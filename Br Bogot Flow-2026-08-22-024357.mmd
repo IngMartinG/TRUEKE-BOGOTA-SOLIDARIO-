@@ -1,0 +1,24 @@
+flowchart TD
+    A["ETAPA 1: Descubrimiento y Requerimientos<br/>Trueke Bogotá Solidario"]:::etapa
+    B{"¿QUÉ SE HACE?<br/>Levantamiento de Información"}:::decision
+
+    C["¿Qué queremos construir?<br/>(Objetivo General)<br/>Plataforma digital para que los<br/>ciudadanos de Bogotá intercambien<br/>bienes de forma solidaria,<br/>organizada y segura"]:::pregunta
+
+    D["¿Para quién?<br/>(User Personas / Audiencia)<br/>Ciudadanos de Bogotá que quieren<br/>dar nuevo uso a productos como<br/>ropa, libros o artículos del hogar,<br/>especialmente comunidades con<br/>menor acceso a recursos"]:::pregunta
+
+    E["¿Qué debe hacer?<br/>(Requerimientos Funcionales y NFR)<br/>RF: Registrar usuarios, iniciar sesión,<br/>publicar productos, buscar por<br/>categoría, ver detalles, contactar<br/>usuarios, gestionar perfil<br/>NFR: interfaz fácil de usar, seguridad<br/>de datos, compatibilidad móvil"]:::pregunta
+
+    F["RESULTADO ESPERADO:<br/>App móvil Cliente–Servidor con<br/>BD relacional (usuarios, productos,<br/>chats, mensajes, solicitudes)<br/>orientada a economía circular<br/>y consumo responsable"]:::resultado
+
+    A --> B
+    B --> C
+    B --> D
+    B --> E
+    C --> F
+    D --> F
+    E --> F
+
+    classDef etapa fill:#1e3a8a,color:#ffffff,stroke:#3b82f6,stroke-width:1px,font-weight:bold;
+    classDef decision fill:#d97706,color:#ffffff,stroke:#f59e0b,stroke-width:1px,font-weight:bold;
+    classDef pregunta fill:#0f172a,color:#7dd3fc,stroke:#38bdf8,stroke-width:1px;
+    classDef resultado fill:#0f172a,color:#6ee7b7,stroke:#34d399,stroke-width:1px;
