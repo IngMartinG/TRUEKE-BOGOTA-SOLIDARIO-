@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trueke Bogotá Solidario — ACA 1 · Ingeniería Web</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Archivo:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#132420;
+    --bg-soft:#1b322c;
+    --paper:#f2ecdc;
+    --paper-dim:#e7dfc9;
+    --ink:#14201c;
+    --ink-soft:#3c463f;
+    --terracotta:#c1502e;
+    --jade:#4c9578;
+    --gold:#dfa653;
+    --line:rgba(242,236,220,0.16);
+    --line-dark:rgba(20,32,28,0.14);
+    --max:920px;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--paper);
+    font-family:'Archivo',sans-serif;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1,h2,h3{
+    font-family:'Fraunces',serif;
+    font-weight:600;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 28px;}
+  a{color:inherit;}
+
+  /* ---------- MASTHEAD ---------- */
+  .masthead{
+    padding:38px 0 20px;
+    border-bottom:1px solid var(--line);
+  }
+  .masthead-row{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:16px;
+    flex-wrap:wrap;
+    font-size:0.86rem;
+    color:var(--paper-dim);
+  }
+  .masthead-row .course{font-weight:600;color:var(--paper);}
+  .masthead-row .meta{text-align:right;}
+  .masthead-row .meta span{display:block;}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    padding:64px 0 70px;
+    animation:rise 0.7s ease-out;
+  }
+  @keyframes rise{
+    from{opacity:0;transform:translateY(14px);}
+    to{opacity:1;transform:translateY(0);}
+  }
+  .hero .kicker{
+    font-size:0.95rem;
+    color:var(--gold);
+    margin-bottom:18px;
+    max-width:60ch;
+  }
+  .hero h1{
+    font-size:clamp(2.4rem, 5.6vw, 4rem);
+    line-height:1.04;
+    color:var(--paper);
+  }
+  .hero h1 em{
+    font-style:italic;
+    color:var(--jade);
+  }
+  .hero p.lede{
+    margin-top:26px;
+    max-width:58ch;
+    font-size:1.12rem;
+    color:var(--paper-dim);
+  }
+  .hero-team{
+    margin-top:40px;
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px 28px;
+    font-size:0.9rem;
+    color:var(--paper-dim);
+    border-top:1px solid var(--line);
+    padding-top:18px;
+  }
+  .hero-team strong{color:var(--paper);font-weight:600;}
+
+  /* ---------- SECTION SHELL ---------- */
+  section{padding:56px 0;}
+  section + section{border-top:1px solid var(--line);}
+  .section-label{
+    font-size:0.82rem;
+    color:var(--gold);
+    margin-bottom:10px;
+  }
+  .section-title{
+    font-size:clamp(1.6rem,3vw,2.1rem);
+    max-width:22ch;
+  }
+
+  /* ---------- PROBLEMA / SOLUCION ---------- */
+  .split{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:44px;
+    margin-top:32px;
+  }
+  .split h3{
+    font-size:1.05rem;
+    color:var(--terracotta);
+    margin-bottom:12px;
+  }
+  .split p{color:var(--paper-dim);font-size:0.98rem;}
+
+  /* ---------- PILARES ---------- */
+  .pillars{
+    margin-top:34px;
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:1px;
+    background:var(--line);
+    border:1px solid var(--line);
+  }
+  .pillar{
+    background:var(--bg);
+    padding:30px 28px;
+  }
+  .pillar .num{
+    font-family:'Fraunces',serif;
+    font-size:0.95rem;
+    color:var(--jade);
+    margin-bottom:14px;
+  }
+  .pillar h3{
+    font-size:1.18rem;
+    margin-bottom:10px;
+    color:var(--paper);
+  }
+  .pillar p{
+    color:var(--paper-dim);
+    font-size:0.94rem;
+    margin-bottom:14px;
+  }
+  .tag-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .tag{
+    font-size:0.76rem;
+    padding:4px 10px;
+    border:1px solid var(--line);
+    border-radius:3px;
+    color:var(--paper-dim);
+  }
+
+  /* ---------- ARQUITECTURA (diagrama SVG) ---------- */
+  .diagram-card{
+    margin-top:32px;
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:6px;
+    padding:30px 28px 24px;
+  }
+  .diagram-card svg{width:100%;height:auto;display:block;}
+  .diagram-caption{
+    margin-top:18px;
+    font-size:0.88rem;
+    color:var(--ink-soft);
+    border-top:1px solid var(--line-dark);
+    padding-top:14px;
+  }
+
+  /* ---------- CALLOUT REPO ---------- */
+  .callout{
+    margin-top:26px;
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:20px;
+    flex-wrap:wrap;
+    border:1px solid var(--line);
+    padding:16px 20px;
+    font-size:0.9rem;
+    color:var(--paper-dim);
+  }
+  .callout a{color:var(--gold);text-decoration:none;border-bottom:1px solid var(--gold);}
+
+  /* ---------- REQUERIMIENTOS ---------- */
+  .req-grid{
+    margin-top:32px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:24px;
+  }
+  .req-item .label{font-size:0.78rem;color:var(--jade);margin-bottom:8px;}
+  .req-item h4{font-family:'Fraunces',serif;font-size:1.02rem;margin-bottom:8px;color:var(--paper);font-weight:500;}
+  .req-item p{font-size:0.87rem;color:var(--paper-dim);}
+
+  /* ---------- C4 GRID ---------- */
+  .c4-grid{
+    margin-top:32px;
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:20px;
+  }
+  .c4-card{
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:6px;
+    padding:22px 22px 18px;
+  }
+  .c4-card .c4-level{font-size:0.74rem;color:var(--terracotta);margin-bottom:6px;font-weight:600;letter-spacing:0.02em;}
+  .c4-card h4{font-family:'Fraunces',serif;font-size:1.02rem;margin-bottom:12px;}
+  .c4-card svg{width:100%;height:auto;display:block;}
+  .c4-card p{font-size:0.82rem;color:var(--ink-soft);margin-top:12px;}
+  .c4-card .see-more{font-size:0.78rem;margin-top:8px;display:inline-block;color:var(--terracotta);}
+
+  /* ---------- ENTIDADES ---------- */
+  .entity-grid{
+    margin-top:32px;
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:16px;
+  }
+  .entity-card{border:1px solid var(--line);padding:18px;}
+  .entity-card h4{font-family:'Fraunces',serif;font-size:1rem;color:var(--jade);margin-bottom:10px;}
+  .entity-card ul{margin:0;padding-left:16px;font-size:0.83rem;color:var(--paper-dim);}
+  .entity-card li{margin-bottom:4px;}
+
+  /* ---------- STACK TABLE ---------- */
+  .stack-table{
+    margin-top:32px;
+    width:100%;
+    border-collapse:collapse;
+    font-size:0.92rem;
+  }
+  .stack-table th{
+    text-align:left;
+    font-family:'Fraunces',serif;
+    font-weight:500;
+    color:var(--gold);
+    padding:10px 16px 10px 0;
+    border-bottom:1px solid var(--line);
+  }
+  .stack-table td{
+    padding:14px 16px 14px 0;
+    border-bottom:1px solid var(--line);
+    color:var(--paper-dim);
+    vertical-align:top;
+  }
+  .stack-table td.pillar-name{color:var(--paper);font-weight:600;white-space:nowrap;}
+
+  /* ---------- CUMPLIMIENTO ---------- */
+  .checklist{
+    margin-top:30px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:20px;
+  }
+  .check-item{border-left:2px solid var(--jade);padding-left:14px;}
+  .check-item .label{font-size:0.78rem;color:var(--gold);margin-bottom:6px;}
+  .check-item .value{font-family:'Fraunces',serif;font-size:1.1rem;color:var(--paper);}
+  .check-item .sub{font-size:0.82rem;color:var(--paper-dim);margin-top:3px;}
+
+  /* ---------- EQUIPO ---------- */
+  .team-grid{
+    margin-top:30px;
+    display:grid;
+    grid-template-columns:repeat(4,1fr);
+    gap:16px;
+  }
+  .team-card{
+    border:1px solid var(--line);
+    padding:18px 16px;
+    font-size:0.92rem;
+  }
+  .team-card .role{color:var(--gold);font-size:0.76rem;display:block;margin-bottom:6px;}
+
+  /* ---------- FOOTER ---------- */
+  footer{
+    padding:34px 0 50px;
+    color:var(--paper-dim);
+    font-size:0.85rem;
+    display:flex;
+    justify-content:space-between;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+
+  @media (max-width:720px){
+    .split,.pillars,.checklist,.team-grid{grid-template-columns:1fr;}
+    .masthead-row{flex-direction:column;align-items:flex-start;}
+    .masthead-row .meta{text-align:left;}
+  }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="masthead">
+    <div class="masthead-row">
+      <span class="course">Ingeniería Web · CUN</span>
+      <span class="meta">
+        <span>Docente: Alex Cómbita</span>
+      </span>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <section class="hero">
+    <p class="kicker">Idea del proyecto grupal</p>
+    <h1>Trueke Bogotá<br><em>Solidario</em></h1>
+    <p class="lede">Una plataforma web para que los ciudadanos de Bogotá intercambien bienes y servicios sin usar dinero, diseñada como un sistema distribuido, con comunicación asíncrona entre servicios, persistencia mixta y despliegue en contenedores.</p>
+    <div class="hero-team">
+      <span><strong>Martin Orlando Gutiérrez Arismendi</strong></span>
+      <span><strong>Anderson Burgos Rodríguez</strong></span>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section id="problema">
+    <p class="section-label">Contexto</p>
+    <h2 class="section-title">El problema y la propuesta</h2>
+    <div class="split">
+      <div>
+        <h3>Definición del problema</h3>
+        <p>En Bogotá, muchos hogares acumulan objetos en buen estado que ya no usan, ropa, libros, electrodomésticos, mientras otros ciudadanos necesitan justamente eso y no tienen cómo pagarlo. No existe un canal confiable, geolocalizado y gratuito para poner en contacto a quien sobra con quien necesita.</p>
+        <p>Resolver esto con una aplicación web monolítica tradicional no escala: los picos de solicitudes de intercambio en horas pico generarían cuellos de botella severos, la falta de una capa de caché haría lentas las búsquedas de publicaciones por categoría o localidad, y el acoplamiento excesivo entre módulos impediría desplegar mejoras de forma continua y segura en la nube.</p>
+      </div>
+      <div>
+        <h3>Propuesta de solución</h3>
+        <p>Trueke Bogotá Solidario es una plataforma web que permite publicar, buscar e intercambiar bienes por trueke directo, sin intermediación de dinero. La arquitectura se diseña como un sistema desacoplado: un front-end de publicaciones y chat, un back-end que expone la lógica de negocio, comunicación en tiempo real entre usuarios mediante eventos, y una estrategia de datos combinada (relacional + caché) pensada para escalar en la nube.</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section id="pilares">
+    <p class="section-label">Foco de evaluación</p>
+    <h2 class="section-title">Los cuatro pilares aplicados a Trueke</h2>
+  </section>
+</div>
+
+<div class="wrap" style="padding-bottom:0;">
+  <div class="pillars">
+    <div class="pillar">
+      <div class="num">01</div>
+      <h3>Arquitectura de información &amp; usabilidad</h3>
+      <p>Navegación de cuatro secciones, Explorar, Publicar, Mensajes, Perfil, pensada mobile-first, con un flujo de publicación de tres pasos (foto, categoría, descripción) para bajar la fricción de un usuario que nunca ha usado la app.</p>
+      <div class="tag-row">
+        <span class="tag">Modelado UML/C4 (Draw.io, Mermaid)</span>
+        <span class="tag">Flujo de publicación</span>
+      </div>
+    </div>
+    <div class="pillar">
+      <div class="num">02</div>
+      <h3>Comunicación entre aplicaciones (Pub/Sub)</h3>
+      <p>Cuando un usuario crea una Solicitud de intercambio, el back-end publica un evento <code>solicitud.creada</code>. Dos consumidores independientes reaccionan: el servicio de notificaciones (envía el correo) y el hub de chat (actualiza la conversación en tiempo real), sin que ninguno bloquee al otro.</p>
+      <div class="tag-row">
+        <span class="tag">SignalR (WebSockets)</span>
+        <span class="tag">Redis Pub/Sub</span>
+        <span class="tag">Event Bus</span>
+      </div>
+    </div>
+    <div class="pillar">
+      <div class="num">03</div>
+      <h3>Persistencia de datos (SQL / NoSQL)</h3>
+      <p>SQL Server guarda lo transaccional, usuarios, publicaciones, solicitudes, historial de intercambios, donde la integridad relacional importa. Redis se usa como caché de sesión, contador de vistas por publicación y broker de los eventos Pub/Sub.</p>
+      <div class="tag-row">
+        <span class="tag">SQL Server</span>
+        <span class="tag">Redis</span>
+      </div>
+    </div>
+    <div class="pillar">
+      <div class="num">04</div>
+      <h3>Contenedores &amp; servicios cloud</h3>
+      <p>Entorno local reproducible con Docker Compose (API + SQL Server + Redis), con Kubernetes como estrategia de orquestación para escalar horizontalmente la API en picos de solicitudes. Despliegue en Azure App Service dentro de una red virtual (VNet) propia, con Azure Blob Storage para las fotos de publicaciones y pipeline de CI/CD en GitHub Actions.</p>
+      <div class="tag-row">
+        <span class="tag">Docker Compose</span>
+        <span class="tag">Kubernetes</span>
+        <span class="tag">Azure VNet</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="wrap">
+  <section id="arquitectura">
+    <p class="section-label">Vista de arquitectura</p>
+    <h2 class="section-title">Nivel 2 — Contenedores (C4)</h2>
+    <div class="diagram-card">
+      <svg viewBox="0 0 860 380" xmlns="http://www.w3.org/2000/svg">
+        <!-- user -->
+        <circle cx="60" cy="150" r="22" fill="none" stroke="#14201c" stroke-width="2"/>
+        <text x="60" y="192" font-family="Archivo" font-size="12" text-anchor="middle" fill="#14201c">Usuario</text>
+
+        <!-- system boundary -->
+        <rect x="140" y="40" width="480" height="220" fill="none" stroke="#c9c0a4" stroke-width="1.4" stroke-dasharray="4 4"/>
+        <text x="152" y="60" font-family="Fraunces" font-size="12" fill="#3c463f">Trueke Bogotá Solidario</text>
+
+        <!-- frontend -->
+        <rect x="165" y="80" width="140" height="70" rx="3" fill="#4c9578"/>
+        <text x="235" y="108" font-family="Archivo" font-weight="600" font-size="12" text-anchor="middle" fill="#f2ecdc">Front-end</text>
+        <text x="235" y="124" font-family="Archivo" font-size="10" text-anchor="middle" fill="#f2ecdc">Angular</text>
+
+        <!-- backend -->
+        <rect x="345" y="80" width="150" height="70" rx="3" fill="#c1502e"/>
+        <text x="420" y="106" font-family="Archivo" font-weight="600" font-size="12" text-anchor="middle" fill="#f2ecdc">API Back-end</text>
+        <text x="420" y="122" font-family="Archivo" font-size="10" text-anchor="middle" fill="#f2ecdc">ASP.NET Core</text>
+        <text x="420" y="136" font-family="Archivo" font-size="10" text-anchor="middle" fill="#f2ecdc">+ SignalR (Pub/Sub)</text>
+
+        <!-- db -->
+        <rect x="165" y="190" width="140" height="55" rx="3" fill="#14201c"/>
+        <text x="235" y="214" font-family="Archivo" font-weight="600" font-size="11" text-anchor="middle" fill="#f2ecdc">SQL Server</text>
+        <text x="235" y="228" font-family="Archivo" font-size="9" text-anchor="middle" fill="#dfa653">datos transaccionales</text>
+
+        <!-- redis -->
+        <rect x="345" y="190" width="150" height="55" rx="3" fill="#14201c"/>
+        <text x="420" y="214" font-family="Archivo" font-weight="600" font-size="11" text-anchor="middle" fill="#f2ecdc">Redis</text>
+        <text x="420" y="228" font-family="Archivo" font-size="9" text-anchor="middle" fill="#dfa653">caché + broker eventos</text>
+
+        <!-- storage -->
+        <rect x="525" y="80" width="75" height="70" rx="3" fill="#3c463f"/>
+        <text x="562" y="112" font-family="Archivo" font-weight="600" font-size="10" text-anchor="middle" fill="#f2ecdc">Blob</text>
+        <text x="562" y="125" font-family="Archivo" font-size="9" text-anchor="middle" fill="#f2ecdc">Storage</text>
+
+        <!-- externals -->
+        <rect x="670" y="40" width="150" height="46" rx="3" fill="none" stroke="#3c463f" stroke-width="1.4"/>
+        <text x="745" y="67" font-family="Archivo" font-size="11" text-anchor="middle" fill="#3c463f">Wompi (pagos)</text>
+
+        <rect x="670" y="100" width="150" height="46" rx="3" fill="none" stroke="#3c463f" stroke-width="1.4"/>
+        <text x="745" y="127" font-family="Archivo" font-size="11" text-anchor="middle" fill="#3c463f">Google OAuth</text>
+
+        <rect x="670" y="160" width="150" height="46" rx="3" fill="none" stroke="#3c463f" stroke-width="1.4"/>
+        <text x="745" y="187" font-family="Archivo" font-size="11" text-anchor="middle" fill="#3c463f">Email</text>
+
+        <!-- connections -->
+        <line x1="82" y1="150" x2="163" y2="115" stroke="#14201c" stroke-width="1.4"/>
+        <line x1="305" y1="115" x2="345" y2="115" stroke="#14201c" stroke-width="1.4"/>
+        <line x1="420" y1="150" x2="420" y2="190" stroke="#14201c" stroke-width="1.4"/>
+        <line x1="235" y1="150" x2="235" y2="190" stroke="#14201c" stroke-width="1.4"/>
+        <line x1="495" y1="115" x2="525" y2="115" stroke="#14201c" stroke-width="1.4"/>
+        <line x1="495" y1="100" x2="670" y2="63" stroke="#3c463f" stroke-width="1" stroke-dasharray="3 3"/>
+        <line x1="495" y1="115" x2="670" y2="123" stroke="#3c463f" stroke-width="1" stroke-dasharray="3 3"/>
+        <line x1="495" y1="135" x2="670" y2="183" stroke="#3c463f" stroke-width="1" stroke-dasharray="3 3"/>
+      </svg>
+      <div class="diagram-caption">Diagrama de contenedores (Nivel 2 del modelo C4, completo con los niveles 1–4 documentado en el repositorio del proyecto). El Front-end en Angular consume la API en ASP.NET Core; la API persiste en SQL Server y usa Redis como caché y como canal Pub/Sub para eventos en tiempo real.</div>
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <section id="stack">
+    <p class="section-label">Stack tecnológico</p>
+    <h2 class="section-title">Herramientas por pilar</h2>
+    <table class="stack-table">
+      <thead>
+        <tr><th>Pilar</th><th>Herramienta</th><th>Uso en Trueke</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="pillar-name">Modelado UML</td>
+          <td>Draw.io + Mermaid.js / PlantUML (C4)</td>
+          <td>Diagramas de arquitectura C4 (niveles 1 a 4) versionados en GitHub</td>
+        </tr>
+        <tr>
+          <td class="pillar-name">IDE's y editores</td>
+          <td>Visual Studio / VS Code</td>
+          <td>Desarrollo del front-end (Angular) y de la API (ASP.NET Core)</td>
+        </tr>
+        <tr>
+          <td class="pillar-name">Persistencia SQL</td>
+          <td>SQL Server</td>
+          <td>Usuarios, publicaciones, solicitudes, historial de trueques</td>
+        </tr>
+        <tr>
+          <td class="pillar-name">Persistencia NoSQL</td>
+          <td>Redis Caché</td>
+          <td>Caché de sesión, contador de vistas, cola de eventos Pub/Sub</td>
+        </tr>
+        <tr>
+          <td class="pillar-name">Comunicación Pub/Sub</td>
+          <td>WebSockets (SignalR) + Event Bus (Redis)</td>
+          <td>Notificaciones y chat en tiempo real al crear una solicitud</td>
+        </tr>
+        <tr>
+          <td class="pillar-name">CI/CD</td>
+          <td>GitHub Actions</td>
+          <td>Build y pruebas automáticas en cada push a <code>main</code></td>
+        </tr>
+        <tr>
+          <td class="pillar-name">Contenedores</td>
+          <td>Docker / Docker Compose</td>
+          <td>Entorno local reproducible (API + SQL Server + Redis)</td>
+        </tr>
+        <tr>
+          <td class="pillar-name">Orquestación</td>
+          <td>Kubernetes / Rancher</td>
+          <td>Escalado horizontal de la API ante picos de solicitudes</td>
+        </tr>
+        <tr>
+          <td class="pillar-name">Nube y exposición</td>
+          <td>Azure App Service + VNet + Blob Storage</td>
+          <td>Despliegue de la API en red privada y almacenamiento de imágenes</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+</div>
+
+
+<div class="wrap">
+  <section id="equipo">
+    <p class="section-label">Conformación oficial del equipo</p>
+    <h2 class="section-title">Integrantes</h2>
+    <div class="team-grid">
+      <div class="team-card"><span class="role">Integrante 1</span>Martin Orlando Gutiérrez Arismendi</div>
+      <div class="team-card"><span class="role">Integrante 2</span>Anderson Burgos Rodríguez</div>
+     
+    </div>
+  </section>
+</div>
+
+<div class="wrap">
+  <footer>
+    <span>Repositorio: github.com/IngMartinG/TRUEKE-BOGOTA-SOLIDARIO-</span>
+  </footer>
+</div>
+
+</body>
+</html>
