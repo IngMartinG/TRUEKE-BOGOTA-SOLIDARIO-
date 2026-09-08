@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Trueke Bogotá Solidario — Catálogo</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <!-- Navbar: fiel a la franja verde superior con buscador y modos -->
+  <nav class="navbar">
+    <input class="navbar__search" type="search" placeholder="Buscar artículos por categoría o ubicación...">
+    <span class="navbar__eco-puntos">🌿 120 Eco-Puntos</span>
+  </nav>
+
+  <!-- Hero: sección "Bogotá Circular" -->
+  <header class="hero">
+    <p style="font-size:var(--font-size-sm); opacity:.85;">🌿 BOGOTÁ CIRCULAR</p>
+    <h1>Promueve la Economía Circular</h1>
+    <p>Intercambia productos sin plástico y reduce el impacto ambiental en tu ciudad.</p>
+    <div class="hero__stats">
+      <div class="hero__stat"><strong>12.4 ton</strong><span>Plástico evitado</span></div>
+      <div class="hero__stat"><strong>3,200+</strong><span>Intercambios realizados</span></div>
+      <div class="hero__stat"><strong>8,500+</strong><span>Vecinos activos</span></div>
+    </div>
+  </header>
+
+  <!-- Grid de catálogo: componente card-producto reutilizado 3 veces -->
+  <main class="catalogo-grid">
+
+    <article class="card-producto">
+      <div class="card-producto__badges">
+        <span class="badge badge--sin-plastico">100% Sin Plástico</span>
+        <span class="badge badge--eco-circular">Eco-Circular</span>
+      </div>
+      <p class="card-producto__categoria">Sweaters y Abrigos</p>
+      <h3 class="card-producto__titulo">Chaqueta de Lana Reciclada</h3>
+      <p class="card-producto__estado">Como nuevo</p>
+      <p class="card-producto__precio">80 Eco-Pts <small>· $45.000</small></p>
+      <button class="btn-primary" type="button">Solicitar Trueke</button>
+    </article>
+
+    <article class="card-producto">
+      <div class="card-producto__badges">
+        <span class="badge badge--eco-puntos">Eco-Puntos</span>
+      </div>
+      <p class="card-producto__categoria">Remeras y Camisas</p>
+      <h3 class="card-producto__titulo">Camiseta Orgánica Estampada</h3>
+      <p class="card-producto__estado">Como nuevo</p>
+      <p class="card-producto__precio">40 Eco-Pts <small>· $22.000</small></p>
+      <button class="btn-primary" type="button" disabled>No disponible</button>
+    </article>
+
+    <article class="card-producto">
+      <div class="card-producto__badges">
+        <span class="badge badge--sin-plastico">100% Sin Plástico</span>
+        <span class="badge badge--eco-circular">Eco-Circular</span>
+      </div>
+      <p class="card-producto__categoria">Artículos del Hogar</p>
+      <h3 class="card-producto__titulo">Mochila de Fique Natural</h3>
+      <p class="card-producto__estado">Como nuevo</p>
+      <p class="card-producto__precio">130 Eco-Pts <small>· $68.000</small></p>
+      <button class="btn-secondary" type="button">Ver detalle</button>
+    </article>
+
+  </main>
+
+</body>
+</html>
