@@ -54,4 +54,4 @@ A partir de las pantallas del PDF se abstrajeron las variables visuales a
 
 ## 6. Pull Request
 
-Enlace al PR: `[pegar aquí la URL una vez creado el PR — ver Paso 3]`
+Enlace al PR: `https://github.com/IngMartinG/TRUEKE-BOGOTA-SOLIDARIO-/pull/1`
