@@ -19,6 +19,14 @@ public sealed class RegistroRequest
     public bool AceptoPoliticaDatos { get; init; }
 }
 
+public sealed class GoogleLoginRequest
+{
+    /// <summary>ID token (JWT) que entrega Google Identity Services en el navegador.</summary>
+    [Required, StringLength(4096, MinimumLength = 20)] public string IdToken { get; init; } = "";
+    /// <summary>Obligatorio solo si la cuenta es nueva (Ley 1581).</summary>
+    public bool AceptoPoliticaDatos { get; init; }
+}
+
 public sealed class LoginRequest
 {
     [Required, EmailAddress, MaxLength(160)] public string Correo { get; init; } = "";
@@ -144,7 +152,11 @@ public sealed record SesionDto(string Token, DateTime ExpiraUtc, UsuarioDto Usua
 /// Resultado interno de autenticarse. Presentacion devuelve SOLO <see cref="Sesion"/> en el JSON y guarda
 /// <see cref="TokenRefresco"/> en una cookie HttpOnly: el refresco nunca es accesible desde JavaScript.
 /// </summary>
-public sealed record ResultadoAutenticacion(SesionDto Sesion, string TokenRefresco, DateTime TokenRefrescoExpiraUtc);
+public sealed record ResultadoAutenticacion(SesionDto Sesion, string TokenRefresco, DateTime TokenRefrescoExpiraUtc)
+{
+    /// <summary>true si el inicio de sesión creó la cuenta (Google): Presentacion responde 201.</summary>
+    public bool CuentaCreada { get; init; }
+}
 
 public sealed record PerfilPublicoDto(string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta);
 
