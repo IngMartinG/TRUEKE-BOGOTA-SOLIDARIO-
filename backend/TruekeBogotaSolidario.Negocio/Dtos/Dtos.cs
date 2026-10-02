@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using TruekeBogotaSolidario.Negocio.Comun;
 
 namespace TruekeBogotaSolidario.Negocio.Dtos;
 
@@ -187,6 +188,15 @@ public sealed class ResolverDenunciaRequest
     [StringLength(300, MinimumLength = 3)] public string? Nota { get; init; }
 }
 
+/// <summary>Derecho de supresión (Ley 1581). Exige volver a demostrar identidad: la clave, o un ID token de Google si la cuenta no tiene clave.</summary>
+public sealed class EliminarCuentaRequest
+{
+    [Required, RegularExpression("^ELIMINAR$", ErrorMessage = "Escribe ELIMINAR para confirmar.")]
+    public string Confirmacion { get; init; } = "";
+    [MaxLength(128)] public string? Clave { get; init; }
+    [StringLength(4096)] public string? GoogleIdToken { get; init; }
+}
+
 public sealed class FiltroNotificacionesRequest
 {
     public bool SoloNoLeidas { get; init; }
@@ -249,6 +259,17 @@ public sealed record DenunciaCreadaDto(Guid Id, string Estado, DateTime FechaUtc
 /// </summary>
 public sealed record DenunciaAgrupadaDto(Guid DenunciaId, string Tipo, Guid ObjetivoId, int Total, IReadOnlyList<string> Motivos,
     IReadOnlyList<string> Detalles, string? VistaPrevia, bool ObjetivoExiste, DateTime PrimeraUtc, DateTime UltimaUtc, string Estado);
+
+// ---------------- Exportación de datos personales (Ley 1581: derecho de acceso) ----------------
+public sealed record ComentarioExportDto(Guid Id, Guid PublicacionId, string Texto, DateTime FechaUtc, bool Oculto);
+public sealed record MensajeExportDto(Guid Id, Guid ConversacionId, string Texto, DateTime FechaUtc);
+public sealed record TransaccionExportDto(Guid Id, Guid PublicacionId, string Modo, string MiRol, bool RecibiPuntos, DateTime FechaUtc);
+public sealed record DenunciaExportDto(Guid Id, string Tipo, Guid ObjetivoId, string Motivo, string? Detalle, string Estado, DateTime FechaUtc);
+
+public sealed record DatosPersonalesDto(DateTime GeneradoUtc, UsuarioDto Perfil, string? PoliticaDatosVersion, DateTime? FechaAceptacionPolitica,
+    IReadOnlyList<PublicacionDto> Publicaciones, IReadOnlyList<SolicitudDto> SolicitudesEnviadas, IReadOnlyList<ComentarioExportDto> Comentarios,
+    IReadOnlyList<MensajeExportDto> MensajesEnviados, IReadOnlyList<TransaccionExportDto> Transacciones, IReadOnlyList<PagoEstadoDto> Pagos,
+    IReadOnlyList<NotificacionDto> Notificaciones, IReadOnlyList<DenunciaExportDto> DenunciasRealizadas);
 
 public sealed record PaginaDto<T>(IReadOnlyList<T> Items, int Total, int Pagina, int Tamano);
 

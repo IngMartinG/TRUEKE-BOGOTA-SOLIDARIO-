@@ -104,6 +104,10 @@ public sealed class PublicacionRepository : IPublicacionRepository
         => _db.Publicaciones.CountAsync(p => p.PropietarioId == usuarioId
             && (p.Estado == EstadoPublicacionEnum.Disponible || p.Estado == EstadoPublicacionEnum.EnNegociacion));
 
+    public async Task<IReadOnlyList<Publicacion>> ListarActivasParaActualizarAsync(Guid propietarioId)
+        => await _db.Publicaciones.Where(p => p.PropietarioId == propietarioId
+            && (p.Estado == EstadoPublicacionEnum.Disponible || p.Estado == EstadoPublicacionEnum.EnNegociacion)).ToListAsync();
+
     public void Agregar(Publicacion publicacion) => _db.Publicaciones.Add(publicacion);
 }
 
@@ -131,6 +135,11 @@ public sealed class SolicitudRepository : ISolicitudRepository
 
     public Task<bool> ExisteAceptadaAsync(Guid publicacionId, Guid solicitanteId)
         => _db.Solicitudes.AnyAsync(s => s.PublicacionId == publicacionId && s.SolicitanteId == solicitanteId && s.Estado == EstadoSolicitud.Aceptada);
+
+    public async Task<IReadOnlyList<Solicitud>> ListarPendientesDelUsuarioAsync(Guid usuarioId)
+        => await _db.Solicitudes.Include(s => s.Publicacion)
+            .Where(s => s.Estado == EstadoSolicitud.Pendiente && (s.SolicitanteId == usuarioId || s.Publicacion!.PropietarioId == usuarioId))
+            .ToListAsync();
 
     public void Agregar(Solicitud solicitud) => _db.Solicitudes.Add(solicitud);
 }
@@ -173,6 +182,9 @@ public sealed class PagoRepository : IPagoRepository
     public async Task<IReadOnlyList<Pago>> ListarPendientesAnterioresAAsync(DateTime limiteUtc, int maximo)
         => await _db.Pagos.Where(p => p.Estado == EstadoPago.Pendiente && p.FechaUtc < limiteUtc)
             .OrderBy(p => p.FechaUtc).Take(maximo).ToListAsync();
+
+    public async Task<IReadOnlyList<Pago>> ListarPorUsuarioAsync(Guid usuarioId, int maximo)
+        => await _db.Pagos.AsNoTracking().Where(p => p.UsuarioId == usuarioId).OrderByDescending(p => p.FechaUtc).Take(maximo).ToListAsync();
 
     public void Agregar(Pago pago) => _db.Pagos.Add(pago);
 }
@@ -263,6 +275,9 @@ public sealed class NotificacionRepository : INotificacionRepository
         var items = await q.OrderByDescending(n => n.FechaUtc).Skip((pagina - 1) * tamano).Take(tamano).ToListAsync();
         return (items, total);
     }
+
+    public async Task<IReadOnlyList<Notificacion>> ListarTodasAsync(Guid usuarioId, int maximo)
+        => await _db.Notificaciones.AsNoTracking().Where(n => n.UsuarioId == usuarioId).OrderByDescending(n => n.FechaUtc).Take(maximo).ToListAsync();
 
     public Task<int> ContarNoLeidasAsync(Guid usuarioId)
         => _db.Notificaciones.CountAsync(n => n.UsuarioId == usuarioId && n.LeidaUtc == null);
@@ -389,6 +404,9 @@ public sealed class ComentarioRepository : IComentarioRepository
 
     public Task<int> ContarDelAutorDesdeAsync(Guid autorId, DateTime desdeUtc)
         => _db.Comentarios.CountAsync(c => c.AutorId == autorId && c.FechaUtc >= desdeUtc);
+
+    public async Task<IReadOnlyList<Comentario>> ListarDelAutorAsync(Guid autorId, int maximo)
+        => await _db.Comentarios.Where(c => c.AutorId == autorId).OrderByDescending(c => c.FechaUtc).Take(maximo).ToListAsync();
 
     public void Agregar(Comentario comentario) => _db.Comentarios.Add(comentario);
 }
