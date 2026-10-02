@@ -52,6 +52,16 @@ public class Usuario
     public string? DocumentoVerificacionUrl { get; private set; }
     public string? MotivoRechazoVerificacion { get; private set; }
 
+    // Identidad y cumplimiento (Ley 1581 de 2012)
+    public bool CorreoVerificado { get; private set; }
+    public DateTime? FechaVerificacionCorreo { get; private set; }
+    /// <summary>Identificador estable de la cuenta de Google ("sub"), si se vinculó.</summary>
+    public string? GoogleSub { get; private set; }
+    public string? PoliticaDatosVersion { get; private set; }
+    public DateTime? FechaAceptacionPolitica { get; private set; }
+    public bool EstaEliminado { get; private set; }
+    public DateTime? FechaEliminacion { get; private set; }
+
     /// <summary>Token de concurrencia optimista (solo SQL Server).</summary>
     public byte[]? RowVersion { get; private set; }
 
@@ -85,7 +95,10 @@ public class Usuario
 
     public void InvalidarSesiones() => VersionSeguridad++;
 
-    public bool VerificarClave(string claveEnClaro) => PasswordHasher.Verificar(claveEnClaro, ClaveHash);
+    public bool VerificarClave(string claveEnClaro) => TieneClave && PasswordHasher.Verificar(claveEnClaro, ClaveHash);
+
+    /// <summary>Falso en cuentas creadas solo con Google (o eliminadas): no se puede iniciar sesión con contraseña.</summary>
+    public bool TieneClave => ClaveHash.Length > 0;
 
     public bool EstaBloqueado(DateTime ahoraUtc) => BloqueadoHasta.HasValue && BloqueadoHasta.Value > ahoraUtc;
 
@@ -103,6 +116,75 @@ public class Usuario
     {
         IntentosFallidosLogin = 0;
         BloqueadoHasta = null;
+    }
+
+    // ---------------- Correo, Google y datos personales ----------------
+    public void MarcarCorreoVerificado(DateTime ahoraUtc)
+    {
+        if (CorreoVerificado) return;
+        CorreoVerificado = true;
+        FechaVerificacionCorreo = ahoraUtc;
+    }
+
+    public void AceptarPoliticaDatos(string version, DateTime ahoraUtc)
+    {
+        if (string.IsNullOrWhiteSpace(version) || version.Length > 20) throw new ReglaDeNegocioException("Versión de política no válida.");
+        PoliticaDatosVersion = version;
+        FechaAceptacionPolitica = ahoraUtc;
+    }
+
+    /// <summary>Cuenta creada con Google: sin contraseña (no se puede entrar con clave hasta que el usuario cree una) y correo ya verificado.</summary>
+    public static Usuario CrearDesdeGoogle(string nombre, string correo, string googleSub, DateTime ahoraUtc)
+    {
+        var nombreValido = (nombre ?? "").Trim();
+        if (nombreValido.Length is < 3 or > 120 || nombreValido.Any(char.IsControl)) nombreValido = "Usuario Trueke";
+        var u = new Usuario
+        {
+            Id = Guid.NewGuid(),
+            NombreCompleto = nombreValido,
+            Localidad = "Bogotá",
+            Correo = NormalizarCorreo(correo),
+            ClaveHash = "",
+            Rol = RolUsuarioEnum.Cliente,
+            TipoCuenta = TipoCuenta.Individual,
+            EstadoVerificacion = EstadoVerificacion.NoVerificado,
+            FechaRegistro = ahoraUtc
+        };
+        if (u.Correo.Length is 0 or > 160 || !u.Correo.Contains('@')) throw new ReglaDeNegocioException("El correo no es válido.");
+        u.VincularGoogle(googleSub);
+        u.MarcarCorreoVerificado(ahoraUtc);
+        return u;
+    }
+
+    public void VincularGoogle(string googleSub)
+    {
+        if (string.IsNullOrWhiteSpace(googleSub) || googleSub.Length > 64) throw new ReglaDeNegocioException("Cuenta de Google no válida.");
+        if (GoogleSub is not null && GoogleSub != googleSub) throw new ReglaDeNegocioException("La cuenta ya está vinculada a otro usuario de Google.");
+        GoogleSub = googleSub;
+    }
+
+    /// <summary>
+    /// Derecho de supresión: borra los datos que identifican a la persona y deja el registro solo para la integridad
+    /// de pagos y transacciones (obligación contable). La cuenta ya no puede iniciar sesión por ningún medio.
+    /// </summary>
+    public void Anonimizar(DateTime ahoraUtc)
+    {
+        if (EstaEliminado) throw new ReglaDeNegocioException("La cuenta ya fue eliminada.");
+        NombreCompleto = "Usuario eliminado";
+        Localidad = "Bogotá";
+        Correo = $"eliminado-{Id:N}@trueke.invalid";
+        ClaveHash = "";
+        GoogleSub = null;
+        DocumentoVerificacionUrl = null;
+        MotivoRechazoVerificacion = null;
+        SaldoEcoPuntos = 0;
+        DestacadosGratisRestantes = 0;
+        IntentosFallidosLogin = 0;
+        BloqueadoHasta = null;
+        CorreoVerificado = false;
+        EstaEliminado = true;
+        FechaEliminacion = ahoraUtc;
+        VersionSeguridad++; // todos los tokens de acceso dejan de valer
     }
 
     // ---------------- Roles ----------------

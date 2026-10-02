@@ -7,9 +7,7 @@ namespace TruekeBogotaSolidario.Pruebas.Unitarias;
 
 public class AntiFarmeoTests
 {
-    private static Task<SesionDto> RegistrarAsync(EntornoNegocio e, string nombre)
-        => e.EnScopeAsync<IAuthService, SesionDto>(a => a.RegistrarAsync(new RegistroRequest
-        { NombreCompleto = nombre + " Prueba", Localidad = "Kennedy", Correo = $"{nombre}{Guid.NewGuid():N}@t.co", Clave = "Clave12345" }));
+    private static Task<SesionDto> RegistrarAsync(EntornoNegocio e, string nombre) => e.RegistrarAsync(nombre);
 
     private static async Task CompletarTruekeAsync(EntornoNegocio e, Guid oferente, Guid receptor)
     {

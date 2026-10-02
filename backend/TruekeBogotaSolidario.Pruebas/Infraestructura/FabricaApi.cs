@@ -30,5 +30,7 @@ public class FabricaApi : WebApplicationFactory<Program>
         builder.UseSetting("RateLimiting:AuthPorMinuto", "1000");
         builder.UseSetting("RateLimiting:GlobalPorMinuto", "10000");
         builder.UseSetting("RateLimiting:EscrituraPorMinuto", "1000");
+        builder.UseSetting("RateLimiting:RefrescoPorMinuto", "1000");
+        builder.UseSetting("Seguridad:SegundosGraciaRefresco", "0");
     }
 }

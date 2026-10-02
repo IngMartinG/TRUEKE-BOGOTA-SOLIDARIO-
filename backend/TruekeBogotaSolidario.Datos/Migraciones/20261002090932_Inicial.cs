@@ -68,6 +68,13 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     EstadoVerificacion = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     DocumentoVerificacionUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     MotivoRechazoVerificacion = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true),
+                    CorreoVerificado = table.Column<bool>(type: "bit", nullable: false),
+                    FechaVerificacionCorreo = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    GoogleSub = table.Column<string>(type: "varchar(64)", unicode: false, maxLength: 64, nullable: true),
+                    PoliticaDatosVersion = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: true),
+                    FechaAceptacionPolitica = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EstaEliminado = table.Column<bool>(type: "bit", nullable: false),
+                    FechaEliminacion = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
@@ -140,6 +147,32 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     table.ForeignKey(
                         name: "FK_Publicaciones_Usuarios_PropietarioId",
                         column: x => x.PropietarioId,
+                        principalTable: "Usuarios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "SesionesRefresh",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FamiliaId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    TokenHash = table.Column<string>(type: "varchar(64)", unicode: false, maxLength: 64, nullable: false),
+                    CreadoUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExpiraUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExpiraFamiliaUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ReemplazadoPorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    RevocadoUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_SesionesRefresh", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_SesionesRefresh_Usuarios_UsuarioId",
+                        column: x => x.UsuarioId,
                         principalTable: "Usuarios",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -314,6 +347,27 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 column: "PropietarioId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_SesionesRefresh_ExpiraUtc",
+                table: "SesionesRefresh",
+                column: "ExpiraUtc");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SesionesRefresh_FamiliaId",
+                table: "SesionesRefresh",
+                column: "FamiliaId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SesionesRefresh_TokenHash",
+                table: "SesionesRefresh",
+                column: "TokenHash",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_SesionesRefresh_UsuarioId_RevocadoUtc",
+                table: "SesionesRefresh",
+                columns: new[] { "UsuarioId", "RevocadoUtc" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Solicitudes_PublicacionId_Estado",
                 table: "Solicitudes",
                 columns: new[] { "PublicacionId", "Estado" });
@@ -343,6 +397,13 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 name: "IX_Usuarios_EstadoVerificacion",
                 table: "Usuarios",
                 column: "EstadoVerificacion");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Usuarios_GoogleSub",
+                table: "Usuarios",
+                column: "GoogleSub",
+                unique: true,
+                filter: "[GoogleSub] IS NOT NULL");
         }
 
         /// <inheritdoc />
@@ -356,6 +417,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
             migrationBuilder.DropTable(
                 name: "Pagos");
+
+            migrationBuilder.DropTable(
+                name: "SesionesRefresh");
 
             migrationBuilder.DropTable(
                 name: "Solicitudes");

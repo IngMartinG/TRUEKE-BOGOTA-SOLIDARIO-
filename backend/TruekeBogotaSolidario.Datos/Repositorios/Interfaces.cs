@@ -96,6 +96,18 @@ public interface IAuditoriaRepository
     void Agregar(AuditoriaEvento evento);
 }
 
+public interface ISesionRefreshRepository
+{
+    Task<SesionRefresh?> ObtenerPorHashAsync(string tokenHash);
+    /// <summary>Revoca (sin guardar) todos los tokens vigentes de la familia.</summary>
+    Task RevocarFamiliaAsync(Guid familiaId, DateTime ahoraUtc);
+    /// <summary>Revoca (sin guardar) todos los tokens vigentes del usuario: cierre de sesión global.</summary>
+    Task RevocarTodasDelUsuarioAsync(Guid usuarioId, DateTime ahoraUtc);
+    /// <summary>Elimina (y guarda) hasta <paramref name="maximo"/> tokens vencidos o revocados antes de la fecha. Devuelve cuántos.</summary>
+    Task<int> PurgarAsync(DateTime antesDeUtc, int maximo);
+    void Agregar(SesionRefresh sesion);
+}
+
 public interface IComentarioRepository
 {
     Task<Comentario?> ObtenerPorIdAsync(Guid id);

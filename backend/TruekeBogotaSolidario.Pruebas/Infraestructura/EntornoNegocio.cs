@@ -1,8 +1,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using TruekeBogotaSolidario.Datos.Contexto;
 using TruekeBogotaSolidario.Negocio;
+using TruekeBogotaSolidario.Negocio.Dtos;
 using TruekeBogotaSolidario.Negocio.Pagos;
+using TruekeBogotaSolidario.Negocio.Servicios;
 
 namespace TruekeBogotaSolidario.Pruebas.Infraestructura;
 
@@ -52,6 +55,27 @@ public sealed class EntornoNegocio : IDisposable
     {
         using var scope = _sp.CreateScope();
         await accion(scope.ServiceProvider.GetRequiredService<TServicio>());
+    }
+
+    /// <summary>Registra un usuario (con el correo ya verificado, para que pueda operar) y devuelve su sesión.</summary>
+    public async Task<SesionDto> RegistrarAsync(string nombre)
+    {
+        var r = await EnScopeAsync<IAuthService, ResultadoAutenticacion>(a => a.RegistrarAsync(new RegistroRequest
+        {
+            NombreCompleto = nombre + " Prueba", Localidad = "Kennedy", Correo = $"{nombre}{Guid.NewGuid():N}@t.co",
+            Clave = "Clave12345", AceptoPoliticaDatos = true
+        }));
+        await MarcarCorreoVerificadoAsync(r.Sesion.Usuario.Id);
+        return r.Sesion;
+    }
+
+    /// <summary>Atajo de pruebas: marca el correo como verificado directamente en la base.</summary>
+    public async Task MarcarCorreoVerificadoAsync(Guid usuarioId)
+    {
+        using var scope = _sp.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<TruekeDbContext>();
+        (await db.Usuarios.FindAsync(usuarioId))!.MarcarCorreoVerificado(DateTime.UtcNow);
+        await db.SaveChangesAsync();
     }
 
     public void Dispose() => _sp.Dispose();

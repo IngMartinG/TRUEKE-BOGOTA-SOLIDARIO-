@@ -19,4 +19,5 @@ public static class Politicas
     public const string LimiteAuth = "auth";
     public const string LimiteWebhook = "webhook";
     public const string LimiteEscritura = "escritura";
+    public const string LimiteRefresco = "refresco";
 }

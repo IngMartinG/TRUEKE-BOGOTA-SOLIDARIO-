@@ -14,6 +14,9 @@ public sealed class RegistroRequest
     [Required, StringLength(60, MinimumLength = 2)] public string Localidad { get; init; } = "";
     [Required, EmailAddress, MaxLength(160)] public string Correo { get; init; } = "";
     [Required, StringLength(128, MinimumLength = 8)] public string Clave { get; init; } = "";
+    /// <summary>Ley 1581 de 2012: autorización expresa para el tratamiento de datos personales.</summary>
+    [Range(typeof(bool), "true", "true", ErrorMessage = "Debes aceptar la política de tratamiento de datos personales.")]
+    public bool AceptoPoliticaDatos { get; init; }
 }
 
 public sealed class LoginRequest
@@ -24,7 +27,8 @@ public sealed class LoginRequest
 
 public sealed class CambiarClaveRequest
 {
-    [Required, StringLength(128, MinimumLength = 1)] public string ClaveActual { get; init; } = "";
+    /// <summary>Obligatoria si la cuenta ya tiene contraseña; las cuentas creadas solo con Google pueden omitirla para crear una.</summary>
+    [MaxLength(128)] public string? ClaveActual { get; init; }
     [Required, StringLength(128, MinimumLength = 8)] public string ClaveNueva { get; init; } = "";
 }
 
@@ -118,6 +122,12 @@ public sealed record UsuarioDto(Guid Id, string NombreCompleto, string Localidad
     int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas, int DestacadosGratisRestantes);
 
 public sealed record SesionDto(string Token, DateTime ExpiraUtc, UsuarioDto Usuario);
+
+/// <summary>
+/// Resultado interno de autenticarse. Presentacion devuelve SOLO <see cref="Sesion"/> en el JSON y guarda
+/// <see cref="TokenRefresco"/> en una cookie HttpOnly: el refresco nunca es accesible desde JavaScript.
+/// </summary>
+public sealed record ResultadoAutenticacion(SesionDto Sesion, string TokenRefresco, DateTime TokenRefrescoExpiraUtc);
 
 public sealed record PerfilPublicoDto(string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta);
 

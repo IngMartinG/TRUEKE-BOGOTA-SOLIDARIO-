@@ -29,8 +29,7 @@ public class PagosIdempotenciaTests
     {
         var pasarela = new PasarelaFalsa();
         var entorno = new EntornoNegocio(pasarela);
-        var sesion = await entorno.EnScopeAsync<IAuthService, SesionDto>(a => a.RegistrarAsync(new RegistroRequest
-        { NombreCompleto = "Pagador Prueba", Localidad = "Bosa", Correo = $"p{Guid.NewGuid():N}@t.co", Clave = "Clave12345" }));
+        var sesion = await entorno.RegistrarAsync("pagador");
         var pago = await entorno.EnScopeAsync<IPagoService, PagoIniciadoDto>(p => p.IniciarAsync(sesion.Usuario.Id,
             new IniciarPagoRequest { Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = montoCop }));
         return (entorno, pasarela, sesion.Usuario.Id, pago);

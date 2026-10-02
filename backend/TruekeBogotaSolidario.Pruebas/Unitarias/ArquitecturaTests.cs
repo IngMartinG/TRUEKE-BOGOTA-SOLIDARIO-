@@ -46,6 +46,8 @@ public class ArquitecturaTests
         {
             "POST api/v1/auth/registrar",
             "POST api/v1/auth/login",
+            "POST api/v1/auth/refrescar",
+            "POST api/v1/auth/salir",
             "GET api/v1/categorias",
             "GET api/v1/publicaciones",
             "GET api/v1/publicaciones/cercanas",

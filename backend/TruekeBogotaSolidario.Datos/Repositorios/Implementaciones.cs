@@ -183,6 +183,39 @@ public sealed class SaludBaseDatos : ISaludBaseDatos
     public Task<bool> PuedeConectarAsync(CancellationToken ct) => _db.Database.CanConnectAsync(ct);
 }
 
+public sealed class SesionRefreshRepository : ISesionRefreshRepository
+{
+    private readonly TruekeDbContext _db;
+    public SesionRefreshRepository(TruekeDbContext db) => _db = db;
+
+    public Task<SesionRefresh?> ObtenerPorHashAsync(string tokenHash)
+        => _db.SesionesRefresh.FirstOrDefaultAsync(s => s.TokenHash == tokenHash);
+
+    public async Task RevocarFamiliaAsync(Guid familiaId, DateTime ahoraUtc)
+    {
+        foreach (var s in await _db.SesionesRefresh.Where(s => s.FamiliaId == familiaId && s.RevocadoUtc == null).ToListAsync())
+            s.Revocar(ahoraUtc);
+    }
+
+    public async Task RevocarTodasDelUsuarioAsync(Guid usuarioId, DateTime ahoraUtc)
+    {
+        foreach (var s in await _db.SesionesRefresh.Where(s => s.UsuarioId == usuarioId && s.RevocadoUtc == null).ToListAsync())
+            s.Revocar(ahoraUtc);
+    }
+
+    public async Task<int> PurgarAsync(DateTime antesDeUtc, int maximo)
+    {
+        var viejas = await _db.SesionesRefresh
+            .Where(s => s.ExpiraUtc < antesDeUtc || (s.RevocadoUtc != null && s.RevocadoUtc < antesDeUtc))
+            .OrderBy(s => s.ExpiraUtc).Take(maximo).ToListAsync();
+        _db.SesionesRefresh.RemoveRange(viejas);
+        await _db.SaveChangesAsync();
+        return viejas.Count;
+    }
+
+    public void Agregar(SesionRefresh sesion) => _db.SesionesRefresh.Add(sesion);
+}
+
 public sealed class ComentarioRepository : IComentarioRepository
 {
     private readonly TruekeDbContext _db;
