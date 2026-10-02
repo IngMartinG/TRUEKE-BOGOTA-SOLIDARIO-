@@ -12,7 +12,7 @@ using TruekeBogotaSolidario.Datos.Contexto;
 namespace TruekeBogotaSolidario.Datos.Migraciones
 {
     [DbContext(typeof(TruekeDbContext))]
-    [Migration("20261002081736_Inicial")]
+    [Migration("20261002090932_Inicial")]
     partial class Inicial
     {
         /// <inheritdoc />
@@ -20,7 +20,7 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.11")
+                .HasAnnotation("ProductVersion", "8.0.31")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -322,6 +322,57 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("Publicaciones");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.SesionRefresh", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreadoUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiraFamiliaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiraUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("FamiliaId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ReemplazadoPorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime?>("RevocadoUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiraUtc");
+
+                    b.HasIndex("FamiliaId");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UsuarioId", "RevocadoUtc");
+
+                    b.ToTable("SesionesRefresh");
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Solicitud", b =>
                 {
                     b.Property<Guid>("Id")
@@ -422,6 +473,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(160)
                         .HasColumnType("nvarchar(160)");
 
+                    b.Property<bool>("CorreoVerificado")
+                        .HasColumnType("bit");
+
                     b.Property<int>("DestacadosGratisRestantes")
                         .HasColumnType("int");
 
@@ -429,16 +483,33 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(500)
                         .HasColumnType("nvarchar(500)");
 
+                    b.Property<bool>("EstaEliminado")
+                        .HasColumnType("bit");
+
                     b.Property<string>("EstadoVerificacion")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("FechaAceptacionPolitica")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaEliminacion")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FechaRegistro")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("FechaVencimientoSuscripcion")
                         .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaVerificacionCorreo")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("GoogleSub")
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
 
                     b.Property<int>("IntentosFallidosLogin")
                         .HasColumnType("int");
@@ -456,6 +527,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("PoliticaDatosVersion")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<decimal>("Reputacion")
                         .HasPrecision(3, 2)
@@ -497,6 +572,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .IsUnique();
 
                     b.HasIndex("EstadoVerificacion");
+
+                    b.HasIndex("GoogleSub")
+                        .IsUnique()
+                        .HasFilter("[GoogleSub] IS NOT NULL");
 
                     b.ToTable("Usuarios");
                 });
@@ -546,6 +625,15 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Navigation("Categoria");
 
                     b.Navigation("Propietario");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.SesionRefresh", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Solicitud", b =>

@@ -17,6 +17,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddOptions<JwtOpciones>().Bind(config.GetSection(JwtOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
         services.AddOptions<SeguridadOpciones>().Bind(config.GetSection(SeguridadOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
         services.AddOptions<UrlsOpciones>().Bind(config.GetSection(UrlsOpciones.Seccion));
+        services.AddOptions<LegalOpciones>().Bind(config.GetSection(LegalOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
         services.AddOptions<PagosOpciones>().Bind(config.GetSection(PagosOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
 
         var pagos = config.GetSection(PagosOpciones.Seccion).Get<PagosOpciones>() ?? new PagosOpciones();
@@ -44,6 +45,7 @@ public static class NegocioServiceCollectionExtensions
 
         services.AddSingleton<IGeneradorToken, GeneradorJwt>();
         services.AddScoped<ISesionService, SesionService>();
+        services.AddScoped<EmisorSesiones>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IPublicacionService, PublicacionService>();
         services.AddScoped<ISolicitudService, SolicitudService>();

@@ -99,7 +99,7 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
         // AllowCredentials: el cliente JS de SignalR negocia con credenciales. Es seguro porque los orígenes son explícitos
         // (nunca "*") y la API no usa cookies: la autenticación viaja en el JWT.
         p.WithOrigins(origenes).WithMethods("GET", "POST", "PUT", "PATCH", "DELETE")
-            .WithHeaders("Authorization", "Content-Type", "X-Requested-With", "X-SignalR-User-Agent")
+            .WithHeaders("Authorization", "Content-Type", "X-Requested-With", "X-SignalR-User-Agent", ProteccionCsrfAttribute.Cabecera)
             .WithExposedHeaders("Location", "Retry-After")
             .AllowCredentials().SetPreflightMaxAge(TimeSpan.FromHours(1));
 }));
@@ -119,6 +119,9 @@ builder.Services.AddRateLimiter(o =>
     var limiteWebhook = config.GetValue("RateLimiting:WebhookPorMinuto", 120);
     var limiteGlobal = config.GetValue("RateLimiting:GlobalPorMinuto", 300);
     var limiteEscritura = config.GetValue("RateLimiting:EscrituraPorMinuto", 20);
+    var limiteRefresco = config.GetValue("RateLimiting:RefrescoPorMinuto", 60);
+    o.AddPolicy(Politicas.LimiteRefresco, c => RateLimitPartition.GetFixedWindowLimiter(Ip(c),
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = limiteRefresco, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     o.AddPolicy(Politicas.LimiteEscritura, c => RateLimitPartition.GetFixedWindowLimiter(
         c.User.FindFirst("sub")?.Value ?? Ip(c),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = limiteEscritura, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));

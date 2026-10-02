@@ -32,13 +32,15 @@ public sealed class AdministracionService : IAdministracionService
     private readonly ISesionService _sesiones;
     private readonly TimeProvider _reloj;
     private readonly INotificador _notificador;
+    private readonly ISesionRefreshRepository _refrescos;
     private readonly ILogger<AdministracionService> _log;
 
     public AdministracionService(IUsuarioRepository usuarios, IPublicacionRepository pubs, IUnidadDeTrabajo uow,
-        IAuditoriaRepository auditoria, ISesionService sesiones, TimeProvider reloj, INotificador notificador, ILogger<AdministracionService> log)
+        IAuditoriaRepository auditoria, ISesionService sesiones, TimeProvider reloj, INotificador notificador,
+        ISesionRefreshRepository refrescos, ILogger<AdministracionService> log)
     {
         _usuarios = usuarios; _pubs = pubs; _uow = uow; _auditoria = auditoria; _sesiones = sesiones; _reloj = reloj;
-        _notificador = notificador; _log = log;
+        _notificador = notificador; _refrescos = refrescos; _log = log;
     }
 
     private Task NotificarAsync(Guid usuarioId, string tipo, string mensaje, Guid? recursoId)
@@ -120,6 +122,7 @@ public sealed class AdministracionService : IAdministracionService
             throw new ReglaDeNegocioException("Debe existir al menos un SuperUsuario.");
 
         Auditar(actorId, "ROL_CAMBIADO", "Usuario", objetivo.Id, $"{rolAnterior}->{objetivo.Rol}");
+        await _refrescos.RevocarTodasDelUsuarioAsync(objetivo.Id, _reloj.GetUtcNow().UtcDateTime); // debe volver a iniciar sesión
         await _uow.GuardarCambiosAsync();
         _sesiones.Invalidar(objetivo.Id);
         _log.LogWarning("Rol de {UsuarioId} cambiado {Anterior}→{Nuevo} por {ActorId}", objetivo.Id, rolAnterior, objetivo.Rol, actorId);

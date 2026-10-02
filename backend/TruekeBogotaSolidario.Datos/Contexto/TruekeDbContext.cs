@@ -15,6 +15,7 @@ public class TruekeDbContext : DbContext
     public DbSet<Pago> Pagos => Set<Pago>();
     public DbSet<AuditoriaEvento> Auditoria => Set<AuditoriaEvento>();
     public DbSet<Comentario> Comentarios => Set<Comentario>();
+    public DbSet<SesionRefresh> SesionesRefresh => Set<SesionRefresh>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -28,7 +29,7 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.NombreCompleto).HasMaxLength(120).IsRequired();
             e.Property(x => x.Localidad).HasMaxLength(60).IsRequired();
             e.Property(x => x.Correo).HasMaxLength(160).IsRequired();
-            e.Property(x => x.ClaveHash).HasMaxLength(256).IsRequired();
+            e.Property(x => x.ClaveHash).HasMaxLength(256).IsRequired(); // "" = sin contraseña (Google o eliminada)
             e.Property(x => x.Reputacion).HasPrecision(3, 2);
             e.Property(x => x.Rol).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.TipoCuenta).HasConversion<string>().HasMaxLength(20);
@@ -37,7 +38,11 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.MotivoRechazoVerificacion).HasMaxLength(300);
             e.HasIndex(x => x.Correo).IsUnique();
             e.HasIndex(x => x.EstadoVerificacion);
+            e.Property(x => x.GoogleSub).HasMaxLength(64).IsUnicode(false);
+            e.HasIndex(x => x.GoogleSub).IsUnique().HasFilter("[GoogleSub] IS NOT NULL");
+            e.Property(x => x.PoliticaDatosVersion).HasMaxLength(20);
             e.Ignore(x => x.EsVerificado);
+            e.Ignore(x => x.TieneClave);
             if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
         });
 
@@ -103,6 +108,19 @@ public class TruekeDbContext : DbContext
             e.HasOne(x => x.Autor).WithMany().HasForeignKey(x => x.AutorId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.PublicacionId, x.EstaOculto, x.FechaUtc });
             e.HasIndex(x => new { x.AutorId, x.FechaUtc });
+            if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+        });
+
+        mb.Entity<SesionRefresh>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.TokenHash).HasMaxLength(64).IsRequired().IsUnicode(false);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.TokenHash).IsUnique();
+            e.HasIndex(x => new { x.UsuarioId, x.RevocadoUtc });
+            e.HasIndex(x => x.FamiliaId);
+            e.HasIndex(x => x.ExpiraUtc);
             if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
         });
 

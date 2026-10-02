@@ -35,7 +35,7 @@ public class SeguridadTests : IClassFixture<FabricaApi>
         var correo = $"bloqueo-{Guid.NewGuid():N}@trueke.test";
         var anonimo = _fabrica.CreateClient();
         (await anonimo.PostAsJsonAsync("/api/v1/auth/registrar",
-            new { nombreCompleto = "Bloqueo Prueba", localidad = "Suba", correo, clave = Api.ClaveValida })).EnsureSuccessStatusCode();
+            new { nombreCompleto = "Bloqueo Prueba", localidad = "Suba", correo, clave = Api.ClaveValida, aceptoPoliticaDatos = true })).EnsureSuccessStatusCode();
 
         for (var i = 0; i < 5; i++)
             Assert.Equal(HttpStatusCode.Unauthorized, (await anonimo.PostAsJsonAsync("/api/v1/auth/login", new { correo, clave = "Incorrecta1" })).StatusCode);
@@ -100,10 +100,13 @@ public class SeguridadTests : IClassFixture<FabricaApi>
         var c = Api.ConToken(_fabrica, ses.Token);
         Assert.Equal(HttpStatusCode.OK, (await c.GetAsync("/api/v1/usuarios/yo")).StatusCode);
 
-        Assert.Equal(HttpStatusCode.NoContent, (await c.PostAsJsonAsync("/api/v1/auth/cambiar-clave",
-            new { claveActual = Api.ClaveValida, claveNueva = "OtraClave999" })).StatusCode);
+        var cambio = await c.PostAsJsonAsync("/api/v1/auth/cambiar-clave", new { claveActual = Api.ClaveValida, claveNueva = "OtraClave999" });
+        Assert.Equal(HttpStatusCode.OK, cambio.StatusCode);
 
         Assert.Equal(HttpStatusCode.Unauthorized, (await c.GetAsync("/api/v1/usuarios/yo")).StatusCode);
+        // la respuesta trae una sesión nueva para este dispositivo
+        var nueva = (await cambio.Content.ReadFromJsonAsync<SesionMinDto>())!;
+        Assert.Equal(HttpStatusCode.OK, (await Api.ConToken(_fabrica, nueva.Token).GetAsync("/api/v1/usuarios/yo")).StatusCode);
     }
 
     [Fact]

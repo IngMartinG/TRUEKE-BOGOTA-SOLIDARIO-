@@ -18,7 +18,7 @@ public static class Api
     {
         var correo = $"{nombre}-{Guid.NewGuid():N}@trueke.test";
         var resp = await f.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar",
-            new { nombreCompleto = $"{nombre} Prueba", localidad = "Chapinero", correo, clave = ClaveValida });
+            new { nombreCompleto = $"{nombre} Prueba", localidad = "Chapinero", correo, clave = ClaveValida, aceptoPoliticaDatos = true });
         if (resp.StatusCode != HttpStatusCode.Created)
             throw new InvalidOperationException($"Registro falló: {(int)resp.StatusCode} {await resp.Content.ReadAsStringAsync()}");
         return (await resp.Content.ReadFromJsonAsync<SesionMinDto>())!;

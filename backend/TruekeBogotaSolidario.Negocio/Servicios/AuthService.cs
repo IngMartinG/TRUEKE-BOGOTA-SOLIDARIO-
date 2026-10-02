@@ -10,11 +10,16 @@ namespace TruekeBogotaSolidario.Negocio.Servicios;
 
 public interface IAuthService
 {
-    Task<SesionDto> RegistrarAsync(RegistroRequest r);
-    Task<SesionDto> LoginAsync(LoginRequest r);
+    Task<ResultadoAutenticacion> RegistrarAsync(RegistroRequest r);
+    Task<ResultadoAutenticacion> LoginAsync(LoginRequest r);
+    /// <summary>Rota el token de refresco. Reusar uno ya reemplazado revoca toda la familia (posible robo).</summary>
+    Task<ResultadoAutenticacion> RefrescarAsync(string? tokenRefresco);
+    /// <summary>Cierra la sesión de ESTE dispositivo (revoca la familia del token de refresco). Nunca falla.</summary>
+    Task CerrarSesionAsync(string? tokenRefresco);
     Task<UsuarioDto> ObtenerPerfilAsync(Guid actorId);
     Task<UsuarioDto> ActualizarPerfilAsync(Guid actorId, ActualizarPerfilRequest r);
-    Task CambiarClaveAsync(Guid actorId, CambiarClaveRequest r);
+    /// <summary>Revoca todas las sesiones y devuelve una nueva para el dispositivo actual.</summary>
+    Task<ResultadoAutenticacion> CambiarClaveAsync(Guid actorId, CambiarClaveRequest r);
     /// <summary>Cierra la sesión en TODOS los dispositivos (invalida todos los tokens emitidos).</summary>
     Task CerrarSesionesAsync(Guid actorId);
 }
@@ -22,42 +27,40 @@ public interface IAuthService
 public sealed class AuthService : IAuthService
 {
     private readonly IUsuarioRepository _usuarios;
+    private readonly ISesionRefreshRepository _refrescos;
     private readonly IUnidadDeTrabajo _uow;
-    private readonly IGeneradorToken _tokens;
+    private readonly EmisorSesiones _emisor;
     private readonly ISesionService _sesiones;
     private readonly SeguridadOpciones _seg;
+    private readonly LegalOpciones _legal;
     private readonly TimeProvider _reloj;
     private readonly ILogger<AuthService> _log;
 
-    public AuthService(IUsuarioRepository usuarios, IUnidadDeTrabajo uow, IGeneradorToken tokens, ISesionService sesiones,
-        IOptions<SeguridadOpciones> seg, TimeProvider reloj, ILogger<AuthService> log)
+    public AuthService(IUsuarioRepository usuarios, ISesionRefreshRepository refrescos, IUnidadDeTrabajo uow, EmisorSesiones emisor,
+        ISesionService sesiones, IOptions<SeguridadOpciones> seg, IOptions<LegalOpciones> legal, TimeProvider reloj, ILogger<AuthService> log)
     {
-        _usuarios = usuarios; _uow = uow; _tokens = tokens; _sesiones = sesiones; _seg = seg.Value; _reloj = reloj; _log = log;
+        _usuarios = usuarios; _refrescos = refrescos; _uow = uow; _emisor = emisor; _sesiones = sesiones; _seg = seg.Value; _legal = legal.Value; _reloj = reloj; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
-    private SesionDto CrearSesion(Usuario u)
-    {
-        var (token, expira) = _tokens.Generar(u);
-        return new SesionDto(token, expira, Mapeos.AUsuarioDto(u, Ahora));
-    }
-
-    public async Task<SesionDto> RegistrarAsync(RegistroRequest r)
+    public async Task<ResultadoAutenticacion> RegistrarAsync(RegistroRequest r)
     {
         var correo = Usuario.NormalizarCorreo(r.Correo);
         if (await _usuarios.ExisteCorreoAsync(correo))
             throw new ReglaDeNegocioException("Ya existe una cuenta con ese correo.");
 
         var usuario = new Usuario(r.NombreCompleto, r.Localidad, correo, r.Clave);
+        usuario.AceptarPoliticaDatos(_legal.VersionPoliticaDatos, Ahora);
         usuario.AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosBienvenida);
         _usuarios.Agregar(usuario);
+        var sesion = _emisor.Emitir(usuario);
         await _uow.GuardarCambiosAsync(); // el índice único del correo cubre el registro simultáneo
         _log.LogInformation("Usuario registrado {UsuarioId}", usuario.Id);
-        return CrearSesion(usuario);
+        return sesion;
     }
 
-    public async Task<SesionDto> LoginAsync(LoginRequest r)
+    public async Task<ResultadoAutenticacion> LoginAsync(LoginRequest r)
     {
         var ahora = Ahora;
         var usuario = await _usuarios.ObtenerPorCorreoAsync(Usuario.NormalizarCorreo(r.Correo));
@@ -83,12 +86,49 @@ public sealed class AuthService : IAuthService
             throw new AutenticacionException();
         }
 
-        if (usuario.IntentosFallidosLogin != 0 || usuario.BloqueadoHasta.HasValue)
+        usuario.RegistrarLoginExitoso();
+        var sesion = _emisor.Emitir(usuario);
+        await _uow.GuardarCambiosAsync();
+        return sesion;
+    }
+
+    public async Task<ResultadoAutenticacion> RefrescarAsync(string? tokenRefresco)
+    {
+        const string expirada = "Tu sesión expiró. Inicia sesión de nuevo.";
+        if (!TokensSeguros.FormatoValido(tokenRefresco)) throw new AutenticacionException(expirada);
+
+        var ahora = Ahora;
+        var actual = await _refrescos.ObtenerPorHashAsync(TokensSeguros.Hash(tokenRefresco!)) ?? throw new AutenticacionException(expirada);
+
+        if (actual.ReemplazadoPorId is not null)
         {
-            usuario.RegistrarLoginExitoso();
+            // Dos pestañas refrescando a la vez: el navegador ya recibió el token nuevo, basta con reintentar.
+            if (actual.RevocadoUtc > ahora.AddSeconds(-_seg.SegundosGraciaRefresco))
+                throw new ConflictoDeConcurrenciaException("La sesión se renovó en otra pestaña. Vuelve a intentarlo.");
+
+            // Reuso de un token viejo: alguien más lo tiene. Se corta toda la sesión (también al atacante).
+            await _refrescos.RevocarFamiliaAsync(actual.FamiliaId, ahora);
             await _uow.GuardarCambiosAsync();
+            _log.LogWarning("Reuso de token de refresco detectado para {UsuarioId}: familia {FamiliaId} revocada", actual.UsuarioId, actual.FamiliaId);
+            throw new AutenticacionException(expirada);
         }
-        return CrearSesion(usuario);
+
+        if (!actual.EstaActiva(ahora)) throw new AutenticacionException(expirada);
+
+        var usuario = await _usuarios.ObtenerPorIdAsync(actual.UsuarioId);
+        if (usuario is null || usuario.EstaEliminado) throw new AutenticacionException(expirada);
+        var sesion = _emisor.Emitir(usuario, actual);
+        await _uow.GuardarCambiosAsync(); // RowVersion: dos refrescos simultáneos del mismo token → uno recibe 409
+        return sesion;
+    }
+
+    public async Task CerrarSesionAsync(string? tokenRefresco)
+    {
+        if (!TokensSeguros.FormatoValido(tokenRefresco)) return;
+        var actual = await _refrescos.ObtenerPorHashAsync(TokensSeguros.Hash(tokenRefresco!));
+        if (actual is null) return;
+        await _refrescos.RevocarFamiliaAsync(actual.FamiliaId, Ahora);
+        await _uow.GuardarCambiosAsync();
     }
 
     private async Task<Usuario> CargarAsync(Guid id)
@@ -105,21 +145,29 @@ public sealed class AuthService : IAuthService
         return Mapeos.AUsuarioDto(u, Ahora);
     }
 
-    public async Task CambiarClaveAsync(Guid actorId, CambiarClaveRequest r)
+    public async Task<ResultadoAutenticacion> CambiarClaveAsync(Guid actorId, CambiarClaveRequest r)
     {
         var u = await CargarAsync(actorId);
-        if (!u.VerificarClave(r.ClaveActual)) throw new ReglaDeNegocioException("La contraseña actual no es correcta.");
-        if (r.ClaveActual == r.ClaveNueva) throw new ReglaDeNegocioException("La nueva contraseña debe ser distinta de la actual.");
-        u.EstablecerClave(r.ClaveNueva); // sube VersionSeguridad: todos los tokens anteriores quedan revocados
+        if (u.TieneClave)
+        {
+            if (string.IsNullOrEmpty(r.ClaveActual) || !u.VerificarClave(r.ClaveActual))
+                throw new ReglaDeNegocioException("La contraseña actual no es correcta.");
+            if (r.ClaveActual == r.ClaveNueva) throw new ReglaDeNegocioException("La nueva contraseña debe ser distinta de la actual.");
+        }
+        u.EstablecerClave(r.ClaveNueva); // sube VersionSeguridad: todos los tokens de acceso anteriores quedan revocados
+        await _refrescos.RevocarTodasDelUsuarioAsync(u.Id, Ahora);
+        var sesion = _emisor.Emitir(u);
         await _uow.GuardarCambiosAsync();
         _sesiones.Invalidar(u.Id);
         _log.LogInformation("Contraseña cambiada {UsuarioId}", u.Id);
+        return sesion;
     }
 
     public async Task CerrarSesionesAsync(Guid actorId)
     {
         var u = await CargarAsync(actorId);
         u.InvalidarSesiones();
+        await _refrescos.RevocarTodasDelUsuarioAsync(u.Id, Ahora);
         await _uow.GuardarCambiosAsync();
         _sesiones.Invalidar(u.Id);
     }

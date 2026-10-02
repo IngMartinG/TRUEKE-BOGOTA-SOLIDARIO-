@@ -33,6 +33,7 @@ public static class DatosServiceCollectionExtensions
         services.AddScoped<ISaludBaseDatos, SaludBaseDatos>();
         services.AddScoped<IAuditoriaRepository, AuditoriaRepository>();
         services.AddScoped<IComentarioRepository, ComentarioRepository>();
+        services.AddScoped<ISesionRefreshRepository, SesionRefreshRepository>();
         return services;
     }
 }
@@ -67,6 +68,7 @@ public static class DatosInicializador
 
         var su = new Usuario("Super Usuario Trueke", "Bogotá", correo, superClave);
         su.CambiarRol(RolUsuarioEnum.SuperUsuario);
+        su.MarcarCorreoVerificado(DateTime.UtcNow); // lo define el operador por configuración
         db.Usuarios.Add(su);
         await db.SaveChangesAsync();
     }

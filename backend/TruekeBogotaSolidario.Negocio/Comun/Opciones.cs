@@ -9,7 +9,8 @@ public sealed class JwtOpciones
     [Required, MinLength(1)] public string Audience { get; set; } = "";
     /// <summary>Mínimo 32 caracteres (256 bits). Nunca se versiona: variable de entorno / Key Vault.</summary>
     [Required, MinLength(32)] public string Key { get; set; } = "";
-    [Range(5, 1440)] public int Minutos { get; set; } = 60;
+    /// <summary>Vida del token de acceso. Corta a propósito: la sesión se mantiene con el refresco (cookie HttpOnly).</summary>
+    [Range(5, 1440)] public int Minutos { get; set; } = 15;
 }
 
 public sealed class SeguridadOpciones
@@ -19,6 +20,12 @@ public sealed class SeguridadOpciones
     [Range(1, 1440)] public int MinutosBloqueo { get; set; } = 15;
     /// <summary>Cuánto se cachea la validación de sesión (versión de seguridad). Es también el retraso máximo de revocación entre instancias.</summary>
     [Range(0, 3600)] public int SegundosCacheSesion { get; set; } = 30;
+    /// <summary>Vida de cada token de refresco (se renueva con cada uso).</summary>
+    [Range(1, 90)] public int DiasRefresco { get; set; } = 14;
+    /// <summary>Vida máxima absoluta de una sesión aunque se siga usando: luego hay que volver a iniciar sesión.</summary>
+    [Range(1, 365)] public int DiasMaximosSesion { get; set; } = 30;
+    /// <summary>Si un token recién reemplazado se reusa dentro de esta ventana (dos pestañas refrescando a la vez) se responde 409 sin revocar la familia.</summary>
+    [Range(0, 120)] public int SegundosGraciaRefresco { get; set; } = 30;
 }
 
 public sealed class WompiOpciones
@@ -48,6 +55,13 @@ public sealed class UrlsOpciones
     public List<string> HostsPermitidosImagenes { get; set; } = new();
     /// <summary>Hosts https permitidos para documentos de verificación de identidad.</summary>
     public List<string> HostsPermitidosDocumentos { get; set; } = new();
+}
+
+public sealed class LegalOpciones
+{
+    public const string Seccion = "Legal";
+    /// <summary>Versión vigente de la política de tratamiento de datos que el front muestra al registrarse.</summary>
+    [Required, StringLength(20, MinimumLength = 1)] public string VersionPoliticaDatos { get; set; } = "2026-10";
 }
 
 public static class Limites
