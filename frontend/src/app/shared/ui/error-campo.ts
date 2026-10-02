@@ -39,7 +39,7 @@ export class ErrorCampo {
     if (e['max']) return `El valor máximo es ${e['max'].max}.`;
     if (e['pattern']) return `${this.etiqueta()} no tiene el formato esperado.`;
     if (e['requiredTrue']) return 'Debes aceptar para continuar.';
-    if (e['claveDebil']) return 'Usa al menos 8 caracteres, con letras y números.';
+    if (e['claveDebil']) return 'Usa al menos 8 caracteres con mayúscula, minúscula y número.';
     if (e['noCoincide']) return 'Las contraseñas no coinciden.';
     return `${this.etiqueta()} no es válido.`;
   });

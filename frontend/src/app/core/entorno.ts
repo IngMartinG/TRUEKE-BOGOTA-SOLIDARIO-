@@ -7,21 +7,39 @@
 export interface Entorno {
   /** URL base de la API sin barra final. Vacío = mismo origen (proxy de desarrollo o nginx). */
   apiUrl: string;
+  /** Plantilla de teselas del mapa ({s}, {z}, {x}, {y}). Por defecto, OpenStreetMap. */
+  mapaTeselas: string;
+  /** Atribución que exige el proveedor de teselas (HTML fijo de configuración, no de usuarios). */
+  mapaAtribucion: string;
 }
 
-let entorno: Entorno = { apiUrl: '' };
+const POR_DEFECTO: Entorno = {
+  apiUrl: '',
+  mapaTeselas: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+  mapaAtribucion: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+};
+
+let entorno: Entorno = { ...POR_DEFECTO };
 
 export async function cargarEntorno(): Promise<void> {
   try {
     const r = await fetch('/config.json', { cache: 'no-store' });
     if (r.ok) {
       const datos = (await r.json()) as Partial<Entorno>;
-      entorno = { apiUrl: (datos.apiUrl ?? '').replace(/\/+$/, '') };
+      entorno = {
+        apiUrl: (datos.apiUrl ?? '').replace(/\/+$/, ''),
+        mapaTeselas: datos.mapaTeselas || POR_DEFECTO.mapaTeselas,
+        mapaAtribucion: datos.mapaAtribucion || POR_DEFECTO.mapaAtribucion,
+      };
     }
   } catch {
-    // Sin config.json se usa el mismo origen.
+    // Sin config.json se usan los valores por defecto (API en el mismo origen).
   }
 }
 
 export const apiBase = (): string => `${entorno.apiUrl}/api/v1`;
 export const hubUrl = (): string => `${entorno.apiUrl}/hubs/notificaciones`;
+export const mapaTeselas = (): { url: string; atribucion: string } => ({
+  url: entorno.mapaTeselas,
+  atribucion: entorno.mapaAtribucion,
+});

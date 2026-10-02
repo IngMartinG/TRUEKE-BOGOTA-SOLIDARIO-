@@ -5,6 +5,9 @@ import type { SesionDto, UsuarioDto } from '../api/tipos';
 import { AuthApi } from './api/auth.api';
 import { CuentaApi } from './api/cuenta.api';
 
+/** Marca "este navegador tuvo sesión": solo un 1, nunca el token ni datos personales. */
+const MARCA_SESION = 'trueke.sesion';
+
 /**
  * Estado de la sesión. El token de acceso vive SOLO en memoria (nunca en localStorage):
  * al recargar la página se recupera con el refresco, que viaja en una cookie HttpOnly.
@@ -32,13 +35,19 @@ export class SesionService {
   readonly correoVerificado = computed(() => this._usuario()?.correoVerificado === true);
   readonly primerNombre = computed(() => this._usuario()?.nombreCompleto?.split(' ')[0] ?? '');
 
-  /** Al arrancar la app: intenta recuperar la sesión con la cookie de refresco. */
+  /**
+   * Al arrancar la app: intenta recuperar la sesión con la cookie de refresco.
+   * Solo si este navegador tuvo sesión (marca sin datos sensibles), para no hacer
+   * una petición fallida en cada visita anónima.
+   */
   async restaurar(): Promise<void> {
+    if (!this.huboSesion()) return;
     await firstValueFrom(this.refrescar());
   }
 
   establecer(sesion: SesionDto): void {
     if (!sesion.token) return;
+    this.marcarSesion(true);
     this._token.set(sesion.token);
     this._usuario.set(sesion.usuario ?? null);
     const expira = sesion.expiraUtc ? Date.parse(sesion.expiraUtc) : Date.now() + 15 * 60_000;
@@ -88,10 +97,28 @@ export class SesionService {
 
   /** Cierra la sesión local sin llamar a la API (refresco vencido, cuenta eliminada...). */
   limpiar(): void {
+    this.marcarSesion(false);
     clearTimeout(this.temporizador);
     this._token.set(null);
     this._usuario.set(null);
     this._expira.set(0);
+  }
+
+  private huboSesion(): boolean {
+    try {
+      return localStorage.getItem(MARCA_SESION) === '1';
+    } catch {
+      return true; // sin almacenamiento, se intenta siempre
+    }
+  }
+
+  private marcarSesion(activa: boolean): void {
+    try {
+      if (activa) localStorage.setItem(MARCA_SESION, '1');
+      else localStorage.removeItem(MARCA_SESION);
+    } catch {
+      // Almacenamiento bloqueado: no pasa nada, se intentará refrescar siempre.
+    }
   }
 
   private programarRenovacion(expira: number): void {

@@ -15,6 +15,7 @@ import {
 import { Router } from '@angular/router';
 import type * as L from 'leaflet';
 import { CENTRO_BOGOTA } from '../../api/tipos';
+import { mapaTeselas } from '../../core/entorno';
 
 export interface PuntoMapa {
   id: string;
@@ -26,9 +27,6 @@ export interface PuntoMapa {
 }
 
 const COLOR_MODO: Record<string, string> = { Trueke: '#1f7a4d', Compra: '#2f6fa3', Donacion: '#c25a2e' };
-const TESELAS = 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
-const ATRIBUCION =
-  '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>';
 
 /**
  * Mapa con Leaflet (se descarga solo cuando se usa). Modos:
@@ -101,7 +99,8 @@ export class Mapa {
         zoomControl: true,
         attributionControl: true,
       });
-      lf.tileLayer(TESELAS, { attribution: ATRIBUCION, maxZoom: 19, subdomains: 'abcd', crossOrigin: true }).addTo(mapa);
+      const teselas = mapaTeselas();
+      lf.tileLayer(teselas.url, { attribution: teselas.atribucion, maxZoom: 19 }).addTo(mapa);
       mapa.on('focus', () => mapa.scrollWheelZoom.enable());
       mapa.on('blur', () => mapa.scrollWheelZoom.disable());
       if (this.seleccion()) {
