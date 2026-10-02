@@ -31,6 +31,10 @@ if (esProduccion)
         throw new InvalidOperationException("Database:Provider=InMemory no está permitido en Producción.");
     if (config["Jwt:Key"]?.Contains("CAMBIAR", StringComparison.OrdinalIgnoreCase) == true)
         throw new InvalidOperationException("Jwt:Key es un placeholder. Define una clave real por variable de entorno o gestor de secretos.");
+    if (string.Equals(config["Correo:Proveedor"], "Simulado", StringComparison.OrdinalIgnoreCase))
+        throw new InvalidOperationException("Correo:Proveedor=Simulado no está permitido en Producción (configura Correo:Smtp).");
+    if (!Uri.TryCreate(config["Urls:Frontend"], UriKind.Absolute, out var front) || front.Scheme != Uri.UriSchemeHttps)
+        throw new InvalidOperationException("Urls:Frontend debe ser la URL https del front (los enlaces de los correos apuntan ahí).");
 }
 
 // ---------- Kestrel: sin cabecera Server, cuerpo máximo 1 MB ----------

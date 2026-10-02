@@ -179,6 +179,29 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 });
 
             migrationBuilder.CreateTable(
+                name: "TokensUsoUnico",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Proposito = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    TokenHash = table.Column<string>(type: "varchar(64)", unicode: false, maxLength: 64, nullable: false),
+                    CreadoUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ExpiraUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UsadoUtc = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TokensUsoUnico", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TokensUsoUnico_Usuarios_UsuarioId",
+                        column: x => x.UsuarioId,
+                        principalTable: "Usuarios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Transacciones",
                 columns: table => new
                 {
@@ -378,6 +401,22 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 columns: new[] { "SolicitanteId", "Estado" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_TokensUsoUnico_ExpiraUtc",
+                table: "TokensUsoUnico",
+                column: "ExpiraUtc");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TokensUsoUnico_TokenHash",
+                table: "TokensUsoUnico",
+                column: "TokenHash",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TokensUsoUnico_UsuarioId_Proposito_CreadoUtc",
+                table: "TokensUsoUnico",
+                columns: new[] { "UsuarioId", "Proposito", "CreadoUtc" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Transacciones_OferenteId_FechaUtc",
                 table: "Transacciones",
                 columns: new[] { "OferenteId", "FechaUtc" });
@@ -423,6 +462,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
             migrationBuilder.DropTable(
                 name: "Solicitudes");
+
+            migrationBuilder.DropTable(
+                name: "TokensUsoUnico");
 
             migrationBuilder.DropTable(
                 name: "Transacciones");

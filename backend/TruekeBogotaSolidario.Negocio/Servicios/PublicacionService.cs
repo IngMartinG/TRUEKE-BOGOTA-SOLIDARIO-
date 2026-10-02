@@ -40,7 +40,8 @@ public sealed class PublicacionService : IPublicacionService
 
     public async Task<PublicacionDto> CrearAsync(Guid actorId, CrearPublicacionRequest r)
     {
-        _ = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
+        var actor = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
+        Guardas.ExigirCorreoVerificado(actor);
         if (await _pubs.ContarActivasPorUsuarioAsync(actorId) >= Limites.MaxPublicacionesActivasPorUsuario)
             throw new ReglaDeNegocioException($"Alcanzaste el máximo de {Limites.MaxPublicacionesActivasPorUsuario} publicaciones activas.");
 

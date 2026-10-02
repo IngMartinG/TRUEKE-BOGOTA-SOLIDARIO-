@@ -4,6 +4,7 @@ using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Datos.Repositorios;
 using TruekeBogotaSolidario.Negocio.Comun;
+using TruekeBogotaSolidario.Negocio.Correo;
 using TruekeBogotaSolidario.Negocio.Dtos;
 
 namespace TruekeBogotaSolidario.Negocio.Servicios;
@@ -33,13 +34,17 @@ public sealed class AuthService : IAuthService
     private readonly ISesionService _sesiones;
     private readonly SeguridadOpciones _seg;
     private readonly LegalOpciones _legal;
+    private readonly CorreosCuenta _correos;
+    private readonly ICorreoSaliente _salida;
     private readonly TimeProvider _reloj;
     private readonly ILogger<AuthService> _log;
 
     public AuthService(IUsuarioRepository usuarios, ISesionRefreshRepository refrescos, IUnidadDeTrabajo uow, EmisorSesiones emisor,
-        ISesionService sesiones, IOptions<SeguridadOpciones> seg, IOptions<LegalOpciones> legal, TimeProvider reloj, ILogger<AuthService> log)
+        ISesionService sesiones, IOptions<SeguridadOpciones> seg, IOptions<LegalOpciones> legal, CorreosCuenta correos,
+        ICorreoSaliente salida, TimeProvider reloj, ILogger<AuthService> log)
     {
-        _usuarios = usuarios; _refrescos = refrescos; _uow = uow; _emisor = emisor; _sesiones = sesiones; _seg = seg.Value; _legal = legal.Value; _reloj = reloj; _log = log;
+        _usuarios = usuarios; _refrescos = refrescos; _uow = uow; _emisor = emisor; _sesiones = sesiones; _seg = seg.Value;
+        _legal = legal.Value; _correos = correos; _salida = salida; _reloj = reloj; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
@@ -55,7 +60,9 @@ public sealed class AuthService : IAuthService
         usuario.AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosBienvenida);
         _usuarios.Agregar(usuario);
         var sesion = _emisor.Emitir(usuario);
+        var confirmacion = await _correos.PrepararVerificacionAsync(usuario);
         await _uow.GuardarCambiosAsync(); // el índice único del correo cubre el registro simultáneo
+        _salida.Encolar(confirmacion);    // solo después de guardar: el enlace siempre corresponde a un token persistido
         _log.LogInformation("Usuario registrado {UsuarioId}", usuario.Id);
         return sesion;
     }

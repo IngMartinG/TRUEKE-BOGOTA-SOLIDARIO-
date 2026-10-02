@@ -216,6 +216,34 @@ public sealed class SesionRefreshRepository : ISesionRefreshRepository
     public void Agregar(SesionRefresh sesion) => _db.SesionesRefresh.Add(sesion);
 }
 
+public sealed class TokenUsoUnicoRepository : ITokenUsoUnicoRepository
+{
+    private readonly TruekeDbContext _db;
+    public TokenUsoUnicoRepository(TruekeDbContext db) => _db = db;
+
+    public Task<TokenUsoUnico?> ObtenerPorHashAsync(string tokenHash, PropositoToken proposito)
+        => _db.TokensUsoUnico.FirstOrDefaultAsync(t => t.TokenHash == tokenHash && t.Proposito == proposito);
+
+    public async Task InvalidarVigentesAsync(Guid usuarioId, PropositoToken proposito, DateTime ahoraUtc)
+    {
+        foreach (var t in await _db.TokensUsoUnico.Where(t => t.UsuarioId == usuarioId && t.Proposito == proposito && t.UsadoUtc == null).ToListAsync())
+            t.Consumir(ahoraUtc);
+    }
+
+    public Task<int> ContarDesdeAsync(Guid usuarioId, PropositoToken proposito, DateTime desdeUtc)
+        => _db.TokensUsoUnico.CountAsync(t => t.UsuarioId == usuarioId && t.Proposito == proposito && t.CreadoUtc >= desdeUtc);
+
+    public async Task<int> PurgarAsync(DateTime antesDeUtc, int maximo)
+    {
+        var viejos = await _db.TokensUsoUnico.Where(t => t.ExpiraUtc < antesDeUtc).OrderBy(t => t.ExpiraUtc).Take(maximo).ToListAsync();
+        _db.TokensUsoUnico.RemoveRange(viejos);
+        await _db.SaveChangesAsync();
+        return viejos.Count;
+    }
+
+    public void Agregar(TokenUsoUnico token) => _db.TokensUsoUnico.Add(token);
+}
+
 public sealed class ComentarioRepository : IComentarioRepository
 {
     private readonly TruekeDbContext _db;

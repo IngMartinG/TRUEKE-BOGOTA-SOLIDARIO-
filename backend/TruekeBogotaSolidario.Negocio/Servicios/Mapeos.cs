@@ -30,7 +30,8 @@ internal static class Mapeos
         return new UsuarioDto(u.Id, u.NombreCompleto, u.Localidad, u.Correo, u.Rol.ToString(), TipoCuentaEfectivo(u, ahora),
             planVigente ? u.FechaVencimientoSuscripcion : null, u.EsVerificado, u.EstadoVerificacion.ToString(),
             u.SaldoEcoPuntos, u.Reputacion, u.TotalTruekesCompletados, u.TotalComprasRealizadas, u.TotalDonacionesRealizadas,
-            u.PremiumVigente(ahora) ? u.DestacadosGratisRestantes : 0);
+            u.PremiumVigente(ahora) ? u.DestacadosGratisRestantes : 0,
+            u.CorreoVerificado, u.TieneClave, u.GoogleSub is not null);
     }
 
     public static CategoriaDto ACategoriaDto(Categoria c) => new(c.Id, c.NombreCategoria, c.Descripcion);

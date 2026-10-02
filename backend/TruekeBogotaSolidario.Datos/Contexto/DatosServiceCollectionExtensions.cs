@@ -34,6 +34,7 @@ public static class DatosServiceCollectionExtensions
         services.AddScoped<IAuditoriaRepository, AuditoriaRepository>();
         services.AddScoped<IComentarioRepository, ComentarioRepository>();
         services.AddScoped<ISesionRefreshRepository, SesionRefreshRepository>();
+        services.AddScoped<ITokenUsoUnicoRepository, TokenUsoUnicoRepository>();
         return services;
     }
 }

@@ -192,7 +192,9 @@ public class SeguridadTests : IClassFixture<FabricaApi>
         Assert.DoesNotContain("propietarioId", cuerpo, StringComparison.OrdinalIgnoreCase);
 
         var yo = await (await duenio.GetAsync("/api/v1/usuarios/yo")).Content.ReadAsStringAsync();
-        Assert.DoesNotContain("clave", yo, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("claveHash", yo, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("v1.600000", yo);                    // formato del hash PBKDF2
+        Assert.DoesNotContain("googleSub", yo, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("intentosFallidos", yo, StringComparison.OrdinalIgnoreCase);
     }
 

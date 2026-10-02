@@ -32,6 +32,22 @@ public sealed class CambiarClaveRequest
     [Required, StringLength(128, MinimumLength = 8)] public string ClaveNueva { get; init; } = "";
 }
 
+public sealed class TokenRequest
+{
+    [Required, StringLength(100, MinimumLength = 20)] public string Token { get; init; } = "";
+}
+
+public sealed class OlvideClaveRequest
+{
+    [Required, EmailAddress, MaxLength(160)] public string Correo { get; init; } = "";
+}
+
+public sealed class RestablecerClaveRequest
+{
+    [Required, StringLength(100, MinimumLength = 20)] public string Token { get; init; } = "";
+    [Required, StringLength(128, MinimumLength = 8)] public string ClaveNueva { get; init; } = "";
+}
+
 public sealed class ActualizarPerfilRequest
 {
     [Required, StringLength(120, MinimumLength = 3)] public string NombreCompleto { get; init; } = "";
@@ -119,7 +135,8 @@ public sealed class PaginacionRequest
 // ---------------- Responses ----------------
 public sealed record UsuarioDto(Guid Id, string NombreCompleto, string Localidad, string Correo, string Rol, string TipoCuenta,
     DateTime? PlanVigenteHasta, bool Verificado, string EstadoVerificacion, int SaldoEcoPuntos, decimal Reputacion,
-    int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas, int DestacadosGratisRestantes);
+    int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas, int DestacadosGratisRestantes,
+    bool CorreoVerificado, bool TieneClave, bool VinculadoGoogle);
 
 public sealed record SesionDto(string Token, DateTime ExpiraUtc, UsuarioDto Usuario);
 
