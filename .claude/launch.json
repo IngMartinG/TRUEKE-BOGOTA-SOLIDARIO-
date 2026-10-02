@@ -1,0 +1,26 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "backend/TruekeBogotaSolidario.Presentacion",
+        "--launch-profile",
+        "Desarrollo",
+        "--",
+        "--Bootstrap:SuperUsuarioCorreo=admin@trueke.test",
+        "--Bootstrap:SuperUsuarioClave=AdminPrueba2026"
+      ],
+      "port": 5180
+    },
+    {
+      "name": "web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "frontend", "start"],
+      "port": 4200
+    }
+  ]
+}

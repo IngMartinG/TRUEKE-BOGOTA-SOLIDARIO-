@@ -1,7 +1,8 @@
-# Entorno completo local: API + SQL Server + Redis.
+# Entorno completo local: Front + API + SQL Server + Redis.
 #   1) cp .env.example .env   y completa los valores
 #   2) docker compose up --build
-#   3) API en http://localhost:8080  (health: /health/ready)
+#   3) Front en http://localhost:8081 (sirve también /api y /hubs: mismo origen, sin CORS)
+#      API directa en http://localhost:8080  (health: /health/ready)
 # SQL Server y Redis NO se publican al host: solo la API los ve por la red interna.
 # Por defecto corre en "Staging" (permite correo y pagos simulados). Con ASPNETCORE_ENVIRONMENT=Production
 # la API exige TODOS los servicios reales (SMTP, Wompi, Azure Blob, Urls__Frontend https) o no arranca.
@@ -40,7 +41,7 @@ services:
       APPLICATIONINSIGHTS_CONNECTION_STRING: ${APPLICATIONINSIGHTS_CONNECTION_STRING:-}
       Almacenamiento__CadenaConexion: ${ALMACENAMIENTO_CADENA:-}
       Almacenamiento__ServicioUrl: ${ALMACENAMIENTO_URL:-}
-      Urls__Frontend: ${URL_FRONTEND:-http://localhost:4200}
+      Urls__Frontend: ${URL_FRONTEND:-http://localhost:8081}
       Redis__Habilitado: "true"
       Redis__Conexion: "redis:6379,password=${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env},abortConnect=false"
       Cors__Origenes__0: ${CORS_ORIGEN:-http://localhost:4200}
@@ -57,6 +58,30 @@ services:
     read_only: true
     tmpfs:
       - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  web:
+    build: ../frontend
+    image: trueke-web:local
+    ports:
+      - "8081:8080"
+    environment:
+      # Vacío = la API se usa en el mismo origen a través del proxy de nginx (recomendado).
+      API_URL: ${WEB_API_URL:-}
+      API_UPSTREAM: http://api:8080
+      # Hosts de Azure Blob para fotos (img-src) y subidas directas con SAS (connect-src).
+      CSP_IMG_EXTRA: ${WEB_CSP_IMG_EXTRA:-}
+      CSP_CONNECT_EXTRA: ${WEB_CSP_CONNECT_EXTRA:-}
+    depends_on:
+      - api
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /etc/nginx/conf.d:uid=101,gid=101
     security_opt:
       - no-new-privileges:true
     cap_drop:

@@ -46,6 +46,7 @@ Un controller nunca puede tocar un repositorio ni el DbContext.
   - pruebas contra SQL Server real (Testcontainers).
 
   Build `-warnaserror` y 175 pruebas en verde (más 4 de SQL Server que corren en el CI). Ver `backend/ESTADO_Y_PENDIENTES.md` y `backend/README.md` (sección 10: contrato para Angular).
+- **Front-end Angular hecho** en `frontend/` (rama `feature/frontend-angular`): Angular 22 con signals y sin Zone.js, Tailwind v4 con sistema de diseño ecológico, todas las pantallas del contrato (catálogo con mapa, publicar, intercambios, chat SignalR, notificaciones, Eco-Puntos/pagos, cuenta con 2FA y Habeas Data, moderación). Lint, 13 pruebas y build de producción en verde; imagen nginx sin root con CSP; CI en `.github/workflows/frontend-ci.yml`. Ver `frontend/README.md`.
 - La solución y los proyectos viven en `backend/`. El backend anterior (Etapa4) se eliminó. Estructura del repo: `backend/`, `frontend/`, `prototipo/`, `docs/`.
 - **Reglas añadidas:**
   - los Eco-Puntos se otorgan solo al completarse el intercambio (ambas partes confirman la entrega);
@@ -100,4 +101,11 @@ dotnet test
 dotnet tool run dotnet-ef migrations add <Nombre> -p TruekeBogotaSolidario.Datos -s TruekeBogotaSolidario.Datos -o Migraciones
 dotnet run --project TruekeBogotaSolidario.Presentacion   # Swagger en /swagger (Development)
 ACTUALIZAR_OPENAPI=1 dotnet test --filter OpenApiTests    # regenera docs/openapi.json tras cambiar la API
+```
+Desde `frontend/` (Node 24 LTS):
+```
+npm ci
+npm start            # http://localhost:4200 con proxy de /api y /hubs a https://localhost:7180
+npm run verificar    # lint + pruebas + build de producción
+npm run api          # regenera los tipos desde docs/openapi.json (tras cambiar la API)
 ```
