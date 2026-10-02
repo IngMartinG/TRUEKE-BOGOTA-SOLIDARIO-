@@ -1,0 +1,94 @@
+# Entorno completo local: API + SQL Server + Redis.
+#   1) cp .env.example .env   y completa los valores
+#   2) docker compose up --build
+#   3) API en http://localhost:8080  (health: /health/ready)
+# SQL Server y Redis NO se publican al host: solo la API los ve por la red interna.
+# Por defecto corre en "Staging" (permite correo y pagos simulados). Con ASPNETCORE_ENVIRONMENT=Production
+# la API exige TODOS los servicios reales (SMTP, Wompi, Azure Blob, Urls__Frontend https) o no arranca.
+
+name: trueke
+
+services:
+  api:
+    build: .
+    image: trueke-api:local
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Staging}
+      ConnectionStrings__TruekeDb: "Server=sqlserver,1433;Database=TruekeDb;User Id=sa;Password=${SQL_SA_PASSWORD:?Define SQL_SA_PASSWORD en .env};TrustServerCertificate=True;Encrypt=True"
+      Database__Provider: SqlServer
+      Database__Inicializacion: Migrate
+      Jwt__Key: ${JWT_KEY:?Define JWT_KEY en .env}
+      Pagos__Proveedor: ${PAGOS_PROVEEDOR:-Simulado}
+      Pagos__Wompi__BaseUrl: ${WOMPI_BASE_URL:-https://sandbox.wompi.co/v1}
+      Pagos__Wompi__LlavePublica: ${WOMPI_LLAVE_PUBLICA:-}
+      Pagos__Wompi__LlavePrivada: ${WOMPI_LLAVE_PRIVADA:-}
+      Pagos__Wompi__SecretoIntegridad: ${WOMPI_SECRETO_INTEGRIDAD:-}
+      Pagos__Wompi__SecretoEventos: ${WOMPI_SECRETO_EVENTOS:-}
+      Correo__Proveedor: ${CORREO_PROVEEDOR:-Simulado}
+      Correo__Remitente: ${CORREO_REMITENTE:-no-responder@trueke.co}
+      Correo__Smtp__Host: ${SMTP_HOST:-}
+      Correo__Smtp__Puerto: ${SMTP_PUERTO:-587}
+      Correo__Smtp__Usuario: ${SMTP_USUARIO:-}
+      Correo__Smtp__Clave: ${SMTP_CLAVE:-}
+      Google__ClientId: ${GOOGLE_CLIENT_ID:-}
+      Captcha__ClaveSitio: ${CAPTCHA_CLAVE_SITIO:-}
+      Captcha__ClaveSecreta: ${CAPTCHA_CLAVE_SECRETA:-}
+      Seguridad__ClaveCifrado: ${CLAVE_CIFRADO:?Define CLAVE_CIFRADO en .env}
+      Seguridad__ExigirDosFactoresModeradores: ${EXIGIR_2FA_ADMIN:-true}
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ${APPLICATIONINSIGHTS_CONNECTION_STRING:-}
+      Almacenamiento__CadenaConexion: ${ALMACENAMIENTO_CADENA:-}
+      Almacenamiento__ServicioUrl: ${ALMACENAMIENTO_URL:-}
+      Urls__Frontend: ${URL_FRONTEND:-http://localhost:4200}
+      Redis__Habilitado: "true"
+      Redis__Conexion: "redis:6379,password=${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env},abortConnect=false"
+      Cors__Origenes__0: ${CORS_ORIGEN:-http://localhost:4200}
+      Auth__CookieSameSite: ${COOKIE_SAMESITE:-Strict}
+      Bootstrap__SuperUsuarioCorreo: ${SUPERUSUARIO_CORREO:-}
+      Bootstrap__SuperUsuarioClave: ${SUPERUSUARIO_CLAVE:-}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    # Endurecimiento del contenedor
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD:?Define SQL_SA_PASSWORD en .env}
+      MSSQL_PID: Developer
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env}", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    restart: unless-stopped
+
+volumes:
+  sqldata:

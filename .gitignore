@@ -1,0 +1,29 @@
+# Configuración local de herramientas
+.claude/settings.local.json
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Compilación (cualquier proyecto)
+**/bin/
+**/obj/
+**/TestResults/
+**/node_modules/
+**/dist/
+**/.angular/
+
+# Secretos (NUNCA versionar)
+.env
+.env.*
+!.env.example
+**/appsettings.*.local.json
+**/appsettings.Production.json
+*.pfx
+*.pem
+
+# Sistema operativo
+Thumbs.db
+Desktop.ini
+.DS_Store

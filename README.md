@@ -1,57 +1,39 @@
-# Etapa 3 — UI/UX & Prototipado Generativo con IA
-**Proyecto:** Trueke Bogotá Solidario
+# Trueke Bogotá Solidario
 
-## 1. Prompt utilizado en Figma AI
+Plataforma comunitaria de **economía circular** para Bogotá. Las personas intercambian, venden o donan objetos en tres modos (**Trueke, Compra y Donación**) y ganan **Eco-Puntos**, una moneda interna que premia las prácticas solidarias.
 
-> "Genera un UI/UX y especificación de diseño para una plataforma de intercambio
-> solidario de bienes en Bogotá con tres modos: Trueke, Compra y Donación. Incluye
-> pantalla de catálogo con hero verde ecológico, badges de certificación (100% Sin
-> Plástico, Eco-Circular, Eco-Puntos), tarjetas de producto con precio en Eco-Puntos,
-> y una pantalla de detalle de producto con métricas de impacto ambiental (plástico
-> evitado, CO₂ reducido, vida útil extendida)."
-
-## 2. Resultado en ejecución
-
-El prototipo generado (4 pantallas: catálogo en modo Trueke, catálogo en modo Compra,
-catálogo en modo Donación y detalle de producto) fue exportado como PDF de
-especificación oficial:
-
-`Especificaciones_UIUX_Proyecto_pdf.pdf`
-
-## 3. Tokens de diseño extraídos
-
-A partir de las pantallas del PDF se abstrajeron las variables visuales a
-`styles.css` (`:root`), evitando "hardcodear" colores dentro de los componentes:
-
-| Token | Valor | Uso en el PDF |
-|---|---|---|
-| `--color-primary` | `#1f7a4d` | Botón "Solicitar Trueke", precios en Eco-Pts |
-| `--color-primary-dark` | `#123d27` | Fondo del hero "Bogotá Circular" y navbar |
-| `--color-accent` | `#0f8a86` | Badge "100% Sin Plástico" |
-| `--color-info` | `#2f6fa3` | Badge "Eco-Puntos" |
-| `--color-disabled` | `#9aa39c` | Estado "No disponible en este modo" |
-| `--radius-card` | `14px` | Esquinas de las tarjetas de producto |
-| `--radius-badge` | `999px` | Forma de píldora de los badges |
-
-## 4. Componentes implementados
-
-- `.navbar` — franja superior verde con buscador y contador de Eco-Puntos.
-- `.hero` — sección "Bogotá Circular" con estadísticas de impacto.
-- `.badge` (+ variantes) — certificaciones del producto.
-- `.card-producto` — tarjeta reutilizable del catálogo, con estado `:hover` y
-  botón `disabled` para "No disponible en este modo".
-- `.btn-primary` / `.btn-secondary` — con estado `:focus-visible` accesible.
-
-## 5. Archivos de esta entrega
+## Estructura del repositorio
 
 ```
-/
-├── Especificaciones_UIUX_Proyecto_pdf.pdf   ← spec oficial de diseño
-├── styles.css                                ← tokens + componentes
-├── index.html                                ← implementación semántica
-└── README.md                                 ← este archivo
+├── backend/      API ASP.NET Core 8 en capas (Datos · Negocio · Presentación · Pruebas), SignalR, Docker
+├── frontend/     Aplicación Angular (en construcción)
+├── prototipo/    Prototipo estático de UI/UX (Etapa 3) y presentación del pitch
+├── docs/         Modelo C4 (fuente de verdad de la arquitectura), contrato OpenAPI, especificación UI/UX y flujos
+└── .github/      Integración continua (GitHub Actions)
 ```
 
-## 6. Pull Request
+## Stack
 
-Enlace al PR: `  https://github.com/IngMartinG/TRUEKE-BOGOTA-SOLIDARIO-/pull/1`
+| Capa | Tecnología |
+|---|---|
+| Front-end | Angular |
+| API | ASP.NET Core 8 (C#), SignalR |
+| Datos | SQL Server (EF Core 8), Redis (backplane de SignalR) |
+| Pagos | Wompi (solo dinero hacia la plataforma) |
+| Infraestructura | Docker, GitHub Actions, Azure App Service + VNet + Blob Storage |
+
+## Empezar
+
+- **Backend:** ver [`backend/README.md`](backend/README.md). En resumen:
+  ```bash
+  cd backend
+  dotnet test
+  dotnet run --project TruekeBogotaSolidario.Presentacion
+  ```
+- **Contrato para el front:** [`docs/openapi.json`](docs/openapi.json).
+- **Arquitectura:** [`docs/c4/C4_MODELO_TRUEKE.md`](docs/c4/C4_MODELO_TRUEKE.md).
+- **Prototipo UI/UX:** abre [`prototipo/index.html`](prototipo/index.html) en el navegador.
+
+## Flujo de trabajo
+
+Rama `feature/*` → Pull Request → revisión y CI en verde → merge a `main`.
