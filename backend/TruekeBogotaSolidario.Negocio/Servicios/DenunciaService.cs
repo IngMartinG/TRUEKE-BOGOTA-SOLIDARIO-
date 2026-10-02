@@ -27,12 +27,14 @@ public sealed class DenunciaService : IDenunciaService
     private readonly IUnidadDeTrabajo _uow;
     private readonly INotificador _notificador;
     private readonly TimeProvider _reloj;
+    private readonly ICalificacionRepository _calificacionesRepo;
     private readonly ILogger<DenunciaService> _log;
 
     public DenunciaService(IDenunciaRepository denuncias, IUsuarioRepository usuarios, IPublicacionRepository pubs, IComentarioRepository comentarios,
         IConversacionRepository conversaciones, IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, INotificador notificador,
-        TimeProvider reloj, ILogger<DenunciaService> log)
+        TimeProvider reloj, ICalificacionRepository calificacionesRepo, ILogger<DenunciaService> log)
     {
+        _calificacionesRepo = calificacionesRepo;
         _denuncias = denuncias; _usuarios = usuarios; _pubs = pubs; _comentarios = comentarios; _conversaciones = conversaciones;
         _auditoria = auditoria; _uow = uow; _notificador = notificador; _reloj = reloj; _log = log;
     }
@@ -67,6 +69,13 @@ public sealed class DenunciaService : IDenunciaService
                 var m = await _conversaciones.ObtenerMensajeAsync(objetivoId);
                 if (m is null || m.EstaOculto || !m.Conversacion!.EsParticipante(actorId)) throw new NoEncontradoException("Mensaje no encontrado.");
                 if (m.AutorId == actorId) throw new ReglaDeNegocioException(propio);
+                break;
+            }
+            case TipoObjetoDenuncia.Calificacion:
+            {
+                var c = await _calificacionesRepo.ObtenerAsync(objetivoId);
+                if (c is null || c.ComentarioOculto || c.Comentario is null) throw new NoEncontradoException("Calificación no encontrada.");
+                if (c.AutorId == actorId) throw new ReglaDeNegocioException(propio);
                 break;
             }
             case TipoObjetoDenuncia.Usuario:
@@ -115,6 +124,7 @@ public sealed class DenunciaService : IDenunciaService
         TipoObjetoDenuncia.Comentario => await _comentarios.ObtenerPorIdAsync(id) is { } c ? (true, Recortar(c.Texto)) : (false, null),
         TipoObjetoDenuncia.Mensaje => await _conversaciones.ObtenerMensajeAsync(id) is { } m ? (true, Recortar(m.Texto)) : (false, null),
         TipoObjetoDenuncia.Usuario => await _usuarios.ObtenerPorIdAsync(id) is { } u ? (true, Mapeos.NombrePublico(u.NombreCompleto)) : (false, null),
+        TipoObjetoDenuncia.Calificacion => await _calificacionesRepo.ObtenerAsync(id) is { } k ? (true, Recortar($"{k.Estrellas}★ {k.Comentario}")) : (false, null),
         _ => (false, null)
     };
 
@@ -171,8 +181,15 @@ public sealed class DenunciaService : IDenunciaService
                     avisoAutor = (m.AutorId, TiposNotificacion.MensajeOcultado, "Uno de tus mensajes fue ocultado tras una denuncia.", m.ConversacionId);
                     break;
                 }
+                case TipoObjetoDenuncia.Calificacion:
+                {
+                    var k = await _calificacionesRepo.ObtenerAsync(d.ObjetivoId) ?? throw new NoEncontradoException("La calificación ya no existe.");
+                    if (!k.ComentarioOculto) k.OcultarComentario(nota!);
+                    avisoAutor = (k.AutorId, TiposNotificacion.ComentarioOcultado, "El comentario de una de tus calificaciones fue ocultado tras una denuncia.", k.SolicitudId);
+                    break;
+                }
                 default:
-                    throw new ReglaDeNegocioException("A un usuario no se le puede ocultar: usa MarcarRevisada y, si corresponde, gestiona su cuenta.");
+                    throw new ReglaDeNegocioException("A un usuario no se le puede ocultar: usa MarcarRevisada y, si corresponde, suspende su cuenta.");
             }
         }
 

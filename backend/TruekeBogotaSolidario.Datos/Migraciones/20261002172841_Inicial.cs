@@ -75,6 +75,15 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     FechaAceptacionPolitica = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EstaEliminado = table.Column<bool>(type: "bit", nullable: false),
                     FechaEliminacion = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EstaSuspendido = table.Column<bool>(type: "bit", nullable: false),
+                    SuspendidoHasta = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    MotivoSuspension = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true),
+                    CalificacionesTotal = table.Column<int>(type: "int", nullable: false),
+                    CalificacionesSuma = table.Column<int>(type: "int", nullable: false),
+                    DosFactoresActivo = table.Column<bool>(type: "bit", nullable: false),
+                    SecretoDosFactoresCifrado = table.Column<string>(type: "varchar(200)", unicode: false, maxLength: 200, nullable: true),
+                    UltimoPasoDosFactores = table.Column<long>(type: "bigint", nullable: false),
+                    CodigosRecuperacionHash = table.Column<string>(type: "varchar(700)", unicode: false, maxLength: 700, nullable: true),
                     RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
@@ -177,9 +186,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     Localidad = table.Column<string>(type: "nvarchar(60)", maxLength: 60, nullable: false),
                     Latitud = table.Column<double>(type: "float", nullable: true),
                     Longitud = table.Column<double>(type: "float", nullable: true),
-                    ImagenUrl = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
                     Estado = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     FechaPublicacion = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    FechaEdicion = table.Column<DateTime>(type: "datetime2", nullable: true),
                     MotivoCancelacion = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true),
                     DestacadaHasta = table.Column<DateTime>(type: "datetime2", nullable: true),
                     EstaOculta = table.Column<bool>(type: "bit", nullable: false),
@@ -314,6 +323,52 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 });
 
             migrationBuilder.CreateTable(
+                name: "Favoritos",
+                columns: table => new
+                {
+                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PublicacionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    FechaUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Favoritos", x => new { x.UsuarioId, x.PublicacionId });
+                    table.ForeignKey(
+                        name: "FK_Favoritos_Publicaciones_PublicacionId",
+                        column: x => x.PublicacionId,
+                        principalTable: "Publicaciones",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Favoritos_Usuarios_UsuarioId",
+                        column: x => x.UsuarioId,
+                        principalTable: "Usuarios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "PublicacionImagenes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    Url = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
+                    Orden = table.Column<int>(type: "int", nullable: false),
+                    PublicacionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_PublicacionImagenes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_PublicacionImagenes_Publicaciones_PublicacionId",
+                        column: x => x.PublicacionId,
+                        principalTable: "Publicaciones",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Solicitudes",
                 columns: table => new
                 {
@@ -324,6 +379,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     Mensaje = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: false),
                     Estado = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
                     MotivoRechazo = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true),
+                    FechaAceptacionUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ConfirmadaPorDuenioUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    ConfirmadaPorSolicitanteUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    FechaCierreUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
@@ -338,6 +397,43 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     table.ForeignKey(
                         name: "FK_Solicitudes_Usuarios_SolicitanteId",
                         column: x => x.SolicitanteId,
+                        principalTable: "Usuarios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Calificaciones",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SolicitudId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AutorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CalificadoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Estrellas = table.Column<int>(type: "int", nullable: false),
+                    Comentario = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true),
+                    FechaUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ComentarioOculto = table.Column<bool>(type: "bit", nullable: false),
+                    MotivoOcultamiento = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Calificaciones", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Calificaciones_Solicitudes_SolicitudId",
+                        column: x => x.SolicitudId,
+                        principalTable: "Solicitudes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Calificaciones_Usuarios_AutorId",
+                        column: x => x.AutorId,
+                        principalTable: "Usuarios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Calificaciones_Usuarios_CalificadoId",
+                        column: x => x.CalificadoId,
                         principalTable: "Usuarios",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
@@ -439,6 +535,22 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 column: "FechaUtc");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Calificaciones_AutorId",
+                table: "Calificaciones",
+                column: "AutorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Calificaciones_CalificadoId_FechaUtc",
+                table: "Calificaciones",
+                columns: new[] { "CalificadoId", "FechaUtc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Calificaciones_SolicitudId_AutorId",
+                table: "Calificaciones",
+                columns: new[] { "SolicitudId", "AutorId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Comentarios_AutorId_FechaUtc",
                 table: "Comentarios",
                 columns: new[] { "AutorId", "FechaUtc" });
@@ -484,6 +596,16 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 name: "IX_Denuncias_Tipo_ObjetivoId_Estado",
                 table: "Denuncias",
                 columns: new[] { "Tipo", "ObjetivoId", "Estado" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Favoritos_PublicacionId",
+                table: "Favoritos",
+                column: "PublicacionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Favoritos_UsuarioId_FechaUtc",
+                table: "Favoritos",
+                columns: new[] { "UsuarioId", "FechaUtc" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Mensajes_AutorId_FechaUtc",
@@ -547,6 +669,11 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 name: "IX_Publicaciones_PropietarioId",
                 table: "Publicaciones",
                 column: "PropietarioId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_PublicacionImagenes_PublicacionId",
+                table: "PublicacionImagenes",
+                column: "PublicacionId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_SesionesRefresh_ExpiraUtc",
@@ -617,6 +744,11 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 column: "EstadoVerificacion");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Usuarios_EstaSuspendido",
+                table: "Usuarios",
+                column: "EstaSuspendido");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Usuarios_GoogleSub",
                 table: "Usuarios",
                 column: "GoogleSub",
@@ -631,10 +763,16 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 name: "Auditoria");
 
             migrationBuilder.DropTable(
+                name: "Calificaciones");
+
+            migrationBuilder.DropTable(
                 name: "Comentarios");
 
             migrationBuilder.DropTable(
                 name: "Denuncias");
+
+            migrationBuilder.DropTable(
+                name: "Favoritos");
 
             migrationBuilder.DropTable(
                 name: "Mensajes");
@@ -644,6 +782,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
             migrationBuilder.DropTable(
                 name: "Pagos");
+
+            migrationBuilder.DropTable(
+                name: "PublicacionImagenes");
 
             migrationBuilder.DropTable(
                 name: "SesionesRefresh");

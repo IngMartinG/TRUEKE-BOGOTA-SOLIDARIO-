@@ -22,7 +22,14 @@ internal static class Mapeos
         => u.PremiumVigente(ahora) ? nameof(TipoCuenta.Premium) : u.EmpresaVigente(ahora) ? nameof(TipoCuenta.Empresa) : nameof(TipoCuenta.Individual);
 
     public static PerfilPublicoDto APerfilPublico(Usuario u, DateTime ahora)
-        => new(NombrePublico(u.NombreCompleto), u.Localidad, u.Reputacion, u.EsVerificado, TipoCuentaEfectivo(u, ahora));
+        => new(u.Id, NombrePublico(u.NombreCompleto), u.Localidad, u.Reputacion, u.EsVerificado, TipoCuentaEfectivo(u, ahora),
+            u.CalificacionPromedio, u.CalificacionesTotal);
+
+    public static PerfilUsuarioDto APerfilUsuario(Usuario u, int publicacionesActivas, DateTime ahora)
+        => new(u.Id, NombrePublico(u.NombreCompleto), u.Localidad, u.Reputacion, u.EsVerificado, TipoCuentaEfectivo(u, ahora),
+            new DateTime(u.FechaRegistro.Year, u.FechaRegistro.Month, 1, 0, 0, 0, DateTimeKind.Utc), // solo mes y año
+            u.TotalTruekesCompletados, u.TotalComprasRealizadas, u.TotalDonacionesRealizadas,
+            u.CalificacionPromedio, u.CalificacionesTotal, publicacionesActivas);
 
     public static UsuarioDto AUsuarioDto(Usuario u, DateTime ahora)
     {
@@ -37,7 +44,7 @@ internal static class Mapeos
     public static CategoriaDto ACategoriaDto(Categoria c) => new(c.Id, c.NombreCategoria, c.Descripcion);
 
     /// <summary>Coordenadas exactas solo para dueño, moderadores y el solicitante con solicitud aceptada; al resto ~1 km de imprecisión.</summary>
-    public static PublicacionDto APublicacionDto(Publicacion p, Guid? actorId, bool veExacto, bool veModeracion, DateTime ahora)
+    public static PublicacionDto APublicacionDto(Publicacion p, Guid? actorId, bool veExacto, bool veModeracion, DateTime ahora, bool esFavorita = false)
     {
         var esMia = actorId.HasValue && p.PropietarioId == actorId.Value;
         double? lat = p.Latitud, lon = p.Longitud;
@@ -51,8 +58,9 @@ internal static class Mapeos
         var vigente = p.EstaDestacadaVigente(ahora);
         var verMotivo = esMia || veModeracion;
         return new PublicacionDto(p.Id, p.Titulo, p.Descripcion, ACategoriaDto(p.Categoria!), p.Modo.ToString(), p.PrecioReferenciaCop,
-            p.Localidad, lat, lon, aproximadas, p.ImagenUrl, p.Estado.ToString(), p.FechaPublicacion, vigente,
-            vigente ? p.DestacadaHasta : null, APerfilPublico(p.Propietario!, ahora), esMia, p.EstaOculta && verMotivo,
+            p.Localidad, lat, lon, aproximadas, p.Imagenes.OrderBy(i => i.Orden).Select(i => i.Url).ToList(), p.Estado.ToString(),
+            p.FechaPublicacion, p.FechaEdicion, vigente,
+            vigente ? p.DestacadaHasta : null, APerfilPublico(p.Propietario!, ahora), esMia, esFavorita, p.EstaOculta && verMotivo,
             verMotivo ? p.MotivoOcultamiento : null);
     }
 }

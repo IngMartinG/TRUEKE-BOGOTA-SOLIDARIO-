@@ -18,7 +18,7 @@ public sealed class EntornoNegocio : IDisposable
     public const string SecretoEventos = "secreto-eventos-pruebas";
     private readonly ServiceProvider _sp;
 
-    public EntornoNegocio(IProveedorPagos? proveedor = null)
+    public EntornoNegocio(IProveedorPagos? proveedor = null, TimeProvider? reloj = null)
     {
         var valores = new Dictionary<string, string?>
         {
@@ -38,6 +38,7 @@ public sealed class EntornoNegocio : IDisposable
         var config = new ConfigurationBuilder().AddInMemoryCollection(valores).Build();
         var services = new ServiceCollection();
         services.AddLogging();
+        if (reloj is not null) services.AddSingleton(reloj); // AddNegocio usa TryAdd: respeta este reloj
         services.AddNegocio(config);
         if (proveedor is not null) services.Replace(ServiceDescriptor.Singleton(proveedor));
         _sp = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });

@@ -73,7 +73,8 @@ public sealed class CrearPublicacionRequest
     [Range(0.01, 1_000_000_000)] public decimal? PrecioReferenciaCop { get; init; }
     [Range(-90, 90)] public double? Latitud { get; init; }
     [Range(-180, 180)] public double? Longitud { get; init; }
-    [MaxLength(500)] public string? ImagenUrl { get; init; }
+    /// <summary>Hasta 5 URLs obtenidas con POST /archivos/subidas. La primera es la foto principal. Al editar, reemplaza la lista completa.</summary>
+    [MaxLength(5)] public List<string>? Imagenes { get; init; }
 }
 
 public sealed class CancelarPublicacionRequest
@@ -110,12 +111,20 @@ public sealed class IniciarPagoRequest
     [Range(1, 10_000_000)] public int? MontoRecargaCop { get; init; }
 }
 
+public enum OrdenPublicacionesDto { Recientes = 1, PrecioAsc = 2, PrecioDesc = 3 }
+
 public sealed class FiltroPublicacionesRequest
 {
     public int? CategoriaId { get; init; }
     public ModoDto? Modo { get; init; }
     [MaxLength(60)] public string? Localidad { get; init; }
     [MaxLength(100)] public string? Texto { get; init; }
+    [Range(0, 1_000_000_000)] public decimal? PrecioMin { get; init; }
+    [Range(0, 1_000_000_000)] public decimal? PrecioMax { get; init; }
+    /// <summary>Solo publicaciones de cuentas con identidad verificada.</summary>
+    public bool SoloVerificados { get; init; }
+    /// <summary>Recientes (destacadas primero), PrecioAsc o PrecioDesc. Para ordenar por cercanía usa /publicaciones/cercanas.</summary>
+    [EnumDataType(typeof(OrdenPublicacionesDto))] public OrdenPublicacionesDto Orden { get; init; } = OrdenPublicacionesDto.Recientes;
     [Range(1, 10_000)] public int Pagina { get; init; } = 1;
     [Range(1, 50)] public int Tamano { get; init; } = 20;
 }
@@ -163,7 +172,7 @@ public sealed class SolicitarSubidaRequest
     [Range(1, 5 * 1024 * 1024)] public long TamanoBytes { get; init; }
 }
 
-public enum TipoDenunciaDto { Publicacion = 1, Comentario = 2, Mensaje = 3, Usuario = 4 }
+public enum TipoDenunciaDto { Publicacion = 1, Comentario = 2, Mensaje = 3, Usuario = 4, Calificacion = 5 }
 public enum MotivoDenunciaDto { Spam = 1, Fraude = 2, ContenidoInapropiado = 3, ArticuloProhibido = 4, Acoso = 5, Otro = 6 }
 public enum EstadoDenunciaDto { Pendiente = 1, Resuelta = 2, Descartada = 3 }
 public enum AccionDenunciaDto { Descartar = 1, OcultarContenido = 2, MarcarRevisada = 3 }
@@ -197,6 +206,37 @@ public sealed class EliminarCuentaRequest
     [StringLength(4096)] public string? GoogleIdToken { get; init; }
 }
 
+// ---------------- Administración ----------------
+public sealed class SuspenderUsuarioRequest
+{
+    [Required, StringLength(300, MinimumLength = 3)] public string Motivo { get; init; } = "";
+    /// <summary>Días de suspensión; null = indefinida (hasta reactivar).</summary>
+    [Range(1, 3650)] public int? Dias { get; init; }
+}
+
+public sealed class BuscarUsuariosRequest
+{
+    [MaxLength(100)] public string? Texto { get; init; }
+    public bool SoloSuspendidos { get; init; }
+    [Range(1, 10_000)] public int Pagina { get; init; } = 1;
+    [Range(1, 50)] public int Tamano { get; init; } = 20;
+}
+
+public enum EstadoPagoDto { Pendiente = 1, Aprobado = 2, Rechazado = 3, Expirado = 4, RequiereRevision = 5, Reembolsado = 6 }
+
+public sealed class FiltroPagosAdminRequest
+{
+    [EnumDataType(typeof(EstadoPagoDto))] public EstadoPagoDto Estado { get; init; } = EstadoPagoDto.RequiereRevision;
+    [Range(1, 10_000)] public int Pagina { get; init; } = 1;
+    [Range(1, 50)] public int Tamano { get; init; } = 20;
+}
+
+public sealed class ReembolsoRequest
+{
+    /// <summary>Referencia o nota del reembolso hecho en el panel de Wompi.</summary>
+    [Required, StringLength(300, MinimumLength = 3)] public string Nota { get; init; } = "";
+}
+
 public sealed class FiltroNotificacionesRequest
 {
     public bool SoloNoLeidas { get; init; }
@@ -222,14 +262,24 @@ public sealed record ResultadoAutenticacion(SesionDto Sesion, string TokenRefres
     public bool CuentaCreada { get; init; }
 }
 
-public sealed record PerfilPublicoDto(string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta);
+/// <summary>
+/// Datos públicos de una persona. Id permite abrir su perfil (GET /usuarios/{id}/perfil); no da acceso a nada:
+/// toda acción usa el usuario del JWT. Nunca incluye correo, nombre completo ni ubicación exacta.
+/// </summary>
+public sealed record PerfilPublicoDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
+    decimal? CalificacionPromedio, int TotalCalificaciones);
+
+public sealed record PerfilUsuarioDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
+    DateTime MiembroDesde, int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas,
+    decimal? CalificacionPromedio, int TotalCalificaciones, int PublicacionesActivas);
 
 public sealed record CategoriaDto(int Id, string Nombre, string Descripcion);
 
+/// <summary>Imagenes[0] es la foto principal. EsFavorita solo es true para el usuario autenticado que la guardó.</summary>
 public sealed record PublicacionDto(Guid Id, string Titulo, string Descripcion, CategoriaDto Categoria, string Modo,
     decimal? PrecioReferenciaCop, string Localidad, double? Latitud, double? Longitud, bool CoordenadasAproximadas,
-    string? ImagenUrl, string Estado, DateTime FechaPublicacion, bool Destacada, DateTime? DestacadaHasta,
-    PerfilPublicoDto Propietario, bool EsMia, bool Oculta, string? MotivoOcultamiento);
+    IReadOnlyList<string> Imagenes, string Estado, DateTime FechaPublicacion, DateTime? FechaEdicion, bool Destacada, DateTime? DestacadaHasta,
+    PerfilPublicoDto Propietario, bool EsMia, bool EsFavorita, bool Oculta, string? MotivoOcultamiento);
 
 /// <summary>DistanciaKm se calcula con las coordenadas que el usuario tiene permitido ver (aproximadas para terceros), redondeada a 0,1 km.</summary>
 public sealed record PublicacionCercanaDto(PublicacionDto Publicacion, double DistanciaKm);
@@ -251,6 +301,14 @@ public sealed record ConversacionDto(Guid Id, Guid SolicitudId, Guid Publicacion
 /// </summary>
 public sealed record SubidaArchivoDto(string UrlSubida, string UrlArchivo, string Metodo, IReadOnlyDictionary<string, string> Cabeceras, DateTime ExpiraUtc);
 
+/// <summary>Vista de administración (incluye el correo: solo la reciben moderadores).</summary>
+public sealed record UsuarioAdminDto(Guid Id, string NombreCompleto, string Correo, string Localidad, string Rol, DateTime FechaRegistro,
+    bool CorreoVerificado, string EstadoVerificacion, bool Suspendido, DateTime? SuspendidoHasta, string? MotivoSuspension,
+    bool DosFactoresActivo, decimal Reputacion, decimal? CalificacionPromedio, int TotalCalificaciones);
+
+public sealed record PagoAdminDto(string Referencia, Guid UsuarioId, string Concepto, int MontoCop, int PuntosCanjeados, string Estado,
+    DateTime FechaUtc, DateTime? FechaResolucionUtc, string? ProveedorTransaccionId, string? NotaInterna);
+
 public sealed record DenunciaCreadaDto(Guid Id, string Estado, DateTime FechaUtc);
 
 /// <summary>
@@ -269,13 +327,36 @@ public sealed record DenunciaExportDto(Guid Id, string Tipo, Guid ObjetivoId, st
 public sealed record DatosPersonalesDto(DateTime GeneradoUtc, UsuarioDto Perfil, string? PoliticaDatosVersion, DateTime? FechaAceptacionPolitica,
     IReadOnlyList<PublicacionDto> Publicaciones, IReadOnlyList<SolicitudDto> SolicitudesEnviadas, IReadOnlyList<ComentarioExportDto> Comentarios,
     IReadOnlyList<MensajeExportDto> MensajesEnviados, IReadOnlyList<TransaccionExportDto> Transacciones, IReadOnlyList<PagoEstadoDto> Pagos,
-    IReadOnlyList<NotificacionDto> Notificaciones, IReadOnlyList<DenunciaExportDto> DenunciasRealizadas);
+    IReadOnlyList<NotificacionDto> Notificaciones, IReadOnlyList<DenunciaExportDto> DenunciasRealizadas,
+    IReadOnlyList<CalificacionExportDto> CalificacionesRealizadas, IReadOnlyList<Guid> Favoritos);
+
+public sealed record CalificacionExportDto(Guid Id, Guid SolicitudId, int Estrellas, string? Comentario, DateTime FechaUtc);
 
 public sealed record PaginaDto<T>(IReadOnlyList<T> Items, int Total, int Pagina, int Tamano);
 
-/// <summary>Las partes se comunican por el chat (ConversacionId): la API nunca comparte correos entre usuarios.</summary>
-public sealed record SolicitudDto(Guid Id, Guid PublicacionId, string PublicacionTitulo, string Modo, PerfilPublicoDto Solicitante,
-    DateTime FechaSolicitud, string Mensaje, string Estado, string? MotivoRechazo, Guid? ConversacionId);
+/// <summary>
+/// Las partes se comunican por el chat (ConversacionId): la API nunca comparte correos entre usuarios.
+/// Estado: Pendiente → Aceptada (coordinando la entrega) → Completada | NoConcretada; o Rechazada | Cancelada.
+/// CierreAutomaticoUtc: si sigue Aceptada, cuándo se cerrará sola (completada si alguien confirmó; no concretada si nadie).
+/// </summary>
+public sealed record SolicitudDto(Guid Id, Guid PublicacionId, string PublicacionTitulo, string Modo, PerfilPublicoDto Propietario,
+    PerfilPublicoDto Solicitante, bool SoyDuenio, DateTime FechaSolicitud, string Mensaje, string Estado, string? MotivoRechazo,
+    Guid? ConversacionId, DateTime? FechaAceptacionUtc, bool ConfirmadaPorDuenio, bool ConfirmadaPorSolicitante,
+    DateTime? FechaCierreUtc, DateTime? CierreAutomaticoUtc, bool PuedoCalificar);
+
+public sealed class NoConcretadaRequest
+{
+    [Required, StringLength(300, MinimumLength = 3)] public string Motivo { get; init; } = "";
+}
+
+public sealed class CalificarRequest
+{
+    [Range(1, 5)] public int Estrellas { get; init; }
+    [MaxLength(300)] public string? Comentario { get; init; }
+}
+
+/// <summary>Reseña pública. Comentario es null si la moderación lo ocultó (las estrellas siguen contando).</summary>
+public sealed record CalificacionDto(Guid Id, PerfilPublicoDto Autor, int Estrellas, string? Comentario, DateTime FechaUtc);
 
 public sealed record VerificacionPendienteDto(Guid UsuarioId, string NombreCompleto, string Correo, string DocumentoUrl, DateTime FechaRegistro);
 

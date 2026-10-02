@@ -38,6 +38,8 @@ public static class DatosServiceCollectionExtensions
         services.AddScoped<INotificacionRepository, NotificacionRepository>();
         services.AddScoped<IConversacionRepository, ConversacionRepository>();
         services.AddScoped<IDenunciaRepository, DenunciaRepository>();
+        services.AddScoped<IFavoritoRepository, FavoritoRepository>();
+        services.AddScoped<ICalificacionRepository, CalificacionRepository>();
         return services;
     }
 }

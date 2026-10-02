@@ -38,14 +38,18 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
     private readonly ISesionService _sesiones;
     private readonly INotificador _notificador;
     private readonly TimeProvider _reloj;
+    private readonly ICalificacionRepository _calificaciones;
+    private readonly IFavoritoRepository _favoritos;
     private readonly ILogger<DatosPersonalesService> _log;
 
     public DatosPersonalesService(IUsuarioRepository usuarios, IPublicacionRepository pubs, ISolicitudRepository solicitudes,
         IComentarioRepository comentarios, IConversacionRepository conversaciones, ITransaccionRepository transacciones, IPagoRepository pagos,
         INotificacionRepository notificaciones, IDenunciaRepository denuncias, ISesionRefreshRepository refrescos, IAuditoriaRepository auditoria,
         IUnidadDeTrabajo uow, IPublicacionService publicacionService, ISolicitudService solicitudService, IValidadorGoogle google,
-        IAlmacenArchivos almacen, ISesionService sesiones, INotificador notificador, TimeProvider reloj, ILogger<DatosPersonalesService> log)
+        IAlmacenArchivos almacen, ISesionService sesiones, INotificador notificador, TimeProvider reloj,
+        ICalificacionRepository calificaciones, IFavoritoRepository favoritos, ILogger<DatosPersonalesService> log)
     {
+        _calificaciones = calificaciones; _favoritos = favoritos;
         _usuarios = usuarios; _pubs = pubs; _solicitudes = solicitudes; _comentarios = comentarios; _conversaciones = conversaciones;
         _transacciones = transacciones; _pagos = pagos; _notificaciones = notificaciones; _denuncias = denuncias; _refrescos = refrescos;
         _auditoria = auditoria; _uow = uow; _publicacionService = publicacionService; _solicitudService = solicitudService; _google = google;
@@ -75,9 +79,19 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         var denuncias = (await _denuncias.ListarDelDenuncianteAsync(actorId, Maximo))
             .Select(d => new DenunciaExportDto(d.Id, d.Tipo.ToString(), d.ObjetivoId, d.Motivo.ToString(), d.Detalle, d.Estado.ToString(), d.FechaUtc)).ToList();
 
+        var calificaciones = (await _calificaciones.ListarDelAutorAsync(actorId, Maximo))
+            .Select(c => new CalificacionExportDto(c.Id, c.SolicitudId, c.Estrellas, c.Comentario, c.FechaUtc)).ToList();
+        var favoritos = new List<Guid>();
+        for (var pagina = 1; ; pagina++)
+        {
+            var (ids, total) = await _favoritos.ListarAsync(actorId, pagina, 50);
+            favoritos.AddRange(ids);
+            if (ids.Count == 0 || favoritos.Count >= total) break;
+        }
+
         return new DatosPersonalesDto(ahora, Mapeos.AUsuarioDto(u, ahora), u.PoliticaDatosVersion, u.FechaAceptacionPolitica,
             await _publicacionService.ListarMiasAsync(actorId), await _solicitudService.ListarEnviadasAsync(actorId),
-            comentarios, mensajes, transacciones, pagos, notificaciones, denuncias);
+            comentarios, mensajes, transacciones, pagos, notificaciones, denuncias, calificaciones, favoritos);
     }
 
     /// <summary>Volver a demostrar identidad: con un token robado (o un equipo desatendido) no basta para borrar la cuenta.</summary>
@@ -109,10 +123,17 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         var ahora = Ahora;
         var avisos = new List<(Guid UsuarioId, string Tipo, string Mensaje, Guid Recurso)>();
 
-        // 1) Solicitudes en curso: las propias se cancelan; las recibidas se rechazan (y su publicación queda libre)
+        // 1) Solicitudes en curso: las aceptadas quedan "no concretadas"; las pendientes propias se cancelan y las recibidas se rechazan
         foreach (var s in await _solicitudes.ListarPendientesDelUsuarioAsync(actorId))
         {
-            if (s.SolicitanteId == actorId)
+            if (s.Estado == EstadoSolicitud.Aceptada)
+            {
+                s.MarcarNoConcretada("Una de las partes eliminó su cuenta.", ahora);
+                s.Publicacion!.VolverADisponible();
+                var otra = s.SolicitanteId == actorId ? s.Publicacion.PropietarioId : s.SolicitanteId;
+                avisos.Add((otra, TiposNotificacion.IntercambioNoConcretado, $"El intercambio de \"{s.Publicacion.Titulo}\" se canceló: la otra persona eliminó su cuenta.", s.Id));
+            }
+            else if (s.SolicitanteId == actorId)
             {
                 s.Cancelar();
                 s.Publicacion!.VolverADisponible();

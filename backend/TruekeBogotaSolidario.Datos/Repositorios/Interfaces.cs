@@ -2,12 +2,18 @@ using TruekeBogotaSolidario.Datos.Entidades;
 
 namespace TruekeBogotaSolidario.Datos.Repositorios;
 
+public enum OrdenPublicaciones { Recientes = 1, PrecioAsc = 2, PrecioDesc = 3 }
+
 public class FiltroPublicaciones
 {
     public int? CategoriaId { get; set; }
     public ModoTransaccion? Modo { get; set; }
     public string? Localidad { get; set; }
     public string? Texto { get; set; }
+    public decimal? PrecioMin { get; set; }
+    public decimal? PrecioMax { get; set; }
+    public bool SoloVerificados { get; set; }
+    public OrdenPublicaciones Orden { get; set; } = OrdenPublicaciones.Recientes;
     public int Pagina { get; set; } = 1;
     public int Tamano { get; set; } = 20;
 }
@@ -30,6 +36,8 @@ public interface IUsuarioRepository
     Task<bool> ExisteCorreoAsync(string correoNormalizado);
     Task<IReadOnlyList<Usuario>> ObtenerPorVerificacionAsync(EstadoVerificacion estado);
     Task<int> ContarPorRolAsync(RolUsuarioEnum rol);
+    /// <summary>Búsqueda para administración por nombre o correo (contiene). Más recientes primero.</summary>
+    Task<(IReadOnlyList<Usuario> Items, int Total)> BuscarAsync(string? texto, bool soloSuspendidos, int pagina, int tamano);
     /// <summary>Consulta ligera (sin tracking) para validar sesiones JWT. Null si el usuario no existe.</summary>
     Task<int?> ObtenerVersionSeguridadAsync(Guid id);
     void Agregar(Usuario usuario);
@@ -45,11 +53,15 @@ public interface IPublicacionRepository
 {
     /// <summary>Incluye Categoria y Propietario.</summary>
     Task<Publicacion?> ObtenerPorIdAsync(Guid id);
-    /// <summary>Solo Disponibles y NO ocultas; destacadas vigentes primero.</summary>
+    /// <summary>Visibles = Disponibles, no ocultas y de dueños no suspendidos. Destacadas vigentes primero (orden Recientes).</summary>
     Task<(IReadOnlyList<Publicacion> Items, int Total)> ListarVisiblesAsync(FiltroPublicaciones filtro, DateTime ahoraUtc);
-    /// <summary>Visibles (Disponibles, no ocultas) con coordenadas dentro del rectángulo indicado. Máximo <paramref name="maximo"/>.</summary>
+    /// <summary>Visibles con coordenadas dentro del rectángulo indicado. Máximo <paramref name="maximo"/>.</summary>
     Task<IReadOnlyList<Publicacion>> ListarVisiblesEnAreaAsync(double minLat, double maxLat, double minLon, double maxLon,
-        int? categoriaId, ModoTransaccion? modo, int maximo);
+        int? categoriaId, ModoTransaccion? modo, int maximo, DateTime ahoraUtc);
+    /// <summary>Visibles de un propietario (su perfil público).</summary>
+    Task<(IReadOnlyList<Publicacion> Items, int Total)> ListarVisiblesDePropietarioAsync(Guid propietarioId, int pagina, int tamano, DateTime ahoraUtc);
+    /// <summary>Visibles, en el orden de <paramref name="ids"/> no garantizado (favoritos).</summary>
+    Task<IReadOnlyList<Publicacion>> ListarPorIdsAsync(IReadOnlyCollection<Guid> ids);
     Task<IReadOnlyList<Publicacion>> ListarPorPropietarioAsync(Guid propietarioId);
     Task<int> ContarActivasPorUsuarioAsync(Guid usuarioId);
     /// <summary>Disponibles o en negociación del usuario, CON tracking (para cancelarlas).</summary>
@@ -64,9 +76,17 @@ public interface ISolicitudRepository
     Task<IReadOnlyList<Solicitud>> ListarPorSolicitanteAsync(Guid solicitanteId);
     Task<IReadOnlyList<Solicitud>> ListarRecibidasAsync(Guid propietarioId);
     Task<Solicitud?> ObtenerPendientePorPublicacionAsync(Guid publicacionId);
+    /// <summary>La solicitud Pendiente o Aceptada de la publicación (con tracking), si existe.</summary>
+    Task<Solicitud?> ObtenerEnCursoPorPublicacionAsync(Guid publicacionId);
     Task<int> ContarPendientesPorSolicitanteAsync(Guid solicitanteId);
+    /// <summary>Aceptada o Completada: el solicitante puede ver las coordenadas exactas.</summary>
     Task<bool> ExisteAceptadaAsync(Guid publicacionId, Guid solicitanteId);
-    /// <summary>Pendientes enviadas o recibidas por el usuario, CON tracking e incluyendo la Publicacion.</summary>
+    /// <summary>
+    /// Aceptadas que deben cerrarse solas: con UNA confirmación y aceptadas antes de <paramref name="limiteConConfirmacion"/>
+    /// (se completan), o SIN confirmaciones y aceptadas antes de <paramref name="limiteSinConfirmacion"/> (no concretadas).
+    /// </summary>
+    Task<IReadOnlyList<Guid>> ListarParaCierreAutomaticoAsync(DateTime limiteConConfirmacion, DateTime limiteSinConfirmacion, int maximo);
+    /// <summary>En curso (Pendientes o Aceptadas) enviadas o recibidas por el usuario, CON tracking e incluyendo la Publicacion.</summary>
     Task<IReadOnlyList<Solicitud>> ListarPendientesDelUsuarioAsync(Guid usuarioId);
     void Agregar(Solicitud solicitud);
 }
@@ -88,6 +108,8 @@ public interface IPagoRepository
     Task<bool> ExistePendienteAsync(Guid usuarioId, ConceptoPago concepto, Guid? publicacionId);
     Task<IReadOnlyList<Pago>> ListarPendientesAnterioresAAsync(DateTime limiteUtc, int maximo);
     Task<IReadOnlyList<Pago>> ListarPorUsuarioAsync(Guid usuarioId, int maximo);
+    /// <summary>Para administración (p. ej. RequiereRevision). Más antiguos primero.</summary>
+    Task<(IReadOnlyList<Pago> Items, int Total)> ListarPorEstadoAsync(EstadoPago estado, int pagina, int tamano);
     void Agregar(Pago pago);
 }
 
@@ -171,11 +193,38 @@ public interface IDenunciaRepository
     void Agregar(Denuncia denuncia);
 }
 
+public interface IFavoritoRepository
+{
+    Task<Favorito?> ObtenerAsync(Guid usuarioId, Guid publicacionId);
+    /// <summary>De la lista dada, cuáles son favoritas del usuario (para marcar el catálogo).</summary>
+    Task<IReadOnlySet<Guid>> FiltrarFavoritasAsync(Guid usuarioId, IReadOnlyCollection<Guid> publicacionIds);
+    /// <summary>Ids de las favoritas, más recientes primero.</summary>
+    Task<(IReadOnlyList<Guid> Ids, int Total)> ListarAsync(Guid usuarioId, int pagina, int tamano);
+    Task<int> ContarAsync(Guid usuarioId);
+    void Agregar(Favorito favorito);
+    void Quitar(Favorito favorito);
+}
+
+public interface ICalificacionRepository
+{
+    Task<Calificacion?> ObtenerAsync(Guid id);
+    Task<bool> ExisteAsync(Guid solicitudId, Guid autorId);
+    /// <summary>De las solicitudes dadas, cuáles ya calificó el autor.</summary>
+    Task<IReadOnlySet<Guid>> SolicitudesCalificadasPorAsync(Guid autorId, IReadOnlyCollection<Guid> solicitudIds);
+    /// <summary>Recibidas por el usuario, más recientes primero; incluye Autor.</summary>
+    Task<(IReadOnlyList<Calificacion> Items, int Total)> ListarRecibidasAsync(Guid calificadoId, int pagina, int tamano);
+    Task<IReadOnlyList<Calificacion>> ListarDelAutorAsync(Guid autorId, int maximo);
+    void Agregar(Calificacion calificacion);
+}
+
 public interface IComentarioRepository
 {
     Task<Comentario?> ObtenerPorIdAsync(Guid id);
-    /// <summary>Incluye Autor. Más recientes primero. Si <paramref name="incluirOcultos"/> es false, los ocultos no se devuelven.</summary>
-    Task<(IReadOnlyList<Comentario> Items, int Total)> ListarPorPublicacionAsync(Guid publicacionId, bool incluirOcultos, int pagina, int tamano);
+    /// <summary>
+    /// Incluye Autor. Más recientes primero. Si <paramref name="incluirOcultos"/> es false, no se devuelven los ocultos
+    /// ni los de autores suspendidos.
+    /// </summary>
+    Task<(IReadOnlyList<Comentario> Items, int Total)> ListarPorPublicacionAsync(Guid publicacionId, bool incluirOcultos, int pagina, int tamano, DateTime ahoraUtc);
     Task<int> ContarDelAutorDesdeAsync(Guid autorId, DateTime desdeUtc);
     /// <summary>CON tracking (exportación y ocultamiento al eliminar la cuenta).</summary>
     Task<IReadOnlyList<Comentario>> ListarDelAutorAsync(Guid autorId, int maximo);
