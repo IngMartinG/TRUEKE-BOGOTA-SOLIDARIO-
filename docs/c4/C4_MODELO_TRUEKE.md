@@ -45,8 +45,8 @@ flowchart TB
         direction TB
         FE["🖥️ Front-end<br/>React (SPA)<br/>Hosting: Vercel"]:::container
         BE["⚙️ Back-end API<br/>Node.js / Express<br/>Hosting: Railway"]:::container
-        DB[("🗄️ Base de Datos<br/>PostgreSQL (Supabase)<br/>usuarios, productos,<br/>chats, mensajes, solicitudes")]:::database
-        STORAGE["☁️ Almacenamiento Cloud<br/>Supabase Storage<br/>(imágenes de publicaciones)"]:::container
+        DB[("🗄️ Base de Datos<br/>SQL Server (Azure SQL)<br/>usuarios, productos,<br/>chats, mensajes, solicitudes")]:::database
+        STORAGE["☁️ Almacenamiento Cloud<br/>Azure Blob Storage<br/>(imágenes de publicaciones)"]:::container
     end
 
     EXT1["💳 Wompi"]:::external
@@ -94,7 +94,7 @@ flowchart TB
         end
     end
 
-    DB[("🗄️ PostgreSQL (Supabase)")]:::database
+    DB[("🗄️ SQL Server (Azure SQL)")]:::database
 
     FE --> C1
     FE --> C2
