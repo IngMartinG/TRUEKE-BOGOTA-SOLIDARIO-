@@ -152,6 +152,16 @@ public sealed class MensajesRequest
     [Range(1, 100)] public int Tamano { get; init; } = 30;
 }
 
+public enum TipoArchivoDto { Imagen = 1, Documento = 2 }
+
+public sealed class SolicitarSubidaRequest
+{
+    /// <summary>Imagen (publicaciones, contenedor público) o Documento (verificación de identidad, contenedor PRIVADO).</summary>
+    [EnumDataType(typeof(TipoArchivoDto))] public TipoArchivoDto Tipo { get; init; } = TipoArchivoDto.Imagen;
+    [Required, StringLength(50)] public string ContentType { get; init; } = "";
+    [Range(1, 5 * 1024 * 1024)] public long TamanoBytes { get; init; }
+}
+
 public sealed class FiltroNotificacionesRequest
 {
     public bool SoloNoLeidas { get; init; }
@@ -199,6 +209,12 @@ public sealed record MensajeChatDto(Guid Id, Guid ConversacionId, bool EsMio, st
 /// <summary>Resumen de una conversación para la bandeja de chats.</summary>
 public sealed record ConversacionDto(Guid Id, Guid SolicitudId, Guid PublicacionId, string PublicacionTitulo, string EstadoSolicitud,
     bool SoyDuenio, PerfilPublicoDto Contraparte, string? UltimoMensaje, DateTime UltimoMensajeUtc, int NoLeidos, bool Escribible);
+
+/// <summary>
+/// Autorización de subida directa a Azure Blob: el navegador hace PUT del archivo a <see cref="UrlSubida"/> con
+/// <see cref="Cabeceras"/> antes de <see cref="ExpiraUtc"/>, y luego envía <see cref="UrlArchivo"/> a la API.
+/// </summary>
+public sealed record SubidaArchivoDto(string UrlSubida, string UrlArchivo, string Metodo, IReadOnlyDictionary<string, string> Cabeceras, DateTime ExpiraUtc);
 
 public sealed record PaginaDto<T>(IReadOnlyList<T> Items, int Total, int Pagina, int Tamano);
 

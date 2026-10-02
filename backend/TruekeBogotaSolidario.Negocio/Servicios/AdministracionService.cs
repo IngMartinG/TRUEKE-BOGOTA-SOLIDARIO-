@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Datos.Repositorios;
+using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Dtos;
 
@@ -33,14 +34,15 @@ public sealed class AdministracionService : IAdministracionService
     private readonly TimeProvider _reloj;
     private readonly INotificador _notificador;
     private readonly ISesionRefreshRepository _refrescos;
+    private readonly IAlmacenArchivos _almacen;
     private readonly ILogger<AdministracionService> _log;
 
     public AdministracionService(IUsuarioRepository usuarios, IPublicacionRepository pubs, IUnidadDeTrabajo uow,
         IAuditoriaRepository auditoria, ISesionService sesiones, TimeProvider reloj, INotificador notificador,
-        ISesionRefreshRepository refrescos, ILogger<AdministracionService> log)
+        ISesionRefreshRepository refrescos, IAlmacenArchivos almacen, ILogger<AdministracionService> log)
     {
         _usuarios = usuarios; _pubs = pubs; _uow = uow; _auditoria = auditoria; _sesiones = sesiones; _reloj = reloj;
-        _notificador = notificador; _refrescos = refrescos; _log = log;
+        _notificador = notificador; _refrescos = refrescos; _almacen = almacen; _log = log;
     }
 
     private Task NotificarAsync(Guid usuarioId, string tipo, string mensaje, Guid? recursoId)
@@ -82,7 +84,14 @@ public sealed class AdministracionService : IAdministracionService
     {
         await ExigirRolAsync(actorId, RolUsuarioEnum.Administrador);
         var lista = await _usuarios.ObtenerPorVerificacionAsync(EstadoVerificacion.Pendiente);
-        return lista.Select(u => new VerificacionPendienteDto(u.Id, u.NombreCompleto, u.Correo, u.DocumentoVerificacionUrl ?? "", u.FechaRegistro)).ToList();
+        var resultado = new List<VerificacionPendienteDto>(lista.Count);
+        foreach (var u in lista)
+        {
+            // El documento de identidad vive en un contenedor privado: el moderador recibe un enlace que caduca en 5 minutos
+            var enlace = u.DocumentoVerificacionUrl is null ? null : await _almacen.UrlLecturaTemporalAsync(u.DocumentoVerificacionUrl);
+            resultado.Add(new VerificacionPendienteDto(u.Id, u.NombreCompleto, u.Correo, enlace ?? "", u.FechaRegistro));
+        }
+        return resultado;
     }
 
     public async Task AprobarVerificacionAsync(Guid actorId, Guid usuarioId)

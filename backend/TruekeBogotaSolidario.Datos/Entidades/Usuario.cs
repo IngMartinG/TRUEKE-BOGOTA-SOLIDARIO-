@@ -286,8 +286,7 @@ public class Usuario
     {
         if (EstadoVerificacion == EstadoVerificacion.Aprobada) throw new ReglaDeNegocioException("Tu cuenta ya está verificada.");
         if (EstadoVerificacion == EstadoVerificacion.Pendiente) throw new ReglaDeNegocioException("Ya tienes una verificación en revisión.");
-        if (documentoUrl is null || documentoUrl.Length > 500
-            || !Uri.TryCreate(documentoUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+        if (!UrlsSeguras.EsValida(documentoUrl))
             throw new ReglaDeNegocioException("El documento debe ser una URL https válida.");
     }
 
