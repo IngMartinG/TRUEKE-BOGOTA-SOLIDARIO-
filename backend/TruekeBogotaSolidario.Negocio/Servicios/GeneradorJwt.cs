@@ -9,7 +9,8 @@ namespace TruekeBogotaSolidario.Negocio.Servicios;
 
 public interface IGeneradorToken
 {
-    (string Token, DateTime ExpiraUtc) Generar(Usuario usuario);
+    /// <param name="conDosFactores">Agrega "amr":"mfa" (la sesión pasó la verificación en dos pasos).</param>
+    (string Token, DateTime ExpiraUtc) Generar(Usuario usuario, bool conDosFactores = false);
 }
 
 /// <summary>
@@ -28,7 +29,7 @@ public sealed class GeneradorJwt : IGeneradorToken
         _reloj = reloj;
     }
 
-    public (string Token, DateTime ExpiraUtc) Generar(Usuario usuario)
+    public (string Token, DateTime ExpiraUtc) Generar(Usuario usuario, bool conDosFactores = false)
     {
         var ahora = _reloj.GetUtcNow().UtcDateTime;
         var expira = ahora.AddMinutes(_jwt.Minutos);
@@ -38,6 +39,7 @@ public sealed class GeneradorJwt : IGeneradorToken
             ["sub"] = usuario.Id.ToString(),
             ["role"] = usuario.Rol.ToString(),
             ["sv"] = usuario.VersionSeguridad,
+            ["amr"] = conDosFactores ? "mfa" : "pwd", // método de autenticación (RFC 8176)
             ["jti"] = Guid.NewGuid().ToString("N"),
             ["iss"] = _jwt.Issuer,
             ["aud"] = _jwt.Audience,

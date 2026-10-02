@@ -28,12 +28,16 @@ public sealed class GoogleLoginRequest
     [Required, StringLength(4096, MinimumLength = 20)] public string IdToken { get; init; } = "";
     /// <summary>Obligatorio solo si la cuenta es nueva (Ley 1581).</summary>
     public bool AceptoPoliticaDatos { get; init; }
+    /// <summary>Solo si la cuenta tiene verificación en dos pasos: 6 dígitos de la app o un código de recuperación.</summary>
+    [MaxLength(20)] public string? CodigoDosFactores { get; init; }
 }
 
 public sealed class LoginRequest
 {
     [Required, EmailAddress, MaxLength(160)] public string Correo { get; init; } = "";
     [Required, StringLength(128, MinimumLength = 1)] public string Clave { get; init; } = "";
+    /// <summary>Solo si la cuenta tiene verificación en dos pasos: 6 dígitos de la app o un código de recuperación.</summary>
+    [MaxLength(20)] public string? CodigoDosFactores { get; init; }
     /// <summary>Token de reCAPTCHA v3 (grecaptcha.execute). Obligatorio cuando el captcha está habilitado.</summary>
     [MaxLength(4096)] public string? CaptchaToken { get; init; }
 }
@@ -254,9 +258,23 @@ public sealed class FiltroNotificacionesRequest
 public sealed record UsuarioDto(Guid Id, string NombreCompleto, string Localidad, string Correo, string Rol, string TipoCuenta,
     DateTime? PlanVigenteHasta, bool Verificado, string EstadoVerificacion, int SaldoEcoPuntos, decimal Reputacion,
     int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas, int DestacadosGratisRestantes,
-    bool CorreoVerificado, bool TieneClave, bool VinculadoGoogle);
+    bool CorreoVerificado, bool TieneClave, bool VinculadoGoogle, bool DosFactoresActivo, int CodigosRecuperacionRestantes);
 
 public sealed record SesionDto(string Token, DateTime ExpiraUtc, UsuarioDto Usuario);
+
+/// <summary>Para el código QR: el front genera el QR a partir de UriOtpauth (o el usuario teclea SecretoBase32 en la app).</summary>
+public sealed record ConfiguracionDosFactoresDto(string SecretoBase32, string UriOtpauth);
+
+/// <summary>Los códigos de recuperación se muestran UNA sola vez: el usuario debe guardarlos.</summary>
+public sealed record ActivacionDosFactoresDto(IReadOnlyList<string> CodigosRecuperacion, SesionDto Sesion);
+
+public sealed record CodigosRecuperacionDto(IReadOnlyList<string> CodigosRecuperacion);
+
+public sealed class CodigoDosFactoresRequest
+{
+    /// <summary>6 dígitos de la app, o un código de recuperación (XXXX-XXXX).</summary>
+    [Required, StringLength(20, MinimumLength = 6)] public string Codigo { get; init; } = "";
+}
 
 /// <summary>
 /// Resultado interno de autenticarse. Presentacion devuelve SOLO <see cref="Sesion"/> en el JSON y guarda

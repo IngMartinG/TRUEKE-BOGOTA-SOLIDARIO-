@@ -223,6 +223,7 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     CreadoUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ExpiraUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
                     ExpiraFamiliaUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    ConDosFactores = table.Column<bool>(type: "bit", nullable: false),
                     ReemplazadoPorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
                     RevocadoUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
                     RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)

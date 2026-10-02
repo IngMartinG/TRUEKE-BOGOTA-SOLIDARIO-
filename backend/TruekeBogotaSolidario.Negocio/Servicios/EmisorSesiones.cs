@@ -39,17 +39,19 @@ public sealed class EmisorSesiones
         _tokens = tokens; _refrescos = refrescos; _seg = seg.Value; _reloj = reloj;
     }
 
-    /// <param name="anterior">Si se está rotando, el token usado (queda reemplazado y la familia se conserva).</param>
-    public ResultadoAutenticacion Emitir(Usuario usuario, SesionRefresh? anterior = null)
+    /// <param name="anterior">Si se está rotando, el token usado (queda reemplazado; se conservan la familia y la marca de 2FA).</param>
+    /// <param name="conDosFactores">El usuario acaba de demostrar el segundo factor (solo aplica a sesiones nuevas).</param>
+    public ResultadoAutenticacion Emitir(Usuario usuario, SesionRefresh? anterior = null, bool conDosFactores = false)
     {
         var ahora = _reloj.GetUtcNow().UtcDateTime;
+        var mfa = anterior?.ConDosFactores ?? conDosFactores;
         var token = TokensSeguros.Generar();
         var nueva = new SesionRefresh(usuario.Id, anterior?.FamiliaId ?? Guid.NewGuid(), TokensSeguros.Hash(token), ahora,
-            ahora.AddDays(_seg.DiasRefresco), anterior?.ExpiraFamiliaUtc ?? ahora.AddDays(_seg.DiasMaximosSesion));
+            ahora.AddDays(_seg.DiasRefresco), anterior?.ExpiraFamiliaUtc ?? ahora.AddDays(_seg.DiasMaximosSesion), mfa);
         _refrescos.Agregar(nueva);
         anterior?.MarcarReemplazada(nueva.Id, ahora);
 
-        var (jwt, expira) = _tokens.Generar(usuario);
+        var (jwt, expira) = _tokens.Generar(usuario, mfa);
         return new ResultadoAutenticacion(new SesionDto(jwt, expira, Mapeos.AUsuarioDto(usuario, ahora)), token, nueva.ExpiraUtc);
     }
 }

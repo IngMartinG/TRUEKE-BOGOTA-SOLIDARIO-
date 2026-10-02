@@ -16,6 +16,8 @@ public class FabricaApi : WebApplicationFactory<Program>
     public const string ClaveJwtPruebas = "clave-de-pruebas-de-al-menos-32-caracteres-0123456789";
     public const string CorreoSuper = "super@trueke.test";
     public const string ClaveSuper = "SuperClave123";
+    /// <summary>32 bytes de prueba en base64 (solo para tests).</summary>
+    public const string ClaveCifradoPruebas = "MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=";
 
     private readonly string _nombreBd = "pruebas-" + Guid.NewGuid().ToString("N");
 
@@ -37,6 +39,8 @@ public class FabricaApi : WebApplicationFactory<Program>
         builder.UseSetting("RateLimiting:RefrescoPorMinuto", "1000");
         builder.UseSetting("Seguridad:SegundosGraciaRefresco", "0");
         builder.UseSetting("Correo:Proveedor", "Simulado");
+        builder.UseSetting("Seguridad:ClaveCifrado", ClaveCifradoPruebas);
+        builder.UseSetting("Seguridad:ExigirDosFactoresModeradores", "false"); // una prueba dedicada lo activa
         builder.ConfigureTestServices(s => s.Replace(ServiceDescriptor.Singleton<ICorreoSaliente>(Correos)));
     }
 

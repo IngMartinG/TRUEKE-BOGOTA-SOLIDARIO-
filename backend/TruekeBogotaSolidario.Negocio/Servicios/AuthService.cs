@@ -40,15 +40,18 @@ public sealed class AuthService : IAuthService
     private readonly ICorreoSaliente _salida;
     private readonly IValidadorGoogle _google;
     private readonly IVerificadorCaptcha _captcha;
+    private readonly VerificadorDosFactores _dosFactores;
     private readonly TimeProvider _reloj;
     private readonly ILogger<AuthService> _log;
 
     public AuthService(IUsuarioRepository usuarios, ISesionRefreshRepository refrescos, IUnidadDeTrabajo uow, EmisorSesiones emisor,
         ISesionService sesiones, IOptions<SeguridadOpciones> seg, IOptions<LegalOpciones> legal, CorreosCuenta correos,
-        ICorreoSaliente salida, IValidadorGoogle google, IVerificadorCaptcha captcha, TimeProvider reloj, ILogger<AuthService> log)
+        ICorreoSaliente salida, IValidadorGoogle google, IVerificadorCaptcha captcha, VerificadorDosFactores dosFactores,
+        TimeProvider reloj, ILogger<AuthService> log)
     {
         _usuarios = usuarios; _refrescos = refrescos; _uow = uow; _emisor = emisor; _sesiones = sesiones; _seg = seg.Value;
-        _legal = legal.Value; _correos = correos; _salida = salida; _google = google; _captcha = captcha; _reloj = reloj; _log = log;
+        _legal = legal.Value; _correos = correos; _salida = salida; _google = google; _captcha = captcha; _dosFactores = dosFactores;
+        _reloj = reloj; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
@@ -100,10 +103,26 @@ public sealed class AuthService : IAuthService
         }
 
         ExigirNoSuspendido(usuario, ahora); // tras validar la clave: a un tercero no se le revela nada
+        var conDosFactores = await ExigirSegundoFactorAsync(usuario, r.CodigoDosFactores, ahora);
         usuario.RegistrarLoginExitoso();
-        var sesion = _emisor.Emitir(usuario);
+        var sesion = _emisor.Emitir(usuario, conDosFactores: conDosFactores);
         await _uow.GuardarCambiosAsync();
         return sesion;
+    }
+
+    /// <summary>
+    /// Si la cuenta tiene 2FA: sin código → 401 "2fa_requerido" (el front muestra el campo); código incorrecto → cuenta como
+    /// intento fallido (mismo bloqueo que la clave: 5 intentos), así no se puede adivinar el código de 6 dígitos.
+    /// </summary>
+    private async Task<bool> ExigirSegundoFactorAsync(Usuario usuario, string? codigo, DateTime ahora)
+    {
+        if (!usuario.DosFactoresActivo) return false;
+        if (string.IsNullOrWhiteSpace(codigo)) throw new DosFactoresRequeridoException();
+        if (_dosFactores.Verificar(usuario, codigo)) return true;
+        usuario.RegistrarLoginFallido(_seg.MaxIntentosLogin, TimeSpan.FromMinutes(_seg.MinutosBloqueo), ahora);
+        try { await _uow.GuardarCambiosAsync(); }
+        catch (ConflictoDeConcurrenciaException) { /* otro intento simultáneo ya actualizó el contador */ }
+        throw new AutenticacionException("El código de verificación no es correcto o ya fue usado.");
     }
 
     private static void ExigirNoSuspendido(Usuario u, DateTime ahora)
@@ -153,9 +172,10 @@ public sealed class AuthService : IAuthService
         }
         if (usuario.EstaEliminado) throw new AutenticacionException("No se pudo validar tu cuenta de Google.");
         ExigirNoSuspendido(usuario, ahora);
+        var conDosFactores = await ExigirSegundoFactorAsync(usuario, r.CodigoDosFactores, ahora);
 
         usuario.RegistrarLoginExitoso();
-        var sesion = _emisor.Emitir(usuario);
+        var sesion = _emisor.Emitir(usuario, conDosFactores: conDosFactores);
         await _uow.GuardarCambiosAsync(); // índices únicos de correo y GoogleSub cubren dos altas simultáneas
         _sesiones.Invalidar(usuario.Id);
         if (creada) _log.LogInformation("Usuario registrado con Google {UsuarioId}", usuario.Id);

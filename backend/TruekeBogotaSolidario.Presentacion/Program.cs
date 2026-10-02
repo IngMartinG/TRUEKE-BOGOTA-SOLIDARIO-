@@ -21,6 +21,9 @@ var esProduccion = builder.Environment.IsProduction();
 // Fuera de Development NUNCA se genera: si falta, la validación de JwtOpciones impide arrancar.
 if (builder.Environment.IsDevelopment() && string.IsNullOrWhiteSpace(config["Jwt:Key"]))
     config["Jwt:Key"] = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(48));
+// Igual con la llave que cifra los secretos de 2FA (en desarrollo, la 2FA configurada se pierde al reiniciar).
+if (builder.Environment.IsDevelopment() && string.IsNullOrWhiteSpace(config["Seguridad:ClaveCifrado"]))
+    config["Seguridad:ClaveCifrado"] = Convert.ToBase64String(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32));
 
 // ---------- Fail-fast de configuración peligrosa ----------
 if (esProduccion)
@@ -33,6 +36,8 @@ if (esProduccion)
         throw new InvalidOperationException("Jwt:Key es un placeholder. Define una clave real por variable de entorno o gestor de secretos.");
     if (string.IsNullOrWhiteSpace(config["Almacenamiento:ServicioUrl"]) && string.IsNullOrWhiteSpace(config["Almacenamiento:CadenaConexion"]))
         throw new InvalidOperationException("Configura Almacenamiento:ServicioUrl (Azure Blob con Managed Identity) para la subida de imágenes.");
+    if (string.IsNullOrWhiteSpace(config["Seguridad:ClaveCifrado"]))
+        throw new InvalidOperationException("Configura Seguridad:ClaveCifrado (32 bytes en base64: openssl rand -base64 32) para cifrar los secretos de 2FA.");
     if (string.IsNullOrWhiteSpace(config["Captcha:ClaveSecreta"]) || string.IsNullOrWhiteSpace(config["Captcha:ClaveSitio"]))
         throw new InvalidOperationException("Configura Captcha:ClaveSecreta y Captcha:ClaveSitio (reCAPTCHA v3) para proteger registro, login y recuperación de clave.");
     if (string.Equals(config["Correo:Proveedor"], "Simulado", StringComparison.OrdinalIgnoreCase))

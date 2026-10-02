@@ -8,8 +8,10 @@ public class SesionRefresh
 {
     private SesionRefresh() { TokenHash = ""; } // EF Core
 
-    public SesionRefresh(Guid usuarioId, Guid familiaId, string tokenHash, DateTime ahoraUtc, DateTime expiraUtc, DateTime expiraFamiliaUtc)
+    public SesionRefresh(Guid usuarioId, Guid familiaId, string tokenHash, DateTime ahoraUtc, DateTime expiraUtc, DateTime expiraFamiliaUtc,
+        bool conDosFactores = false)
     {
+        ConDosFactores = conDosFactores;
         Id = Guid.NewGuid();
         UsuarioId = usuarioId;
         FamiliaId = familiaId;
@@ -28,6 +30,8 @@ public class SesionRefresh
     public DateTime ExpiraUtc { get; private set; }
     /// <summary>Vida máxima absoluta de la sesión, aunque se siga refrescando.</summary>
     public DateTime ExpiraFamiliaUtc { get; private set; }
+    /// <summary>La sesión se inició con verificación en dos pasos: los tokens renovados la conservan.</summary>
+    public bool ConDosFactores { get; private set; }
     public Guid? ReemplazadoPorId { get; private set; }
     public DateTime? RevocadoUtc { get; private set; }
     public byte[]? RowVersion { get; private set; }
