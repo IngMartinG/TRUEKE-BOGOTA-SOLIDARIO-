@@ -1,0 +1,79 @@
+name: Backend CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["backend/**", "docs/openapi.json", ".github/workflows/backend-ci.yml"]
+  pull_request:
+    paths: ["backend/**", "docs/openapi.json", ".github/workflows/backend-ci.yml"]
+  workflow_dispatch:
+
+# Mínimo privilegio: el workflow solo lee el repositorio.
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  compilar-y-probar:
+    name: Compilar, probar y auditar dependencias
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: backend/global.json
+
+      - name: Restaurar
+        run: dotnet restore TruekeBogotaSolidario.sln
+
+      - name: Compilar (warnings = errores)
+        run: dotnet build TruekeBogotaSolidario.sln -c Release --no-restore -warnaserror
+
+      - name: Pruebas
+        run: dotnet test TruekeBogotaSolidario.sln -c Release --no-build --logger "trx;LogFileName=resultados.trx" --results-directory TestResults
+
+      - name: Auditar paquetes vulnerables (incluye transitivos)
+        run: |
+          dotnet list TruekeBogotaSolidario.sln package --vulnerable --include-transitive 2>&1 | tee vulnerables.txt
+          if grep -qiE "has the following vulnerable packages|tiene los paquetes vulnerables" vulnerables.txt; then
+            echo "::error::Hay paquetes NuGet con vulnerabilidades conocidas."
+            exit 1
+          fi
+
+      - name: Publicar resultados de pruebas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados-pruebas
+          path: backend/TestResults
+          retention-days: 7
+
+  imagen-docker:
+    name: Construir imagen Docker
+    needs: compilar-y-probar
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir imagen
+        run: docker build -t trueke-api:${{ github.sha }} backend
+      - name: Verificar que la imagen no corre como root
+        run: |
+          usuario=$(docker inspect --format '{{.Config.User}}' trueke-api:${{ github.sha }})
+          echo "Usuario de la imagen: $usuario"
+          if [ -z "$usuario" ] || [ "$usuario" = "root" ] || [ "$usuario" = "0" ]; then
+            echo "::error::La imagen se ejecuta como root."
+            exit 1
+          fi
