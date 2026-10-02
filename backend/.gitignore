@@ -1,0 +1,26 @@
+# Compilación
+bin/
+obj/
+out/
+publish/
+TestResults/
+*.trx
+coverage*/
+
+# IDEs
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.rsuser
+
+# Secretos y configuración local (NUNCA versionar)
+.env
+*.env.local
+appsettings.*.local.json
+appsettings.Production.json
+secrets.json
+*.pfx
+*.pem
+*.key
