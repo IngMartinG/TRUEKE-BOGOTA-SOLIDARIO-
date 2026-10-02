@@ -31,9 +31,25 @@ Un controller nunca puede tocar un repositorio ni el DbContext.
   - denuncias;
   - Habeas Data.
 
-  Build `-warnaserror` y 137 pruebas en verde. Ver `backend/ESTADO_Y_PENDIENTES.md` y `backend/README.md` (sección 10: contrato para Angular).
+  Segunda tanda, también hecha:
+  - perfil público;
+  - editar publicaciones y varias fotos;
+  - confirmación de entrega por ambas partes;
+  - calificaciones;
+  - favoritos y filtros;
+  - suspensión de cuentas;
+  - pagos en revisión;
+  - correos HTML;
+  - reCAPTCHA v3;
+  - 2FA TOTP para administradores;
+  - Application Insights;
+  - pruebas contra SQL Server real (Testcontainers).
+
+  Build `-warnaserror` y 175 pruebas en verde (más 4 de SQL Server que corren en el CI). Ver `backend/ESTADO_Y_PENDIENTES.md` y `backend/README.md` (sección 10: contrato para Angular).
 - La solución y los proyectos viven en `backend/`. El backend anterior (Etapa4) se eliminó. Estructura del repo: `backend/`, `frontend/`, `prototipo/`, `docs/`.
 - **Reglas añadidas:**
+  - los Eco-Puntos se otorgan solo al completarse el intercambio (ambas partes confirman la entrega);
+  - las funciones de administración exigen una sesión con 2FA (`amr=mfa`);
   - publicar, solicitar, comentar, chatear, denunciar y pagar exigen correo verificado (`Guardas.ExigirCorreoVerificado`);
   - la API nunca comparte correos entre usuarios (se usa el chat);
   - los archivos se suben directo a Blob con SAS y se validan al usarlos.

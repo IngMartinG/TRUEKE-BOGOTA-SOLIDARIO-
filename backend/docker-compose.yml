@@ -33,6 +33,11 @@ services:
       Correo__Smtp__Usuario: ${SMTP_USUARIO:-}
       Correo__Smtp__Clave: ${SMTP_CLAVE:-}
       Google__ClientId: ${GOOGLE_CLIENT_ID:-}
+      Captcha__ClaveSitio: ${CAPTCHA_CLAVE_SITIO:-}
+      Captcha__ClaveSecreta: ${CAPTCHA_CLAVE_SECRETA:-}
+      Seguridad__ClaveCifrado: ${CLAVE_CIFRADO:?Define CLAVE_CIFRADO en .env}
+      Seguridad__ExigirDosFactoresModeradores: ${EXIGIR_2FA_ADMIN:-true}
+      APPLICATIONINSIGHTS_CONNECTION_STRING: ${APPLICATIONINSIGHTS_CONNECTION_STRING:-}
       Almacenamiento__CadenaConexion: ${ALMACENAMIENTO_CADENA:-}
       Almacenamiento__ServicioUrl: ${ALMACENAMIENTO_URL:-}
       Urls__Frontend: ${URL_FRONTEND:-http://localhost:4200}

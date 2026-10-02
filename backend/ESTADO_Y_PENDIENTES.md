@@ -1,36 +1,50 @@
 # Estado del backend — Trueke Bogotá Solidario (2026-10-02)
 
-## Hecho
-**Base (10 pendientes originales de CLAUDE.md):**
-- solución por capas;
-- configuración sin secretos;
-- geolocalización (`/publicaciones/cercanas`, coordenadas aproximadas);
-- comentarios con moderación;
+## Hecho — backend completo para conectar el front
+**Base:**
+- arquitectura por capas;
+- catálogo con geolocalización y comentarios;
 - SignalR + Redis;
-- migración EF Core;
-- pruebas;
-- Docker y CI;
-- contrato para Angular (ProblemDetails, fechas UTC, enums como texto, `docs/openapi.json`);
-- README.
+- migraciones;
+- Docker;
+- CI;
+- contrato OpenAPI y ProblemDetails.
 
-**Cierre de brechas antes de conectar el front:**
-1. **Refresh token seguro:** acceso de 15 min en memoria; refresco rotativo en una cookie HttpOnly con detección de reuso y anti-CSRF.
-2. **Verificación de correo y recuperación de contraseña:** enlaces de un solo uso y SMTP (MailKit). Sin correo verificado no se puede publicar, solicitar, comentar, chatear, denunciar ni pagar.
-3. **Login con Google:** ID token validado en el servidor y vinculación segura de cuentas.
-4. **Chat interno por solicitud**, en tiempo real. Se eliminó `correoContacto`: la API ya no comparte correos entre usuarios.
-5. **Subida de imágenes a Azure Blob:** SAS de 5 min y validación posterior de dueño, tamaño y magic bytes. Documentos de identidad privados, borrados al resolver la verificación.
-6. **Notificaciones persistentes:** bandeja más tiempo real.
-7. **Denuncias** con cola de moderación agrupada.
-8. **Habeas Data (Ley 1581):** consentimiento, exportar mis datos y eliminar la cuenta (anonimización).
-9. **Mantenimiento periódico:** purga de tokens vencidos y notificaciones viejas.
+**Seguridad y cuentas:**
+- refresh token rotativo en cookie HttpOnly;
+- verificación de correo y recuperación de clave;
+- login con Google;
+- **2FA TOTP** obligatoria para administración;
+- **reCAPTCHA v3**;
+- Habeas Data (Ley 1581).
 
-137 pruebas en verde; `dotnet build -warnaserror` y `dotnet list package --vulnerable` limpios.
+**Funcionalidad:**
+- perfil público;
+- editar publicaciones y hasta 5 fotos (Azure Blob con SAS);
+- chat interno;
+- **confirmación de entrega por ambas partes** con cierre automático (7 y 30 días);
+- **calificaciones**;
+- **favoritos**;
+- orden y filtros;
+- notificaciones persistentes;
+- denuncias.
 
-## Pendiente
-- Ejecutar `docker build` / `docker compose up` (Docker no estaba instalado en la máquina de desarrollo; los valida el CI).
-- Infraestructura Azure:
-  - contenedores `imagenes` (lectura pública de blobs) y `documentos` (privado);
-  - CORS de Storage;
-  - regla de *lifecycle* para archivos huérfanos;
-  - Client ID de Google y SMTP.
-- Construir el front Angular siguiendo la sección 10 del README.
+**Administración:**
+- suspender o reactivar cuentas con jerarquía de roles;
+- búsqueda de usuarios;
+- pagos en revisión y registro de reembolsos;
+- verificaciones y roles.
+
+**Operación:**
+- Application Insights (OpenTelemetry);
+- correos HTML;
+- tarea horaria de cierre y purga;
+- pruebas contra SQL Server real (Testcontainers) obligatorias en el CI.
+
+**Estado de verificación:** 175 pruebas aprobadas y 4 de SQL Server que corren en el CI; `-warnaserror` limpio; sin paquetes vulnerables.
+
+## Pendiente (fuera del código)
+- **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
+- **Instalar Docker en local:** activar la virtualización en la BIOS, `wsl --install` y Docker Desktop.
+- **Configuración externa:** Google Client ID, reCAPTCHA, SMTP, Azure (SQL, Redis, Storage, App Service, Key Vault, Application Insights) y Wompi. Ver la sección 7 del README; se guía en el momento de cada etapa.
+- **Construir el front Angular** siguiendo la sección 10 del README.

@@ -24,7 +24,7 @@ jobs:
   compilar-y-probar:
     name: Compilar, probar y auditar dependencias
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     defaults:
       run:
         working-directory: backend
@@ -41,11 +41,21 @@ jobs:
       - name: Compilar (warnings = errores)
         run: dotnet build TruekeBogotaSolidario.sln -c Release --no-restore -warnaserror
 
-      - name: Pruebas
-        run: dotnet test TruekeBogotaSolidario.sln -c Release --no-build --logger "trx;LogFileName=resultados.trx" --results-directory TestResults
+      - name: Pruebas (incluye SQL Server real en Docker con Testcontainers)
+        run: |
+          set -o pipefail   # sin esto, "| tee" ocultaría un fallo de las pruebas
+          dotnet test TruekeBogotaSolidario.sln -c Release --no-build --logger "trx;LogFileName=resultados.trx" --logger "console;verbosity=normal" --results-directory TestResults | tee pruebas.txt
+
+      - name: Exigir que las pruebas de SQL Server se ejecutaron (no omitidas)
+        run: |
+          if grep -E "\[SKIP\]" pruebas.txt; then
+            echo "::error::Se omitieron pruebas de SQL Server: en CI deben ejecutarse siempre."
+            exit 1
+          fi
 
       - name: Auditar paquetes vulnerables (incluye transitivos)
         run: |
+          set -o pipefail
           dotnet list TruekeBogotaSolidario.sln package --vulnerable --include-transitive 2>&1 | tee vulnerables.txt
           if grep -qiE "has the following vulnerable packages|tiene los paquetes vulnerables" vulnerables.txt; then
             echo "::error::Hay paquetes NuGet con vulnerabilidades conocidas."

@@ -36,7 +36,7 @@ public sealed class PublicacionesController : ControllerBase
     [HttpGet("publicaciones/mias")]
     public async Task<ActionResult<IReadOnlyList<PublicacionDto>>> Mias() => Ok(await _pubs.ListarMiasAsync(User.IdActual()));
 
-    [HttpPost("publicaciones")]
+    [HttpPost("publicaciones"), EnableRateLimiting(Politicas.LimiteEscritura)]
     public async Task<ActionResult<PublicacionDto>> Crear([FromBody] CrearPublicacionRequest r)
     {
         var creada = await _pubs.CrearAsync(User.IdActual(), r);
