@@ -21,7 +21,7 @@ import { Logo } from '../shared/ui/logo';
           <app-logo [tamano]="38" />
         </a>
 
-        <nav class="hidden items-center gap-1 lg:flex" aria-label="Principal">
+        <nav class="hidden items-center gap-1 whitespace-nowrap xl:flex" aria-label="Principal">
           @for (e of enlaces; track e.ruta) {
             <a
               [routerLink]="e.ruta"
