@@ -1,0 +1,288 @@
+/* ==========================================================================
+   Trueke Bogotá Solidario — sistema de diseño
+   Tokens tomados del prototipo de la Etapa 3 (prototipo/styles.css) y ampliados
+   a una paleta ecológica completa con modo claro y oscuro.
+   ========================================================================== */
+@import 'tailwindcss';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: 'Inter Variable', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-display: 'Plus Jakarta Sans Variable', 'Inter Variable', system-ui, sans-serif;
+
+  /* Verde bosque: identidad "Bogotá Circular" */
+  --color-bosque-50: #eefaf3;
+  --color-bosque-100: #d6f2e1;
+  --color-bosque-200: #afe4c6;
+  --color-bosque-300: #7bcfa3;
+  --color-bosque-400: #47b37d;
+  --color-bosque-500: #269763;
+  --color-bosque-600: #1f7a4d;
+  --color-bosque-700: #19623f;
+  --color-bosque-800: #154e34;
+  --color-bosque-900: #123d27;
+  --color-bosque-950: #0a2417;
+
+  /* Teal: agua, frescura (badge "100% sin plástico") */
+  --color-agua-50: #ecfbfa;
+  --color-agua-100: #d0f4f2;
+  --color-agua-500: #12a39e;
+  --color-agua-600: #0f8a86;
+  --color-agua-700: #0e6e6b;
+
+  /* Modos de intercambio */
+  --color-trueke: #1f7a4d;
+  --color-compra: #2f6fa3;
+  --color-donacion: #c25a2e;
+
+  /* Petróleo (Compra) */
+  --color-cielo-50: #eef5fb;
+  --color-cielo-100: #d9e8f5;
+  --color-cielo-600: #2f6fa3;
+  --color-cielo-700: #275b86;
+
+  /* Terracota (Donación) */
+  --color-tierra-50: #fdf3ee;
+  --color-tierra-100: #f9e1d5;
+  --color-tierra-500: #d76d3d;
+  --color-tierra-600: #c25a2e;
+  --color-tierra-700: #9e4724;
+
+  /* Sol (Eco-Puntos) */
+  --color-sol-50: #fef9e8;
+  --color-sol-100: #fdefc3;
+  --color-sol-300: #f7cf5c;
+  --color-sol-400: #f2b632;
+  --color-sol-500: #d99a0b;
+  --color-sol-600: #b07a06;
+
+  /* Superficies semánticas (cambian con el tema) */
+  --color-fondo: var(--c-fondo);
+  --color-superficie: var(--c-superficie);
+  --color-superficie-2: var(--c-superficie-2);
+  --color-tinta: var(--c-tinta);
+  --color-tenue: var(--c-tenue);
+  --color-borde: var(--c-borde);
+
+  --radius-tarjeta: 1.25rem;
+  --shadow-suave: 0 1px 2px rgb(18 61 39 / 0.04), 0 4px 16px rgb(18 61 39 / 0.06);
+  --shadow-elevada: 0 2px 6px rgb(18 61 39 / 0.06), 0 18px 40px rgb(18 61 39 / 0.14);
+
+  --animate-aparecer: aparecer 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+  --animate-flotar: flotar 6s ease-in-out infinite;
+  --animate-brillo: brillo 1.4s ease-in-out infinite;
+
+  @keyframes aparecer {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+  @keyframes flotar {
+    0%,
+    100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-10px) rotate(3deg);
+    }
+  }
+  @keyframes brillo {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+}
+
+:root {
+  --c-fondo: #f6f4ec;
+  --c-superficie: #ffffff;
+  --c-superficie-2: #eef2ea;
+  --c-tinta: #14261d;
+  --c-tenue: #56675d;
+  --c-borde: rgb(20 38 29 / 0.1);
+  color-scheme: light;
+}
+
+.dark {
+  --c-fondo: #0b1611;
+  --c-superficie: #12211a;
+  --c-superficie-2: #183025;
+  --c-tinta: #e8f1eb;
+  --c-tenue: #9db3a6;
+  --c-borde: rgb(232 241 235 / 0.1);
+  color-scheme: dark;
+}
+
+@layer base {
+  html {
+    @apply bg-fondo text-tinta antialiased;
+    font-family: var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply min-h-dvh bg-fondo;
+  }
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    @apply tracking-tight text-tinta;
+  }
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-bosque-500;
+  }
+  ::selection {
+    @apply bg-bosque-200 text-bosque-950;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* ---------- Botones ---------- */
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold
+      transition-all duration-200 select-none active:scale-[0.97]
+      disabled:pointer-events-none disabled:opacity-50;
+  }
+  .btn-sm {
+    @apply px-3.5 py-1.5 text-xs;
+  }
+  .btn-lg {
+    @apply px-7 py-3.5 text-base;
+  }
+  .btn-primario {
+    @apply bg-bosque-600 text-white shadow-[0_6px_18px_-6px_rgb(31_122_77/0.6)] hover:bg-bosque-700
+      hover:shadow-[0_10px_24px_-8px_rgb(31_122_77/0.7)];
+  }
+  .btn-secundario {
+    @apply border border-borde bg-superficie text-tinta hover:border-bosque-300 hover:bg-bosque-50
+      dark:hover:bg-bosque-900/40;
+  }
+  .btn-fantasma {
+    @apply text-tenue hover:bg-superficie-2 hover:text-tinta;
+  }
+  .btn-peligro {
+    @apply bg-tierra-600 text-white hover:bg-tierra-700;
+  }
+  .btn-sol {
+    @apply bg-sol-400 text-bosque-950 hover:bg-sol-300;
+  }
+  .btn-icono {
+    @apply inline-flex size-10 items-center justify-center rounded-full text-tenue transition
+      hover:bg-superficie-2 hover:text-tinta;
+  }
+
+  /* ---------- Tarjetas ---------- */
+  .tarjeta {
+    @apply rounded-tarjeta border border-borde bg-superficie shadow-suave;
+  }
+  .tarjeta-interactiva {
+    @apply rounded-tarjeta border border-borde bg-superficie shadow-suave transition duration-300 hover:-translate-y-1 hover:shadow-elevada;
+  }
+
+  /* ---------- Formularios ---------- */
+  .campo {
+    @apply flex flex-col gap-1.5;
+  }
+  .etiqueta {
+    @apply text-sm font-semibold text-tinta;
+  }
+  .ayuda {
+    @apply text-xs text-tenue;
+  }
+  .error-campo {
+    @apply text-xs font-medium text-tierra-600 dark:text-tierra-500;
+  }
+  .entrada {
+    @apply w-full rounded-xl border border-borde bg-superficie px-4 py-2.5 text-sm text-tinta
+      placeholder:text-tenue/70 transition outline-none
+      focus:border-bosque-500 focus:ring-4 focus:ring-bosque-500/15
+      aria-[invalid=true]:border-tierra-500 aria-[invalid=true]:focus:ring-tierra-500/15
+      disabled:opacity-60;
+  }
+  textarea.entrada {
+    @apply min-h-28 resize-y;
+  }
+  select.entrada {
+    @apply appearance-none bg-[length:1rem] bg-[right_0.9rem_center] bg-no-repeat pr-10;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%2356675d' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  }
+  .casilla {
+    @apply size-5 shrink-0 cursor-pointer rounded-md border-borde accent-bosque-600;
+  }
+
+  /* ---------- Insignias ---------- */
+  .insignia {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap;
+  }
+  .insignia-trueke {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap bg-bosque-100 text-bosque-800 dark:bg-bosque-900 dark:text-bosque-200;
+  }
+  .insignia-compra {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap bg-cielo-100 text-cielo-700 dark:bg-cielo-700/30 dark:text-cielo-100;
+  }
+  .insignia-donacion {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100;
+  }
+  .insignia-neutra {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap bg-superficie-2 text-tenue;
+  }
+  .insignia-sol {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap bg-sol-100 text-sol-600 dark:bg-sol-500/20 dark:text-sol-300;
+  }
+  .insignia-agua {
+    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap bg-agua-100 text-agua-700 dark:bg-agua-700/30 dark:text-agua-100;
+  }
+
+  /* ---------- Otros ---------- */
+  .contenedor {
+    @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8;
+  }
+  .titulo-seccion {
+    @apply text-2xl font-bold sm:text-3xl;
+  }
+  .esqueleto {
+    @apply rounded-lg bg-[linear-gradient(90deg,var(--c-superficie-2)_25%,var(--c-borde)_50%,var(--c-superficie-2)_75%)]
+      bg-[length:200%_100%] animate-brillo;
+  }
+  .enlace {
+    @apply font-semibold text-bosque-700 underline-offset-4 hover:underline dark:text-bosque-300;
+  }
+  .pestanas {
+    @apply inline-flex rounded-full border border-borde bg-superficie p-1 shadow-suave;
+  }
+  .pestana {
+    @apply rounded-full px-4 py-1.5 text-sm font-semibold text-tenue transition hover:text-tinta;
+  }
+  .pestana-activa {
+    @apply bg-bosque-600 text-white hover:text-white;
+  }
+}
+
+/* Leaflet en modo oscuro: atenuar las teselas para no deslumbrar */
+.dark .leaflet-tile-pane {
+  filter: brightness(0.75) contrast(1.1) saturate(0.8);
+}
+.leaflet-container {
+  font-family: var(--font-sans);
+  border-radius: inherit;
+}

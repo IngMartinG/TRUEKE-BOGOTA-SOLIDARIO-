@@ -1,0 +1,138 @@
+import { effect, inject, Injectable, signal, untracked } from '@angular/core';
+import { Router } from '@angular/router';
+import type { HubConnection } from '@microsoft/signalr';
+import { firstValueFrom, Subject } from 'rxjs';
+import type { MensajeChatDto, NotificacionDto } from '../api/tipos';
+import { CuentaApi } from './api/cuenta.api';
+import { IntercambiosApi } from './api/intercambios.api';
+import { AvisosService } from './avisos.service';
+import { hubUrl } from './entorno';
+import { SesionService } from './sesion.service';
+
+/** Notificaciones que cambian el saldo o la reputación: tras recibirlas se recarga el perfil. */
+const AFECTAN_PERFIL = new Set([
+  'IntercambioCompletado',
+  'PagoAprobado',
+  'PagoReembolsado',
+  'VerificacionAprobada',
+  'VerificacionRechazada',
+  'CalificacionRecibida',
+]);
+
+/**
+ * Conexión SignalR con `/hubs/notificaciones` (eventos "notificacion" y "mensaje").
+ * Se abre al iniciar sesión y se cierra al salir. Al reconectar se resincroniza lo pendiente.
+ */
+@Injectable({ providedIn: 'root' })
+export class TiempoRealService {
+  private readonly sesion = inject(SesionService);
+  private readonly cuentaApi = inject(CuentaApi);
+  private readonly intercambiosApi = inject(IntercambiosApi);
+  private readonly avisos = inject(AvisosService);
+  private readonly router = inject(Router);
+  private conexion: HubConnection | null = null;
+  private conectando = false;
+
+  readonly notificacionesNoLeidas = signal(0);
+  readonly mensajesNoLeidos = signal(0);
+  readonly conectado = signal(false);
+  /** Conversación visible en pantalla: sus mensajes no suman al contador ni generan aviso. */
+  readonly conversacionAbierta = signal<string | null>(null);
+
+  readonly notificacion$ = new Subject<NotificacionDto>();
+  readonly mensaje$ = new Subject<MensajeChatDto>();
+  /** Emite tras reconectar: las pantallas abiertas recargan sus datos. */
+  readonly resincronizar$ = new Subject<void>();
+
+  constructor() {
+    effect(() => {
+      const autenticado = this.sesion.autenticado();
+      untracked(() => (autenticado ? void this.conectar() : void this.desconectar()));
+    });
+  }
+
+  async sincronizarContadores(): Promise<void> {
+    if (!this.sesion.autenticado()) return;
+    try {
+      const [total, conversaciones] = await Promise.all([
+        firstValueFrom(this.cuentaApi.totalNoLeidas()),
+        firstValueFrom(this.intercambiosApi.conversaciones()),
+      ]);
+      this.notificacionesNoLeidas.set(total ?? 0);
+      this.mensajesNoLeidos.set(conversaciones.reduce((s, c) => s + (c.noLeidos ?? 0), 0));
+    } catch {
+      // Los contadores se reintentan en la próxima reconexión o navegación.
+    }
+  }
+
+  private async conectar(): Promise<void> {
+    if (this.conexion || this.conectando) return;
+    this.conectando = true;
+    // SignalR se descarga solo cuando hay sesión: no pesa en la carga inicial del catálogo.
+    const { HubConnectionBuilder, HttpTransportType, LogLevel } = await import('@microsoft/signalr').finally(
+      () => (this.conectando = false),
+    );
+    if (this.conexion || !this.sesion.autenticado()) return;
+    const conexion = new HubConnectionBuilder()
+      .withUrl(hubUrl(), {
+        accessTokenFactory: async () => this.sesion.token() ?? (await firstValueFrom(this.sesion.refrescar())) ?? '',
+        transport: HttpTransportType.WebSockets | HttpTransportType.LongPolling,
+      })
+      .withAutomaticReconnect([0, 2000, 5000, 10000, 20000, 30000])
+      .configureLogging(LogLevel.None)
+      .build();
+
+    conexion.on('notificacion', (n: NotificacionDto) => this.alRecibirNotificacion(n));
+    conexion.on('mensaje', (m: MensajeChatDto) => this.alRecibirMensaje(m));
+    conexion.onreconnecting(() => this.conectado.set(false));
+    conexion.onreconnected(() => {
+      this.conectado.set(true);
+      void this.sincronizarContadores();
+      this.resincronizar$.next();
+    });
+    conexion.onclose(() => {
+      this.conectado.set(false);
+      // El servidor cierra la conexión cuando vence el JWT con que se abrió: se reabre con el nuevo.
+      if (this.conexion === conexion && this.sesion.autenticado()) {
+        this.conexion = null;
+        setTimeout(() => void this.conectar(), 1500);
+      }
+    });
+
+    this.conexion = conexion;
+    void this.sincronizarContadores();
+    try {
+      await conexion.start();
+      this.conectado.set(true);
+    } catch {
+      if (this.conexion === conexion) {
+        this.conexion = null;
+        if (this.sesion.autenticado()) setTimeout(() => void this.conectar(), 10_000);
+      }
+    }
+  }
+
+  private async desconectar(): Promise<void> {
+    const conexion = this.conexion;
+    this.conexion = null;
+    this.notificacionesNoLeidas.set(0);
+    this.mensajesNoLeidos.set(0);
+    this.conectado.set(false);
+    if (conexion && String(conexion.state) !== 'Disconnected') await conexion.stop();
+  }
+
+  private alRecibirNotificacion(n: NotificacionDto): void {
+    this.notificacionesNoLeidas.update((v) => v + 1);
+    this.notificacion$.next(n);
+    if (n.tipo && AFECTAN_PERFIL.has(n.tipo)) this.sesion.recargarUsuario();
+    if (n.tipo === 'IntercambioCompletado') this.avisos.puntos('¡Intercambio completado!', n.mensaje);
+    else this.avisos.info('Nueva notificación', n.mensaje);
+  }
+
+  private alRecibirMensaje(m: MensajeChatDto): void {
+    this.mensaje$.next(m);
+    if (m.esMio || m.conversacionId === this.conversacionAbierta()) return;
+    this.mensajesNoLeidos.update((v) => v + 1);
+    if (!this.router.url.startsWith('/mensajes')) this.avisos.info('Nuevo mensaje', m.texto?.slice(0, 80));
+  }
+}
