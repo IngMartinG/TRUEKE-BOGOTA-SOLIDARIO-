@@ -765,6 +765,191 @@
         }
       }
     },
+    "/api/v1/conversaciones": {
+      "get": {
+        "tags": [
+          "Conversaciones"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConversacionDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConversacionDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ConversacionDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversaciones/{id}/mensajes": {
+      "get": {
+        "tags": [
+          "Conversaciones"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "AntesDe",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Tamano",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MensajeChatDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MensajeChatDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MensajeChatDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Conversaciones"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnviarMensajeRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EnviarMensajeRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/EnviarMensajeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MensajeChatDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MensajeChatDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MensajeChatDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/conversaciones/{id}/leer": {
+      "post": {
+        "tags": [
+          "Conversaciones"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/eco-puntos/politica": {
       "get": {
         "tags": [
@@ -2000,6 +2185,51 @@
         ],
         "type": "string"
       },
+      "ConversacionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "solicitudId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "publicacionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "publicacionTitulo": {
+            "type": "string"
+          },
+          "estadoSolicitud": {
+            "type": "string"
+          },
+          "soyDuenio": {
+            "type": "boolean"
+          },
+          "contraparte": {
+            "$ref": "#/components/schemas/PerfilPublicoDto"
+          },
+          "ultimoMensaje": {
+            "type": "string",
+            "nullable": true
+          },
+          "ultimoMensajeUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "noLeidos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "escribible": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "CotizacionDto": {
         "type": "object",
         "properties": {
@@ -2149,6 +2379,20 @@
         },
         "additionalProperties": false
       },
+      "EnviarMensajeRequest": {
+        "required": [
+          "texto"
+        ],
+        "type": "object",
+        "properties": {
+          "texto": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "EscalonDto": {
         "type": "object",
         "properties": {
@@ -2240,6 +2484,36 @@
             "maxLength": 128,
             "minLength": 1,
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MensajeChatDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "conversacionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "esMio": {
+            "type": "boolean"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "leido": {
+            "type": "boolean"
+          },
+          "oculto": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -2741,8 +3015,9 @@
             "type": "string",
             "nullable": true
           },
-          "correoContacto": {
+          "conversacionId": {
             "type": "string",
+            "format": "uuid",
             "nullable": true
           }
         },

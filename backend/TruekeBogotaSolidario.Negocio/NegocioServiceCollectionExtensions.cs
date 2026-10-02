@@ -61,6 +61,7 @@ public static class NegocioServiceCollectionExtensions
         services.TryAddSingleton<IEmisorTiempoReal, EmisorTiempoRealNulo>(); // Presentacion lo reemplaza por SignalR
         services.AddScoped<INotificador, NotificadorPersistente>();
         services.AddScoped<INotificacionService, NotificacionService>();
+        services.AddScoped<IChatService, ChatService>();
         services.AddMemoryCache();
 
         services.AddSingleton<IGeneradorToken, GeneradorJwt>();
