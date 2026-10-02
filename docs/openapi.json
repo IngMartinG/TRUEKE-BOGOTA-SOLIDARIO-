@@ -1,0 +1,2407 @@
+{
+  "openapi": "3.0.1",
+  "info": {
+    "title": "Trueke Bogot\u00E1 Solidario API",
+    "description": "Errores: application/problem\u002Bjson (title = mensaje mostrable, errors = validaci\u00F3n por campo). Fechas en UTC ISO-8601 con Z. Enums como texto. Notificaciones en tiempo real: SignalR en /hubs/notificaciones (token por ?access_token=, evento \u0022notificacion\u0022).",
+    "version": "v1"
+  },
+  "paths": {
+    "/api/v1/admin/publicaciones/{id}/ocultar": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/publicaciones/{id}/mostrar": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/verificaciones": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VerificacionPendienteDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VerificacionPendienteDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VerificacionPendienteDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/verificaciones/{usuarioId}/aprobar": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/verificaciones/{usuarioId}/rechazar": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/usuarios/{usuarioId}/rol": {
+      "patch": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarRolRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarRolRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarRolRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/registrar": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistroRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistroRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/RegistroRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SesionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SesionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SesionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SesionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SesionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SesionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/cambiar-clave": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarClaveRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarClaveRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarClaveRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/auth/cerrar-sesiones": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/publicaciones/{id}/comentarios": {
+      "get": {
+        "tags": [
+          "Comentarios"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Pagina",
+            "in": "query",
+            "schema": {
+              "maximum": 10000,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Tamano",
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComentarioDtoPaginaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComentarioDtoPaginaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComentarioDtoPaginaDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Comentarios"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearComentarioRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearComentarioRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearComentarioRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComentarioDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComentarioDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ComentarioDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/comentarios/{id}/ocultar": {
+      "post": {
+        "tags": [
+          "Comentarios"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/comentarios/{id}/mostrar": {
+      "post": {
+        "tags": [
+          "Comentarios"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/eco-puntos/politica": {
+      "get": {
+        "tags": [
+          "EcoPuntos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoliticaEcoPuntosDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoliticaEcoPuntosDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PoliticaEcoPuntosDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/eco-puntos/resumen": {
+      "get": {
+        "tags": [
+          "EcoPuntos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EcoPuntosResumenDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EcoPuntosResumenDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EcoPuntosResumenDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/eco-puntos/cotizacion": {
+      "get": {
+        "tags": [
+          "EcoPuntos"
+        ],
+        "parameters": [
+          {
+            "name": "concepto",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ConceptoPagoDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CotizacionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CotizacionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CotizacionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pagos/iniciar": {
+      "post": {
+        "tags": [
+          "Pagos"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IniciarPagoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IniciarPagoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/IniciarPagoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoIniciadoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoIniciadoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoIniciadoDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pagos/{referencia}": {
+      "get": {
+        "tags": [
+          "Pagos"
+        ],
+        "parameters": [
+          {
+            "name": "referencia",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoEstadoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoEstadoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoEstadoDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pagos/wompi/eventos": {
+      "post": {
+        "tags": [
+          "Pagos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/pagos/{referencia}/simular": {
+      "post": {
+        "tags": [
+          "Pagos"
+        ],
+        "parameters": [
+          {
+            "name": "referencia",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "aprobado",
+            "in": "query",
+            "schema": {
+              "type": "boolean",
+              "default": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoEstadoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoEstadoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoEstadoDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/categorias": {
+      "get": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoriaDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoriaDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CategoriaDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publicaciones": {
+      "get": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "CategoriaId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Modo",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ModoDto"
+            }
+          },
+          {
+            "name": "Localidad",
+            "in": "query",
+            "schema": {
+              "maxLength": 60,
+              "type": "string"
+            }
+          },
+          {
+            "name": "Texto",
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "Pagina",
+            "in": "query",
+            "schema": {
+              "maximum": 10000,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Tamano",
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDtoPaginaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDtoPaginaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDtoPaginaDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPublicacionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPublicacionRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPublicacionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publicaciones/cercanas": {
+      "get": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "Lat",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "maximum": 90,
+              "minimum": -90,
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "Lon",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "maximum": 180,
+              "minimum": -180,
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "RadioKm",
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "minimum": 0.1,
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "CategoriaId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Modo",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/ModoDto"
+            }
+          },
+          {
+            "name": "Max",
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicacionCercanaDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicacionCercanaDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicacionCercanaDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publicaciones/{id}": {
+      "get": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publicaciones/mias": {
+      "get": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicacionDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicacionDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicacionDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publicaciones/{id}/cancelar": {
+      "post": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelarPublicacionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelarPublicacionRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CancelarPublicacionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/publicaciones/{id}/destacar-gratis": {
+      "post": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/solicitudes": {
+      "post": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearSolicitudRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearSolicitudRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearSolicitudRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solicitudes/enviadas": {
+      "get": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SolicitudDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SolicitudDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SolicitudDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solicitudes/recibidas": {
+      "get": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SolicitudDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SolicitudDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/SolicitudDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solicitudes/{id}/aceptar": {
+      "post": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solicitudes/{id}/rechazar": {
+      "post": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RechazarSolicitudRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RechazarSolicitudRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/RechazarSolicitudRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/solicitudes/{id}/cancelar": {
+      "post": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/health/ready": {
+      "get": {
+        "tags": [
+          "TruekeBogotaSolidario.Presentacion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/usuarios/yo": {
+      "get": {
+        "tags": [
+          "Usuarios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Usuarios"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarPerfilRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarPerfilRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarPerfilRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ActualizarPerfilRequest": {
+        "required": [
+          "localidad",
+          "nombreCompleto"
+        ],
+        "type": "object",
+        "properties": {
+          "nombreCompleto": {
+            "maxLength": 120,
+            "minLength": 3,
+            "type": "string"
+          },
+          "localidad": {
+            "maxLength": 60,
+            "minLength": 2,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CambiarClaveRequest": {
+        "required": [
+          "claveActual",
+          "claveNueva"
+        ],
+        "type": "object",
+        "properties": {
+          "claveActual": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          },
+          "claveNueva": {
+            "maxLength": 128,
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CambiarRolRequest": {
+        "type": "object",
+        "properties": {
+          "rol": {
+            "$ref": "#/components/schemas/RolDto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CancelarPublicacionRequest": {
+        "type": "object",
+        "properties": {
+          "motivo": {
+            "maxLength": 300,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CategoriaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ComentarioDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "publicacionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "autor": {
+            "$ref": "#/components/schemas/PerfilPublicoDto"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "esMio": {
+            "type": "boolean"
+          },
+          "oculto": {
+            "type": "boolean"
+          },
+          "motivoOcultamiento": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ComentarioDtoPaginaDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComentarioDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pagina": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tamano": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConceptoPagoDto": {
+        "enum": [
+          "Destacar",
+          "Verificar",
+          "Premium",
+          "Empresa",
+          "Recarga"
+        ],
+        "type": "string"
+      },
+      "CotizacionDto": {
+        "type": "object",
+        "properties": {
+          "precioBaseCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "descuentoPorcentaje": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "puntosACanjear": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "totalCop": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CrearComentarioRequest": {
+        "required": [
+          "texto"
+        ],
+        "type": "object",
+        "properties": {
+          "texto": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CrearPublicacionRequest": {
+        "required": [
+          "descripcion",
+          "localidad",
+          "titulo"
+        ],
+        "type": "object",
+        "properties": {
+          "titulo": {
+            "maxLength": 120,
+            "minLength": 3,
+            "type": "string"
+          },
+          "descripcion": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "categoriaId": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "modo": {
+            "$ref": "#/components/schemas/ModoDto"
+          },
+          "localidad": {
+            "maxLength": 60,
+            "minLength": 2,
+            "type": "string"
+          },
+          "precioReferenciaCop": {
+            "maximum": 1000000000,
+            "minimum": 0.01,
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "latitud": {
+            "maximum": 90,
+            "minimum": -90,
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "longitud": {
+            "maximum": 180,
+            "minimum": -180,
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "imagenUrl": {
+            "maxLength": 500,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CrearSolicitudRequest": {
+        "required": [
+          "mensaje"
+        ],
+        "type": "object",
+        "properties": {
+          "publicacionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "mensaje": {
+            "maxLength": 500,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EcoPuntosResumenDto": {
+        "type": "object",
+        "properties": {
+          "saldo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reputacion": {
+            "type": "number",
+            "format": "double"
+          },
+          "transaccionesConPuntosEnUltimas24h": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "transaccionesConPuntosRestantes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tipoCuenta": {
+            "type": "string"
+          },
+          "planVigenteHasta": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "destacadosGratisRestantes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EscalonDto": {
+        "type": "object",
+        "properties": {
+          "puntosMinimos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "descuentoPorcentaje": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GananciaDto": {
+        "type": "object",
+        "properties": {
+          "modo": {
+            "type": "string"
+          },
+          "puntos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reputacion": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "IniciarPagoRequest": {
+        "type": "object",
+        "properties": {
+          "concepto": {
+            "$ref": "#/components/schemas/ConceptoPagoDto"
+          },
+          "publicacionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "documentoUrl": {
+            "maxLength": 500,
+            "type": "string",
+            "nullable": true
+          },
+          "montoRecargaCop": {
+            "maximum": 10000000,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "LoginRequest": {
+        "required": [
+          "clave",
+          "correo"
+        ],
+        "type": "object",
+        "properties": {
+          "correo": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string",
+            "format": "email"
+          },
+          "clave": {
+            "maxLength": 128,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ModoDto": {
+        "enum": [
+          "Trueke",
+          "Compra",
+          "Donacion"
+        ],
+        "type": "string"
+      },
+      "MotivoRequest": {
+        "required": [
+          "motivo"
+        ],
+        "type": "object",
+        "properties": {
+          "motivo": {
+            "maxLength": 300,
+            "minLength": 3,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PagoEstadoDto": {
+        "type": "object",
+        "properties": {
+          "referencia": {
+            "type": "string"
+          },
+          "concepto": {
+            "type": "string"
+          },
+          "montoCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaResolucionUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PagoIniciadoDto": {
+        "type": "object",
+        "properties": {
+          "referencia": {
+            "type": "string"
+          },
+          "concepto": {
+            "type": "string"
+          },
+          "montoCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "montoEnCentavos": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "moneda": {
+            "type": "string"
+          },
+          "proveedor": {
+            "type": "string"
+          },
+          "llavePublica": {
+            "type": "string",
+            "nullable": true
+          },
+          "firmaIntegridad": {
+            "type": "string",
+            "nullable": true
+          },
+          "cotizacion": {
+            "$ref": "#/components/schemas/CotizacionDto"
+          },
+          "expiraUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PerfilPublicoDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "localidad": {
+            "type": "string"
+          },
+          "reputacion": {
+            "type": "number",
+            "format": "double"
+          },
+          "verificado": {
+            "type": "boolean"
+          },
+          "tipoCuenta": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PoliticaEcoPuntosDto": {
+        "type": "object",
+        "properties": {
+          "puntosBienvenida": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ganancias": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/GananciaDto"
+            }
+          },
+          "maxTransaccionesConPuntosPorDia": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reputacionMaxima": {
+            "type": "number",
+            "format": "double"
+          },
+          "precioDestacarCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "duracionDestacadoDias": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "escalonesDestacar": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EscalonDto"
+            }
+          },
+          "precioVerificarCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "escalonesVerificar": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EscalonDto"
+            }
+          },
+          "precioPremiumCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "destacadosGratisPremium": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "descuentoPremiumPorcentaje": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "precioEmpresaCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "duracionSuscripcionDias": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "copPorEcoPunto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "recargaMinimaCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "recargaMaximaCop": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PublicacionCercanaDto": {
+        "type": "object",
+        "properties": {
+          "publicacion": {
+            "$ref": "#/components/schemas/PublicacionDto"
+          },
+          "distanciaKm": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PublicacionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "categoria": {
+            "$ref": "#/components/schemas/CategoriaDto"
+          },
+          "modo": {
+            "type": "string"
+          },
+          "precioReferenciaCop": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "localidad": {
+            "type": "string"
+          },
+          "latitud": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "longitud": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "coordenadasAproximadas": {
+            "type": "boolean"
+          },
+          "imagenUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string"
+          },
+          "fechaPublicacion": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "destacada": {
+            "type": "boolean"
+          },
+          "destacadaHasta": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "propietario": {
+            "$ref": "#/components/schemas/PerfilPublicoDto"
+          },
+          "esMia": {
+            "type": "boolean"
+          },
+          "oculta": {
+            "type": "boolean"
+          },
+          "motivoOcultamiento": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PublicacionDtoPaginaDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicacionDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pagina": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tamano": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RechazarSolicitudRequest": {
+        "type": "object",
+        "properties": {
+          "motivo": {
+            "maxLength": 300,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "RegistroRequest": {
+        "required": [
+          "clave",
+          "correo",
+          "localidad",
+          "nombreCompleto"
+        ],
+        "type": "object",
+        "properties": {
+          "nombreCompleto": {
+            "maxLength": 120,
+            "minLength": 3,
+            "type": "string"
+          },
+          "localidad": {
+            "maxLength": 60,
+            "minLength": 2,
+            "type": "string"
+          },
+          "correo": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string",
+            "format": "email"
+          },
+          "clave": {
+            "maxLength": 128,
+            "minLength": 8,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RolDto": {
+        "enum": [
+          "Cliente",
+          "Administrador",
+          "SuperUsuario"
+        ],
+        "type": "string"
+      },
+      "SesionDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string"
+          },
+          "expiraUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "usuario": {
+            "$ref": "#/components/schemas/UsuarioDto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SolicitudDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "publicacionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "publicacionTitulo": {
+            "type": "string"
+          },
+          "modo": {
+            "type": "string"
+          },
+          "solicitante": {
+            "$ref": "#/components/schemas/PerfilPublicoDto"
+          },
+          "fechaSolicitud": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "mensaje": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "motivoRechazo": {
+            "type": "string",
+            "nullable": true
+          },
+          "correoContacto": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "UsuarioDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombreCompleto": {
+            "type": "string"
+          },
+          "localidad": {
+            "type": "string"
+          },
+          "correo": {
+            "type": "string"
+          },
+          "rol": {
+            "type": "string"
+          },
+          "tipoCuenta": {
+            "type": "string"
+          },
+          "planVigenteHasta": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "verificado": {
+            "type": "boolean"
+          },
+          "estadoVerificacion": {
+            "type": "string"
+          },
+          "saldoEcoPuntos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "reputacion": {
+            "type": "number",
+            "format": "double"
+          },
+          "truekesCompletados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comprasRealizadas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "donacionesRealizadas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "destacadosGratisRestantes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VerificacionPendienteDto": {
+        "type": "object",
+        "properties": {
+          "usuarioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombreCompleto": {
+            "type": "string"
+          },
+          "correo": {
+            "type": "string"
+          },
+          "documentoUrl": {
+            "type": "string"
+          },
+          "fechaRegistro": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "securitySchemes": {
+      "Bearer": {
+        "type": "http",
+        "description": "Pega el token devuelto por /auth/login (sin la palabra Bearer).",
+        "scheme": "bearer",
+        "bearerFormat": "JWT"
+      }
+    }
+  },
+  "security": [
+    {
+      "Bearer": []
+    }
+  ]
+}
