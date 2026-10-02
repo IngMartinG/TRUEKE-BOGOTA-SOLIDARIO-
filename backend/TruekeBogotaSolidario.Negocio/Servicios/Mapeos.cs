@@ -38,7 +38,7 @@ internal static class Mapeos
             planVigente ? u.FechaVencimientoSuscripcion : null, u.EsVerificado, u.EstadoVerificacion.ToString(),
             u.SaldoEcoPuntos, u.Reputacion, u.TotalTruekesCompletados, u.TotalComprasRealizadas, u.TotalDonacionesRealizadas,
             u.PremiumVigente(ahora) ? u.DestacadosGratisRestantes : 0,
-            u.CorreoVerificado, u.TieneClave, u.GoogleSub is not null);
+            u.CorreoVerificado, u.TieneClave, u.GoogleSub is not null, u.DosFactoresActivo, u.CodigosRecuperacionRestantes);
     }
 
     public static CategoriaDto ACategoriaDto(Categoria c) => new(c.Id, c.NombreCategoria, c.Descripcion);

@@ -26,6 +26,10 @@ public sealed class SeguridadOpciones
     [Range(1, 365)] public int DiasMaximosSesion { get; set; } = 30;
     /// <summary>Si un token recién reemplazado se reusa dentro de esta ventana (dos pestañas refrescando a la vez) se responde 409 sin revocar la familia.</summary>
     [Range(0, 120)] public int SegundosGraciaRefresco { get; set; } = 30;
+    /// <summary>Llave AES-256 (32 bytes en base64) para cifrar los secretos de 2FA. Secreto: solo por variable de entorno / Key Vault.</summary>
+    public string ClaveCifrado { get; set; } = "";
+    /// <summary>Administradores y SuperUsuarios solo pueden usar funciones de administración con una sesión iniciada con 2FA.</summary>
+    public bool ExigirDosFactoresModeradores { get; set; } = true;
 }
 
 public sealed class WompiOpciones

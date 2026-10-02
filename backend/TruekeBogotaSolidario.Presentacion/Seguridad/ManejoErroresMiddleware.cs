@@ -40,14 +40,14 @@ public sealed class ManejoErroresMiddleware
             var e = TraductorErrores.Traducir(ex);
             if (e.EsInesperado) _log.LogError(ex, "Error no controlado en {Metodo} {Ruta}", ctx.Request.Method, ctx.Request.Path.Value);
             else _log.LogInformation("Solicitud rechazada ({Estado}): {Tipo}", e.Estado, ex.GetType().Name);
-            await Responder(ctx, e.Estado, e.Titulo);
+            await Responder(ctx, e.Estado, e.Titulo, e.Codigo);
         }
     }
 
-    private static Task Responder(HttpContext ctx, int estado, string? titulo)
+    private static Task Responder(HttpContext ctx, int estado, string? titulo, string? codigo = null)
     {
         if (ctx.Response.HasStarted) return Task.CompletedTask;
         ctx.Response.Clear();
-        return Problemas.EscribirAsync(ctx, estado, titulo);
+        return Problemas.EscribirAsync(ctx, estado, titulo, codigo: codigo);
     }
 }

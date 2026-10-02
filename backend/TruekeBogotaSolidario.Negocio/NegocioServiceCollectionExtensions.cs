@@ -69,6 +69,9 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<IDenunciaService, DenunciaService>();
         services.AddScoped<IDatosPersonalesService, DatosPersonalesService>();
         services.AddScoped<IConfiguracionService, ConfiguracionService>();
+        services.AddSingleton<ICifradorSecretos, CifradorAesGcm>();
+        services.AddScoped<VerificadorDosFactores>();
+        services.AddScoped<IDosFactoresService, DosFactoresService>();
 
         // Archivos: Azure Blob si está configurado; si no, deshabilitado (las URLs se validan solo por host permitido)
         services.AddOptions<AlmacenamientoOpciones>().Bind(config.GetSection(AlmacenamientoOpciones.Seccion));

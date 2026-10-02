@@ -49,18 +49,21 @@ public static class Problemas
         return p;
     }
 
-    public static async Task EscribirAsync(HttpContext ctx, int estado, string? titulo = null, CancellationToken ct = default)
+    /// <param name="codigo">Identificador estable opcional (p. ej. "2fa_requerido") para que el front reaccione sin leer el texto.</param>
+    public static async Task EscribirAsync(HttpContext ctx, int estado, string? titulo = null, CancellationToken ct = default, string? codigo = null)
     {
         if (ctx.Response.HasStarted) return;
         ctx.Response.StatusCode = estado;
         ctx.Response.ContentType = TipoContenido;
-        await ctx.Response.WriteAsync(JsonSerializer.Serialize(new
+        var cuerpo = new Dictionary<string, object?>
         {
-            type = TipoPara(estado),
-            title = titulo ?? TituloPorDefecto(estado),
-            status = estado,
-            traceId = ctx.TraceIdentifier
-        }, Json), ct);
+            ["type"] = TipoPara(estado),
+            ["title"] = titulo ?? TituloPorDefecto(estado),
+            ["status"] = estado,
+            ["traceId"] = ctx.TraceIdentifier
+        };
+        if (codigo is not null) cuerpo["codigo"] = codigo;
+        await ctx.Response.WriteAsync(JsonSerializer.Serialize(cuerpo, Json), ct);
     }
 
     /// <summary>400 de validación: claves en camelCase (como las propiedades JSON que envía Angular).</summary>

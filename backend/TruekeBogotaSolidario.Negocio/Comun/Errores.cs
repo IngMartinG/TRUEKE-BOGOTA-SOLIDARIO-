@@ -20,7 +20,15 @@ public sealed class AutenticacionException : Exception
     public AutenticacionException(string mensaje = "Correo o contraseña incorrectos.") : base(mensaje) { }
 }
 
-public sealed record ErrorTraducido(int Estado, string Titulo, bool EsInesperado);
+/// <summary>La clave es correcta pero la cuenta tiene 2FA: el front debe pedir el código de 6 dígitos (HTTP 401, codigo "2fa_requerido").</summary>
+public sealed class DosFactoresRequeridoException : Exception
+{
+    public const string Codigo = "2fa_requerido";
+    public DosFactoresRequeridoException() : base("Ingresa el código de 6 dígitos de tu app autenticadora (o un código de recuperación).") { }
+}
+
+/// <param name="Codigo">Identificador estable para que el front reaccione sin depender del texto.</param>
+public sealed record ErrorTraducido(int Estado, string Titulo, bool EsInesperado, string? Codigo = null);
 
 /// <summary>
 /// Única puerta de traducción excepción → respuesta HTTP. Solo las excepciones de negocio conocidas exponen su
@@ -33,6 +41,7 @@ public static class TraductorErrores
         ReglaDeNegocioException e => new(400, e.Message, false),
         NoEncontradoException e => new(404, e.Message, false),
         AccesoDenegadoException e => new(403, e.Message, false),
+        DosFactoresRequeridoException e => new(401, e.Message, false, DosFactoresRequeridoException.Codigo),
         AutenticacionException e => new(401, e.Message, false),
         ConflictoDeConcurrenciaException e => new(409, e.Message, false),
         _ => new(500, "Error interno del servidor.", true)

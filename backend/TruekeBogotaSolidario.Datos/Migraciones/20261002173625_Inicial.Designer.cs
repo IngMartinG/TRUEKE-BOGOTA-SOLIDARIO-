@@ -12,7 +12,7 @@ using TruekeBogotaSolidario.Datos.Contexto;
 namespace TruekeBogotaSolidario.Datos.Migraciones
 {
     [DbContext(typeof(TruekeDbContext))]
-    [Migration("20261002173147_Inicial")]
+    [Migration("20261002173625_Inicial")]
     partial class Inicial
     {
         /// <inheritdoc />
@@ -559,6 +559,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 {
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("ConDosFactores")
+                        .HasColumnType("bit");
 
                     b.Property<DateTime>("CreadoUtc")
                         .HasColumnType("datetime2");

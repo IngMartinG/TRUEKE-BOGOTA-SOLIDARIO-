@@ -295,6 +295,13 @@ public class Usuario
         return true;
     }
 
+    /// <summary>Invalida todos los códigos de recuperación anteriores y guarda los nuevos (sin cerrar sesiones).</summary>
+    public void ReemplazarCodigosRecuperacion(IEnumerable<string> hashes)
+    {
+        if (!DosFactoresActivo) throw new ReglaDeNegocioException("La verificación en dos pasos no está activa.");
+        CodigosRecuperacionHash = string.Join(';', hashes);
+    }
+
     public int CodigosRecuperacionRestantes => string.IsNullOrEmpty(CodigosRecuperacionHash)
         ? 0 : CodigosRecuperacionHash.Split(';', StringSplitOptions.RemoveEmptyEntries).Length;
 

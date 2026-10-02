@@ -557,6 +557,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("ConDosFactores")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime>("CreadoUtc")
                         .HasColumnType("datetime2");
 

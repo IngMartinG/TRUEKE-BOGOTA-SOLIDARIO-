@@ -73,10 +73,12 @@ public static class AutenticacionJwt
         {
             // Seguro por defecto: todo exige sesión salvo lo marcado [AllowAnonymous].
             o.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
-            // Jerarquía SuperUsuario ⊃ Administrador ⊃ Cliente
-            o.AddPolicy(Politicas.Moderador, p => p.RequireRole("Administrador", "SuperUsuario"));
-            o.AddPolicy(Politicas.SuperUsuario, p => p.RequireRole("SuperUsuario"));
+            // Jerarquía SuperUsuario ⊃ Administrador ⊃ Cliente; además, sesión con verificación en dos pasos
+            o.AddPolicy(Politicas.Moderador, p => p.RequireRole("Administrador", "SuperUsuario").AddRequirements(new DosFactoresRequirement()));
+            o.AddPolicy(Politicas.SuperUsuario, p => p.RequireRole("SuperUsuario").AddRequirements(new DosFactoresRequirement()));
         });
+        services.AddSingleton<IAuthorizationHandler, DosFactoresHandler>();
+        services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationMiddlewareResultHandler, ResultadoAutorizacionHandler>();
         return services;
     }
 }

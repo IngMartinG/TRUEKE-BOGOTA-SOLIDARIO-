@@ -34,6 +34,7 @@ public sealed class EntornoNegocio : IDisposable
             ["Pagos:Wompi:SecretoIntegridad"] = "integridad-pruebas",
             ["Pagos:Wompi:SecretoEventos"] = SecretoEventos,
             ["Correo:Proveedor"] = "Simulado",
+            ["Seguridad:ClaveCifrado"] = FabricaApi.ClaveCifradoPruebas,
         };
         var config = new ConfigurationBuilder().AddInMemoryCollection(valores).Build();
         var services = new ServiceCollection();
