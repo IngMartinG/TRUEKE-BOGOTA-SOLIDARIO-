@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Threading.RateLimiting;
+using Azure.Monitor.OpenTelemetry.AspNetCore;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
@@ -53,6 +54,13 @@ builder.WebHost.ConfigureKestrel(k =>
     k.Limits.MaxRequestBodySize = TamanoMaximoCuerpo;
     k.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(15);
 });
+
+// ---------- Monitoreo (Azure Application Insights vía OpenTelemetry): solo si hay cadena de conexión ----------
+// Envía peticiones, dependencias (SQL, HTTP), excepciones y logs. La instrumentación de ASP.NET Core redacta los valores
+// de la query string (p. ej. ?access_token= del hub). Nunca se registran cuerpos de peticiones ni contraseñas.
+var appInsights = config["APPLICATIONINSIGHTS_CONNECTION_STRING"] ?? config["Monitoreo:ConnectionString"];
+if (!string.IsNullOrWhiteSpace(appInsights))
+    builder.Services.AddOpenTelemetry().UseAzureMonitor(o => o.ConnectionString = appInsights);
 
 // ---------- Negocio (que internamente registra Datos) ----------
 builder.Services.AddNegocio(config);
@@ -199,6 +207,8 @@ if (esProduccion)
         app.Logger.LogWarning("Urls:HostsPermitidosDocumentos está vacío: configura el host de Azure Blob Storage para los documentos de verificación.");
     if (origenes.Length == 0)
         app.Logger.LogWarning("Cors:Origenes está vacío: el front Angular no podrá llamar a la API desde el navegador.");
+    if (string.IsNullOrWhiteSpace(appInsights))
+        app.Logger.LogWarning("APPLICATIONINSIGHTS_CONNECTION_STRING no está definida: no habrá monitoreo de errores ni rendimiento.");
 }
 
 // ---------- Pipeline (el orden importa) ----------
