@@ -35,6 +35,7 @@ public sealed class UsuarioRepository : IUsuarioRepository
 
     public Task<Usuario?> ObtenerPorIdAsync(Guid id) => _db.Usuarios.FirstOrDefaultAsync(u => u.Id == id);
     public Task<Usuario?> ObtenerPorCorreoAsync(string correo) => _db.Usuarios.FirstOrDefaultAsync(u => u.Correo == correo);
+    public Task<Usuario?> ObtenerPorGoogleSubAsync(string googleSub) => _db.Usuarios.FirstOrDefaultAsync(u => u.GoogleSub == googleSub);
     public Task<bool> ExisteCorreoAsync(string correo) => _db.Usuarios.AnyAsync(u => u.Correo == correo);
     public async Task<IReadOnlyList<Usuario>> ObtenerPorVerificacionAsync(EstadoVerificacion estado)
         => await _db.Usuarios.AsNoTracking().Where(u => u.EstadoVerificacion == estado).OrderBy(u => u.FechaRegistro).Take(200).ToListAsync();

@@ -13,6 +13,8 @@ public interface IAuthService
 {
     Task<ResultadoAutenticacion> RegistrarAsync(RegistroRequest r);
     Task<ResultadoAutenticacion> LoginAsync(LoginRequest r);
+    /// <summary>Inicia sesión (o crea la cuenta) con un ID token de Google validado en el servidor. Emite NUESTRO JWT.</summary>
+    Task<ResultadoAutenticacion> LoginGoogleAsync(GoogleLoginRequest r);
     /// <summary>Rota el token de refresco. Reusar uno ya reemplazado revoca toda la familia (posible robo).</summary>
     Task<ResultadoAutenticacion> RefrescarAsync(string? tokenRefresco);
     /// <summary>Cierra la sesión de ESTE dispositivo (revoca la familia del token de refresco). Nunca falla.</summary>
@@ -36,15 +38,16 @@ public sealed class AuthService : IAuthService
     private readonly LegalOpciones _legal;
     private readonly CorreosCuenta _correos;
     private readonly ICorreoSaliente _salida;
+    private readonly IValidadorGoogle _google;
     private readonly TimeProvider _reloj;
     private readonly ILogger<AuthService> _log;
 
     public AuthService(IUsuarioRepository usuarios, ISesionRefreshRepository refrescos, IUnidadDeTrabajo uow, EmisorSesiones emisor,
         ISesionService sesiones, IOptions<SeguridadOpciones> seg, IOptions<LegalOpciones> legal, CorreosCuenta correos,
-        ICorreoSaliente salida, TimeProvider reloj, ILogger<AuthService> log)
+        ICorreoSaliente salida, IValidadorGoogle google, TimeProvider reloj, ILogger<AuthService> log)
     {
         _usuarios = usuarios; _refrescos = refrescos; _uow = uow; _emisor = emisor; _sesiones = sesiones; _seg = seg.Value;
-        _legal = legal.Value; _correos = correos; _salida = salida; _reloj = reloj; _log = log;
+        _legal = legal.Value; _correos = correos; _salida = salida; _google = google; _reloj = reloj; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
@@ -97,6 +100,54 @@ public sealed class AuthService : IAuthService
         var sesion = _emisor.Emitir(usuario);
         await _uow.GuardarCambiosAsync();
         return sesion;
+    }
+
+    public async Task<ResultadoAutenticacion> LoginGoogleAsync(GoogleLoginRequest r)
+    {
+        if (!_google.Habilitado) throw new ReglaDeNegocioException("El inicio de sesión con Google no está habilitado.");
+        var id = await _google.ValidarAsync(r.IdToken) ?? throw new AutenticacionException("No se pudo validar tu cuenta de Google.");
+        if (!id.CorreoVerificado) throw new AutenticacionException("Tu cuenta de Google no tiene el correo verificado.");
+
+        var ahora = Ahora;
+        var creada = false;
+        var usuario = await _usuarios.ObtenerPorGoogleSubAsync(id.Sub);
+        if (usuario is null)
+        {
+            usuario = await _usuarios.ObtenerPorCorreoAsync(Usuario.NormalizarCorreo(id.Correo));
+            if (usuario is not null)
+            {
+                // Vincula una cuenta existente con el mismo correo (Google ya demostró que el correo es de esta persona).
+                if (usuario.GoogleSub is not null) throw new AutenticacionException("No se pudo validar tu cuenta de Google.");
+                if (!usuario.CorreoVerificado)
+                {
+                    // La cuenta se creó con clave pero nadie confirmó el correo: podría haberla creado un tercero
+                    // para esperar a la víctima. Se elimina esa clave y se cierran sus sesiones.
+                    usuario.QuitarClave();
+                    await _refrescos.RevocarTodasDelUsuarioAsync(usuario.Id, ahora);
+                    _log.LogWarning("Clave eliminada al vincular Google a una cuenta no verificada {UsuarioId}", usuario.Id);
+                }
+                usuario.VincularGoogle(id.Sub);
+                usuario.MarcarCorreoVerificado(ahora);
+            }
+            else
+            {
+                if (!r.AceptoPoliticaDatos)
+                    throw new ReglaDeNegocioException("Para crear tu cuenta debes aceptar la política de tratamiento de datos personales.");
+                usuario = Usuario.CrearDesdeGoogle(id.Nombre ?? "", id.Correo, id.Sub, ahora);
+                usuario.AceptarPoliticaDatos(_legal.VersionPoliticaDatos, ahora);
+                usuario.AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosBienvenida);
+                _usuarios.Agregar(usuario);
+                creada = true;
+            }
+        }
+        if (usuario.EstaEliminado) throw new AutenticacionException("No se pudo validar tu cuenta de Google.");
+
+        usuario.RegistrarLoginExitoso();
+        var sesion = _emisor.Emitir(usuario);
+        await _uow.GuardarCambiosAsync(); // índices únicos de correo y GoogleSub cubren dos altas simultáneas
+        _sesiones.Invalidar(usuario.Id);
+        if (creada) _log.LogInformation("Usuario registrado con Google {UsuarioId}", usuario.Id);
+        return sesion with { CuentaCreada = creada };
     }
 
     public async Task<ResultadoAutenticacion> RefrescarAsync(string? tokenRefresco)

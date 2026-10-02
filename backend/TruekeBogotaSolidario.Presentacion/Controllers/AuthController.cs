@@ -31,6 +31,18 @@ public sealed class AuthController : ControllerBase
     public async Task<ActionResult<SesionDto>> Login([FromBody] LoginRequest r) => Ok(Iniciar(await _auth.LoginAsync(r)));
 
     /// <summary>
+    /// Inicio de sesión con Google: Angular obtiene el ID token con Google Identity Services y lo envía aquí.
+    /// 201 si se creó la cuenta (exige aceptoPoliticaDatos), 200 si ya existía.
+    /// </summary>
+    [HttpPost("google"), AllowAnonymous, EnableRateLimiting(Politicas.LimiteAuth)]
+    public async Task<ActionResult<SesionDto>> LoginGoogle([FromBody] GoogleLoginRequest r)
+    {
+        var resultado = await _auth.LoginGoogleAsync(r);
+        var sesion = Iniciar(resultado);
+        return resultado.CuentaCreada ? StatusCode(StatusCodes.Status201Created, sesion) : Ok(sesion);
+    }
+
+    /// <summary>
     /// Nuevo token de acceso a partir de la cookie de refresco (que se rota). Requiere la cabecera X-Trueke-Csrf: 1.
     /// Angular lo llama al recibir un 401 y al recargar la página (el token de acceso vive solo en memoria).
     /// </summary>

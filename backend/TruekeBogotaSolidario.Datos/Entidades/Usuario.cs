@@ -156,6 +156,16 @@ public class Usuario
         return u;
     }
 
+    /// <summary>
+    /// Elimina la contraseña y revoca los tokens. Se usa al vincular Google a una cuenta cuyo correo NUNCA se verificó:
+    /// quien la creó con esa clave no demostró ser el dueño del correo (evita el "secuestro previo" de cuentas).
+    /// </summary>
+    public void QuitarClave()
+    {
+        ClaveHash = "";
+        VersionSeguridad++;
+    }
+
     public void VincularGoogle(string googleSub)
     {
         if (string.IsNullOrWhiteSpace(googleSub) || googleSub.Length > 64) throw new ReglaDeNegocioException("Cuenta de Google no válida.");

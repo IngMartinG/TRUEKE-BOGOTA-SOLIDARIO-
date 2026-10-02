@@ -26,6 +26,7 @@ public interface IUsuarioRepository
 {
     Task<Usuario?> ObtenerPorIdAsync(Guid id);
     Task<Usuario?> ObtenerPorCorreoAsync(string correoNormalizado);
+    Task<Usuario?> ObtenerPorGoogleSubAsync(string googleSub);
     Task<bool> ExisteCorreoAsync(string correoNormalizado);
     Task<IReadOnlyList<Usuario>> ObtenerPorVerificacionAsync(EstadoVerificacion estado);
     Task<int> ContarPorRolAsync(RolUsuarioEnum rol);
