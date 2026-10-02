@@ -83,6 +83,34 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 });
 
             migrationBuilder.CreateTable(
+                name: "Denuncias",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DenuncianteId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Tipo = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    ObjetivoId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Motivo = table.Column<string>(type: "nvarchar(30)", maxLength: 30, nullable: false),
+                    Detalle = table.Column<string>(type: "nvarchar(500)", maxLength: 500, nullable: true),
+                    FechaUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Estado = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    ModeradorId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    FechaResolucionUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    NotaResolucion = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true),
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Denuncias", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Denuncias_Usuarios_DenuncianteId",
+                        column: x => x.DenuncianteId,
+                        principalTable: "Usuarios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Notificaciones",
                 columns: table => new
                 {
@@ -442,6 +470,22 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 unique: true);
 
             migrationBuilder.CreateIndex(
+                name: "IX_Denuncias_DenuncianteId_Tipo_ObjetivoId",
+                table: "Denuncias",
+                columns: new[] { "DenuncianteId", "Tipo", "ObjetivoId" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Denuncias_Estado_FechaUtc",
+                table: "Denuncias",
+                columns: new[] { "Estado", "FechaUtc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Denuncias_Tipo_ObjetivoId_Estado",
+                table: "Denuncias",
+                columns: new[] { "Tipo", "ObjetivoId", "Estado" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Mensajes_AutorId_FechaUtc",
                 table: "Mensajes",
                 columns: new[] { "AutorId", "FechaUtc" });
@@ -588,6 +632,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
             migrationBuilder.DropTable(
                 name: "Comentarios");
+
+            migrationBuilder.DropTable(
+                name: "Denuncias");
 
             migrationBuilder.DropTable(
                 name: "Mensajes");

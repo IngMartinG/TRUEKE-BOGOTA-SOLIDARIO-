@@ -152,6 +152,19 @@ public interface IConversacionRepository
     void AgregarMensaje(Mensaje mensaje);
 }
 
+public interface IDenunciaRepository
+{
+    Task<Denuncia?> ObtenerAsync(Guid id);
+    Task<bool> ExisteAsync(Guid denuncianteId, TipoObjetoDenuncia tipo, Guid objetivoId);
+    Task<int> ContarDelDenuncianteDesdeAsync(Guid denuncianteId, DateTime desdeUtc);
+    /// <summary>Más antiguas primero (cola de moderación).</summary>
+    Task<IReadOnlyList<Denuncia>> ListarPorEstadoAsync(EstadoDenuncia estado, int maximo);
+    /// <summary>Pendientes sobre el mismo objetivo (con tracking): se resuelven juntas.</summary>
+    Task<IReadOnlyList<Denuncia>> PendientesDelObjetivoAsync(TipoObjetoDenuncia tipo, Guid objetivoId);
+    Task<IReadOnlyList<Denuncia>> ListarDelDenuncianteAsync(Guid denuncianteId, int maximo);
+    void Agregar(Denuncia denuncia);
+}
+
 public interface IComentarioRepository
 {
     Task<Comentario?> ObtenerPorIdAsync(Guid id);

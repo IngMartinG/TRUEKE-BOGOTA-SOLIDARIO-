@@ -162,6 +162,31 @@ public sealed class SolicitarSubidaRequest
     [Range(1, 5 * 1024 * 1024)] public long TamanoBytes { get; init; }
 }
 
+public enum TipoDenunciaDto { Publicacion = 1, Comentario = 2, Mensaje = 3, Usuario = 4 }
+public enum MotivoDenunciaDto { Spam = 1, Fraude = 2, ContenidoInapropiado = 3, ArticuloProhibido = 4, Acoso = 5, Otro = 6 }
+public enum EstadoDenunciaDto { Pendiente = 1, Resuelta = 2, Descartada = 3 }
+public enum AccionDenunciaDto { Descartar = 1, OcultarContenido = 2, MarcarRevisada = 3 }
+
+public sealed class CrearDenunciaRequest
+{
+    [EnumDataType(typeof(TipoDenunciaDto))] public TipoDenunciaDto Tipo { get; init; }
+    public Guid ObjetivoId { get; init; }
+    [EnumDataType(typeof(MotivoDenunciaDto))] public MotivoDenunciaDto Motivo { get; init; }
+    [MaxLength(500)] public string? Detalle { get; init; }
+}
+
+public sealed class FiltroDenunciasRequest
+{
+    [EnumDataType(typeof(EstadoDenunciaDto))] public EstadoDenunciaDto Estado { get; init; } = EstadoDenunciaDto.Pendiente;
+}
+
+public sealed class ResolverDenunciaRequest
+{
+    /// <summary>OcultarContenido: oculta la publicación, comentario o mensaje. MarcarRevisada: procedente sin ocultar (p. ej. denuncias a usuarios).</summary>
+    [EnumDataType(typeof(AccionDenunciaDto))] public AccionDenunciaDto Accion { get; init; }
+    [StringLength(300, MinimumLength = 3)] public string? Nota { get; init; }
+}
+
 public sealed class FiltroNotificacionesRequest
 {
     public bool SoloNoLeidas { get; init; }
@@ -215,6 +240,15 @@ public sealed record ConversacionDto(Guid Id, Guid SolicitudId, Guid Publicacion
 /// <see cref="Cabeceras"/> antes de <see cref="ExpiraUtc"/>, y luego envía <see cref="UrlArchivo"/> a la API.
 /// </summary>
 public sealed record SubidaArchivoDto(string UrlSubida, string UrlArchivo, string Metodo, IReadOnlyDictionary<string, string> Cabeceras, DateTime ExpiraUtc);
+
+public sealed record DenunciaCreadaDto(Guid Id, string Estado, DateTime FechaUtc);
+
+/// <summary>
+/// Cola de moderación: denuncias agrupadas por objetivo. <see cref="DenunciaId"/> es la más antigua del grupo (resolverla
+/// resuelve todas). VistaPrevia muestra lo denunciado SOLO al moderador; Detalles son los textos de los denunciantes.
+/// </summary>
+public sealed record DenunciaAgrupadaDto(Guid DenunciaId, string Tipo, Guid ObjetivoId, int Total, IReadOnlyList<string> Motivos,
+    IReadOnlyList<string> Detalles, string? VistaPrevia, bool ObjetivoExiste, DateTime PrimeraUtc, DateTime UltimaUtc, string Estado);
 
 public sealed record PaginaDto<T>(IReadOnlyList<T> Items, int Total, int Pagina, int Tamano);
 
