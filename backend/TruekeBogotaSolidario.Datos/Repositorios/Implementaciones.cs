@@ -343,6 +343,31 @@ public sealed class ConversacionRepository : IConversacionRepository
     public void AgregarMensaje(Mensaje mensaje) => _db.Mensajes.Add(mensaje);
 }
 
+public sealed class DenunciaRepository : IDenunciaRepository
+{
+    private readonly TruekeDbContext _db;
+    public DenunciaRepository(TruekeDbContext db) => _db = db;
+
+    public Task<Denuncia?> ObtenerAsync(Guid id) => _db.Denuncias.FirstOrDefaultAsync(d => d.Id == id);
+
+    public Task<bool> ExisteAsync(Guid denuncianteId, TipoObjetoDenuncia tipo, Guid objetivoId)
+        => _db.Denuncias.AnyAsync(d => d.DenuncianteId == denuncianteId && d.Tipo == tipo && d.ObjetivoId == objetivoId);
+
+    public Task<int> ContarDelDenuncianteDesdeAsync(Guid denuncianteId, DateTime desdeUtc)
+        => _db.Denuncias.CountAsync(d => d.DenuncianteId == denuncianteId && d.FechaUtc >= desdeUtc);
+
+    public async Task<IReadOnlyList<Denuncia>> ListarPorEstadoAsync(EstadoDenuncia estado, int maximo)
+        => await _db.Denuncias.AsNoTracking().Where(d => d.Estado == estado).OrderBy(d => d.FechaUtc).Take(Math.Clamp(maximo, 1, 1000)).ToListAsync();
+
+    public async Task<IReadOnlyList<Denuncia>> PendientesDelObjetivoAsync(TipoObjetoDenuncia tipo, Guid objetivoId)
+        => await _db.Denuncias.Where(d => d.Tipo == tipo && d.ObjetivoId == objetivoId && d.Estado == EstadoDenuncia.Pendiente).ToListAsync();
+
+    public async Task<IReadOnlyList<Denuncia>> ListarDelDenuncianteAsync(Guid denuncianteId, int maximo)
+        => await _db.Denuncias.AsNoTracking().Where(d => d.DenuncianteId == denuncianteId).OrderByDescending(d => d.FechaUtc).Take(maximo).ToListAsync();
+
+    public void Agregar(Denuncia denuncia) => _db.Denuncias.Add(denuncia);
+}
+
 public sealed class ComentarioRepository : IComentarioRepository
 {
     private readonly TruekeDbContext _db;

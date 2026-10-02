@@ -20,6 +20,7 @@ public class TruekeDbContext : DbContext
     public DbSet<Notificacion> Notificaciones => Set<Notificacion>();
     public DbSet<Conversacion> Conversaciones => Set<Conversacion>();
     public DbSet<Mensaje> Mensajes => Set<Mensaje>();
+    public DbSet<Denuncia> Denuncias => Set<Denuncia>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -174,6 +175,22 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => new { x.ConversacionId, x.FechaUtc });
             e.HasIndex(x => new { x.ConversacionId, x.AutorId, x.LeidoUtc });
             e.HasIndex(x => new { x.AutorId, x.FechaUtc });
+        });
+
+        mb.Entity<Denuncia>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Motivo).HasConversion<string>().HasMaxLength(30);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Detalle).HasMaxLength(500);
+            e.Property(x => x.NotaResolucion).HasMaxLength(300);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.DenuncianteId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.DenuncianteId, x.Tipo, x.ObjetivoId }).IsUnique();
+            e.HasIndex(x => new { x.Estado, x.FechaUtc });
+            e.HasIndex(x => new { x.Tipo, x.ObjetivoId, x.Estado });
+            if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
         });
 
         mb.Entity<Transaccion>(e =>

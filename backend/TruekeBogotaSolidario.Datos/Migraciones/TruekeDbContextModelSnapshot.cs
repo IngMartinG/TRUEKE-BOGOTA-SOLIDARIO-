@@ -200,6 +200,66 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("Conversaciones");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Denuncia", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DenuncianteId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Detalle")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("FechaResolucionUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ModeradorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Motivo")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("NotaResolucion")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<Guid>("ObjetivoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Estado", "FechaUtc");
+
+                    b.HasIndex("DenuncianteId", "Tipo", "ObjetivoId")
+                        .IsUnique();
+
+                    b.HasIndex("Tipo", "ObjetivoId", "Estado");
+
+                    b.ToTable("Denuncias");
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Mensaje", b =>
                 {
                     b.Property<Guid>("Id")
@@ -778,6 +838,15 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Navigation("Solicitante");
 
                     b.Navigation("Solicitud");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Denuncia", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("DenuncianteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Mensaje", b =>

@@ -64,6 +64,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<INotificacionService, NotificacionService>();
         services.AddScoped<IChatService, ChatService>();
         services.AddScoped<IArchivoService, ArchivoService>();
+        services.AddScoped<IDenunciaService, DenunciaService>();
 
         // Archivos: Azure Blob si está configurado; si no, deshabilitado (las URLs se validan solo por host permitido)
         services.AddOptions<AlmacenamientoOpciones>().Bind(config.GetSection(AlmacenamientoOpciones.Seccion));

@@ -998,6 +998,143 @@
         }
       }
     },
+    "/api/v1/denuncias": {
+      "post": {
+        "tags": [
+          "Denuncias"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearDenunciaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearDenunciaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearDenunciaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DenunciaCreadaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DenunciaCreadaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DenunciaCreadaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/denuncias": {
+      "get": {
+        "tags": [
+          "Denuncias"
+        ],
+        "parameters": [
+          {
+            "name": "Estado",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EstadoDenunciaDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DenunciaAgrupadaDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DenunciaAgrupadaDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DenunciaAgrupadaDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/denuncias/{id}/resolver": {
+      "post": {
+        "tags": [
+          "Denuncias"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolverDenunciaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolverDenunciaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolverDenunciaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/eco-puntos/politica": {
       "get": {
         "tags": [
@@ -2090,6 +2227,14 @@
   },
   "components": {
     "schemas": {
+      "AccionDenunciaDto": {
+        "enum": [
+          "Descartar",
+          "OcultarContenido",
+          "MarcarRevisada"
+        ],
+        "type": "string"
+      },
       "ActualizarPerfilRequest": {
         "required": [
           "localidad",
@@ -2314,6 +2459,27 @@
         },
         "additionalProperties": false
       },
+      "CrearDenunciaRequest": {
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoDenunciaDto"
+          },
+          "objetivoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "motivo": {
+            "$ref": "#/components/schemas/MotivoDenunciaDto"
+          },
+          "detalle": {
+            "maxLength": 500,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CrearPublicacionRequest": {
         "required": [
           "descripcion",
@@ -2393,6 +2559,74 @@
         },
         "additionalProperties": false
       },
+      "DenunciaAgrupadaDto": {
+        "type": "object",
+        "properties": {
+          "denunciaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "objetivoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "motivos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "detalles": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "vistaPrevia": {
+            "type": "string",
+            "nullable": true
+          },
+          "objetivoExiste": {
+            "type": "boolean"
+          },
+          "primeraUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ultimaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "estado": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DenunciaCreadaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "EcoPuntosResumenDto": {
         "type": "object",
         "properties": {
@@ -2454,6 +2688,14 @@
           }
         },
         "additionalProperties": false
+      },
+      "EstadoDenunciaDto": {
+        "enum": [
+          "Pendiente",
+          "Resuelta",
+          "Descartada"
+        ],
+        "type": "string"
       },
       "GananciaDto": {
         "type": "object",
@@ -2571,6 +2813,17 @@
           "Trueke",
           "Compra",
           "Donacion"
+        ],
+        "type": "string"
+      },
+      "MotivoDenunciaDto": {
+        "enum": [
+          "Spam",
+          "Fraude",
+          "ContenidoInapropiado",
+          "ArticuloProhibido",
+          "Acoso",
+          "Otro"
         ],
         "type": "string"
       },
@@ -2985,6 +3238,21 @@
         },
         "additionalProperties": false
       },
+      "ResolverDenunciaRequest": {
+        "type": "object",
+        "properties": {
+          "accion": {
+            "$ref": "#/components/schemas/AccionDenunciaDto"
+          },
+          "nota": {
+            "maxLength": 300,
+            "minLength": 3,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "RestablecerClaveRequest": {
         "required": [
           "claveNueva",
@@ -3123,6 +3391,15 @@
         "enum": [
           "Imagen",
           "Documento"
+        ],
+        "type": "string"
+      },
+      "TipoDenunciaDto": {
+        "enum": [
+          "Publicacion",
+          "Comentario",
+          "Mensaje",
+          "Usuario"
         ],
         "type": "string"
       },
