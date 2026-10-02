@@ -1,5 +1,9 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using TruekeBogotaSolidario.Negocio.Correo;
 
 namespace TruekeBogotaSolidario.Pruebas.Infraestructura;
 
@@ -32,5 +36,10 @@ public class FabricaApi : WebApplicationFactory<Program>
         builder.UseSetting("RateLimiting:EscrituraPorMinuto", "1000");
         builder.UseSetting("RateLimiting:RefrescoPorMinuto", "1000");
         builder.UseSetting("Seguridad:SegundosGraciaRefresco", "0");
+        builder.UseSetting("Correo:Proveedor", "Simulado");
+        builder.ConfigureTestServices(s => s.Replace(ServiceDescriptor.Singleton<ICorreoSaliente>(Correos)));
     }
+
+    /// <summary>Correos "enviados" por esta instancia de la API.</summary>
+    public CorreoCapturado Correos { get; } = new();
 }

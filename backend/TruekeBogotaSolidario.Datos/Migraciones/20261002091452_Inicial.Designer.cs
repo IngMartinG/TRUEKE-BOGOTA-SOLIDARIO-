@@ -12,7 +12,7 @@ using TruekeBogotaSolidario.Datos.Contexto;
 namespace TruekeBogotaSolidario.Datos.Migraciones
 {
     [DbContext(typeof(TruekeDbContext))]
-    [Migration("20261002090932_Inicial")]
+    [Migration("20261002091452_Inicial")]
     partial class Inicial
     {
         /// <inheritdoc />
@@ -415,6 +415,46 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("Solicitudes");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.TokenUsoUnico", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreadoUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("ExpiraUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Proposito")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(64)");
+
+                    b.Property<DateTime?>("UsadoUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ExpiraUtc");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique();
+
+                    b.HasIndex("UsuarioId", "Proposito", "CreadoUtc");
+
+                    b.ToTable("TokensUsoUnico");
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Transaccion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -653,6 +693,15 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Navigation("Publicacion");
 
                     b.Navigation("Solicitante");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.TokenUsoUnico", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Transaccion", b =>

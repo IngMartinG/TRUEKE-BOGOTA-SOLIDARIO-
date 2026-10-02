@@ -33,6 +33,7 @@ public sealed class EntornoNegocio : IDisposable
             ["Pagos:Wompi:LlavePublica"] = "pub_test_x",
             ["Pagos:Wompi:SecretoIntegridad"] = "integridad-pruebas",
             ["Pagos:Wompi:SecretoEventos"] = SecretoEventos,
+            ["Correo:Proveedor"] = "Simulado",
         };
         var config = new ConfigurationBuilder().AddInMemoryCollection(valores).Build();
         var services = new ServiceCollection();

@@ -43,6 +43,7 @@ public sealed class SolicitudService : ISolicitudService
     public async Task<SolicitudDto> CrearAsync(Guid actorId, CrearSolicitudRequest r)
     {
         var solicitante = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
+        Guardas.ExigirCorreoVerificado(solicitante);
         var pub = await _pubs.ObtenerPorIdAsync(r.PublicacionId);
         if (pub is null || pub.EstaOculta) throw new NoEncontradoException("Publicación no encontrada.");
         if (pub.PropietarioId == actorId) throw new ReglaDeNegocioException("No puedes solicitar tu propia publicación.");

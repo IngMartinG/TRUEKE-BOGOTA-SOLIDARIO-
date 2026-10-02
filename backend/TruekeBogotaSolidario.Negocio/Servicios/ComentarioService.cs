@@ -61,6 +61,7 @@ public sealed class ComentarioService : IComentarioService
     {
         var (pub, actor, _) = await CargarPublicacionVisibleAsync(actorId, publicacionId);
         if (actor is null) throw new AutenticacionException("Sesión no válida.");
+        Guardas.ExigirCorreoVerificado(actor);
         if (pub.EstaOculta) throw new ReglaDeNegocioException("No se puede comentar una publicación oculta por moderación.");
         if (pub.Estado is EstadoPublicacionEnum.Cancelada or EstadoPublicacionEnum.Intercambiada)
             throw new ReglaDeNegocioException("La publicación ya no admite comentarios.");

@@ -108,6 +108,16 @@ public interface ISesionRefreshRepository
     void Agregar(SesionRefresh sesion);
 }
 
+public interface ITokenUsoUnicoRepository
+{
+    Task<TokenUsoUnico?> ObtenerPorHashAsync(string tokenHash, PropositoToken proposito);
+    /// <summary>Consume (sin guardar) los tokens vigentes de ese propósito: solo el último enlace enviado sirve.</summary>
+    Task InvalidarVigentesAsync(Guid usuarioId, PropositoToken proposito, DateTime ahoraUtc);
+    Task<int> ContarDesdeAsync(Guid usuarioId, PropositoToken proposito, DateTime desdeUtc);
+    Task<int> PurgarAsync(DateTime antesDeUtc, int maximo);
+    void Agregar(TokenUsoUnico token);
+}
+
 public interface IComentarioRepository
 {
     Task<Comentario?> ObtenerPorIdAsync(Guid id);

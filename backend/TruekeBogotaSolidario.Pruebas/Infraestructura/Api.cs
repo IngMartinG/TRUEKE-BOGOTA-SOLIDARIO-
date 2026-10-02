@@ -2,6 +2,8 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
+using TruekeBogotaSolidario.Negocio.Correo;
 
 namespace TruekeBogotaSolidario.Pruebas.Infraestructura;
 
@@ -21,7 +23,20 @@ public static class Api
             new { nombreCompleto = $"{nombre} Prueba", localidad = "Chapinero", correo, clave = ClaveValida, aceptoPoliticaDatos = true });
         if (resp.StatusCode != HttpStatusCode.Created)
             throw new InvalidOperationException($"Registro falló: {(int)resp.StatusCode} {await resp.Content.ReadAsStringAsync()}");
+        await VerificarCorreoAsync(f, correo);
         return (await resp.Content.ReadFromJsonAsync<SesionMinDto>())!;
+    }
+
+    public static CorreoCapturado Correos(WebApplicationFactory<Program> f)
+        => (CorreoCapturado)f.Services.GetRequiredService<ICorreoSaliente>();
+
+    /// <summary>Simula que el usuario abre el enlace del correo de confirmación.</summary>
+    public static async Task VerificarCorreoAsync(WebApplicationFactory<Program> f, string correo)
+    {
+        var token = Correos(f).UltimoToken(correo, "verificar-correo") ?? throw new InvalidOperationException("No llegó el correo de verificación.");
+        var r = await f.CreateClient().PostAsJsonAsync("/api/v1/auth/verificar-correo", new { token });
+        if (r.StatusCode != HttpStatusCode.NoContent)
+            throw new InvalidOperationException($"Verificación falló: {(int)r.StatusCode} {await r.Content.ReadAsStringAsync()}");
     }
 
     public static async Task<HttpClient> RegistrarAsync(WebApplicationFactory<Program> f, string nombre)

@@ -51,6 +51,8 @@ public sealed class PagosOpciones
 public sealed class UrlsOpciones
 {
     public const string Seccion = "Urls";
+    /// <summary>URL base del front Angular: los enlaces de los correos apuntan aquí (https obligatorio en Producción).</summary>
+    public string Frontend { get; set; } = "http://localhost:4200";
     /// <summary>Hosts https permitidos para imágenes de publicaciones (p. ej. tucuenta.blob.core.windows.net). Vacío = cualquier https.</summary>
     public List<string> HostsPermitidosImagenes { get; set; } = new();
     /// <summary>Hosts https permitidos para documentos de verificación de identidad.</summary>

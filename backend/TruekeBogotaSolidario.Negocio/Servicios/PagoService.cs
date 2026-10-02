@@ -86,6 +86,7 @@ public sealed class PagoService : IPagoService
     {
         var ahora = Ahora;
         var u = await CargarUsuarioAsync(actorId);
+        Guardas.ExigirCorreoVerificado(u);
         var concepto = (ConceptoPago)(int)r.Concepto;
         if (!Enum.IsDefined(concepto)) throw new ReglaDeNegocioException("Concepto de pago no válido.");
 
@@ -183,6 +184,7 @@ public sealed class PagoService : IPagoService
     {
         var ahora = Ahora;
         var u = await CargarUsuarioAsync(actorId);
+        Guardas.ExigirCorreoVerificado(u);
         var pub = await _pubs.ObtenerPorIdAsync(publicacionId);
         if (pub is null || pub.PropietarioId != actorId) throw new NoEncontradoException("Publicación no encontrada.");
         pub.ValidarPuedeDestacarse(ahora);   // validar ANTES de consumir el beneficio

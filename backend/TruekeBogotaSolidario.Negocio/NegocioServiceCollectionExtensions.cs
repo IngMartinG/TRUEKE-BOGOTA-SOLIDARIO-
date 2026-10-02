@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using TruekeBogotaSolidario.Datos.Contexto;
 using TruekeBogotaSolidario.Datos.Repositorios;
 using TruekeBogotaSolidario.Negocio.Comun;
+using TruekeBogotaSolidario.Negocio.Correo;
 using TruekeBogotaSolidario.Negocio.Pagos;
 using TruekeBogotaSolidario.Negocio.Servicios;
 
@@ -35,6 +36,21 @@ public static class NegocioServiceCollectionExtensions
             services.AddSingleton<IProveedorPagos, ProveedorPagosSimulado>();
         }
 
+        // Correo saliente: cola en memoria + worker; el transporte depende de la configuración.
+        services.AddOptions<CorreoOpciones>().Bind(config.GetSection(CorreoOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
+        var correo = config.GetSection(CorreoOpciones.Seccion).Get<CorreoOpciones>() ?? new CorreoOpciones();
+        if (correo.EsSimulado)
+            services.AddScoped<ITransporteCorreo, TransporteCorreoSimulado>();
+        else
+        {
+            if (string.IsNullOrWhiteSpace(correo.Smtp.Host))
+                throw new InvalidOperationException("Correo:Smtp:Host es obligatorio (o usa Correo:Proveedor=Simulado solo en desarrollo).");
+            services.AddScoped<ITransporteCorreo, TransporteCorreoSmtp>();
+        }
+        services.AddSingleton<ColaCorreo>();
+        services.AddSingleton<ICorreoSaliente>(sp => sp.GetRequiredService<ColaCorreo>());
+        services.AddHostedService<EnvioCorreosHostedService>();
+
         // Persistencia: Presentacion nunca referencia Datos directamente; todo entra por aquí.
         services.AddDatos(config["Database:Provider"] ?? "SqlServer", config.GetConnectionString("TruekeDb"), config["Database:NombreInMemory"]);
         services.AddScoped<ISaludSistema, SaludSistema>();
@@ -46,6 +62,8 @@ public static class NegocioServiceCollectionExtensions
         services.AddSingleton<IGeneradorToken, GeneradorJwt>();
         services.AddScoped<ISesionService, SesionService>();
         services.AddScoped<EmisorSesiones>();
+        services.AddScoped<CorreosCuenta>();
+        services.AddScoped<ICuentaService, CuentaService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IPublicacionService, PublicacionService>();
         services.AddScoped<ISolicitudService, SolicitudService>();

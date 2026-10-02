@@ -13,7 +13,8 @@ namespace TruekeBogotaSolidario.Presentacion.Controllers;
 public sealed class AuthController : ControllerBase
 {
     private readonly IAuthService _auth;
-    public AuthController(IAuthService auth) => _auth = auth;
+    private readonly ICuentaService _cuenta;
+    public AuthController(IAuthService auth, ICuentaService cuenta) { _auth = auth; _cuenta = cuenta; }
 
     /// <summary>Devuelve la sesión (token de acceso corto) y deja el token de refresco en una cookie HttpOnly.</summary>
     private SesionDto Iniciar(ResultadoAutenticacion r)
@@ -42,6 +43,37 @@ public sealed class AuthController : ControllerBase
     {
         await _auth.CerrarSesionAsync(CookieRefresco.Leer(HttpContext));
         CookieRefresco.Borrar(HttpContext);
+        return NoContent();
+    }
+
+    /// <summary>Confirma el correo con el token del enlace enviado al registrarse (válido 24 h, un solo uso).</summary>
+    [HttpPost("verificar-correo"), AllowAnonymous, EnableRateLimiting(Politicas.LimiteAuth)]
+    public async Task<IActionResult> VerificarCorreo([FromBody] TokenRequest r)
+    {
+        await _cuenta.VerificarCorreoAsync(r.Token);
+        return NoContent();
+    }
+
+    [HttpPost("reenviar-verificacion"), EnableRateLimiting(Politicas.LimiteAuth)]
+    public async Task<IActionResult> ReenviarVerificacion()
+    {
+        await _cuenta.ReenviarVerificacionAsync(User.IdActual());
+        return Accepted();
+    }
+
+    /// <summary>Siempre 202, exista o no la cuenta (no permite averiguar qué correos están registrados).</summary>
+    [HttpPost("olvide-clave"), AllowAnonymous, EnableRateLimiting(Politicas.LimiteAuth)]
+    public async Task<IActionResult> OlvideClave([FromBody] OlvideClaveRequest r)
+    {
+        await _cuenta.OlvideClaveAsync(r.Correo);
+        return Accepted();
+    }
+
+    /// <summary>Define una contraseña nueva con el token del correo (30 min, un solo uso). Cierra todas las sesiones abiertas.</summary>
+    [HttpPost("restablecer-clave"), AllowAnonymous, EnableRateLimiting(Politicas.LimiteAuth)]
+    public async Task<IActionResult> RestablecerClave([FromBody] RestablecerClaveRequest r)
+    {
+        await _cuenta.RestablecerClaveAsync(r.Token, r.ClaveNueva);
         return NoContent();
     }
 

@@ -16,6 +16,7 @@ public class TruekeDbContext : DbContext
     public DbSet<AuditoriaEvento> Auditoria => Set<AuditoriaEvento>();
     public DbSet<Comentario> Comentarios => Set<Comentario>();
     public DbSet<SesionRefresh> SesionesRefresh => Set<SesionRefresh>();
+    public DbSet<TokenUsoUnico> TokensUsoUnico => Set<TokenUsoUnico>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -122,6 +123,18 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => x.FamiliaId);
             e.HasIndex(x => x.ExpiraUtc);
             if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+        });
+
+        mb.Entity<TokenUsoUnico>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.TokenHash).HasMaxLength(64).IsRequired().IsUnicode(false);
+            e.Property(x => x.Proposito).HasConversion<string>().HasMaxLength(20);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.TokenHash).IsUnique();
+            e.HasIndex(x => new { x.UsuarioId, x.Proposito, x.CreadoUtc });
+            e.HasIndex(x => x.ExpiraUtc);
         });
 
         mb.Entity<Transaccion>(e =>
