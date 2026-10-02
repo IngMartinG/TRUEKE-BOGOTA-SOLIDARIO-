@@ -1,0 +1,5 @@
+{
+  "apiUrl": "${API_URL}",
+  "mapaTeselas": "${MAPA_TESELAS}",
+  "mapaAtribucion": "${MAPA_ATRIBUCION}"
+}

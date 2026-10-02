@@ -1,0 +1,91 @@
+name: Frontend CI
+
+on:
+  push:
+    branches: [main]
+    paths: ["frontend/**", "docs/openapi.json", ".github/workflows/frontend-ci.yml"]
+  pull_request:
+    paths: ["frontend/**", "docs/openapi.json", ".github/workflows/frontend-ci.yml"]
+  workflow_dispatch:
+
+# Mínimo privilegio: el workflow solo lee el repositorio.
+permissions:
+  contents: read
+
+concurrency:
+  group: frontend-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Lint, pruebas, contrato y build de producción
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias (exactas del lock)
+        run: npm ci --no-audit --no-fund
+
+      - name: Contrato al día con docs/openapi.json
+        run: |
+          npm run api
+          if ! git diff --quiet -- src/app/api/schema.d.ts; then
+            echo "::error::src/app/api/schema.d.ts no coincide con docs/openapi.json. Ejecuta 'npm run api' y confirma el cambio."
+            git diff --stat -- src/app/api/schema.d.ts
+            exit 1
+          fi
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Pruebas unitarias
+        run: npm run test:ci
+
+      - name: Build de producción (sin source maps)
+        run: |
+          npm run build
+          if find dist -name '*.map' | grep -q .; then
+            echo "::error::El build de producción contiene source maps."
+            exit 1
+          fi
+
+      - name: Auditar dependencias de producción
+        run: npm audit --omit=dev --audit-level=high
+
+  imagen-docker:
+    name: Construir imagen Docker
+    needs: verificar
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Construir imagen
+        run: docker build -t trueke-web:${{ github.sha }} frontend
+      - name: Verificar que la imagen no corre como root
+        run: |
+          usuario=$(docker inspect --format '{{.Config.User}}' trueke-web:${{ github.sha }})
+          echo "Usuario de la imagen: $usuario"
+          if [ -z "$usuario" ] || [ "$usuario" = "root" ] || [ "$usuario" = "0" ]; then
+            echo "::error::La imagen se ejecuta como root."
+            exit 1
+          fi
+      - name: Probar arranque, cabeceras de seguridad y config.json
+        run: |
+          docker run -d --name web -p 8081:8080 -e API_URL=https://api.ejemplo.co trueke-web:${{ github.sha }}
+          for i in $(seq 1 20); do curl -fs http://localhost:8081/salud && break; sleep 1; done
+          curl -fsI http://localhost:8081/ | tee cabeceras.txt
+          grep -qi "content-security-policy" cabeceras.txt || { echo "::error::Falta la CSP"; exit 1; }
+          grep -qi "connect-src 'self' https://api.ejemplo.co wss://api.ejemplo.co" cabeceras.txt || { echo "::error::La CSP no incluye la API"; exit 1; }
+          curl -fs http://localhost:8081/config.json | grep -q '"apiUrl": "https://api.ejemplo.co"' || { echo "::error::config.json incorrecto"; exit 1; }
+          curl -fs http://localhost:8081/explorar | grep -q "<app-root" || { echo "::error::El fallback SPA no funciona"; exit 1; }
+          docker logs web
