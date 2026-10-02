@@ -76,7 +76,7 @@ type Paso2fa = 'inicio' | 'escanear' | 'codigos';
               <div class="esqueleto size-[200px]"></div>
             }
           </div>
-          <form (ngSubmit)="activar2fa()" class="space-y-4">
+          <form (ngSubmit)="activar2fa()" class="min-w-0 space-y-4">
             <ol class="list-decimal space-y-1 pl-5 text-sm">
               <li>Abre tu app autenticadora y escanea el código.</li>
               <li>Si no puedes escanear, escribe esta clave: <code class="rounded bg-superficie-2 px-1.5 py-0.5 font-mono text-xs break-all select-all">{{ secreto() }}</code></li>

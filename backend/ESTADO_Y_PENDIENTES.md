@@ -47,4 +47,4 @@
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
 - **Instalar Docker en local:** activar la virtualización en la BIOS, `wsl --install` y Docker Desktop.
 - **Configuración externa:** Google Client ID, reCAPTCHA, SMTP, Azure (SQL, Redis, Storage, App Service, Key Vault, Application Insights) y Wompi. Ver la sección 7 del README; se guía en el momento de cada etapa.
-- **Construir el front Angular** siguiendo la sección 10 del README.
+- ~~Construir el front Angular~~ → hecho en `frontend/` (ver `frontend/README.md`). El compose ahora incluye el servicio `web` en http://localhost:8081.

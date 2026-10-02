@@ -1,9 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { BreakpointObserver } from '@angular/cdk/layout';
+import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Title } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, map } from 'rxjs';
 import { ETIQUETA_ESTADO_PUBLICACION, INFO_MODO, type ModoDto } from '../../api/tipos';
 import { AdminApi } from '../../core/api/admin.api';
 import { CatalogoApi } from '../../core/api/catalogo.api';
@@ -105,7 +106,7 @@ import { Comentarios } from './comentarios';
               <p class="mt-3 leading-relaxed break-words whitespace-pre-line text-tinta/90">{{ p.descripcion }}</p>
             </section>
 
-            @if (p.latitud != null && p.longitud != null) {
+            @if (p.latitud !== null && p.latitud !== undefined && p.longitud !== null && p.longitud !== undefined) {
               <section class="mt-8" aria-labelledby="titulo-ubicacion">
                 <h2 id="titulo-ubicacion" class="text-lg font-bold">Ubicación</h2>
                 <p class="mt-1 text-sm text-tenue">
@@ -118,9 +119,11 @@ import { Comentarios } from './comentarios';
               </section>
             }
 
-            <div class="mt-8 hidden lg:block">
-              <app-comentarios [publicacionId]="p.id!" [propietarioId]="p.propietario?.id" />
-            </div>
+            @if (escritorio()) {
+              <div class="mt-8">
+                <app-comentarios [publicacionId]="p.id!" [propietarioId]="p.propietario?.id" />
+              </div>
+            }
           </div>
 
           <!-- Panel de acción -->
@@ -258,9 +261,11 @@ import { Comentarios } from './comentarios';
           </aside>
         </div>
 
-        <div class="mt-8 lg:hidden">
-          <app-comentarios [publicacionId]="p.id!" [propietarioId]="p.propietario?.id" />
-        </div>
+        @if (!escritorio()) {
+          <div class="mt-8">
+            <app-comentarios [publicacionId]="p.id!" [propietarioId]="p.propietario?.id" />
+          </div>
+        }
       </div>
 
       <!-- Solicitar -->
@@ -329,6 +334,11 @@ export default class Detalle {
   protected readonly favoritos = inject(FavoritosService);
 
   readonly id = input.required<string>();
+  /** Una sola instancia de comentarios: en escritorio va bajo la galería y en móvil al final. */
+  protected readonly escritorio = toSignal(
+    inject(BreakpointObserver).observe('(min-width: 1024px)').pipe(map((r) => r.matches)),
+    { initialValue: window.matchMedia('(min-width: 1024px)').matches },
+  );
   protected readonly etiquetaEstado = ETIQUETA_ESTADO_PUBLICACION;
 
   protected readonly recurso = rxResource({

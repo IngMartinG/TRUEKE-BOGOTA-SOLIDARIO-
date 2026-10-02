@@ -35,7 +35,7 @@ import { Modal } from '../../shared/ui/modal';
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
               <div class="flex flex-wrap items-center gap-2">
-                <span class="insignia-neutra">{{ d.tipo }}</span>
+                <span class="insignia-neutra">{{ tipos[d.tipo ?? ''] ?? d.tipo }}</span>
                 <span class="insignia bg-tierra-100 text-tierra-700">{{ d.total }} {{ d.total === 1 ? 'reporte' : 'reportes' }}</span>
                 @if (!d.objetivoExiste) {
                   <span class="insignia-neutra">El contenido ya no existe</span>
@@ -99,6 +99,13 @@ export default class Denuncias {
   private readonly avisos = inject(AvisosService);
   protected readonly estados: EstadoDenunciaDto[] = ['Pendiente', 'Resuelta', 'Descartada'];
   protected readonly estado = signal<EstadoDenunciaDto>('Pendiente');
+  protected readonly tipos: Record<string, string> = {
+    Publicacion: 'Publicación',
+    Comentario: 'Comentario',
+    Mensaje: 'Mensaje',
+    Usuario: 'Usuario',
+    Calificacion: 'Calificación',
+  };
   protected readonly recurso = rxResource({ params: () => this.estado(), stream: ({ params }) => this.api.denuncias(params) });
   protected readonly titulos: Record<AccionDenunciaDto, string> = {
     Descartar: 'Descartar denuncia',
