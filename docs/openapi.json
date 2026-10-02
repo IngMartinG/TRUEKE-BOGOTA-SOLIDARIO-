@@ -2149,6 +2149,66 @@
         }
       }
     },
+    "/api/v1/usuarios/yo/datos": {
+      "get": {
+        "tags": [
+          "Usuarios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosPersonalesDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosPersonalesDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosPersonalesDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/usuarios/yo/eliminar": {
+      "post": {
+        "tags": [
+          "Usuarios"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EliminarCuentaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EliminarCuentaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/EliminarCuentaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/usuarios/yo": {
       "get": {
         "tags": [
@@ -2368,6 +2428,30 @@
         },
         "additionalProperties": false
       },
+      "ComentarioExportDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "publicacionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "oculto": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "ConceptoPagoDto": {
         "enum": [
           "Destacar",
@@ -2559,6 +2643,76 @@
         },
         "additionalProperties": false
       },
+      "DatosPersonalesDto": {
+        "type": "object",
+        "properties": {
+          "generadoUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "perfil": {
+            "$ref": "#/components/schemas/UsuarioDto"
+          },
+          "politicaDatosVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaAceptacionPolitica": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "publicaciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicacionDto"
+            }
+          },
+          "solicitudesEnviadas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SolicitudDto"
+            }
+          },
+          "comentarios": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ComentarioExportDto"
+            }
+          },
+          "mensajesEnviados": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MensajeExportDto"
+            }
+          },
+          "transacciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TransaccionExportDto"
+            }
+          },
+          "pagos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PagoEstadoDto"
+            }
+          },
+          "notificaciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificacionDto"
+            }
+          },
+          "denunciasRealizadas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DenunciaExportDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "DenunciaAgrupadaDto": {
         "type": "object",
         "properties": {
@@ -2627,6 +2781,37 @@
         },
         "additionalProperties": false
       },
+      "DenunciaExportDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "objetivoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "detalle": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "EcoPuntosResumenDto": {
         "type": "object",
         "properties": {
@@ -2657,6 +2842,31 @@
           "destacadosGratisRestantes": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EliminarCuentaRequest": {
+        "required": [
+          "confirmacion"
+        ],
+        "type": "object",
+        "properties": {
+          "confirmacion": {
+            "minLength": 1,
+            "pattern": "^ELIMINAR$",
+            "type": "string"
+          },
+          "clave": {
+            "maxLength": 128,
+            "type": "string",
+            "nullable": true
+          },
+          "googleIdToken": {
+            "maxLength": 4096,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -2804,6 +3014,27 @@
           },
           "oculto": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MensajeExportDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "conversacionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -3413,6 +3644,33 @@
             "maxLength": 100,
             "minLength": 20,
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TransaccionExportDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "publicacionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "modo": {
+            "type": "string"
+          },
+          "miRol": {
+            "type": "string"
+          },
+          "recibiPuntos": {
+            "type": "boolean"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false

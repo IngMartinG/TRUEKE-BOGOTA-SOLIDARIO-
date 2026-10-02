@@ -109,7 +109,24 @@ public sealed class AuthController : ControllerBase
 public sealed class UsuariosController : ControllerBase
 {
     private readonly IAuthService _auth;
-    public UsuariosController(IAuthService auth) => _auth = auth;
+    private readonly IDatosPersonalesService _datos;
+    public UsuariosController(IAuthService auth, IDatosPersonalesService datos) { _auth = auth; _datos = datos; }
+
+    /// <summary>Ley 1581 — derecho de acceso: todos tus datos en JSON.</summary>
+    [HttpGet("yo/datos"), EnableRateLimiting(Politicas.LimiteAuth)]
+    public async Task<ActionResult<DatosPersonalesDto>> MisDatos() => Ok(await _datos.ExportarAsync(User.IdActual()));
+
+    /// <summary>
+    /// Ley 1581 — derecho de supresión: anonimiza la cuenta (irreversible). Exige "ELIMINAR" y la contraseña (o un ID token
+    /// de Google reciente si la cuenta no tiene clave). Pagos y transacciones se conservan anonimizados por obligación contable.
+    /// </summary>
+    [HttpPost("yo/eliminar"), EnableRateLimiting(Politicas.LimiteAuth)]
+    public async Task<IActionResult> EliminarCuenta([FromBody] EliminarCuentaRequest r)
+    {
+        await _datos.EliminarCuentaAsync(User.IdActual(), r);
+        CookieRefresco.Borrar(HttpContext);
+        return NoContent();
+    }
 
     [HttpGet("yo")]
     public async Task<ActionResult<UsuarioDto>> Yo() => Ok(await _auth.ObtenerPerfilAsync(User.IdActual()));

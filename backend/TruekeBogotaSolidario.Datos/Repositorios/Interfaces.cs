@@ -52,6 +52,8 @@ public interface IPublicacionRepository
         int? categoriaId, ModoTransaccion? modo, int maximo);
     Task<IReadOnlyList<Publicacion>> ListarPorPropietarioAsync(Guid propietarioId);
     Task<int> ContarActivasPorUsuarioAsync(Guid usuarioId);
+    /// <summary>Disponibles o en negociación del usuario, CON tracking (para cancelarlas).</summary>
+    Task<IReadOnlyList<Publicacion>> ListarActivasParaActualizarAsync(Guid propietarioId);
     void Agregar(Publicacion publicacion);
 }
 
@@ -64,6 +66,8 @@ public interface ISolicitudRepository
     Task<Solicitud?> ObtenerPendientePorPublicacionAsync(Guid publicacionId);
     Task<int> ContarPendientesPorSolicitanteAsync(Guid solicitanteId);
     Task<bool> ExisteAceptadaAsync(Guid publicacionId, Guid solicitanteId);
+    /// <summary>Pendientes enviadas o recibidas por el usuario, CON tracking e incluyendo la Publicacion.</summary>
+    Task<IReadOnlyList<Solicitud>> ListarPendientesDelUsuarioAsync(Guid usuarioId);
     void Agregar(Solicitud solicitud);
 }
 
@@ -83,6 +87,7 @@ public interface IPagoRepository
     /// <summary>Evita pagar dos veces lo mismo (mismo concepto y, si aplica, misma publicación).</summary>
     Task<bool> ExistePendienteAsync(Guid usuarioId, ConceptoPago concepto, Guid? publicacionId);
     Task<IReadOnlyList<Pago>> ListarPendientesAnterioresAAsync(DateTime limiteUtc, int maximo);
+    Task<IReadOnlyList<Pago>> ListarPorUsuarioAsync(Guid usuarioId, int maximo);
     void Agregar(Pago pago);
 }
 
@@ -123,6 +128,7 @@ public interface INotificacionRepository
 {
     Task<Notificacion?> ObtenerAsync(Guid id, Guid usuarioId);
     Task<(IReadOnlyList<Notificacion> Items, int Total)> ListarAsync(Guid usuarioId, bool soloNoLeidas, int pagina, int tamano);
+    Task<IReadOnlyList<Notificacion>> ListarTodasAsync(Guid usuarioId, int maximo);
     Task<int> ContarNoLeidasAsync(Guid usuarioId);
     /// <summary>Marca (sin guardar) hasta 1000 notificaciones no leídas.</summary>
     Task MarcarTodasLeidasAsync(Guid usuarioId, DateTime ahoraUtc);
@@ -171,5 +177,7 @@ public interface IComentarioRepository
     /// <summary>Incluye Autor. Más recientes primero. Si <paramref name="incluirOcultos"/> es false, los ocultos no se devuelven.</summary>
     Task<(IReadOnlyList<Comentario> Items, int Total)> ListarPorPublicacionAsync(Guid publicacionId, bool incluirOcultos, int pagina, int tamano);
     Task<int> ContarDelAutorDesdeAsync(Guid autorId, DateTime desdeUtc);
+    /// <summary>CON tracking (exportación y ocultamiento al eliminar la cuenta).</summary>
+    Task<IReadOnlyList<Comentario>> ListarDelAutorAsync(Guid autorId, int maximo);
     void Agregar(Comentario comentario);
 }
