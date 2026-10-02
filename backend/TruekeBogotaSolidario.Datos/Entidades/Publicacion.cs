@@ -20,7 +20,7 @@ public class Publicacion
             throw new ReglaDeNegocioException("Una publicación en modo Compra requiere un precio de referencia mayor a cero.");
         if (latitud.HasValue != longitud.HasValue) throw new ReglaDeNegocioException("Latitud y longitud deben enviarse juntas.");
         if (latitud is < -90 or > 90 || longitud is < -180 or > 180) throw new ReglaDeNegocioException("Coordenadas fuera de rango.");
-        if (imagenUrl is not null && (imagenUrl.Length > 500 || !Uri.TryCreate(imagenUrl, UriKind.Absolute, out var u) || u.Scheme != Uri.UriSchemeHttps))
+        if (imagenUrl is not null && !UrlsSeguras.EsValida(imagenUrl))
             throw new ReglaDeNegocioException("La imagen debe ser una URL https válida.");
 
         Id = Guid.NewGuid();

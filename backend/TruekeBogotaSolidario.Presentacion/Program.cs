@@ -31,6 +31,8 @@ if (esProduccion)
         throw new InvalidOperationException("Database:Provider=InMemory no está permitido en Producción.");
     if (config["Jwt:Key"]?.Contains("CAMBIAR", StringComparison.OrdinalIgnoreCase) == true)
         throw new InvalidOperationException("Jwt:Key es un placeholder. Define una clave real por variable de entorno o gestor de secretos.");
+    if (string.IsNullOrWhiteSpace(config["Almacenamiento:ServicioUrl"]) && string.IsNullOrWhiteSpace(config["Almacenamiento:CadenaConexion"]))
+        throw new InvalidOperationException("Configura Almacenamiento:ServicioUrl (Azure Blob con Managed Identity) para la subida de imágenes.");
     if (string.Equals(config["Correo:Proveedor"], "Simulado", StringComparison.OrdinalIgnoreCase))
         throw new InvalidOperationException("Correo:Proveedor=Simulado no está permitido en Producción (configura Correo:Smtp).");
     if (!Uri.TryCreate(config["Urls:Frontend"], UriKind.Absolute, out var front) || front.Scheme != Uri.UriSchemeHttps)

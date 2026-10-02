@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using TruekeBogotaSolidario.Datos.Contexto;
 using TruekeBogotaSolidario.Datos.Repositorios;
+using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Correo;
 using TruekeBogotaSolidario.Negocio.Pagos;
@@ -62,6 +63,13 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<INotificador, NotificadorPersistente>();
         services.AddScoped<INotificacionService, NotificacionService>();
         services.AddScoped<IChatService, ChatService>();
+        services.AddScoped<IArchivoService, ArchivoService>();
+
+        // Archivos: Azure Blob si está configurado; si no, deshabilitado (las URLs se validan solo por host permitido)
+        services.AddOptions<AlmacenamientoOpciones>().Bind(config.GetSection(AlmacenamientoOpciones.Seccion));
+        var almacen = config.GetSection(AlmacenamientoOpciones.Seccion).Get<AlmacenamientoOpciones>() ?? new AlmacenamientoOpciones();
+        if (almacen.Configurado) services.TryAddSingleton<IAlmacenArchivos, AlmacenBlobAzure>();
+        else services.TryAddSingleton<IAlmacenArchivos, AlmacenDeshabilitado>();
         services.AddMemoryCache();
 
         services.AddSingleton<IGeneradorToken, GeneradorJwt>();

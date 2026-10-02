@@ -3,6 +3,7 @@ using Microsoft.Extensions.Options;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Datos.Repositorios;
+using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Dtos;
 using TruekeBogotaSolidario.Negocio.Pagos;
@@ -36,14 +37,15 @@ public sealed class PagoService : IPagoService
     private readonly UrlsOpciones _urls;
     private readonly TimeProvider _reloj;
     private readonly INotificador _notificador;
+    private readonly IAlmacenArchivos _almacen;
     private readonly ILogger<PagoService> _log;
 
     public PagoService(IPagoRepository pagos, IUsuarioRepository usuarios, IPublicacionRepository pubs, IUnidadDeTrabajo uow,
         IProveedorPagos proveedor, IOptions<PagosOpciones> opciones, IOptions<UrlsOpciones> urls, TimeProvider reloj,
-        INotificador notificador, ILogger<PagoService> log)
+        INotificador notificador, IAlmacenArchivos almacen, ILogger<PagoService> log)
     {
         _pagos = pagos; _usuarios = usuarios; _pubs = pubs; _uow = uow; _proveedor = proveedor;
-        _opciones = opciones.Value; _urls = urls.Value; _reloj = reloj; _notificador = notificador; _log = log;
+        _opciones = opciones.Value; _urls = urls.Value; _reloj = reloj; _notificador = notificador; _almacen = almacen; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
@@ -116,7 +118,8 @@ public sealed class PagoService : IPagoService
             case ConceptoPago.Verificar:
             {
                 if (r.DocumentoUrl is null) throw new ReglaDeNegocioException("Indica el enlace del documento de identidad.");
-                ValidadorUrls.ExigirHostPermitido(r.DocumentoUrl, _urls.HostsPermitidosDocumentos, "El documento");
+                if (_almacen.Habilitado) await _almacen.ValidarArchivoPropioAsync(r.DocumentoUrl, actorId, TipoArchivoDto.Documento, ct);
+                else ValidadorUrls.ExigirHostPermitido(r.DocumentoUrl, _urls.HostsPermitidosDocumentos, "El documento");
                 u.ValidarPuedeSolicitarVerificacion(r.DocumentoUrl);
                 documento = r.DocumentoUrl;
                 cotizacion = CotizarInterno(u, concepto, ahora)!;

@@ -233,6 +233,54 @@
         }
       }
     },
+    "/api/v1/archivos/subidas": {
+      "post": {
+        "tags": [
+          "Archivos"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitarSubidaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitarSubidaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitarSubidaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubidaArchivoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubidaArchivoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SubidaArchivoDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/registrar": {
       "post": {
         "tags": [
@@ -2981,6 +3029,29 @@
         },
         "additionalProperties": false
       },
+      "SolicitarSubidaRequest": {
+        "required": [
+          "contentType"
+        ],
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoArchivoDto"
+          },
+          "contentType": {
+            "maxLength": 50,
+            "minLength": 0,
+            "type": "string"
+          },
+          "tamanoBytes": {
+            "maximum": 5242880,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int64"
+          }
+        },
+        "additionalProperties": false
+      },
       "SolicitudDto": {
         "type": "object",
         "properties": {
@@ -3022,6 +3093,38 @@
           }
         },
         "additionalProperties": false
+      },
+      "SubidaArchivoDto": {
+        "type": "object",
+        "properties": {
+          "urlSubida": {
+            "type": "string"
+          },
+          "urlArchivo": {
+            "type": "string"
+          },
+          "metodo": {
+            "type": "string"
+          },
+          "cabeceras": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          },
+          "expiraUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TipoArchivoDto": {
+        "enum": [
+          "Imagen",
+          "Documento"
+        ],
+        "type": "string"
       },
       "TokenRequest": {
         "required": [

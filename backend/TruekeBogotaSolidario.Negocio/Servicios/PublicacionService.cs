@@ -2,6 +2,7 @@ using Microsoft.Extensions.Options;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Datos.Repositorios;
+using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Dtos;
 
@@ -28,12 +29,14 @@ public sealed class PublicacionService : IPublicacionService
     private readonly UrlsOpciones _urls;
     private readonly TimeProvider _reloj;
     private readonly INotificador _notificador;
+    private readonly IAlmacenArchivos _almacen;
 
     public PublicacionService(IPublicacionRepository pubs, IUsuarioRepository usuarios, ICategoriaRepository categorias,
-        ISolicitudRepository solicitudes, IUnidadDeTrabajo uow, IOptions<UrlsOpciones> urls, TimeProvider reloj, INotificador notificador)
+        ISolicitudRepository solicitudes, IUnidadDeTrabajo uow, IOptions<UrlsOpciones> urls, TimeProvider reloj, INotificador notificador,
+        IAlmacenArchivos almacen)
     {
         _pubs = pubs; _usuarios = usuarios; _categorias = categorias; _solicitudes = solicitudes; _uow = uow; _urls = urls.Value; _reloj = reloj;
-        _notificador = notificador;
+        _notificador = notificador; _almacen = almacen;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
@@ -46,7 +49,11 @@ public sealed class PublicacionService : IPublicacionService
             throw new ReglaDeNegocioException($"Alcanzaste el máximo de {Limites.MaxPublicacionesActivasPorUsuario} publicaciones activas.");
 
         var categoria = await _categorias.ObtenerPorIdAsync(r.CategoriaId) ?? throw new ReglaDeNegocioException("La categoría no existe.");
-        ValidadorUrls.ExigirHostPermitido(r.ImagenUrl, _urls.HostsPermitidosImagenes, "La imagen");
+        if (r.ImagenUrl is not null)
+        {
+            if (_almacen.Habilitado) await _almacen.ValidarArchivoPropioAsync(r.ImagenUrl, actorId, TipoArchivoDto.Imagen);
+            else ValidadorUrls.ExigirHostPermitido(r.ImagenUrl, _urls.HostsPermitidosImagenes, "La imagen");
+        }
 
         var pub = new Publicacion(actorId, r.Titulo, r.Descripcion, categoria, (ModoTransaccion)(int)r.Modo, r.Localidad,
             r.PrecioReferenciaCop, r.Latitud, r.Longitud, r.ImagenUrl);
