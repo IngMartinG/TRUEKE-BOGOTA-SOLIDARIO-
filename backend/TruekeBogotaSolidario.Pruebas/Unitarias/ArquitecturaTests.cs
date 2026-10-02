@@ -58,6 +58,7 @@ public class ArquitecturaTests
             "GET api/v1/publicaciones/{id:guid}",
             "GET api/v1/publicaciones/{id:guid}/comentarios",
             "GET api/v1/eco-puntos/politica",
+            "GET api/v1/configuracion",
             "GET api/v1/usuarios/{id:guid}/perfil",
             "GET api/v1/usuarios/{id:guid}/publicaciones",
             "GET api/v1/usuarios/{id:guid}/calificaciones",

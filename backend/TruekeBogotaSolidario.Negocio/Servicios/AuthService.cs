@@ -39,21 +39,23 @@ public sealed class AuthService : IAuthService
     private readonly CorreosCuenta _correos;
     private readonly ICorreoSaliente _salida;
     private readonly IValidadorGoogle _google;
+    private readonly IVerificadorCaptcha _captcha;
     private readonly TimeProvider _reloj;
     private readonly ILogger<AuthService> _log;
 
     public AuthService(IUsuarioRepository usuarios, ISesionRefreshRepository refrescos, IUnidadDeTrabajo uow, EmisorSesiones emisor,
         ISesionService sesiones, IOptions<SeguridadOpciones> seg, IOptions<LegalOpciones> legal, CorreosCuenta correos,
-        ICorreoSaliente salida, IValidadorGoogle google, TimeProvider reloj, ILogger<AuthService> log)
+        ICorreoSaliente salida, IValidadorGoogle google, IVerificadorCaptcha captcha, TimeProvider reloj, ILogger<AuthService> log)
     {
         _usuarios = usuarios; _refrescos = refrescos; _uow = uow; _emisor = emisor; _sesiones = sesiones; _seg = seg.Value;
-        _legal = legal.Value; _correos = correos; _salida = salida; _google = google; _reloj = reloj; _log = log;
+        _legal = legal.Value; _correos = correos; _salida = salida; _google = google; _captcha = captcha; _reloj = reloj; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
     public async Task<ResultadoAutenticacion> RegistrarAsync(RegistroRequest r)
     {
+        await _captcha.ExigirAsync(r.CaptchaToken, AccionesCaptcha.Registro);
         var correo = Usuario.NormalizarCorreo(r.Correo);
         if (await _usuarios.ExisteCorreoAsync(correo))
             throw new ReglaDeNegocioException("Ya existe una cuenta con ese correo.");
@@ -72,6 +74,7 @@ public sealed class AuthService : IAuthService
 
     public async Task<ResultadoAutenticacion> LoginAsync(LoginRequest r)
     {
+        await _captcha.ExigirAsync(r.CaptchaToken, AccionesCaptcha.Login);
         var ahora = Ahora;
         var usuario = await _usuarios.ObtenerPorCorreoAsync(Usuario.NormalizarCorreo(r.Correo));
 

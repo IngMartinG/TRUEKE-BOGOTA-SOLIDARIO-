@@ -100,9 +100,10 @@ public sealed class AdministracionService : IAdministracionService
 
         // No puede iniciar sesión: se le avisa por correo (el motivo es suyo, no de terceros)
         var hasta = u.SuspendidoHasta is { } h ? $"hasta el {h:yyyy-MM-dd} (UTC)" : "hasta nuevo aviso";
-        _correo.Encolar(new MensajeCorreo(u.Correo, "Tu cuenta de Trueke Bogotá Solidario fue suspendida",
-            $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:\n\nTu cuenta fue suspendida {hasta}.\nMotivo: {u.MotivoSuspension}\n\n" +
-            "Si crees que es un error, responde a este correo."));
+        _correo.Encolar(PlantillaCorreo.Crear(u.Correo, "Tu cuenta de Trueke Bogotá Solidario fue suspendida",
+            $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:",
+            new[] { $"Tu cuenta fue suspendida {hasta}.", $"Motivo: {u.MotivoSuspension}" },
+            pie: "Si crees que es un error, responde a este correo y lo revisaremos."));
         return AUsuarioAdmin(u, ahora);
     }
 
@@ -112,8 +113,9 @@ public sealed class AdministracionService : IAdministracionService
         u.Reactivar();
         Auditar(actorId, "USUARIO_REACTIVADO", "Usuario", u.Id, null);
         await _uow.GuardarCambiosAsync();
-        _correo.Encolar(new MensajeCorreo(u.Correo, "Tu cuenta de Trueke Bogotá Solidario fue reactivada",
-            $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:\n\nTu cuenta está activa de nuevo. Ya puedes iniciar sesión."));
+        _correo.Encolar(PlantillaCorreo.Crear(u.Correo, "Tu cuenta de Trueke Bogotá Solidario fue reactivada",
+            $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:",
+            new[] { "Tu cuenta está activa de nuevo. Ya puedes iniciar sesión y seguir participando en la comunidad." }));
         return AUsuarioAdmin(u, Ahora);
     }
 

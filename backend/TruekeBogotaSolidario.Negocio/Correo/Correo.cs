@@ -10,7 +10,8 @@ using MimeKit;
 
 namespace TruekeBogotaSolidario.Negocio.Correo;
 
-public sealed record MensajeCorreo(string Para, string Asunto, string Texto);
+/// <summary>Texto plano siempre; Html opcional (se envían ambos como multipart/alternative).</summary>
+public sealed record MensajeCorreo(string Para, string Asunto, string Texto, string? Html = null);
 
 public sealed class SmtpOpciones
 {
@@ -122,7 +123,7 @@ public sealed class TransporteCorreoSmtp : ITransporteCorreo
         mensaje.From.Add(new MailboxAddress(_o.NombreRemitente, _o.Remitente));
         mensaje.To.Add(MailboxAddress.Parse(m.Para));
         mensaje.Subject = m.Asunto;
-        mensaje.Body = new TextPart("plain") { Text = m.Texto };
+        mensaje.Body = new BodyBuilder { TextBody = m.Texto, HtmlBody = m.Html }.ToMessageBody();
 
         using var cliente = new SmtpClient { Timeout = 15_000 };
         var seguridad = string.Equals(_o.Smtp.Seguridad, "SslOnConnect", StringComparison.OrdinalIgnoreCase)

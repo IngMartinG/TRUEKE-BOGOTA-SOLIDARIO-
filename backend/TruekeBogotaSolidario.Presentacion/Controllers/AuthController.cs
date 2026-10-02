@@ -77,7 +77,7 @@ public sealed class AuthController : ControllerBase
     [HttpPost("olvide-clave"), AllowAnonymous, EnableRateLimiting(Politicas.LimiteAuth)]
     public async Task<IActionResult> OlvideClave([FromBody] OlvideClaveRequest r)
     {
-        await _cuenta.OlvideClaveAsync(r.Correo);
+        await _cuenta.OlvideClaveAsync(r.Correo, r.CaptchaToken);
         return Accepted();
     }
 
