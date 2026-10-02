@@ -19,6 +19,8 @@ public static class NegocioServiceCollectionExtensions
         services.AddOptions<JwtOpciones>().Bind(config.GetSection(JwtOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
         services.AddOptions<SeguridadOpciones>().Bind(config.GetSection(SeguridadOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
         services.AddOptions<UrlsOpciones>().Bind(config.GetSection(UrlsOpciones.Seccion));
+        services.AddOptions<CaptchaOpciones>().Bind(config.GetSection(CaptchaOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
+        services.AddHttpClient<IVerificadorCaptcha, VerificadorRecaptcha>(c => c.Timeout = TimeSpan.FromSeconds(5));
         services.AddOptions<GoogleOpciones>().Bind(config.GetSection(GoogleOpciones.Seccion));
         services.AddSingleton<IValidadorGoogle, ValidadorGoogle>();
         services.AddOptions<LegalOpciones>().Bind(config.GetSection(LegalOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
@@ -66,6 +68,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<IArchivoService, ArchivoService>();
         services.AddScoped<IDenunciaService, DenunciaService>();
         services.AddScoped<IDatosPersonalesService, DatosPersonalesService>();
+        services.AddScoped<IConfiguracionService, ConfiguracionService>();
 
         // Archivos: Azure Blob si está configurado; si no, deshabilitado (las URLs se validan solo por host permitido)
         services.AddOptions<AlmacenamientoOpciones>().Bind(config.GetSection(AlmacenamientoOpciones.Seccion));

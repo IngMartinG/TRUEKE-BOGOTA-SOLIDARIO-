@@ -49,20 +49,20 @@ public sealed class CorreosCuenta
     public async Task<MensajeCorreo> PrepararVerificacionAsync(Usuario u)
     {
         var token = await NuevoTokenAsync(u, PropositoToken.VerificarCorreo, VigenciaVerificacion);
-        return new MensajeCorreo(u.Correo, "Confirma tu correo en Trueke Bogotá Solidario",
-            $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:\n\n" +
-            "Para activar tu cuenta y empezar a publicar, confirma tu correo con este enlace (válido por 24 horas):\n\n" +
-            $"{Enlace("verificar-correo", token)}\n\n" +
+        return PlantillaCorreo.Crear(u.Correo, "Confirma tu correo en Trueke Bogotá Solidario",
+            $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:",
+            new[] { "¡Bienvenido a la comunidad! Para activar tu cuenta y empezar a publicar, intercambiar y donar, confirma tu correo. El enlace es válido por 24 horas." },
+            ("Confirmar mi correo", Enlace("verificar-correo", token)),
             "Si no creaste una cuenta en Trueke Bogotá Solidario, ignora este mensaje.");
     }
 
     public async Task<MensajeCorreo> PrepararRestablecimientoAsync(Usuario u)
     {
         var token = await NuevoTokenAsync(u, PropositoToken.RestablecerClave, VigenciaRestablecimiento);
-        return new MensajeCorreo(u.Correo, "Restablece tu contraseña de Trueke Bogotá Solidario",
-            $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:\n\n" +
-            "Recibimos una solicitud para restablecer tu contraseña. Usa este enlace (válido por 30 minutos y un solo uso):\n\n" +
-            $"{Enlace("restablecer-clave", token)}\n\n" +
+        return PlantillaCorreo.Crear(u.Correo, "Restablece tu contraseña de Trueke Bogotá Solidario",
+            $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:",
+            new[] { "Recibimos una solicitud para restablecer tu contraseña. El enlace es válido por 30 minutos y sirve una sola vez. Al cambiarla, se cerrarán tus sesiones abiertas." },
+            ("Crear una nueva contraseña", Enlace("restablecer-clave", token)),
             "Si no fuiste tú, ignora este correo: tu contraseña no cambiará.");
     }
 }
@@ -72,7 +72,7 @@ public interface ICuentaService
     Task VerificarCorreoAsync(string token);
     Task ReenviarVerificacionAsync(Guid actorId);
     /// <summary>Siempre termina igual (exista o no la cuenta): no permite averiguar qué correos están registrados.</summary>
-    Task OlvideClaveAsync(string correo);
+    Task OlvideClaveAsync(string correo, string? captchaToken);
     Task RestablecerClaveAsync(string token, string claveNueva);
 }
 
@@ -89,11 +89,14 @@ public sealed class CuentaService : ICuentaService
     private readonly ICorreoSaliente _salida;
     private readonly ISesionService _sesiones;
     private readonly TimeProvider _reloj;
+    private readonly IVerificadorCaptcha _captcha;
     private readonly ILogger<CuentaService> _log;
 
     public CuentaService(IUsuarioRepository usuarios, ITokenUsoUnicoRepository tokens, ISesionRefreshRepository refrescos, IUnidadDeTrabajo uow,
-        CorreosCuenta correos, ICorreoSaliente salida, ISesionService sesiones, TimeProvider reloj, ILogger<CuentaService> log)
+        CorreosCuenta correos, ICorreoSaliente salida, ISesionService sesiones, TimeProvider reloj, IVerificadorCaptcha captcha,
+        ILogger<CuentaService> log)
     {
+        _captcha = captcha;
         _usuarios = usuarios; _tokens = tokens; _refrescos = refrescos; _uow = uow; _correos = correos; _salida = salida;
         _sesiones = sesiones; _reloj = reloj; _log = log;
     }
@@ -130,8 +133,9 @@ public sealed class CuentaService : ICuentaService
         _salida.Encolar(mensaje);
     }
 
-    public async Task OlvideClaveAsync(string correo)
+    public async Task OlvideClaveAsync(string correo, string? captchaToken)
     {
+        await _captcha.ExigirAsync(captchaToken, AccionesCaptcha.OlvideClave);
         var u = await _usuarios.ObtenerPorCorreoAsync(Usuario.NormalizarCorreo(correo));
         if (u is null || u.EstaEliminado) return;
         if (await _tokens.ContarDesdeAsync(u.Id, PropositoToken.RestablecerClave, Ahora.AddHours(-1)) >= MaxEnlacesPorHora) return;

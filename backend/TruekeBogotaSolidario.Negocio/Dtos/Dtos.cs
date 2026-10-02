@@ -18,6 +18,8 @@ public sealed class RegistroRequest
     /// <summary>Ley 1581 de 2012: autorización expresa para el tratamiento de datos personales.</summary>
     [Range(typeof(bool), "true", "true", ErrorMessage = "Debes aceptar la política de tratamiento de datos personales.")]
     public bool AceptoPoliticaDatos { get; init; }
+    /// <summary>Token de reCAPTCHA v3 (grecaptcha.execute). Obligatorio cuando el captcha está habilitado.</summary>
+    [MaxLength(4096)] public string? CaptchaToken { get; init; }
 }
 
 public sealed class GoogleLoginRequest
@@ -32,6 +34,8 @@ public sealed class LoginRequest
 {
     [Required, EmailAddress, MaxLength(160)] public string Correo { get; init; } = "";
     [Required, StringLength(128, MinimumLength = 1)] public string Clave { get; init; } = "";
+    /// <summary>Token de reCAPTCHA v3 (grecaptcha.execute). Obligatorio cuando el captcha está habilitado.</summary>
+    [MaxLength(4096)] public string? CaptchaToken { get; init; }
 }
 
 public sealed class CambiarClaveRequest
@@ -49,6 +53,8 @@ public sealed class TokenRequest
 public sealed class OlvideClaveRequest
 {
     [Required, EmailAddress, MaxLength(160)] public string Correo { get; init; } = "";
+    /// <summary>Token de reCAPTCHA v3 (grecaptcha.execute). Obligatorio cuando el captcha está habilitado.</summary>
+    [MaxLength(4096)] public string? CaptchaToken { get; init; }
 }
 
 public sealed class RestablecerClaveRequest

@@ -33,6 +33,8 @@ if (esProduccion)
         throw new InvalidOperationException("Jwt:Key es un placeholder. Define una clave real por variable de entorno o gestor de secretos.");
     if (string.IsNullOrWhiteSpace(config["Almacenamiento:ServicioUrl"]) && string.IsNullOrWhiteSpace(config["Almacenamiento:CadenaConexion"]))
         throw new InvalidOperationException("Configura Almacenamiento:ServicioUrl (Azure Blob con Managed Identity) para la subida de imágenes.");
+    if (string.IsNullOrWhiteSpace(config["Captcha:ClaveSecreta"]) || string.IsNullOrWhiteSpace(config["Captcha:ClaveSitio"]))
+        throw new InvalidOperationException("Configura Captcha:ClaveSecreta y Captcha:ClaveSitio (reCAPTCHA v3) para proteger registro, login y recuperación de clave.");
     if (string.Equals(config["Correo:Proveedor"], "Simulado", StringComparison.OrdinalIgnoreCase))
         throw new InvalidOperationException("Correo:Proveedor=Simulado no está permitido en Producción (configura Correo:Smtp).");
     if (!Uri.TryCreate(config["Urls:Frontend"], UriKind.Absolute, out var front) || front.Scheme != Uri.UriSchemeHttps)

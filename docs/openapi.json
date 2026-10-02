@@ -1094,6 +1094,35 @@
         }
       }
     },
+    "/api/v1/configuracion": {
+      "get": {
+        "tags": [
+          "Configuracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracionPublicaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracionPublicaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ConfiguracionPublicaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/conversaciones": {
       "get": {
         "tags": [
@@ -3339,6 +3368,42 @@
         ],
         "type": "string"
       },
+      "ConfiguracionPublicaDto": {
+        "type": "object",
+        "properties": {
+          "captchaClaveSitio": {
+            "type": "string",
+            "nullable": true
+          },
+          "googleClientId": {
+            "type": "string",
+            "nullable": true
+          },
+          "versionPoliticaDatos": {
+            "type": "string"
+          },
+          "subidaArchivosHabilitada": {
+            "type": "boolean"
+          },
+          "maxImagenesPorPublicacion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tamanoMaximoArchivoBytes": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "diasCierreConUnaConfirmacion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "diasCierreSinConfirmacion": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "ConversacionDto": {
         "type": "object",
         "properties": {
@@ -3888,6 +3953,11 @@
             "maxLength": 128,
             "minLength": 1,
             "type": "string"
+          },
+          "captchaToken": {
+            "maxLength": 4096,
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -4053,6 +4123,11 @@
             "minLength": 1,
             "type": "string",
             "format": "email"
+          },
+          "captchaToken": {
+            "maxLength": 4096,
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -4551,6 +4626,11 @@
           },
           "aceptoPoliticaDatos": {
             "type": "boolean"
+          },
+          "captchaToken": {
+            "maxLength": 4096,
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
