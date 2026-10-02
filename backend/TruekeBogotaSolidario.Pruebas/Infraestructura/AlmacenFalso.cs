@@ -48,6 +48,14 @@ public sealed class AlmacenFalso : IAlmacenArchivos
         return Task.CompletedTask;
     }
 
+    public Task EliminarDocumentoAsync(string url, CancellationToken ct = default)
+    {
+        _blobs.TryRemove(url, out _);
+        return Task.CompletedTask;
+    }
+
+    public bool Existe(string url) => _blobs.ContainsKey(url);
+
     public static byte[] Png(int tamano = 100)
     {
         var d = new byte[tamano];

@@ -79,5 +79,7 @@ public sealed class EntornoNegocio : IDisposable
         await db.SaveChangesAsync();
     }
 
+    public IServiceProvider Proveedor => _sp;
+
     public void Dispose() => _sp.Dispose();
 }

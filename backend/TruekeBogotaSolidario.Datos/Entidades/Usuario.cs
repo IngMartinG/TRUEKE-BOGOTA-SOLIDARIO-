@@ -303,6 +303,7 @@ public class Usuario
         if (EstadoVerificacion != EstadoVerificacion.Pendiente) throw new ReglaDeNegocioException("No hay una verificación pendiente para este usuario.");
         EstadoVerificacion = EstadoVerificacion.Aprobada;
         MotivoRechazoVerificacion = null;
+        DocumentoVerificacionUrl = null; // minimización: una vez decidido, el documento de identidad ya no se conserva
     }
 
     public void RechazarVerificacion(string motivo)
@@ -311,5 +312,6 @@ public class Usuario
         if (string.IsNullOrWhiteSpace(motivo)) throw new ReglaDeNegocioException("Debes indicar el motivo del rechazo.");
         EstadoVerificacion = EstadoVerificacion.Rechazada;
         MotivoRechazoVerificacion = motivo.Trim();
+        DocumentoVerificacionUrl = null;
     }
 }

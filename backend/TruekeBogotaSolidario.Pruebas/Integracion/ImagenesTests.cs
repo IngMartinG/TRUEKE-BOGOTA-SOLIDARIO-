@@ -81,6 +81,29 @@ public class ImagenesTests : IClassFixture<FabricaApi>
     }
 
     [Fact]
+    public async Task Documento_de_identidad_privado_se_ve_con_enlace_temporal_y_se_borra_al_resolver()
+    {
+        var ses = await Api.RegistrarSesionAsync(_f, "verificame");
+        var c = Api.ConToken(_f, ses.Token);
+        var s = await SubidaAsync(c, "application/pdf", 2000, "Documento");
+        Assert.Contains("/documentos/", s.UrlArchivo);
+        _almacen.Subir(s.UrlArchivo, "application/pdf", "%PDF-1.7 cedula"u8.ToArray());
+
+        var pago = await c.PostAsJsonAsync("/api/v1/pagos/iniciar", new { concepto = "Verificar", documentoUrl = s.UrlArchivo });
+        Assert.True(pago.StatusCode == HttpStatusCode.Created, await pago.Content.ReadAsStringAsync());
+        var referencia = (await pago.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("referencia").GetString();
+        (await c.PostAsync($"/api/v1/pagos/{referencia}/simular?aprobado=true", null)).EnsureSuccessStatusCode();
+
+        var super = Api.ConToken(_f, await Api.LoginAsync(_f, FabricaApi.CorreoSuper, FabricaApi.ClaveSuper));
+        var pendientes = await super.GetFromJsonAsync<JsonElement>("/api/v1/admin/verificaciones");
+        var mia = pendientes.EnumerateArray().Single(v => v.GetProperty("usuarioId").GetGuid() == ses.Usuario.Id);
+        Assert.EndsWith("?sas=lectura", mia.GetProperty("documentoUrl").GetString());   // enlace temporal, no la URL directa
+
+        Assert.Equal(HttpStatusCode.NoContent, (await super.PostAsync($"/api/v1/admin/verificaciones/{ses.Usuario.Id}/aprobar", null)).StatusCode);
+        Assert.False(_almacen.Existe(s.UrlArchivo));                                     // minimización: el documento ya no se guarda
+    }
+
+    [Fact]
     public async Task Pedir_subida_exige_sesion_y_correo_verificado()
     {
         Assert.Equal(HttpStatusCode.Unauthorized, (await _f.CreateClient().PostAsJsonAsync("/api/v1/archivos/subidas",

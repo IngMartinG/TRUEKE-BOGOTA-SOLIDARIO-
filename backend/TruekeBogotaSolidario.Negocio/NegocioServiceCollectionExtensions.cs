@@ -87,6 +87,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<IAdministracionService, AdministracionService>();
         services.AddScoped<IComentarioService, ComentarioService>();
         services.AddHostedService<ReconciliadorPagosHostedService>();
+        services.AddHostedService<MantenimientoHostedService>();
         return services;
     }
 
