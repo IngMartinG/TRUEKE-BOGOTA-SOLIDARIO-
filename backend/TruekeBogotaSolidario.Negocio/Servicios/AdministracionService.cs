@@ -99,9 +99,11 @@ public sealed class AdministracionService : IAdministracionService
         await ExigirRolAsync(actorId, RolUsuarioEnum.Administrador);
         if (actorId == usuarioId) throw new ReglaDeNegocioException("No puedes resolver tu propia verificación.");
         var u = await _usuarios.ObtenerPorIdAsync(usuarioId) ?? throw new NoEncontradoException("Usuario no encontrado.");
+        var documento = u.DocumentoVerificacionUrl;
         u.AprobarVerificacion();
         Auditar(actorId, "VERIFICACION_APROBADA", "Usuario", usuarioId, null);
         await _uow.GuardarCambiosAsync();
+        if (documento is not null) await _almacen.EliminarDocumentoAsync(documento);
         _log.LogInformation("Verificación aprobada {UsuarioId} por {ActorId}", usuarioId, actorId);
         await NotificarAsync(usuarioId, TiposNotificacion.VerificacionAprobada, "Tu cuenta fue verificada.", null);
     }
@@ -111,9 +113,11 @@ public sealed class AdministracionService : IAdministracionService
         await ExigirRolAsync(actorId, RolUsuarioEnum.Administrador);
         if (actorId == usuarioId) throw new ReglaDeNegocioException("No puedes resolver tu propia verificación.");
         var u = await _usuarios.ObtenerPorIdAsync(usuarioId) ?? throw new NoEncontradoException("Usuario no encontrado.");
+        var documento = u.DocumentoVerificacionUrl;
         u.RechazarVerificacion(motivo);
         Auditar(actorId, "VERIFICACION_RECHAZADA", "Usuario", usuarioId, motivo);
         await _uow.GuardarCambiosAsync();
+        if (documento is not null) await _almacen.EliminarDocumentoAsync(documento);
         _log.LogInformation("Verificación rechazada {UsuarioId} por {ActorId}", usuarioId, actorId);
         await NotificarAsync(usuarioId, TiposNotificacion.VerificacionRechazada, "Tu solicitud de verificación fue rechazada. Revisa el motivo en tu perfil.", null);
     }

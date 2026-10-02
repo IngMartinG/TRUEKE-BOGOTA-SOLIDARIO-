@@ -34,6 +34,8 @@ public interface IAlmacenArchivos
     /// <summary>URL de lectura válida 5 minutos (documentos privados para moderadores).</summary>
     Task<string?> UrlLecturaTemporalAsync(string url, CancellationToken ct = default);
     Task EliminarDelUsuarioAsync(Guid usuarioId, CancellationToken ct = default);
+    /// <summary>Borra un documento privado (p. ej. el de identidad una vez resuelta la verificación). Ignora URLs ajenas.</summary>
+    Task EliminarDocumentoAsync(string url, CancellationToken ct = default);
 }
 
 public sealed class AlmacenDeshabilitado : IAlmacenArchivos
@@ -44,6 +46,7 @@ public sealed class AlmacenDeshabilitado : IAlmacenArchivos
     public Task ValidarArchivoPropioAsync(string url, Guid usuarioId, TipoArchivoDto tipo, CancellationToken ct = default) => Task.CompletedTask;
     public Task<string?> UrlLecturaTemporalAsync(string url, CancellationToken ct = default) => Task.FromResult<string?>(url);
     public Task EliminarDelUsuarioAsync(Guid usuarioId, CancellationToken ct = default) => Task.CompletedTask;
+    public Task EliminarDocumentoAsync(string url, CancellationToken ct = default) => Task.CompletedTask;
 }
 
 /// <summary>
@@ -163,14 +166,25 @@ public sealed class AlmacenBlobAzure : IAlmacenArchivos
         }
     }
 
-    public async Task<string?> UrlLecturaTemporalAsync(string url, CancellationToken ct = default)
+    /// <summary>El blob de documentos al que apunta la URL, o null si la URL no es de ese contenedor.</summary>
+    private BlobClient? Documento(string url)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var u)) return null;
         var contenedor = Contenedor(TipoArchivoDto.Documento);
         var baseContenedor = contenedor.Uri.AbsoluteUri.TrimEnd('/') + "/";
-        if (!u.AbsoluteUri.StartsWith(baseContenedor, StringComparison.Ordinal)) return null;
-        var blob = contenedor.GetBlobClient(Uri.UnescapeDataString(u.AbsoluteUri[baseContenedor.Length..]));
-        return (await FirmarAsync(blob, BlobSasPermissions.Read, ct)).ToString();
+        return u.AbsoluteUri.StartsWith(baseContenedor, StringComparison.Ordinal)
+            ? contenedor.GetBlobClient(Uri.UnescapeDataString(u.AbsoluteUri[baseContenedor.Length..]))
+            : null;
+    }
+
+    public async Task<string?> UrlLecturaTemporalAsync(string url, CancellationToken ct = default)
+        => Documento(url) is { } blob ? (await FirmarAsync(blob, BlobSasPermissions.Read, ct)).ToString() : null;
+
+    public async Task EliminarDocumentoAsync(string url, CancellationToken ct = default)
+    {
+        if (Documento(url) is not { } blob) return;
+        try { await blob.DeleteIfExistsAsync(cancellationToken: ct); }
+        catch (RequestFailedException ex) { _log.LogWarning(ex, "No se pudo borrar un documento de verificación"); }
     }
 
     public async Task EliminarDelUsuarioAsync(Guid usuarioId, CancellationToken ct = default)

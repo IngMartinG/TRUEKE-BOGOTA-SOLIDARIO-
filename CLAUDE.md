@@ -21,8 +21,22 @@ TruekeBogotaSolidario.sln
 Un controller nunca puede tocar un repositorio ni el DbContext.
 
 ## Estado al 2026-10-02
-- Los 10 pendientes de abajo están **hechos**: build `-warnaserror` y 74 pruebas en verde. Ver `backend/ESTADO_Y_PENDIENTES.md` (decisiones abiertas) y `backend/README.md`.
-- La solución y los proyectos viven en `backend/`. El backend anterior (Etapa4) se eliminó.
+- Los 10 pendientes de abajo están **hechos**. Además, se cerraron las brechas previas al front:
+  - refresh token en cookie HttpOnly;
+  - verificación de correo y recuperación de clave;
+  - Google;
+  - chat interno;
+  - imágenes en Azure Blob;
+  - notificaciones persistentes;
+  - denuncias;
+  - Habeas Data.
+
+  Build `-warnaserror` y 137 pruebas en verde. Ver `backend/ESTADO_Y_PENDIENTES.md` y `backend/README.md` (sección 10: contrato para Angular).
+- La solución y los proyectos viven en `backend/`. El backend anterior (Etapa4) se eliminó. Estructura del repo: `backend/`, `frontend/`, `prototipo/`, `docs/`.
+- **Reglas añadidas:**
+  - publicar, solicitar, comentar, chatear, denunciar y pagar exigen correo verificado (`Guardas.ExigirCorreoVerificado`);
+  - la API nunca comparte correos entre usuarios (se usa el chat);
+  - los archivos se suben directo a Blob con SAS y se validan al usarlos.
 - La clave JWT se configura como `Jwt:Key` (variable `Jwt__Key`).
 
 ## Pendientes originales (completados)
