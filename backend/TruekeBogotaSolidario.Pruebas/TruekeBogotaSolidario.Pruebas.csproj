@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.4" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="8.0.31" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.11.1" />
+    <PackageReference Include="xunit" Version="2.9.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.8.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.31" />
+  </ItemGroup>
+
+  <!-- Las pruebas sí pueden ver todas las capas (las de Negocio usan entidades y repositorios reales sobre InMemory). -->
+  <ItemGroup>
+    <ProjectReference Include="..\TruekeBogotaSolidario.Datos\TruekeBogotaSolidario.Datos.csproj" />
+    <ProjectReference Include="..\TruekeBogotaSolidario.Negocio\TruekeBogotaSolidario.Negocio.csproj" />
+    <ProjectReference Include="..\TruekeBogotaSolidario.Presentacion\TruekeBogotaSolidario.Presentacion.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

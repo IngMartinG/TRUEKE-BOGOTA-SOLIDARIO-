@@ -1,0 +1,76 @@
+# Entorno completo local: API + SQL Server + Redis.
+#   1) cp .env.example .env   y completa los valores
+#   2) docker compose up --build
+#   3) API en http://localhost:8080  (health: /health/ready)
+# SQL Server y Redis NO se publican al host: solo la API los ve por la red interna.
+
+name: trueke
+
+services:
+  api:
+    build: .
+    image: trueke-api:local
+    ports:
+      - "8080:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Production}
+      ConnectionStrings__TruekeDb: "Server=sqlserver,1433;Database=TruekeDb;User Id=sa;Password=${SQL_SA_PASSWORD:?Define SQL_SA_PASSWORD en .env};TrustServerCertificate=True;Encrypt=True"
+      Database__Provider: SqlServer
+      Database__Inicializacion: Migrate
+      Jwt__Key: ${JWT_KEY:?Define JWT_KEY en .env}
+      Pagos__Proveedor: ${PAGOS_PROVEEDOR:-Wompi}
+      Pagos__Wompi__BaseUrl: ${WOMPI_BASE_URL:-https://sandbox.wompi.co/v1}
+      Pagos__Wompi__LlavePublica: ${WOMPI_LLAVE_PUBLICA:-}
+      Pagos__Wompi__LlavePrivada: ${WOMPI_LLAVE_PRIVADA:-}
+      Pagos__Wompi__SecretoIntegridad: ${WOMPI_SECRETO_INTEGRIDAD:-}
+      Pagos__Wompi__SecretoEventos: ${WOMPI_SECRETO_EVENTOS:-}
+      Redis__Habilitado: "true"
+      Redis__Conexion: "redis:6379,password=${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env},abortConnect=false"
+      Cors__Origenes__0: ${CORS_ORIGEN:-http://localhost:4200}
+      Bootstrap__SuperUsuarioCorreo: ${SUPERUSUARIO_CORREO:-}
+      Bootstrap__SuperUsuarioClave: ${SUPERUSUARIO_CLAVE:-}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    # Endurecimiento del contenedor
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD:?Define SQL_SA_PASSWORD en .env}
+      MSSQL_PID: Developer
+    volumes:
+      - sqldata:/var/opt/mssql
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" -b -o /dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env}", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+    restart: unless-stopped
+
+volumes:
+  sqldata:
