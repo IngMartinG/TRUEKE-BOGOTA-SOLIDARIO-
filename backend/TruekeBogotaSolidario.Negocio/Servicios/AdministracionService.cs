@@ -44,7 +44,7 @@ public sealed class AdministracionService : IAdministracionService
     }
 
     private Task NotificarAsync(Guid usuarioId, string tipo, string mensaje, Guid? recursoId)
-        => _notificador.NotificarAsync(usuarioId, new NotificacionDto(tipo, mensaje, recursoId, _reloj.GetUtcNow().UtcDateTime));
+        => _notificador.NotificarAsync(usuarioId, tipo, mensaje, recursoId);
 
     private async Task<Usuario> ExigirRolAsync(Guid actorId, RolUsuarioEnum minimo)
     {

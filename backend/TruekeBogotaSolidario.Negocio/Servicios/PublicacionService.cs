@@ -152,7 +152,7 @@ public sealed class PublicacionService : IPublicacionService
         }
         await _uow.GuardarCambiosAsync();
         if (pendiente is not null)
-            await _notificador.NotificarAsync(pendiente.SolicitanteId, new NotificacionDto(TiposNotificacion.SolicitudRechazada,
-                $"La publicación \"{p.Titulo}\" fue cancelada por su propietario.", pendiente.Id, Ahora));
+            await _notificador.NotificarAsync(pendiente.SolicitanteId, TiposNotificacion.SolicitudRechazada,
+                $"La publicación \"{p.Titulo}\" fue cancelada por su propietario.", pendiente.Id);
     }
 }

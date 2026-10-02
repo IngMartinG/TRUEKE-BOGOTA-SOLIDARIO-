@@ -17,6 +17,7 @@ public class TruekeDbContext : DbContext
     public DbSet<Comentario> Comentarios => Set<Comentario>();
     public DbSet<SesionRefresh> SesionesRefresh => Set<SesionRefresh>();
     public DbSet<TokenUsoUnico> TokensUsoUnico => Set<TokenUsoUnico>();
+    public DbSet<Notificacion> Notificaciones => Set<Notificacion>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -135,6 +136,16 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => x.TokenHash).IsUnique();
             e.HasIndex(x => new { x.UsuarioId, x.Proposito, x.CreadoUtc });
             e.HasIndex(x => x.ExpiraUtc);
+        });
+
+        mb.Entity<Notificacion>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Tipo).HasMaxLength(40).IsRequired();
+            e.Property(x => x.Mensaje).HasMaxLength(300).IsRequired();
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.UsuarioId, x.LeidaUtc, x.FechaUtc });
         });
 
         mb.Entity<Transaccion>(e =>

@@ -83,6 +83,29 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 });
 
             migrationBuilder.CreateTable(
+                name: "Notificaciones",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    UsuarioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Tipo = table.Column<string>(type: "nvarchar(40)", maxLength: 40, nullable: false),
+                    Mensaje = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: false),
+                    RecursoId = table.Column<Guid>(type: "uniqueidentifier", nullable: true),
+                    FechaUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LeidaUtc = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Notificaciones", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Notificaciones_Usuarios_UsuarioId",
+                        column: x => x.UsuarioId,
+                        principalTable: "Usuarios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "Pagos",
                 columns: table => new
                 {
@@ -327,6 +350,11 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 columns: new[] { "PublicacionId", "EstaOculto", "FechaUtc" });
 
             migrationBuilder.CreateIndex(
+                name: "IX_Notificaciones_UsuarioId_LeidaUtc_FechaUtc",
+                table: "Notificaciones",
+                columns: new[] { "UsuarioId", "LeidaUtc", "FechaUtc" });
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Pagos_Estado_FechaUtc",
                 table: "Pagos",
                 columns: new[] { "Estado", "FechaUtc" });
@@ -453,6 +481,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
             migrationBuilder.DropTable(
                 name: "Comentarios");
+
+            migrationBuilder.DropTable(
+                name: "Notificaciones");
 
             migrationBuilder.DropTable(
                 name: "Pagos");

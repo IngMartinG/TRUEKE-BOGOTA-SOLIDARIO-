@@ -67,7 +67,7 @@ if (config.GetValue<bool>("Redis:Habilitado"))
     signalR.AddStackExchangeRedis(redis, o => o.Configuration.ChannelPrefix = StackExchange.Redis.RedisChannel.Literal("trueke"));
 }
 builder.Services.AddSingleton<IUserIdProvider, UsuarioIdPorSub>();
-builder.Services.Replace(ServiceDescriptor.Singleton<INotificador, NotificadorSignalR>());
+builder.Services.Replace(ServiceDescriptor.Singleton<IEmisorTiempoReal, EmisorSignalR>());
 
 // ---------- MVC / JSON ----------
 // Contrato con Angular: camelCase, enums como texto, fechas UTC ISO-8601 con "Z", errores ProblemDetails.

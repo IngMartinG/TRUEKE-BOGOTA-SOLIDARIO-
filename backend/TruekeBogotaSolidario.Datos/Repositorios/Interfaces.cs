@@ -119,6 +119,17 @@ public interface ITokenUsoUnicoRepository
     void Agregar(TokenUsoUnico token);
 }
 
+public interface INotificacionRepository
+{
+    Task<Notificacion?> ObtenerAsync(Guid id, Guid usuarioId);
+    Task<(IReadOnlyList<Notificacion> Items, int Total)> ListarAsync(Guid usuarioId, bool soloNoLeidas, int pagina, int tamano);
+    Task<int> ContarNoLeidasAsync(Guid usuarioId);
+    /// <summary>Marca (sin guardar) hasta 1000 notificaciones no leídas.</summary>
+    Task MarcarTodasLeidasAsync(Guid usuarioId, DateTime ahoraUtc);
+    Task<int> PurgarLeidasAsync(DateTime leidasAntesDeUtc, int maximo);
+    void Agregar(Notificacion notificacion);
+}
+
 public interface IComentarioRepository
 {
     Task<Comentario?> ObtenerPorIdAsync(Guid id);

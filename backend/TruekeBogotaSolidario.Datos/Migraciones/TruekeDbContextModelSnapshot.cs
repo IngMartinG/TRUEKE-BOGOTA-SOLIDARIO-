@@ -163,6 +163,40 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("Comentarios");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Notificacion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LeidaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Mensaje")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<Guid?>("RecursoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(40)
+                        .HasColumnType("nvarchar(40)");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId", "LeidaUtc", "FechaUtc");
+
+                    b.ToTable("Notificaciones");
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Pago", b =>
                 {
                     b.Property<Guid>("Id")
@@ -634,6 +668,15 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Navigation("Autor");
 
                     b.Navigation("Publicacion");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Notificacion", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Pago", b =>

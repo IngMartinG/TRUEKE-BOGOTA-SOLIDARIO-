@@ -245,6 +245,45 @@ public sealed class TokenUsoUnicoRepository : ITokenUsoUnicoRepository
     public void Agregar(TokenUsoUnico token) => _db.TokensUsoUnico.Add(token);
 }
 
+public sealed class NotificacionRepository : INotificacionRepository
+{
+    private readonly TruekeDbContext _db;
+    public NotificacionRepository(TruekeDbContext db) => _db = db;
+
+    public Task<Notificacion?> ObtenerAsync(Guid id, Guid usuarioId)
+        => _db.Notificaciones.FirstOrDefaultAsync(n => n.Id == id && n.UsuarioId == usuarioId);
+
+    public async Task<(IReadOnlyList<Notificacion> Items, int Total)> ListarAsync(Guid usuarioId, bool soloNoLeidas, int pagina, int tamano)
+    {
+        pagina = Math.Max(pagina, 1);
+        tamano = Math.Clamp(tamano, 1, 50);
+        var q = _db.Notificaciones.AsNoTracking().Where(n => n.UsuarioId == usuarioId);
+        if (soloNoLeidas) q = q.Where(n => n.LeidaUtc == null);
+        var total = await q.CountAsync();
+        var items = await q.OrderByDescending(n => n.FechaUtc).Skip((pagina - 1) * tamano).Take(tamano).ToListAsync();
+        return (items, total);
+    }
+
+    public Task<int> ContarNoLeidasAsync(Guid usuarioId)
+        => _db.Notificaciones.CountAsync(n => n.UsuarioId == usuarioId && n.LeidaUtc == null);
+
+    public async Task MarcarTodasLeidasAsync(Guid usuarioId, DateTime ahoraUtc)
+    {
+        foreach (var n in await _db.Notificaciones.Where(n => n.UsuarioId == usuarioId && n.LeidaUtc == null).Take(1000).ToListAsync())
+            n.MarcarLeida(ahoraUtc);
+    }
+
+    public async Task<int> PurgarLeidasAsync(DateTime leidasAntesDeUtc, int maximo)
+    {
+        var viejas = await _db.Notificaciones.Where(n => n.LeidaUtc != null && n.LeidaUtc < leidasAntesDeUtc).Take(maximo).ToListAsync();
+        _db.Notificaciones.RemoveRange(viejas);
+        await _db.SaveChangesAsync();
+        return viejas.Count;
+    }
+
+    public void Agregar(Notificacion notificacion) => _db.Notificaciones.Add(notificacion);
+}
+
 public sealed class ComentarioRepository : IComentarioRepository
 {
     private readonly TruekeDbContext _db;

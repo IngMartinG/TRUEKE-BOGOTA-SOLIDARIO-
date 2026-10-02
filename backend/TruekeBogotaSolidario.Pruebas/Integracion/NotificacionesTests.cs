@@ -85,6 +85,44 @@ public class NotificacionesTests : IClassFixture<FabricaApi>
     }
 
     [Fact]
+    public async Task Las_notificaciones_quedan_en_la_bandeja_aunque_el_usuario_este_desconectado()
+    {
+        var duenio = await Api.RegistrarAsync(_fabrica, "desconectada");   // sin conexión al hub
+        var otro = await Api.RegistrarAsync(_fabrica, "interesado");
+        var pub = await Api.CrearPublicacionAsync(duenio);
+        (await otro.PostAsJsonAsync("/api/v1/solicitudes", new { publicacionId = pub, mensaje = "Hola" })).EnsureSuccessStatusCode();
+
+        Assert.Equal(1, await duenio.GetFromJsonAsync<int>("/api/v1/notificaciones/no-leidas/total"));
+        var pagina = await duenio.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/v1/notificaciones?soloNoLeidas=true");
+        var n = pagina.GetProperty("items")[0];
+        Assert.Equal(TiposNotificacion.SolicitudNueva, n.GetProperty("tipo").GetString());
+        Assert.False(n.GetProperty("leida").GetBoolean());
+        var id = n.GetProperty("id").GetGuid();
+
+        // nadie más puede marcarla (no existe para otros)
+        Assert.Equal(HttpStatusCode.NotFound, (await otro.PostAsync($"/api/v1/notificaciones/{id}/leer", null)).StatusCode);
+        Assert.Equal(0, await otro.GetFromJsonAsync<int>("/api/v1/notificaciones/no-leidas/total"));
+
+        Assert.Equal(HttpStatusCode.NoContent, (await duenio.PostAsync($"/api/v1/notificaciones/{id}/leer", null)).StatusCode);
+        Assert.Equal(0, await duenio.GetFromJsonAsync<int>("/api/v1/notificaciones/no-leidas/total"));
+    }
+
+    [Fact]
+    public async Task Marcar_todas_como_leidas()
+    {
+        var duenio = await Api.RegistrarAsync(_fabrica, "muchas");
+        var otro = await Api.RegistrarAsync(_fabrica, "solicita");
+        for (var i = 0; i < 3; i++)
+        {
+            var pub = await Api.CrearPublicacionAsync(duenio);
+            (await otro.PostAsJsonAsync("/api/v1/solicitudes", new { publicacionId = pub, mensaje = "Hola" })).EnsureSuccessStatusCode();
+        }
+        Assert.Equal(3, await duenio.GetFromJsonAsync<int>("/api/v1/notificaciones/no-leidas/total"));
+        (await duenio.PostAsync("/api/v1/notificaciones/leer-todas", null)).EnsureSuccessStatusCode();
+        Assert.Equal(0, await duenio.GetFromJsonAsync<int>("/api/v1/notificaciones/no-leidas/total"));
+    }
+
+    [Fact]
     public async Task Hub_rechaza_conexion_sin_token_o_con_token_invalido()
     {
         var anonimo = _fabrica.CreateClient();
