@@ -27,7 +27,7 @@ public class ImagenesTests : IClassFixture<FabricaApi>
     }
 
     private static Task<HttpResponseMessage> PublicarAsync(HttpClient c, string? imagenUrl)
-        => c.PostAsJsonAsync("/api/v1/publicaciones", new { titulo = "Lámpara", descripcion = "Funciona", categoriaId = 4, modo = "Trueke", localidad = "Kennedy", imagenUrl });
+        => c.PostAsJsonAsync("/api/v1/publicaciones", new { titulo = "Lámpara", descripcion = "Funciona", categoriaId = 4, modo = "Trueke", localidad = "Kennedy", imagenes = imagenUrl is null ? null : new[] { imagenUrl } });
 
     [Fact]
     public async Task Flujo_completo_pedir_subida_subir_y_publicar_con_la_imagen()
@@ -38,7 +38,7 @@ public class ImagenesTests : IClassFixture<FabricaApi>
 
         var r = await PublicarAsync(c, s.UrlArchivo);
         Assert.Equal(HttpStatusCode.Created, r.StatusCode);
-        Assert.Equal(s.UrlArchivo, (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("imagenUrl").GetString());
+        Assert.Equal(s.UrlArchivo, (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("imagenes")[0].GetString());
     }
 
     [Fact]

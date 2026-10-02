@@ -22,6 +22,11 @@ public static class TiposNotificacion
     public const string VerificacionAprobada = "VerificacionAprobada";
     public const string VerificacionRechazada = "VerificacionRechazada";
     public const string DenunciaRevisada = "DenunciaRevisada";
+    public const string EntregaConfirmada = "EntregaConfirmada";
+    public const string IntercambioCompletado = "IntercambioCompletado";
+    public const string IntercambioNoConcretado = "IntercambioNoConcretado";
+    public const string CalificacionRecibida = "CalificacionRecibida";
+    public const string PagoReembolsado = "PagoReembolsado";
 }
 
 /// <summary>Carga mínima: el front pide el detalle al API (con su JWT) si lo necesita. Nunca datos de terceros.</summary>

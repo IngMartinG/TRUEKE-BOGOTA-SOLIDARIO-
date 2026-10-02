@@ -72,4 +72,8 @@ public static class Limites
     public const int MaxSolicitudesPendientesPorUsuario = 10;
     public const int MaxPagosPendientesPorHora = 5;
     public const int MaxComentariosPorHora = 20;
+    /// <summary>Si solo una parte confirmó la entrega, el intercambio se completa solo pasados estos días.</summary>
+    public const int DiasCierreConUnaConfirmacion = 7;
+    /// <summary>Si nadie confirmó la entrega, el acuerdo se da por no concretado pasados estos días.</summary>
+    public const int DiasCierreSinConfirmacion = 30;
 }

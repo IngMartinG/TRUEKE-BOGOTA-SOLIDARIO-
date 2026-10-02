@@ -52,7 +52,7 @@ public sealed class ComentarioService : IComentarioService
     {
         var (_, actor, esModerador) = await CargarPublicacionVisibleAsync(actorId, publicacionId);
         var ahora = Ahora;
-        var (items, total) = await _comentarios.ListarPorPublicacionAsync(publicacionId, incluirOcultos: esModerador, pagina, tamano);
+        var (items, total) = await _comentarios.ListarPorPublicacionAsync(publicacionId, incluirOcultos: esModerador, pagina, tamano, ahora);
         var dtos = items.Select(c => ADto(c, actor?.Id, esModerador, ahora)).ToList();
         return new PaginaDto<ComentarioDto>(dtos, total, Math.Max(pagina, 1), Math.Clamp(tamano, 1, 50));
     }

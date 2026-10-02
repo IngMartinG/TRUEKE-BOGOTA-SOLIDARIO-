@@ -96,10 +96,18 @@ public sealed class AuthService : IAuthService
             throw new AutenticacionException();
         }
 
+        ExigirNoSuspendido(usuario, ahora); // tras validar la clave: a un tercero no se le revela nada
         usuario.RegistrarLoginExitoso();
         var sesion = _emisor.Emitir(usuario);
         await _uow.GuardarCambiosAsync();
         return sesion;
+    }
+
+    private static void ExigirNoSuspendido(Usuario u, DateTime ahora)
+    {
+        if (!u.SuspensionVigente(ahora)) return;
+        var hasta = u.SuspendidoHasta is { } h ? $" hasta el {h:yyyy-MM-dd}" : "";
+        throw new AccesoDenegadoException($"Tu cuenta está suspendida{hasta}. Motivo: {u.MotivoSuspension}");
     }
 
     public async Task<ResultadoAutenticacion> LoginGoogleAsync(GoogleLoginRequest r)
@@ -141,6 +149,7 @@ public sealed class AuthService : IAuthService
             }
         }
         if (usuario.EstaEliminado) throw new AutenticacionException("No se pudo validar tu cuenta de Google.");
+        ExigirNoSuspendido(usuario, ahora);
 
         usuario.RegistrarLoginExitoso();
         var sesion = _emisor.Emitir(usuario);
@@ -174,7 +183,7 @@ public sealed class AuthService : IAuthService
         if (!actual.EstaActiva(ahora)) throw new AutenticacionException(expirada);
 
         var usuario = await _usuarios.ObtenerPorIdAsync(actual.UsuarioId);
-        if (usuario is null || usuario.EstaEliminado) throw new AutenticacionException(expirada);
+        if (usuario is null || usuario.EstaEliminado || usuario.SuspensionVigente(ahora)) throw new AutenticacionException(expirada);
         var sesion = _emisor.Emitir(usuario, actual);
         await _uow.GuardarCambiosAsync(); // RowVersion: dos refrescos simultáneos del mismo token → uno recibe 409
         return sesion;

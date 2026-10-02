@@ -40,6 +40,22 @@ public sealed class UsuarioRepository : IUsuarioRepository
     public async Task<IReadOnlyList<Usuario>> ObtenerPorVerificacionAsync(EstadoVerificacion estado)
         => await _db.Usuarios.AsNoTracking().Where(u => u.EstadoVerificacion == estado).OrderBy(u => u.FechaRegistro).Take(200).ToListAsync();
     public Task<int> ContarPorRolAsync(RolUsuarioEnum rol) => _db.Usuarios.CountAsync(u => u.Rol == rol);
+
+    public async Task<(IReadOnlyList<Usuario> Items, int Total)> BuscarAsync(string? texto, bool soloSuspendidos, int pagina, int tamano)
+    {
+        pagina = Math.Max(pagina, 1);
+        tamano = Math.Clamp(tamano, 1, 50);
+        var q = _db.Usuarios.AsNoTracking().Where(u => !u.EstaEliminado);
+        if (!string.IsNullOrWhiteSpace(texto))
+        {
+            var t = texto.Trim().ToLowerInvariant();
+            q = q.Where(u => u.Correo.Contains(t) || u.NombreCompleto.ToLower().Contains(t)); // el correo ya se guarda en minúsculas
+        }
+        if (soloSuspendidos) q = q.Where(u => u.EstaSuspendido);
+        var total = await q.CountAsync();
+        var items = await q.OrderByDescending(u => u.FechaRegistro).Skip((pagina - 1) * tamano).Take(tamano).ToListAsync();
+        return (items, total);
+    }
     public async Task<int?> ObtenerVersionSeguridadAsync(Guid id)
         => await _db.Usuarios.AsNoTracking().Where(u => u.Id == id).Select(u => (int?)u.VersionSeguridad).FirstOrDefaultAsync();
     public void Agregar(Usuario usuario) => _db.Usuarios.Add(usuario);
@@ -62,34 +78,58 @@ public sealed class PublicacionRepository : IPublicacionRepository
     public Task<Publicacion?> ObtenerPorIdAsync(Guid id)
         => _db.Publicaciones.Include(p => p.Categoria).Include(p => p.Propietario).FirstOrDefaultAsync(p => p.Id == id);
 
+    /// <summary>Disponibles, no ocultas y cuyo dueño no está suspendido ni eliminado.</summary>
+    private IQueryable<Publicacion> Visibles(DateTime ahoraUtc)
+        => _db.Publicaciones.AsNoTracking().Include(p => p.Categoria).Include(p => p.Propietario)
+            .Where(p => p.Estado == EstadoPublicacionEnum.Disponible && !p.EstaOculta && !p.Propietario!.EstaEliminado
+                        && !(p.Propietario.EstaSuspendido && (p.Propietario.SuspendidoHasta == null || p.Propietario.SuspendidoHasta > ahoraUtc)));
+
     public async Task<(IReadOnlyList<Publicacion> Items, int Total)> ListarVisiblesAsync(FiltroPublicaciones f, DateTime ahoraUtc)
     {
         var pagina = Math.Max(f.Pagina, 1);
         var tamano = Math.Clamp(f.Tamano, 1, 50);
 
-        var q = _db.Publicaciones.AsNoTracking().Include(p => p.Categoria).Include(p => p.Propietario)
-            .Where(p => p.Estado == EstadoPublicacionEnum.Disponible && !p.EstaOculta);
-
+        var q = Visibles(ahoraUtc);
         if (f.CategoriaId.HasValue) q = q.Where(p => p.CategoriaId == f.CategoriaId.Value);
         if (f.Modo.HasValue) q = q.Where(p => p.Modo == f.Modo.Value);
         if (!string.IsNullOrWhiteSpace(f.Localidad)) { var loc = f.Localidad.Trim(); q = q.Where(p => p.Localidad == loc); }
         if (!string.IsNullOrWhiteSpace(f.Texto)) { var t = f.Texto.Trim(); q = q.Where(p => p.Titulo.Contains(t) || p.Descripcion.Contains(t)); }
+        if (f.PrecioMin.HasValue) q = q.Where(p => p.PrecioReferenciaCop >= f.PrecioMin.Value);
+        if (f.PrecioMax.HasValue) q = q.Where(p => p.PrecioReferenciaCop <= f.PrecioMax.Value);
+        if (f.SoloVerificados) q = q.Where(p => p.Propietario!.EstadoVerificacion == EstadoVerificacion.Aprobada);
 
         var total = await q.CountAsync();
-        var items = await q
-            .OrderByDescending(p => p.DestacadaHasta != null && p.DestacadaHasta > ahoraUtc) // destacadas VIGENTES primero
-            .ThenByDescending(p => p.FechaPublicacion)
-            .Skip((pagina - 1) * tamano).Take(tamano)
-            .ToListAsync();
+        var ordenada = f.Orden switch
+        {
+            // sin precio (Trueke/Donación) al final en ambos sentidos
+            OrdenPublicaciones.PrecioAsc => q.OrderBy(p => p.PrecioReferenciaCop == null).ThenBy(p => p.PrecioReferenciaCop).ThenByDescending(p => p.FechaPublicacion),
+            OrdenPublicaciones.PrecioDesc => q.OrderBy(p => p.PrecioReferenciaCop == null).ThenByDescending(p => p.PrecioReferenciaCop).ThenByDescending(p => p.FechaPublicacion),
+            _ => q.OrderByDescending(p => p.DestacadaHasta != null && p.DestacadaHasta > ahoraUtc) // destacadas VIGENTES primero
+                  .ThenByDescending(p => p.FechaPublicacion)
+        };
+        var items = await ordenada.ThenBy(p => p.Id).Skip((pagina - 1) * tamano).Take(tamano).ToListAsync();
         return (items, total);
     }
 
-    public async Task<IReadOnlyList<Publicacion>> ListarVisiblesEnAreaAsync(double minLat, double maxLat, double minLon, double maxLon,
-        int? categoriaId, ModoTransaccion? modo, int maximo)
+    public async Task<(IReadOnlyList<Publicacion> Items, int Total)> ListarVisiblesDePropietarioAsync(Guid propietarioId, int pagina, int tamano, DateTime ahoraUtc)
     {
-        var q = _db.Publicaciones.AsNoTracking().Include(p => p.Categoria).Include(p => p.Propietario)
-            .Where(p => p.Estado == EstadoPublicacionEnum.Disponible && !p.EstaOculta
-                        && p.Latitud != null && p.Longitud != null
+        pagina = Math.Max(pagina, 1);
+        tamano = Math.Clamp(tamano, 1, 50);
+        var q = Visibles(ahoraUtc).Where(p => p.PropietarioId == propietarioId);
+        var total = await q.CountAsync();
+        var items = await q.OrderByDescending(p => p.FechaPublicacion).ThenBy(p => p.Id).Skip((pagina - 1) * tamano).Take(tamano).ToListAsync();
+        return (items, total);
+    }
+
+    public async Task<IReadOnlyList<Publicacion>> ListarPorIdsAsync(IReadOnlyCollection<Guid> ids)
+        => await _db.Publicaciones.AsNoTracking().Include(p => p.Categoria).Include(p => p.Propietario)
+            .Where(p => ids.Contains(p.Id)).ToListAsync();
+
+    public async Task<IReadOnlyList<Publicacion>> ListarVisiblesEnAreaAsync(double minLat, double maxLat, double minLon, double maxLon,
+        int? categoriaId, ModoTransaccion? modo, int maximo, DateTime ahoraUtc)
+    {
+        var q = Visibles(ahoraUtc)
+            .Where(p => p.Latitud != null && p.Longitud != null
                         && p.Latitud >= minLat && p.Latitud <= maxLat && p.Longitud >= minLon && p.Longitud <= maxLon);
         if (categoriaId.HasValue) q = q.Where(p => p.CategoriaId == categoriaId.Value);
         if (modo.HasValue) q = q.Where(p => p.Modo == modo.Value);
@@ -117,14 +157,14 @@ public sealed class SolicitudRepository : ISolicitudRepository
     public SolicitudRepository(TruekeDbContext db) => _db = db;
 
     public Task<Solicitud?> ObtenerPorIdAsync(Guid id)
-        => _db.Solicitudes.Include(s => s.Publicacion).Include(s => s.Solicitante).FirstOrDefaultAsync(s => s.Id == id);
+        => _db.Solicitudes.Include(s => s.Publicacion).ThenInclude(p => p!.Propietario).Include(s => s.Solicitante).FirstOrDefaultAsync(s => s.Id == id);
 
     public async Task<IReadOnlyList<Solicitud>> ListarPorSolicitanteAsync(Guid solicitanteId)
-        => await _db.Solicitudes.AsNoTracking().Include(s => s.Publicacion).Include(s => s.Solicitante)
+        => await _db.Solicitudes.AsNoTracking().Include(s => s.Publicacion).ThenInclude(p => p!.Propietario).Include(s => s.Solicitante)
             .Where(s => s.SolicitanteId == solicitanteId).OrderByDescending(s => s.FechaSolicitud).Take(200).ToListAsync();
 
     public async Task<IReadOnlyList<Solicitud>> ListarRecibidasAsync(Guid propietarioId)
-        => await _db.Solicitudes.AsNoTracking().Include(s => s.Publicacion).Include(s => s.Solicitante)
+        => await _db.Solicitudes.AsNoTracking().Include(s => s.Publicacion).ThenInclude(p => p!.Propietario).Include(s => s.Solicitante)
             .Where(s => s.Publicacion!.PropietarioId == propietarioId).OrderByDescending(s => s.FechaSolicitud).Take(200).ToListAsync();
 
     public Task<Solicitud?> ObtenerPendientePorPublicacionAsync(Guid publicacionId)
@@ -134,11 +174,24 @@ public sealed class SolicitudRepository : ISolicitudRepository
         => _db.Solicitudes.CountAsync(s => s.SolicitanteId == solicitanteId && s.Estado == EstadoSolicitud.Pendiente);
 
     public Task<bool> ExisteAceptadaAsync(Guid publicacionId, Guid solicitanteId)
-        => _db.Solicitudes.AnyAsync(s => s.PublicacionId == publicacionId && s.SolicitanteId == solicitanteId && s.Estado == EstadoSolicitud.Aceptada);
+        => _db.Solicitudes.AnyAsync(s => s.PublicacionId == publicacionId && s.SolicitanteId == solicitanteId
+            && (s.Estado == EstadoSolicitud.Aceptada || s.Estado == EstadoSolicitud.Completada));
+
+    public Task<Solicitud?> ObtenerEnCursoPorPublicacionAsync(Guid publicacionId)
+        => _db.Solicitudes.FirstOrDefaultAsync(s => s.PublicacionId == publicacionId
+            && (s.Estado == EstadoSolicitud.Pendiente || s.Estado == EstadoSolicitud.Aceptada));
+
+    public async Task<IReadOnlyList<Guid>> ListarParaCierreAutomaticoAsync(DateTime limiteConConfirmacion, DateTime limiteSinConfirmacion, int maximo)
+        => await _db.Solicitudes.AsNoTracking()
+            .Where(s => s.Estado == EstadoSolicitud.Aceptada && s.FechaAceptacionUtc != null
+                && (((s.ConfirmadaPorDuenioUtc != null || s.ConfirmadaPorSolicitanteUtc != null) && s.FechaAceptacionUtc < limiteConConfirmacion)
+                    || (s.ConfirmadaPorDuenioUtc == null && s.ConfirmadaPorSolicitanteUtc == null && s.FechaAceptacionUtc < limiteSinConfirmacion)))
+            .OrderBy(s => s.FechaAceptacionUtc).Take(maximo).Select(s => s.Id).ToListAsync();
 
     public async Task<IReadOnlyList<Solicitud>> ListarPendientesDelUsuarioAsync(Guid usuarioId)
         => await _db.Solicitudes.Include(s => s.Publicacion)
-            .Where(s => s.Estado == EstadoSolicitud.Pendiente && (s.SolicitanteId == usuarioId || s.Publicacion!.PropietarioId == usuarioId))
+            .Where(s => (s.Estado == EstadoSolicitud.Pendiente || s.Estado == EstadoSolicitud.Aceptada)
+                        && (s.SolicitanteId == usuarioId || s.Publicacion!.PropietarioId == usuarioId))
             .ToListAsync();
 
     public void Agregar(Solicitud solicitud) => _db.Solicitudes.Add(solicitud);
@@ -182,6 +235,16 @@ public sealed class PagoRepository : IPagoRepository
     public async Task<IReadOnlyList<Pago>> ListarPendientesAnterioresAAsync(DateTime limiteUtc, int maximo)
         => await _db.Pagos.Where(p => p.Estado == EstadoPago.Pendiente && p.FechaUtc < limiteUtc)
             .OrderBy(p => p.FechaUtc).Take(maximo).ToListAsync();
+
+    public async Task<(IReadOnlyList<Pago> Items, int Total)> ListarPorEstadoAsync(EstadoPago estado, int pagina, int tamano)
+    {
+        pagina = Math.Max(pagina, 1);
+        tamano = Math.Clamp(tamano, 1, 50);
+        var q = _db.Pagos.AsNoTracking().Where(p => p.Estado == estado);
+        var total = await q.CountAsync();
+        var items = await q.OrderBy(p => p.FechaUtc).Skip((pagina - 1) * tamano).Take(tamano).ToListAsync();
+        return (items, total);
+    }
 
     public async Task<IReadOnlyList<Pago>> ListarPorUsuarioAsync(Guid usuarioId, int maximo)
         => await _db.Pagos.AsNoTracking().Where(p => p.UsuarioId == usuarioId).OrderByDescending(p => p.FechaUtc).Take(maximo).ToListAsync();
@@ -383,6 +446,63 @@ public sealed class DenunciaRepository : IDenunciaRepository
     public void Agregar(Denuncia denuncia) => _db.Denuncias.Add(denuncia);
 }
 
+public sealed class FavoritoRepository : IFavoritoRepository
+{
+    private readonly TruekeDbContext _db;
+    public FavoritoRepository(TruekeDbContext db) => _db = db;
+
+    public Task<Favorito?> ObtenerAsync(Guid usuarioId, Guid publicacionId)
+        => _db.Favoritos.FirstOrDefaultAsync(f => f.UsuarioId == usuarioId && f.PublicacionId == publicacionId);
+
+    public async Task<IReadOnlySet<Guid>> FiltrarFavoritasAsync(Guid usuarioId, IReadOnlyCollection<Guid> publicacionIds)
+        => (await _db.Favoritos.AsNoTracking().Where(f => f.UsuarioId == usuarioId && publicacionIds.Contains(f.PublicacionId))
+            .Select(f => f.PublicacionId).ToListAsync()).ToHashSet();
+
+    public async Task<(IReadOnlyList<Guid> Ids, int Total)> ListarAsync(Guid usuarioId, int pagina, int tamano)
+    {
+        pagina = Math.Max(pagina, 1);
+        tamano = Math.Clamp(tamano, 1, 50);
+        var q = _db.Favoritos.AsNoTracking().Where(f => f.UsuarioId == usuarioId);
+        var total = await q.CountAsync();
+        var ids = await q.OrderByDescending(f => f.FechaUtc).Skip((pagina - 1) * tamano).Take(tamano).Select(f => f.PublicacionId).ToListAsync();
+        return (ids, total);
+    }
+
+    public Task<int> ContarAsync(Guid usuarioId) => _db.Favoritos.CountAsync(f => f.UsuarioId == usuarioId);
+    public void Agregar(Favorito favorito) => _db.Favoritos.Add(favorito);
+    public void Quitar(Favorito favorito) => _db.Favoritos.Remove(favorito);
+}
+
+public sealed class CalificacionRepository : ICalificacionRepository
+{
+    private readonly TruekeDbContext _db;
+    public CalificacionRepository(TruekeDbContext db) => _db = db;
+
+    public Task<Calificacion?> ObtenerAsync(Guid id) => _db.Calificaciones.Include(c => c.Autor).FirstOrDefaultAsync(c => c.Id == id);
+
+    public Task<bool> ExisteAsync(Guid solicitudId, Guid autorId)
+        => _db.Calificaciones.AnyAsync(c => c.SolicitudId == solicitudId && c.AutorId == autorId);
+
+    public async Task<IReadOnlySet<Guid>> SolicitudesCalificadasPorAsync(Guid autorId, IReadOnlyCollection<Guid> solicitudIds)
+        => (await _db.Calificaciones.AsNoTracking().Where(c => c.AutorId == autorId && solicitudIds.Contains(c.SolicitudId))
+            .Select(c => c.SolicitudId).ToListAsync()).ToHashSet();
+
+    public async Task<(IReadOnlyList<Calificacion> Items, int Total)> ListarRecibidasAsync(Guid calificadoId, int pagina, int tamano)
+    {
+        pagina = Math.Max(pagina, 1);
+        tamano = Math.Clamp(tamano, 1, 50);
+        var q = _db.Calificaciones.AsNoTracking().Include(c => c.Autor).Where(c => c.CalificadoId == calificadoId);
+        var total = await q.CountAsync();
+        var items = await q.OrderByDescending(c => c.FechaUtc).Skip((pagina - 1) * tamano).Take(tamano).ToListAsync();
+        return (items, total);
+    }
+
+    public async Task<IReadOnlyList<Calificacion>> ListarDelAutorAsync(Guid autorId, int maximo)
+        => await _db.Calificaciones.AsNoTracking().Where(c => c.AutorId == autorId).OrderByDescending(c => c.FechaUtc).Take(maximo).ToListAsync();
+
+    public void Agregar(Calificacion calificacion) => _db.Calificaciones.Add(calificacion);
+}
+
 public sealed class ComentarioRepository : IComentarioRepository
 {
     private readonly TruekeDbContext _db;
@@ -391,12 +511,14 @@ public sealed class ComentarioRepository : IComentarioRepository
     public Task<Comentario?> ObtenerPorIdAsync(Guid id)
         => _db.Comentarios.Include(c => c.Autor).FirstOrDefaultAsync(c => c.Id == id);
 
-    public async Task<(IReadOnlyList<Comentario> Items, int Total)> ListarPorPublicacionAsync(Guid publicacionId, bool incluirOcultos, int pagina, int tamano)
+    public async Task<(IReadOnlyList<Comentario> Items, int Total)> ListarPorPublicacionAsync(Guid publicacionId, bool incluirOcultos, int pagina, int tamano, DateTime ahoraUtc)
     {
         pagina = Math.Max(pagina, 1);
         tamano = Math.Clamp(tamano, 1, 50);
         var q = _db.Comentarios.AsNoTracking().Include(c => c.Autor).Where(c => c.PublicacionId == publicacionId);
-        if (!incluirOcultos) q = q.Where(c => !c.EstaOculto);
+        if (!incluirOcultos)
+            q = q.Where(c => !c.EstaOculto
+                && !(c.Autor!.EstaSuspendido && (c.Autor.SuspendidoHasta == null || c.Autor.SuspendidoHasta > ahoraUtc)));
         var total = await q.CountAsync();
         var items = await q.OrderByDescending(c => c.FechaUtc).Skip((pagina - 1) * tamano).Take(tamano).ToListAsync();
         return (items, total);

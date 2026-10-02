@@ -174,6 +174,229 @@
         }
       }
     },
+    "/api/v1/admin/usuarios": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "Texto",
+            "in": "query",
+            "schema": {
+              "maxLength": 100,
+              "type": "string"
+            }
+          },
+          {
+            "name": "SoloSuspendidos",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "Pagina",
+            "in": "query",
+            "schema": {
+              "maximum": 10000,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Tamano",
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDtoPaginaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDtoPaginaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDtoPaginaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/usuarios/{usuarioId}/suspender": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspenderUsuarioRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspenderUsuarioRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/SuspenderUsuarioRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/usuarios/{usuarioId}/reactivar": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pagos": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "Estado",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EstadoPagoDto"
+            }
+          },
+          {
+            "name": "Pagina",
+            "in": "query",
+            "schema": {
+              "maximum": 10000,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Tamano",
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoAdminDtoPaginaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoAdminDtoPaginaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoAdminDtoPaginaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/usuarios/{usuarioId}/rol": {
       "patch": {
         "tags": [
@@ -226,6 +449,64 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/UsuarioDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pagos/{referencia}/reembolsado": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "referencia",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReembolsoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReembolsoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/ReembolsoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoAdminDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoAdminDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PagoAdminDto"
                 }
               }
             }
@@ -1502,6 +1783,166 @@
         }
       }
     },
+    "/api/v1/usuarios/{id}/perfil": {
+      "get": {
+        "tags": [
+          "Perfiles"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilUsuarioDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilUsuarioDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerfilUsuarioDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/usuarios/{id}/publicaciones": {
+      "get": {
+        "tags": [
+          "Perfiles"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Pagina",
+            "in": "query",
+            "schema": {
+              "maximum": 10000,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Tamano",
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDtoPaginaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDtoPaginaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDtoPaginaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/usuarios/{id}/calificaciones": {
+      "get": {
+        "tags": [
+          "Perfiles"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "Pagina",
+            "in": "query",
+            "schema": {
+              "maximum": 10000,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Tamano",
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalificacionDtoPaginaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalificacionDtoPaginaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalificacionDtoPaginaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/categorias": {
       "get": {
         "tags": [
@@ -1575,6 +2016,40 @@
             "schema": {
               "maxLength": 100,
               "type": "string"
+            }
+          },
+          {
+            "name": "PrecioMin",
+            "in": "query",
+            "schema": {
+              "maximum": 1000000000,
+              "minimum": 0,
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "PrecioMax",
+            "in": "query",
+            "schema": {
+              "maximum": 1000000000,
+              "minimum": 0,
+              "type": "number",
+              "format": "double"
+            }
+          },
+          {
+            "name": "SoloVerificados",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "Orden",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/OrdenPublicacionesDto"
             }
           },
           {
@@ -1803,6 +2278,63 @@
             }
           }
         }
+      },
+      "put": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPublicacionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPublicacionRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPublicacionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDto"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/publicaciones/mias": {
@@ -1836,6 +2368,101 @@
                   "items": {
                     "$ref": "#/components/schemas/PublicacionDto"
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publicaciones/{id}/favorito": {
+      "post": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/favoritos": {
+      "get": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "Pagina",
+            "in": "query",
+            "schema": {
+              "maximum": 10000,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Tamano",
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDtoPaginaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDtoPaginaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDtoPaginaDto"
                 }
               }
             }
@@ -2137,6 +2764,164 @@
         }
       }
     },
+    "/api/v1/solicitudes/{id}/confirmar-entrega": {
+      "post": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solicitudes/{id}/no-concretada": {
+      "post": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoConcretadaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoConcretadaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/NoConcretadaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solicitudes/{id}/calificar": {
+      "post": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalificarRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CalificarRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CalificarRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalificacionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalificacionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CalificacionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/health/ready": {
       "get": {
         "tags": [
@@ -2311,6 +3096,98 @@
             "maxLength": 60,
             "minLength": 2,
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CalificacionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "autor": {
+            "$ref": "#/components/schemas/PerfilPublicoDto"
+          },
+          "estrellas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comentario": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CalificacionDtoPaginaDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalificacionDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pagina": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tamano": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CalificacionExportDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "solicitudId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "estrellas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comentario": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CalificarRequest": {
+        "type": "object",
+        "properties": {
+          "estrellas": {
+            "maximum": 5,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32"
+          },
+          "comentario": {
+            "maxLength": 300,
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -2617,9 +3494,12 @@
             "format": "double",
             "nullable": true
           },
-          "imagenUrl": {
-            "maxLength": 500,
-            "type": "string",
+          "imagenes": {
+            "maxItems": 5,
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
             "nullable": true
           }
         },
@@ -2708,6 +3588,19 @@
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/DenunciaExportDto"
+            }
+          },
+          "calificacionesRealizadas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CalificacionExportDto"
+            }
+          },
+          "favoritos": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
             }
           }
         },
@@ -2907,6 +3800,17 @@
         ],
         "type": "string"
       },
+      "EstadoPagoDto": {
+        "enum": [
+          "Pendiente",
+          "Aprobado",
+          "Rechazado",
+          "Expirado",
+          "RequiereRevision",
+          "Reembolsado"
+        ],
+        "type": "string"
+      },
       "GananciaDto": {
         "type": "object",
         "properties": {
@@ -3072,6 +3976,20 @@
         },
         "additionalProperties": false
       },
+      "NoConcretadaRequest": {
+        "required": [
+          "motivo"
+        ],
+        "type": "object",
+        "properties": {
+          "motivo": {
+            "maxLength": 300,
+            "minLength": 3,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "NotificacionDto": {
         "type": "object",
         "properties": {
@@ -3135,6 +4053,82 @@
             "minLength": 1,
             "type": "string",
             "format": "email"
+          }
+        },
+        "additionalProperties": false
+      },
+      "OrdenPublicacionesDto": {
+        "enum": [
+          "Recientes",
+          "PrecioAsc",
+          "PrecioDesc"
+        ],
+        "type": "string"
+      },
+      "PagoAdminDto": {
+        "type": "object",
+        "properties": {
+          "referencia": {
+            "type": "string"
+          },
+          "usuarioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "concepto": {
+            "type": "string"
+          },
+          "montoCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "puntosCanjeados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaResolucionUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "proveedorTransaccionId": {
+            "type": "string",
+            "nullable": true
+          },
+          "notaInterna": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PagoAdminDtoPaginaDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PagoAdminDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pagina": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tamano": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -3211,6 +4205,10 @@
       "PerfilPublicoDto": {
         "type": "object",
         "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
           "nombre": {
             "type": "string"
           },
@@ -3226,6 +4224,70 @@
           },
           "tipoCuenta": {
             "type": "string"
+          },
+          "calificacionPromedio": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "totalCalificaciones": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PerfilUsuarioDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "localidad": {
+            "type": "string"
+          },
+          "reputacion": {
+            "type": "number",
+            "format": "double"
+          },
+          "verificado": {
+            "type": "boolean"
+          },
+          "tipoCuenta": {
+            "type": "string"
+          },
+          "miembroDesde": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "truekesCompletados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "comprasRealizadas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "donacionesRealizadas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "calificacionPromedio": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "totalCalificaciones": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "publicacionesActivas": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -3363,9 +4425,11 @@
           "coordenadasAproximadas": {
             "type": "boolean"
           },
-          "imagenUrl": {
-            "type": "string",
-            "nullable": true
+          "imagenes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           },
           "estado": {
             "type": "string"
@@ -3373,6 +4437,11 @@
           "fechaPublicacion": {
             "type": "string",
             "format": "date-time"
+          },
+          "fechaEdicion": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           },
           "destacada": {
             "type": "boolean"
@@ -3386,6 +4455,9 @@
             "$ref": "#/components/schemas/PerfilPublicoDto"
           },
           "esMia": {
+            "type": "boolean"
+          },
+          "esFavorita": {
             "type": "boolean"
           },
           "oculta": {
@@ -3429,6 +4501,20 @@
             "maxLength": 300,
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ReembolsoRequest": {
+        "required": [
+          "nota"
+        ],
+        "type": "object",
+        "properties": {
+          "nota": {
+            "maxLength": 300,
+            "minLength": 3,
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -3568,8 +4654,14 @@
           "modo": {
             "type": "string"
           },
+          "propietario": {
+            "$ref": "#/components/schemas/PerfilPublicoDto"
+          },
           "solicitante": {
             "$ref": "#/components/schemas/PerfilPublicoDto"
+          },
+          "soyDuenio": {
+            "type": "boolean"
           },
           "fechaSolicitud": {
             "type": "string",
@@ -3589,6 +4681,30 @@
             "type": "string",
             "format": "uuid",
             "nullable": true
+          },
+          "fechaAceptacionUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "confirmadaPorDuenio": {
+            "type": "boolean"
+          },
+          "confirmadaPorSolicitante": {
+            "type": "boolean"
+          },
+          "fechaCierreUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "cierreAutomaticoUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "puedoCalificar": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -3618,6 +4734,27 @@
         },
         "additionalProperties": false
       },
+      "SuspenderUsuarioRequest": {
+        "required": [
+          "motivo"
+        ],
+        "type": "object",
+        "properties": {
+          "motivo": {
+            "maxLength": 300,
+            "minLength": 3,
+            "type": "string"
+          },
+          "dias": {
+            "maximum": 3650,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "TipoArchivoDto": {
         "enum": [
           "Imagen",
@@ -3630,7 +4767,8 @@
           "Publicacion",
           "Comentario",
           "Mensaje",
-          "Usuario"
+          "Usuario",
+          "Calificacion"
         ],
         "type": "string"
       },
@@ -3671,6 +4809,90 @@
           "fechaUtc": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UsuarioAdminDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombreCompleto": {
+            "type": "string"
+          },
+          "correo": {
+            "type": "string"
+          },
+          "localidad": {
+            "type": "string"
+          },
+          "rol": {
+            "type": "string"
+          },
+          "fechaRegistro": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "correoVerificado": {
+            "type": "boolean"
+          },
+          "estadoVerificacion": {
+            "type": "string"
+          },
+          "suspendido": {
+            "type": "boolean"
+          },
+          "suspendidoHasta": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "motivoSuspension": {
+            "type": "string",
+            "nullable": true
+          },
+          "dosFactoresActivo": {
+            "type": "boolean"
+          },
+          "reputacion": {
+            "type": "number",
+            "format": "double"
+          },
+          "calificacionPromedio": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "totalCalificaciones": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UsuarioAdminDtoPaginaDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/UsuarioAdminDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pagina": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tamano": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false

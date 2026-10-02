@@ -62,6 +62,24 @@ public class Usuario
     public bool EstaEliminado { get; private set; }
     public DateTime? FechaEliminacion { get; private set; }
 
+    // Moderación de cuentas
+    public bool EstaSuspendido { get; private set; }
+    /// <summary>null con EstaSuspendido = suspensión indefinida.</summary>
+    public DateTime? SuspendidoHasta { get; private set; }
+    public string? MotivoSuspension { get; private set; }
+
+    // Calificaciones recibidas (contadores para no agregar en cada consulta)
+    public int CalificacionesTotal { get; private set; }
+    public int CalificacionesSuma { get; private set; }
+
+    // Verificación en dos pasos (TOTP). El secreto se guarda CIFRADO (AES-GCM) y los códigos de recuperación como hashes.
+    public bool DosFactoresActivo { get; private set; }
+    public string? SecretoDosFactoresCifrado { get; private set; }
+    /// <summary>Último paso de 30 s aceptado: impide reutilizar el mismo código.</summary>
+    public long UltimoPasoDosFactores { get; private set; }
+    /// <summary>Hashes SHA-256 de los códigos de recuperación no usados, separados por ";".</summary>
+    public string? CodigosRecuperacionHash { get; private set; }
+
     /// <summary>Token de concurrencia optimista (solo SQL Server).</summary>
     public byte[]? RowVersion { get; private set; }
 
@@ -192,10 +210,93 @@ public class Usuario
         IntentosFallidosLogin = 0;
         BloqueadoHasta = null;
         CorreoVerificado = false;
+        DosFactoresActivo = false;
+        SecretoDosFactoresCifrado = null;
+        CodigosRecuperacionHash = null;
         EstaEliminado = true;
         FechaEliminacion = ahoraUtc;
         VersionSeguridad++; // todos los tokens de acceso dejan de valer
     }
+
+    // ---------------- Suspensión (moderación) ----------------
+    public bool SuspensionVigente(DateTime ahoraUtc) => EstaSuspendido && (SuspendidoHasta is null || SuspendidoHasta > ahoraUtc);
+
+    public void Suspender(string motivo, DateTime? hastaUtc, DateTime ahoraUtc)
+    {
+        if (string.IsNullOrWhiteSpace(motivo)) throw new ReglaDeNegocioException("Indica el motivo de la suspensión.");
+        if (hastaUtc.HasValue && hastaUtc <= ahoraUtc) throw new ReglaDeNegocioException("La fecha de fin debe ser futura.");
+        if (EstaEliminado) throw new ReglaDeNegocioException("La cuenta fue eliminada.");
+        EstaSuspendido = true;
+        SuspendidoHasta = hastaUtc;
+        MotivoSuspension = motivo.Trim().Length > 300 ? motivo.Trim()[..300] : motivo.Trim();
+        VersionSeguridad++; // cierra todas sus sesiones de inmediato
+    }
+
+    public void Reactivar()
+    {
+        if (!EstaSuspendido) throw new ReglaDeNegocioException("La cuenta no está suspendida.");
+        EstaSuspendido = false;
+        SuspendidoHasta = null;
+        MotivoSuspension = null;
+    }
+
+    // ---------------- Calificaciones ----------------
+    public void RegistrarCalificacion(int estrellas)
+    {
+        if (estrellas is < 1 or > 5) throw new ReglaDeNegocioException("La calificación debe estar entre 1 y 5 estrellas.");
+        CalificacionesTotal++;
+        CalificacionesSuma += estrellas;
+    }
+
+    public decimal? CalificacionPromedio => CalificacionesTotal == 0 ? null : Math.Round((decimal)CalificacionesSuma / CalificacionesTotal, 1);
+
+    // ---------------- Verificación en dos pasos ----------------
+    /// <summary>Guarda un secreto nuevo SIN activarlo (se activa al confirmar un código).</summary>
+    public void PrepararDosFactores(string secretoCifrado)
+    {
+        if (DosFactoresActivo) throw new ReglaDeNegocioException("La verificación en dos pasos ya está activa.");
+        SecretoDosFactoresCifrado = secretoCifrado;
+    }
+
+    public void ActivarDosFactores(IEnumerable<string> hashesRecuperacion, long paso)
+    {
+        if (DosFactoresActivo) throw new ReglaDeNegocioException("La verificación en dos pasos ya está activa.");
+        if (SecretoDosFactoresCifrado is null) throw new ReglaDeNegocioException("Primero genera el código QR.");
+        DosFactoresActivo = true;
+        UltimoPasoDosFactores = paso;
+        CodigosRecuperacionHash = string.Join(';', hashesRecuperacion);
+        VersionSeguridad++; // las sesiones previas (sin 2FA) dejan de valer
+    }
+
+    public void DesactivarDosFactores()
+    {
+        DosFactoresActivo = false;
+        SecretoDosFactoresCifrado = null;
+        CodigosRecuperacionHash = null;
+        UltimoPasoDosFactores = 0;
+        VersionSeguridad++;
+    }
+
+    /// <summary>Acepta un paso TOTP solo si es posterior al último usado (anti-repetición).</summary>
+    public bool RegistrarPasoDosFactores(long paso)
+    {
+        if (paso <= UltimoPasoDosFactores) return false;
+        UltimoPasoDosFactores = paso;
+        return true;
+    }
+
+    /// <summary>Consume un código de recuperación (por hash). Cada uno sirve una sola vez.</summary>
+    public bool UsarCodigoRecuperacion(string hash)
+    {
+        if (string.IsNullOrEmpty(CodigosRecuperacionHash)) return false;
+        var lista = CodigosRecuperacionHash.Split(';', StringSplitOptions.RemoveEmptyEntries).ToList();
+        if (!lista.Remove(hash)) return false;
+        CodigosRecuperacionHash = string.Join(';', lista);
+        return true;
+    }
+
+    public int CodigosRecuperacionRestantes => string.IsNullOrEmpty(CodigosRecuperacionHash)
+        ? 0 : CodigosRecuperacionHash.Split(';', StringSplitOptions.RemoveEmptyEntries).Length;
 
     // ---------------- Roles ----------------
     public void CambiarRol(RolUsuarioEnum nuevoRol)

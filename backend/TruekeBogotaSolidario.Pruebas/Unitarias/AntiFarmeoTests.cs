@@ -15,6 +15,8 @@ public class AntiFarmeoTests
         { Titulo = "Libro usado", Descripcion = "Buen estado", CategoriaId = 2, Modo = ModoDto.Trueke, Localidad = "Kennedy" }));
         var sol = await e.EnScopeAsync<ISolicitudService, SolicitudDto>(s => s.CrearAsync(receptor, new CrearSolicitudRequest { PublicacionId = pub.Id, Mensaje = "Me sirve" }));
         await e.EnScopeAsync<ISolicitudService, SolicitudDto>(s => s.AceptarAsync(oferente, sol.Id));
+        await e.EnScopeAsync<ISolicitudService, SolicitudDto>(s => s.ConfirmarEntregaAsync(oferente, sol.Id));
+        await e.EnScopeAsync<ISolicitudService, SolicitudDto>(s => s.ConfirmarEntregaAsync(receptor, sol.Id));
     }
 
     private static Task<EcoPuntosResumenDto> ResumenAsync(EntornoNegocio e, Guid id)

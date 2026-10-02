@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 using TruekeBogotaSolidario.Negocio.Dtos;
 using TruekeBogotaSolidario.Negocio.Servicios;
 using TruekeBogotaSolidario.Presentacion.Seguridad;
@@ -41,6 +42,30 @@ public sealed class PublicacionesController : ControllerBase
         var creada = await _pubs.CrearAsync(User.IdActual(), r);
         return CreatedAtAction(nameof(Obtener), new { id = creada.Id }, creada);
     }
+
+    /// <summary>Editar (solo el dueño y solo si está Disponible). Reemplaza todos los campos, incluida la lista de fotos.</summary>
+    [HttpPut("publicaciones/{id:guid}"), EnableRateLimiting(Politicas.LimiteEscritura)]
+    public async Task<ActionResult<PublicacionDto>> Editar(Guid id, [FromBody] CrearPublicacionRequest r)
+        => Ok(await _pubs.EditarAsync(User.IdActual(), id, r));
+
+    // ---- Favoritos (idempotentes)
+    [HttpPost("publicaciones/{id:guid}/favorito")]
+    public async Task<IActionResult> MarcarFavorita(Guid id)
+    {
+        await _pubs.MarcarFavoritaAsync(User.IdActual(), id);
+        return NoContent();
+    }
+
+    [HttpDelete("publicaciones/{id:guid}/favorito")]
+    public async Task<IActionResult> QuitarFavorita(Guid id)
+    {
+        await _pubs.QuitarFavoritaAsync(User.IdActual(), id);
+        return NoContent();
+    }
+
+    [HttpGet("favoritos")]
+    public async Task<ActionResult<PaginaDto<PublicacionDto>>> Favoritos([FromQuery] PaginacionRequest p)
+        => Ok(await _pubs.ListarFavoritasAsync(User.IdActual(), p.Pagina, p.Tamano));
 
     [HttpPost("publicaciones/{id:guid}/cancelar")]
     public async Task<IActionResult> Cancelar(Guid id, [FromBody] CancelarPublicacionRequest? r)

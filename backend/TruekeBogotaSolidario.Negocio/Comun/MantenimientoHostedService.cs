@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using TruekeBogotaSolidario.Datos.Repositorios;
+using TruekeBogotaSolidario.Negocio.Servicios;
 
 namespace TruekeBogotaSolidario.Negocio.Comun;
 
@@ -32,10 +33,35 @@ public sealed class MantenimientoHostedService : BackgroundService
         {
             try { await LimpiarAsync(); }
             catch (Exception ex) { _log.LogError(ex, "Fallo en el mantenimiento periódico"); }
+            try { await CerrarSolicitudesVencidasAsync(ct); }
+            catch (Exception ex) when (ex is not OperationCanceledException) { _log.LogError(ex, "Fallo cerrando solicitudes vencidas"); }
 
             try { await Task.Delay(Intervalo, ct); }
             catch (OperationCanceledException) { break; }
         }
+    }
+
+    /// <summary>Aceptadas con una confirmación hace más de 7 días → Completadas; sin confirmaciones hace más de 30 → No concretadas.</summary>
+    internal async Task<int> CerrarSolicitudesVencidasAsync(CancellationToken ct)
+    {
+        IReadOnlyList<Guid> ids;
+        using (var scope = _fabrica.CreateScope())
+            ids = await scope.ServiceProvider.GetRequiredService<ISolicitudService>().ListarParaCierreAutomaticoAsync(200);
+        foreach (var id in ids)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                using var scope = _fabrica.CreateScope(); // un scope por solicitud: un fallo no contamina al resto
+                await scope.ServiceProvider.GetRequiredService<ISolicitudService>().CerrarAutomaticamenteAsync(id);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _log.LogWarning(ex, "No se pudo cerrar la solicitud {SolicitudId}; se reintentará", id);
+            }
+        }
+        if (ids.Count > 0) _log.LogInformation("Cierre automático: {Total} solicitudes procesadas", ids.Count);
+        return ids.Count;
     }
 
     internal async Task<int> LimpiarAsync()

@@ -2,7 +2,7 @@ using TruekeBogotaSolidario.Datos.Common;
 
 namespace TruekeBogotaSolidario.Datos.Entidades;
 
-public enum TipoObjetoDenuncia { Publicacion = 1, Comentario = 2, Mensaje = 3, Usuario = 4 }
+public enum TipoObjetoDenuncia { Publicacion = 1, Comentario = 2, Mensaje = 3, Usuario = 4, Calificacion = 5 }
 public enum MotivoDenuncia { Spam = 1, Fraude = 2, ContenidoInapropiado = 3, ArticuloProhibido = 4, Acoso = 5, Otro = 6 }
 public enum EstadoDenuncia { Pendiente = 1, Resuelta = 2, Descartada = 3 }
 

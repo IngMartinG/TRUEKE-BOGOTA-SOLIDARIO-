@@ -41,7 +41,7 @@ public sealed class ChatService : IChatService
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
     public static bool EsEscribible(Conversacion c)
-        => c.Solicitud?.Estado is EstadoSolicitud.Pendiente or EstadoSolicitud.Aceptada
+        => c.Solicitud?.Estado is EstadoSolicitud.Pendiente or EstadoSolicitud.Aceptada or EstadoSolicitud.Completada
            && c.Duenio?.EstaEliminado == false && c.Solicitante?.EstaEliminado == false;
 
     private async Task<Conversacion> CargarAsync(Guid actorId, Guid conversacionId)
@@ -87,7 +87,7 @@ public sealed class ChatService : IChatService
         var c = await CargarAsync(actorId, conversacionId);
         var actor = actorId == c.DuenioId ? c.Duenio! : c.Solicitante!;
         Guardas.ExigirCorreoVerificado(actor);
-        if (!EsEscribible(c)) throw new ReglaDeNegocioException("Esta conversación está cerrada: la solicitud fue rechazada o cancelada.");
+        if (!EsEscribible(c)) throw new ReglaDeNegocioException("Esta conversación está cerrada: la solicitud fue rechazada, cancelada o no se concretó.");
 
         var ahora = Ahora;
         if (await _conversaciones.ContarMensajesDelAutorDesdeAsync(actorId, ahora.AddHours(-1)) >= MaxMensajesPorHora)
