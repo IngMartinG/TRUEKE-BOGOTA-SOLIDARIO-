@@ -60,7 +60,7 @@ public sealed class PagoService : IPagoService
             _ => (null, null)
         };
         if (tipo is not null)
-            await _notificador.NotificarAsync(pago.UsuarioId, new NotificacionDto(tipo, mensaje!, null, Ahora));
+            await _notificador.NotificarAsync(pago.UsuarioId, tipo, mensaje!);
     }
 
     private async Task<Usuario> CargarUsuarioAsync(Guid id)

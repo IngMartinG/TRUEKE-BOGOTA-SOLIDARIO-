@@ -58,7 +58,9 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<ISaludSistema, SaludSistema>();
 
         services.TryAddSingleton(TimeProvider.System);
-        services.TryAddSingleton<INotificador, NotificadorNulo>();
+        services.TryAddSingleton<IEmisorTiempoReal, EmisorTiempoRealNulo>(); // Presentacion lo reemplaza por SignalR
+        services.AddScoped<INotificador, NotificadorPersistente>();
+        services.AddScoped<INotificacionService, NotificacionService>();
         services.AddMemoryCache();
 
         services.AddSingleton<IGeneradorToken, GeneradorJwt>();

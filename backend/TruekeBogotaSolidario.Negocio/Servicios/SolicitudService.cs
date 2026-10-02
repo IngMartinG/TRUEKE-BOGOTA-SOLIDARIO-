@@ -38,7 +38,7 @@ public sealed class SolicitudService : ISolicitudService
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
     private Task NotificarAsync(Guid usuarioId, string tipo, string mensaje, Guid recursoId)
-        => _notificador.NotificarAsync(usuarioId, new NotificacionDto(tipo, mensaje, recursoId, Ahora));
+        => _notificador.NotificarAsync(usuarioId, tipo, mensaje, recursoId);
 
     public async Task<SolicitudDto> CrearAsync(Guid actorId, CrearSolicitudRequest r)
     {

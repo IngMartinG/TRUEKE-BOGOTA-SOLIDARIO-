@@ -84,8 +84,8 @@ public sealed class ComentarioService : IComentarioService
         _auditoria.Agregar(new AuditoriaEvento(actorId, "COMENTARIO_OCULTADO", "Comentario", c.Id, motivo, Ahora));
         await _uow.GuardarCambiosAsync();
         _log.LogWarning("Comentario {ComentarioId} ocultado por moderador {ActorId}", c.Id, actorId);
-        await _notificador.NotificarAsync(c.AutorId, new NotificacionDto(TiposNotificacion.ComentarioOcultado,
-            "Uno de tus comentarios fue ocultado por moderación.", c.PublicacionId, Ahora));
+        await _notificador.NotificarAsync(c.AutorId, TiposNotificacion.ComentarioOcultado,
+            "Uno de tus comentarios fue ocultado por moderación.", c.PublicacionId);
     }
 
     public async Task MostrarAsync(Guid actorId, Guid comentarioId)

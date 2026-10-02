@@ -140,6 +140,13 @@ public sealed class PaginacionRequest
     [Range(1, 50)] public int Tamano { get; init; } = 20;
 }
 
+public sealed class FiltroNotificacionesRequest
+{
+    public bool SoloNoLeidas { get; init; }
+    [Range(1, 10_000)] public int Pagina { get; init; } = 1;
+    [Range(1, 50)] public int Tamano { get; init; } = 20;
+}
+
 // ---------------- Responses ----------------
 public sealed record UsuarioDto(Guid Id, string NombreCompleto, string Localidad, string Correo, string Rol, string TipoCuenta,
     DateTime? PlanVigenteHasta, bool Verificado, string EstadoVerificacion, int SaldoEcoPuntos, decimal Reputacion,
@@ -173,6 +180,9 @@ public sealed record PublicacionCercanaDto(PublicacionDto Publicacion, double Di
 /// <summary>Oculto y MotivoOcultamiento solo tienen valor para moderadores (el público nunca recibe comentarios ocultos).</summary>
 public sealed record ComentarioDto(Guid Id, Guid PublicacionId, PerfilPublicoDto Autor, string Texto, DateTime FechaUtc,
     bool EsMio, bool Oculto, string? MotivoOcultamiento);
+
+/// <summary>Mensaje de chat. EsMio es relativo a quien lo recibe en la respuesta.</summary>
+public sealed record MensajeChatDto(Guid Id, Guid ConversacionId, bool EsMio, string Texto, DateTime FechaUtc, bool Leido);
 
 public sealed record PaginaDto<T>(IReadOnlyList<T> Items, int Total, int Pagina, int Tamano);
 
