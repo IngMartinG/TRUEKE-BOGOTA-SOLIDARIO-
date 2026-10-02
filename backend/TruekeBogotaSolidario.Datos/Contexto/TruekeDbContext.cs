@@ -18,6 +18,8 @@ public class TruekeDbContext : DbContext
     public DbSet<SesionRefresh> SesionesRefresh => Set<SesionRefresh>();
     public DbSet<TokenUsoUnico> TokensUsoUnico => Set<TokenUsoUnico>();
     public DbSet<Notificacion> Notificaciones => Set<Notificacion>();
+    public DbSet<Conversacion> Conversaciones => Set<Conversacion>();
+    public DbSet<Mensaje> Mensajes => Set<Mensaje>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -146,6 +148,32 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.Mensaje).HasMaxLength(300).IsRequired();
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.UsuarioId, x.LeidaUtc, x.FechaUtc });
+        });
+
+        mb.Entity<Conversacion>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.HasOne(x => x.Solicitud).WithMany().HasForeignKey(x => x.SolicitudId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Publicacion>().WithMany().HasForeignKey(x => x.PublicacionId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Duenio).WithMany().HasForeignKey(x => x.DuenioId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Solicitante).WithMany().HasForeignKey(x => x.SolicitanteId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.SolicitudId).IsUnique();
+            e.HasIndex(x => new { x.DuenioId, x.UltimoMensajeUtc });
+            e.HasIndex(x => new { x.SolicitanteId, x.UltimoMensajeUtc });
+        });
+
+        mb.Entity<Mensaje>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Texto).HasMaxLength(Mensaje.LongitudMaxima).IsRequired();
+            e.Property(x => x.MotivoOcultamiento).HasMaxLength(300);
+            e.HasOne(x => x.Conversacion).WithMany().HasForeignKey(x => x.ConversacionId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.AutorId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.ConversacionId, x.FechaUtc });
+            e.HasIndex(x => new { x.ConversacionId, x.AutorId, x.LeidoUtc });
+            e.HasIndex(x => new { x.AutorId, x.FechaUtc });
         });
 
         mb.Entity<Transaccion>(e =>

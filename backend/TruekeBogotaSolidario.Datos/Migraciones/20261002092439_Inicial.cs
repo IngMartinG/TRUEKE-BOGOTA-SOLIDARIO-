@@ -315,6 +315,77 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         onDelete: ReferentialAction.Restrict);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Conversaciones",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SolicitudId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    PublicacionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    DuenioId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    SolicitanteId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    CreadaUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    UltimoMensajeUtc = table.Column<DateTime>(type: "datetime2", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Conversaciones", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Conversaciones_Publicaciones_PublicacionId",
+                        column: x => x.PublicacionId,
+                        principalTable: "Publicaciones",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Conversaciones_Solicitudes_SolicitudId",
+                        column: x => x.SolicitudId,
+                        principalTable: "Solicitudes",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Conversaciones_Usuarios_DuenioId",
+                        column: x => x.DuenioId,
+                        principalTable: "Usuarios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Conversaciones_Usuarios_SolicitanteId",
+                        column: x => x.SolicitanteId,
+                        principalTable: "Usuarios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "Mensajes",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    ConversacionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    AutorId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
+                    Texto = table.Column<string>(type: "nvarchar(1000)", maxLength: 1000, nullable: false),
+                    FechaUtc = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    LeidoUtc = table.Column<DateTime>(type: "datetime2", nullable: true),
+                    EstaOculto = table.Column<bool>(type: "bit", nullable: false),
+                    MotivoOcultamiento = table.Column<string>(type: "nvarchar(300)", maxLength: 300, nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Mensajes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Mensajes_Conversaciones_ConversacionId",
+                        column: x => x.ConversacionId,
+                        principalTable: "Conversaciones",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_Mensajes_Usuarios_AutorId",
+                        column: x => x.AutorId,
+                        principalTable: "Usuarios",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                });
+
             migrationBuilder.InsertData(
                 table: "Categorias",
                 columns: new[] { "Id", "Descripcion", "NombreCategoria" },
@@ -348,6 +419,42 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 name: "IX_Comentarios_PublicacionId_EstaOculto_FechaUtc",
                 table: "Comentarios",
                 columns: new[] { "PublicacionId", "EstaOculto", "FechaUtc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Conversaciones_DuenioId_UltimoMensajeUtc",
+                table: "Conversaciones",
+                columns: new[] { "DuenioId", "UltimoMensajeUtc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Conversaciones_PublicacionId",
+                table: "Conversaciones",
+                column: "PublicacionId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Conversaciones_SolicitanteId_UltimoMensajeUtc",
+                table: "Conversaciones",
+                columns: new[] { "SolicitanteId", "UltimoMensajeUtc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Conversaciones_SolicitudId",
+                table: "Conversaciones",
+                column: "SolicitudId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Mensajes_AutorId_FechaUtc",
+                table: "Mensajes",
+                columns: new[] { "AutorId", "FechaUtc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Mensajes_ConversacionId_AutorId_LeidoUtc",
+                table: "Mensajes",
+                columns: new[] { "ConversacionId", "AutorId", "LeidoUtc" });
+
+            migrationBuilder.CreateIndex(
+                name: "IX_Mensajes_ConversacionId_FechaUtc",
+                table: "Mensajes",
+                columns: new[] { "ConversacionId", "FechaUtc" });
 
             migrationBuilder.CreateIndex(
                 name: "IX_Notificaciones_UsuarioId_LeidaUtc_FechaUtc",
@@ -483,6 +590,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 name: "Comentarios");
 
             migrationBuilder.DropTable(
+                name: "Mensajes");
+
+            migrationBuilder.DropTable(
                 name: "Notificaciones");
 
             migrationBuilder.DropTable(
@@ -492,13 +602,16 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                 name: "SesionesRefresh");
 
             migrationBuilder.DropTable(
-                name: "Solicitudes");
-
-            migrationBuilder.DropTable(
                 name: "TokensUsoUnico");
 
             migrationBuilder.DropTable(
                 name: "Transacciones");
+
+            migrationBuilder.DropTable(
+                name: "Conversaciones");
+
+            migrationBuilder.DropTable(
+                name: "Solicitudes");
 
             migrationBuilder.DropTable(
                 name: "Publicaciones");

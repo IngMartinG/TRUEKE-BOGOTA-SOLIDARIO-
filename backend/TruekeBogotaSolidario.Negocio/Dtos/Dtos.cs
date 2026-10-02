@@ -140,6 +140,18 @@ public sealed class PaginacionRequest
     [Range(1, 50)] public int Tamano { get; init; } = 20;
 }
 
+public sealed class EnviarMensajeRequest
+{
+    [Required, StringLength(1000, MinimumLength = 1)] public string Texto { get; init; } = "";
+}
+
+public sealed class MensajesRequest
+{
+    /// <summary>Cursor: devuelve mensajes anteriores a esta fecha (para "cargar más").</summary>
+    public DateTime? AntesDe { get; init; }
+    [Range(1, 100)] public int Tamano { get; init; } = 30;
+}
+
 public sealed class FiltroNotificacionesRequest
 {
     public bool SoloNoLeidas { get; init; }
@@ -181,13 +193,18 @@ public sealed record PublicacionCercanaDto(PublicacionDto Publicacion, double Di
 public sealed record ComentarioDto(Guid Id, Guid PublicacionId, PerfilPublicoDto Autor, string Texto, DateTime FechaUtc,
     bool EsMio, bool Oculto, string? MotivoOcultamiento);
 
-/// <summary>Mensaje de chat. EsMio es relativo a quien lo recibe en la respuesta.</summary>
-public sealed record MensajeChatDto(Guid Id, Guid ConversacionId, bool EsMio, string Texto, DateTime FechaUtc, bool Leido);
+/// <summary>Mensaje de chat. EsMio es relativo a quien lo recibe. Si fue ocultado por moderación, Texto trae un aviso.</summary>
+public sealed record MensajeChatDto(Guid Id, Guid ConversacionId, bool EsMio, string Texto, DateTime FechaUtc, bool Leido, bool Oculto);
+
+/// <summary>Resumen de una conversación para la bandeja de chats.</summary>
+public sealed record ConversacionDto(Guid Id, Guid SolicitudId, Guid PublicacionId, string PublicacionTitulo, string EstadoSolicitud,
+    bool SoyDuenio, PerfilPublicoDto Contraparte, string? UltimoMensaje, DateTime UltimoMensajeUtc, int NoLeidos, bool Escribible);
 
 public sealed record PaginaDto<T>(IReadOnlyList<T> Items, int Total, int Pagina, int Tamano);
 
+/// <summary>Las partes se comunican por el chat (ConversacionId): la API nunca comparte correos entre usuarios.</summary>
 public sealed record SolicitudDto(Guid Id, Guid PublicacionId, string PublicacionTitulo, string Modo, PerfilPublicoDto Solicitante,
-    DateTime FechaSolicitud, string Mensaje, string Estado, string? MotivoRechazo, string? CorreoContacto);
+    DateTime FechaSolicitud, string Mensaje, string Estado, string? MotivoRechazo, Guid? ConversacionId);
 
 public sealed record VerificacionPendienteDto(Guid UsuarioId, string NombreCompleto, string Correo, string DocumentoUrl, DateTime FechaRegistro);
 

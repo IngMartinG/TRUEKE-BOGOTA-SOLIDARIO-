@@ -26,13 +26,15 @@ public sealed class SolicitudService : ISolicitudService
     private readonly IUnidadDeTrabajo _uow;
     private readonly TimeProvider _reloj;
     private readonly INotificador _notificador;
+    private readonly IConversacionRepository _conversaciones;
     private readonly ILogger<SolicitudService> _log;
 
     public SolicitudService(ISolicitudRepository solicitudes, IPublicacionRepository pubs, IUsuarioRepository usuarios,
-        ITransaccionRepository transacciones, IUnidadDeTrabajo uow, TimeProvider reloj, INotificador notificador, ILogger<SolicitudService> log)
+        ITransaccionRepository transacciones, IUnidadDeTrabajo uow, TimeProvider reloj, INotificador notificador,
+        IConversacionRepository conversaciones, ILogger<SolicitudService> log)
     {
         _solicitudes = solicitudes; _pubs = pubs; _usuarios = usuarios; _transacciones = transacciones; _uow = uow; _reloj = reloj;
-        _notificador = notificador; _log = log;
+        _notificador = notificador; _conversaciones = conversaciones; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
@@ -52,37 +54,33 @@ public sealed class SolicitudService : ISolicitudService
         if (await _solicitudes.ContarPendientesPorSolicitanteAsync(actorId) >= Limites.MaxSolicitudesPendientesPorUsuario)
             throw new ReglaDeNegocioException($"Tienes {Limites.MaxSolicitudesPendientesPorUsuario} solicitudes pendientes. Espera respuesta o cancela alguna.");
 
+        var ahora = Ahora;
         var solicitud = new Solicitud(pub.Id, actorId, r.Mensaje);
         pub.MarcarEnNegociacion(); // RowVersion: si dos personas solicitan a la vez, una recibe 409
         _solicitudes.Agregar(solicitud);
+
+        // El chat nace con la solicitud; su mensaje es el primero de la conversación.
+        var conversacion = new Conversacion(solicitud.Id, pub.Id, pub.PropietarioId, actorId, ahora);
+        _conversaciones.Agregar(conversacion);
+        _conversaciones.AgregarMensaje(new Mensaje(conversacion.Id, actorId, solicitud.Mensaje, ahora));
         await _uow.GuardarCambiosAsync();
 
         await NotificarAsync(pub.PropietarioId, TiposNotificacion.SolicitudNueva, $"Nueva solicitud para \"{pub.Titulo}\".", solicitud.Id);
-        return ADto(solicitud, pub, solicitante, verContacto: false, contacto: null, Ahora);
+        return ADto(solicitud, pub, solicitante, conversacion.Id, ahora);
+    }
+
+    private async Task<IReadOnlyList<SolicitudDto>> MapearAsync(IReadOnlyList<Solicitud> lista)
+    {
+        var ahora = Ahora;
+        var conversaciones = await _conversaciones.IdsPorSolicitudAsync(lista.Select(s => s.Id).ToList());
+        return lista.Select(s => ADto(s, s.Publicacion!, s.Solicitante!, conversaciones.TryGetValue(s.Id, out var c) ? c : null, ahora)).ToList();
     }
 
     public async Task<IReadOnlyList<SolicitudDto>> ListarEnviadasAsync(Guid actorId)
-    {
-        var ahora = Ahora;
-        var lista = await _solicitudes.ListarPorSolicitanteAsync(actorId);
-        var resultado = new List<SolicitudDto>(lista.Count);
-        foreach (var s in lista)
-        {
-            string? contacto = null;
-            if (s.Estado == EstadoSolicitud.Aceptada)
-                contacto = (await _usuarios.ObtenerPorIdAsync(s.Publicacion!.PropietarioId))?.Correo;
-            resultado.Add(ADto(s, s.Publicacion!, s.Solicitante!, contacto is not null, contacto, ahora));
-        }
-        return resultado;
-    }
+        => await MapearAsync(await _solicitudes.ListarPorSolicitanteAsync(actorId));
 
     public async Task<IReadOnlyList<SolicitudDto>> ListarRecibidasAsync(Guid actorId)
-    {
-        var ahora = Ahora;
-        var lista = await _solicitudes.ListarRecibidasAsync(actorId);
-        return lista.Select(s => ADto(s, s.Publicacion!, s.Solicitante!, s.Estado == EstadoSolicitud.Aceptada,
-            s.Estado == EstadoSolicitud.Aceptada ? s.Solicitante!.Correo : null, ahora)).ToList();
-    }
+        => await MapearAsync(await _solicitudes.ListarRecibidasAsync(actorId));
 
     public async Task<SolicitudDto> AceptarAsync(Guid actorId, Guid solicitudId)
     {
@@ -108,7 +106,8 @@ public sealed class SolicitudService : ISolicitudService
         await _uow.GuardarCambiosAsync();
         _log.LogInformation("Transacción completada {SolicitudId} modo {Modo}", s.Id, pub.Modo);
         await NotificarAsync(receptor.Id, TiposNotificacion.SolicitudAceptada, $"Tu solicitud para \"{pub.Titulo}\" fue aceptada.", s.Id);
-        return ADto(s, pub, receptor, verContacto: true, contacto: receptor.Correo, ahora);
+        var conversacion = (await _conversaciones.IdsPorSolicitudAsync(new[] { s.Id })).GetValueOrDefault(s.Id);
+        return ADto(s, pub, receptor, conversacion == Guid.Empty ? null : conversacion, ahora);
     }
 
     public async Task RechazarAsync(Guid actorId, Guid solicitudId, string? motivo)
@@ -131,7 +130,7 @@ public sealed class SolicitudService : ISolicitudService
         await NotificarAsync(s.Publicacion.PropietarioId, TiposNotificacion.SolicitudCancelada, $"Se canceló una solicitud para \"{s.Publicacion.Titulo}\".", s.Id);
     }
 
-    private static SolicitudDto ADto(Solicitud s, Publicacion pub, Usuario solicitante, bool verContacto, string? contacto, DateTime ahora)
+    private static SolicitudDto ADto(Solicitud s, Publicacion pub, Usuario solicitante, Guid? conversacionId, DateTime ahora)
         => new(s.Id, pub.Id, pub.Titulo, pub.Modo.ToString(), Mapeos.APerfilPublico(solicitante, ahora), s.FechaSolicitud, s.Mensaje,
-            s.Estado.ToString(), s.MotivoRechazo, verContacto ? contacto : null);
+            s.Estado.ToString(), s.MotivoRechazo, conversacionId);
 }

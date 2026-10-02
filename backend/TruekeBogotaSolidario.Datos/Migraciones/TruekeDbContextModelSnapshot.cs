@@ -163,6 +163,83 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("Comentarios");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Conversacion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreadaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid>("DuenioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("PublicacionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SolicitanteId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("SolicitudId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("UltimoMensajeUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("PublicacionId");
+
+                    b.HasIndex("SolicitudId")
+                        .IsUnique();
+
+                    b.HasIndex("DuenioId", "UltimoMensajeUtc");
+
+                    b.HasIndex("SolicitanteId", "UltimoMensajeUtc");
+
+                    b.ToTable("Conversaciones");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Mensaje", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("AutorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ConversacionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("EstaOculto")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("LeidoUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MotivoOcultamiento")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AutorId", "FechaUtc");
+
+                    b.HasIndex("ConversacionId", "FechaUtc");
+
+                    b.HasIndex("ConversacionId", "AutorId", "LeidoUtc");
+
+                    b.ToTable("Mensajes");
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Notificacion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -668,6 +745,56 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Navigation("Autor");
 
                     b.Navigation("Publicacion");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Conversacion", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", "Duenio")
+                        .WithMany()
+                        .HasForeignKey("DuenioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Publicacion", null)
+                        .WithMany()
+                        .HasForeignKey("PublicacionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", "Solicitante")
+                        .WithMany()
+                        .HasForeignKey("SolicitanteId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Solicitud", "Solicitud")
+                        .WithMany()
+                        .HasForeignKey("SolicitudId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Duenio");
+
+                    b.Navigation("Solicitante");
+
+                    b.Navigation("Solicitud");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Mensaje", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("AutorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Conversacion", "Conversacion")
+                        .WithMany()
+                        .HasForeignKey("ConversacionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Conversacion");
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Notificacion", b =>

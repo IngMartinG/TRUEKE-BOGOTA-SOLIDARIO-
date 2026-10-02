@@ -130,6 +130,28 @@ public interface INotificacionRepository
     void Agregar(Notificacion notificacion);
 }
 
+public interface IConversacionRepository
+{
+    /// <summary>Incluye Solicitud (con Publicacion), Duenio y Solicitante.</summary>
+    Task<Conversacion?> ObtenerAsync(Guid id);
+    Task<IReadOnlyDictionary<Guid, Guid>> IdsPorSolicitudAsync(IReadOnlyCollection<Guid> solicitudIds);
+    /// <summary>Del usuario (como dueño o solicitante), más recientes primero. Incluye Solicitud/Publicacion y participantes.</summary>
+    Task<IReadOnlyList<Conversacion>> ListarDeUsuarioAsync(Guid usuarioId, int maximo);
+    /// <summary>Mensajes NO leídos que otros enviaron al usuario, por conversación.</summary>
+    Task<IReadOnlyDictionary<Guid, int>> ContarNoLeidosAsync(Guid usuarioId, IReadOnlyCollection<Guid> conversacionIds);
+    Task<IReadOnlyDictionary<Guid, Mensaje>> UltimosMensajesAsync(IReadOnlyCollection<Guid> conversacionIds);
+    /// <summary>Más recientes primero, anteriores a <paramref name="antesDeUtc"/> si se indica.</summary>
+    Task<IReadOnlyList<Mensaje>> ListarMensajesAsync(Guid conversacionId, DateTime? antesDeUtc, int tamano);
+    /// <summary>Marca (sin guardar) como leídos los mensajes que recibió <paramref name="lectorId"/>.</summary>
+    Task MarcarLeidosAsync(Guid conversacionId, Guid lectorId, DateTime ahoraUtc);
+    /// <summary>Incluye la Conversacion.</summary>
+    Task<Mensaje?> ObtenerMensajeAsync(Guid id);
+    Task<int> ContarMensajesDelAutorDesdeAsync(Guid autorId, DateTime desdeUtc);
+    Task<IReadOnlyList<Mensaje>> ListarMensajesDelAutorAsync(Guid autorId, int maximo);
+    void Agregar(Conversacion conversacion);
+    void AgregarMensaje(Mensaje mensaje);
+}
+
 public interface IComentarioRepository
 {
     Task<Comentario?> ObtenerPorIdAsync(Guid id);

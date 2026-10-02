@@ -284,6 +284,65 @@ public sealed class NotificacionRepository : INotificacionRepository
     public void Agregar(Notificacion notificacion) => _db.Notificaciones.Add(notificacion);
 }
 
+public sealed class ConversacionRepository : IConversacionRepository
+{
+    private readonly TruekeDbContext _db;
+    public ConversacionRepository(TruekeDbContext db) => _db = db;
+
+    private IQueryable<Conversacion> ConDetalle() => _db.Conversaciones
+        .Include(c => c.Solicitud).ThenInclude(s => s!.Publicacion)
+        .Include(c => c.Duenio).Include(c => c.Solicitante);
+
+    public Task<Conversacion?> ObtenerAsync(Guid id) => ConDetalle().FirstOrDefaultAsync(c => c.Id == id);
+
+    public async Task<IReadOnlyDictionary<Guid, Guid>> IdsPorSolicitudAsync(IReadOnlyCollection<Guid> solicitudIds)
+        => await _db.Conversaciones.AsNoTracking().Where(c => solicitudIds.Contains(c.SolicitudId))
+            .ToDictionaryAsync(c => c.SolicitudId, c => c.Id);
+
+    public async Task<IReadOnlyList<Conversacion>> ListarDeUsuarioAsync(Guid usuarioId, int maximo)
+        => await ConDetalle().AsNoTracking().Where(c => c.DuenioId == usuarioId || c.SolicitanteId == usuarioId)
+            .OrderByDescending(c => c.UltimoMensajeUtc).Take(Math.Clamp(maximo, 1, 200)).ToListAsync();
+
+    public async Task<IReadOnlyDictionary<Guid, int>> ContarNoLeidosAsync(Guid usuarioId, IReadOnlyCollection<Guid> conversacionIds)
+        => await _db.Mensajes.AsNoTracking()
+            .Where(m => conversacionIds.Contains(m.ConversacionId) && m.AutorId != usuarioId && m.LeidoUtc == null)
+            .GroupBy(m => m.ConversacionId).Select(g => new { g.Key, Total = g.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Total);
+
+    public async Task<IReadOnlyDictionary<Guid, Mensaje>> UltimosMensajesAsync(IReadOnlyCollection<Guid> conversacionIds)
+    {
+        var ultimos = await _db.Mensajes.AsNoTracking().Where(m => conversacionIds.Contains(m.ConversacionId))
+            .GroupBy(m => m.ConversacionId)
+            .Select(g => g.OrderByDescending(m => m.FechaUtc).First())
+            .ToListAsync();
+        return ultimos.ToDictionary(m => m.ConversacionId);
+    }
+
+    public async Task<IReadOnlyList<Mensaje>> ListarMensajesAsync(Guid conversacionId, DateTime? antesDeUtc, int tamano)
+    {
+        var q = _db.Mensajes.AsNoTracking().Where(m => m.ConversacionId == conversacionId);
+        if (antesDeUtc.HasValue) q = q.Where(m => m.FechaUtc < antesDeUtc.Value);
+        return await q.OrderByDescending(m => m.FechaUtc).Take(Math.Clamp(tamano, 1, 100)).ToListAsync();
+    }
+
+    public async Task MarcarLeidosAsync(Guid conversacionId, Guid lectorId, DateTime ahoraUtc)
+    {
+        foreach (var m in await _db.Mensajes.Where(m => m.ConversacionId == conversacionId && m.AutorId != lectorId && m.LeidoUtc == null).Take(1000).ToListAsync())
+            m.MarcarLeido(ahoraUtc);
+    }
+
+    public Task<Mensaje?> ObtenerMensajeAsync(Guid id) => _db.Mensajes.Include(m => m.Conversacion).FirstOrDefaultAsync(m => m.Id == id);
+
+    public Task<int> ContarMensajesDelAutorDesdeAsync(Guid autorId, DateTime desdeUtc)
+        => _db.Mensajes.CountAsync(m => m.AutorId == autorId && m.FechaUtc >= desdeUtc);
+
+    public async Task<IReadOnlyList<Mensaje>> ListarMensajesDelAutorAsync(Guid autorId, int maximo)
+        => await _db.Mensajes.AsNoTracking().Where(m => m.AutorId == autorId).OrderByDescending(m => m.FechaUtc).Take(maximo).ToListAsync();
+
+    public void Agregar(Conversacion conversacion) => _db.Conversaciones.Add(conversacion);
+    public void AgregarMensaje(Mensaje mensaje) => _db.Mensajes.Add(mensaje);
+}
+
 public sealed class ComentarioRepository : IComentarioRepository
 {
     private readonly TruekeDbContext _db;
