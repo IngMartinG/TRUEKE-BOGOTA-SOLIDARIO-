@@ -54,7 +54,11 @@ const TIPOS_SOLICITUD = /^(Solicitud|Entrega|Intercambio|Calificacion)/;
           @for (s of visibles(); track s.id) {
             <app-tarjeta-solicitud class="block animate-aparecer" [solicitud]="s" [ocupado]="ocupado() === s.id" (accion)="ejecutar(s, $event)" />
           } @empty {
-            @if (pestana() === 'recibidas') {
+            @if (lista.value()?.length) {
+              <app-estado-vacio icono="checkCirculo" titulo="Nada pendiente por aquí" descripcion="No tienes intercambios en este estado.">
+                <button type="button" class="btn btn-secundario" (click)="filtroEstado.set('todas')">Ver todos</button>
+              </app-estado-vacio>
+            } @else if (pestana() === 'recibidas') {
               <app-estado-vacio icono="apreton" titulo="Aún no recibes solicitudes" descripcion="Cuando alguien quiera tu objeto, lo verás aquí. Las publicaciones con buenas fotos reciben más solicitudes.">
                 <a routerLink="/publicar" class="btn btn-primario">Publicar algo</a>
               </app-estado-vacio>
@@ -121,8 +125,14 @@ export default class Intercambios {
     params: () => this.pestana(),
     stream: ({ params }) => (params === 'enviadas' ? this.api.enviadas() : this.api.recibidas()),
   });
-  private readonly recibidas = rxResource({ stream: () => this.api.recibidas() });
-  protected readonly pendientesRecibidas = computed(() => (this.recibidas.value() ?? []).filter((s) => s.estado === 'Pendiente').length);
+  /** Solo hace falta pedirlas aparte en la pestaña "Enviadas" (para el contador de pendientes). */
+  private readonly recibidas = rxResource({
+    params: () => (this.pestana() === 'enviadas' ? true : undefined),
+    stream: () => this.api.recibidas(),
+  });
+  protected readonly pendientesRecibidas = computed(() =>
+    ((this.pestana() === 'recibidas' ? this.lista.value() : this.recibidas.value()) ?? []).filter((s) => s.estado === 'Pendiente').length,
+  );
 
   protected readonly visibles = computed(() => {
     const todas = [...(this.lista.value() ?? [])].sort(
@@ -230,6 +240,6 @@ export default class Intercambios {
 
   private recargar(): void {
     this.lista.reload();
-    this.recibidas.reload();
+    if (this.pestana() === 'enviadas') this.recibidas.reload();
   }
 }

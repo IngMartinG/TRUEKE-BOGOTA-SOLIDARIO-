@@ -79,7 +79,7 @@ const TAMANO = 40;
         </aside>
 
         <!-- Conversación -->
-        <section class="min-h-0 flex-col" [class]="id() ? 'flex' : 'hidden md:flex'" aria-live="polite">
+        <section class="min-h-0 min-w-0 flex-col" [class]="id() ? 'flex' : 'hidden md:flex'" aria-live="polite">
           @if (!id()) {
             <div class="grid flex-1 place-items-center">
               <app-estado-vacio icono="mensaje" titulo="Elige una conversación" descripcion="Aquí coordinas la entrega sin compartir tu número ni tu correo." />
@@ -200,13 +200,14 @@ export default class Mensajes {
       alLimpiar(() => this.tiempoReal.conversacionAbierta.set(null));
     });
 
-    this.tiempoReal.mensaje$.pipe(takeUntilDestroyed()).subscribe((m) => {
+    this.tiempoReal.mensaje$.pipe(takeUntilDestroyed()).subscribe(async (m) => {
       if (m.conversacionId === this.id()) {
         if (!this.mensajes().some((x) => x.id === m.id)) {
           this.mensajes.update((l) => [...l, m]);
           this.bajar();
         }
-        if (!m.esMio) void firstValueFrom(this.api.marcarLeida(m.conversacionId!)).catch(() => {});
+        // Primero se marca como leída y luego se recarga la lista, para no mostrar un "no leído" falso.
+        if (!m.esMio) await firstValueFrom(this.api.marcarLeida(m.conversacionId!)).catch(() => undefined);
       }
       this.conversaciones.reload();
     });

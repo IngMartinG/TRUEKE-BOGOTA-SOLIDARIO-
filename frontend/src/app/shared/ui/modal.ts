@@ -33,6 +33,8 @@ import { Icono } from './icono';
     }
   `,
   template: `
+    <!-- El teclado ya lo maneja <dialog> (Esc cierra); el clic solo detecta el fondo. -->
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -->
     <dialog
       #dialogo
       class="m-0 mt-auto max-h-[92dvh] w-full max-w-none overflow-hidden rounded-t-3xl border border-borde bg-superficie p-0 text-tinta shadow-elevada sm:m-auto sm:rounded-3xl"

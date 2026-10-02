@@ -70,7 +70,7 @@ const TAMANO = 20;
                 } @else {
                   <span class="insignia-trueke">Activo</span>
                 }
-                <p class="mt-1 text-xs text-tenue">{{ u.correoVerificado ? 'Correo verificado' : 'Correo sin verificar' }} · {{ u.estadoVerificacion }}</p>
+                <p class="mt-1 text-xs text-tenue">{{ u.correoVerificado ? 'Correo verificado' : 'Correo sin verificar' }} · {{ verificacion[u.estadoVerificacion ?? ''] ?? u.estadoVerificacion }}</p>
               </td>
               <td class="px-4 py-3">
                 <p class="font-semibold">{{ (u.reputacion ?? 0).toFixed(1) }}</p>
@@ -125,6 +125,12 @@ export default class Usuarios {
   protected readonly sesion = inject(SesionService);
   protected readonly tamano = TAMANO;
   protected readonly roles: RolDto[] = ['Cliente', 'Administrador', 'SuperUsuario'];
+  protected readonly verificacion: Record<string, string> = {
+    NoVerificado: 'Identidad sin verificar',
+    Pendiente: 'Verificación pendiente',
+    Aprobada: 'Identidad verificada',
+    Rechazada: 'Verificación rechazada',
+  };
   protected readonly textoEntrada = signal('');
   private readonly texto = signal('');
   protected readonly soloSuspendidos = signal(false);

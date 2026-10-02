@@ -52,7 +52,7 @@ interface Servicio {
             </p>
             <dl class="mt-5 grid grid-cols-3 gap-3 text-center text-xs">
               <div class="rounded-xl bg-white/5 p-3"><dt class="text-bosque-200">Reputación</dt><dd class="mt-1 text-lg font-bold">{{ (resumen.value()?.reputacion ?? 0).toFixed(1) }}</dd></div>
-              <div class="rounded-xl bg-white/5 p-3"><dt class="text-bosque-200">Usos hoy</dt><dd class="mt-1 text-lg font-bold">{{ resumen.value()?.transaccionesConPuntosRestantes ?? '–' }}</dd></div>
+              <div class="rounded-xl bg-white/5 p-3"><dt class="text-bosque-200">Canjes libres hoy</dt><dd class="mt-1 text-lg font-bold">{{ resumen.value()?.transaccionesConPuntosRestantes ?? '–' }}</dd></div>
               <div class="rounded-xl bg-white/5 p-3"><dt class="text-bosque-200">Cuenta</dt><dd class="mt-1 text-lg font-bold">{{ resumen.value()?.tipoCuenta ?? '–' }}</dd></div>
             </dl>
             @if (resumen.value()?.planVigenteHasta) {

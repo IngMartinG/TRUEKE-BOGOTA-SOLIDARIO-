@@ -4,7 +4,16 @@
     {
       "name": "api",
       "runtimeExecutable": "dotnet",
-      "runtimeArgs": ["run", "--project", "backend/TruekeBogotaSolidario.Presentacion", "--launch-profile", "Desarrollo"],
+      "runtimeArgs": [
+        "run",
+        "--project",
+        "backend/TruekeBogotaSolidario.Presentacion",
+        "--launch-profile",
+        "Desarrollo",
+        "--",
+        "--Bootstrap:SuperUsuarioCorreo=admin@trueke.test",
+        "--Bootstrap:SuperUsuarioClave=AdminPrueba2026"
+      ],
       "port": 5180
     },
     {
