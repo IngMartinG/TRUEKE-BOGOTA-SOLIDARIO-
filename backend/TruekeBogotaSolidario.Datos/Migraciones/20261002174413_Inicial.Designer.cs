@@ -12,7 +12,7 @@ using TruekeBogotaSolidario.Datos.Contexto;
 namespace TruekeBogotaSolidario.Datos.Migraciones
 {
     [DbContext(typeof(TruekeDbContext))]
-    [Migration("20261002173625_Inicial")]
+    [Migration("20261002174413_Inicial")]
     partial class Inicial
     {
         /// <inheritdoc />
