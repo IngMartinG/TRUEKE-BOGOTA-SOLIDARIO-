@@ -32,7 +32,7 @@
               "node_modules/@angular/cdk/overlay-prebuilt.css",
               "src/styles.css"
             ],
-            "allowedCommonJsDependencies": ["qrcode", "leaflet"]
+            "allowedCommonJsDependencies": ["qrcode", "dijkstrajs", "leaflet"]
           },
           "configurations": {
             "production": {
@@ -87,3 +87,4 @@
     }
   }
 }
+
