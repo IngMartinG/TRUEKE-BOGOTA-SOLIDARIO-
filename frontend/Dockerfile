@@ -11,7 +11,7 @@ COPY . .
 RUN npx ng build --configuration production
 
 # Etapa 2: servidor estático sin privilegios (usuario nginx, puerto 8080).
-FROM nginxinc/nginx-unprivileged:1.27-alpine
+FROM nginxinc/nginx-unprivileged:1.31-alpine
 # Valores por defecto: API en el mismo origen, servida por el proxy inverso de este nginx.
 ENV API_URL="" \
     API_UPSTREAM="http://api:8080" \
