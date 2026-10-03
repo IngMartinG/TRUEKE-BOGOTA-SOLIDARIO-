@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using TruekeBogotaSolidario.Pruebas.Infraestructura;
 
@@ -28,7 +28,7 @@ public class CuentaTests : IClassFixture<FabricaApi>
         var (correo, c) = await RegistrarSinVerificarAsync();
         Assert.False((await c.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/v1/usuarios/yo")).GetProperty("correoVerificado").GetBoolean());
 
-        var bloqueada = await c.PostAsJsonAsync("/api/v1/publicaciones", new { titulo = "Silla", descripcion = "x", categoriaId = 1, modo = "Donacion", localidad = "Suba" });
+        var bloqueada = await c.PostAsJsonAsync("/api/v1/publicaciones", new { titulo = "Silla", descripcion = "x", categoriaId = 1, modo = "Donacion", condicion = "Usado", localidad = "Suba" });
         Assert.Equal(HttpStatusCode.Forbidden, bloqueada.StatusCode);
 
         await Api.VerificarCorreoAsync(_fabrica, correo);

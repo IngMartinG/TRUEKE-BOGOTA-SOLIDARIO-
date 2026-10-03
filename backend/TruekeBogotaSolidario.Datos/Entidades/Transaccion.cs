@@ -6,7 +6,7 @@ public class Transaccion
     private Transaccion() { } // EF Core
 
     public Transaccion(Guid publicacionId, Guid solicitudId, Guid oferenteId, Guid receptorId, ModoTransaccion modo,
-        bool puntosOferente, bool puntosReceptor)
+        bool puntosOferente, bool puntosReceptor, DateTime? fechaUtc = null)
     {
         Id = Guid.NewGuid();
         PublicacionId = publicacionId;
@@ -14,7 +14,7 @@ public class Transaccion
         OferenteId = oferenteId;
         ReceptorId = receptorId;
         Modo = modo;
-        FechaUtc = DateTime.UtcNow;
+        FechaUtc = fechaUtc ?? DateTime.UtcNow;
         PuntosOtorgadosOferente = puntosOferente;
         PuntosOtorgadosReceptor = puntosReceptor;
     }

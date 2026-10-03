@@ -38,19 +38,23 @@ public sealed class PagoService : IPagoService
     private readonly TimeProvider _reloj;
     private readonly INotificador _notificador;
     private readonly IAlmacenArchivos _almacen;
+    private readonly IFacturaRepository _facturas;
+    private readonly FacturacionOpciones _facturacion;
     private readonly ILogger<PagoService> _log;
 
     public PagoService(IPagoRepository pagos, IUsuarioRepository usuarios, IPublicacionRepository pubs, IUnidadDeTrabajo uow,
         IProveedorPagos proveedor, IOptions<PagosOpciones> opciones, IOptions<UrlsOpciones> urls, TimeProvider reloj,
-        INotificador notificador, IAlmacenArchivos almacen, ILogger<PagoService> log)
+        INotificador notificador, IAlmacenArchivos almacen, IFacturaRepository facturas, IOptions<FacturacionOpciones> facturacion,
+        ILogger<PagoService> log)
     {
         _pagos = pagos; _usuarios = usuarios; _pubs = pubs; _uow = uow; _proveedor = proveedor;
-        _opciones = opciones.Value; _urls = urls.Value; _reloj = reloj; _notificador = notificador; _almacen = almacen; _log = log;
+        _opciones = opciones.Value; _urls = urls.Value; _reloj = reloj; _notificador = notificador; _almacen = almacen;
+        _facturas = facturas; _facturacion = facturacion.Value; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
-    /// <summary>Confirma el resultado de la pasarela y, SOLO después de guardar, avisa al usuario.</summary>
+    /// <summary>Confirma el resultado de la pasarela y, SOLO después de guardar, avisa al usuario (y al equipo si hay que revisar).</summary>
     private async Task GuardarYNotificarAsync(Pago pago)
     {
         await _uow.GuardarCambiosAsync();
@@ -63,7 +67,22 @@ public sealed class PagoService : IPagoService
         };
         if (tipo is not null)
             await _notificador.NotificarAsync(pago.UsuarioId, tipo, mensaje!);
+
+        // Dinero cobrado sin beneficio aplicado: el equipo debe reembolsar o aplicar a mano. Se avisa a los moderadores.
+        if (pago.Estado == EstadoPago.RequiereRevision)
+            foreach (var moderador in await _usuarios.ListarIdsModeradoresAsync())
+                await _notificador.NotificarAsync(moderador, TiposNotificacion.AlertaPagoEnRevision,
+                    $"Pago {pago.Referencia} de {pago.MontoCop:N0} COP requiere revisión: {pago.NotaInterna}");
     }
+
+    private decimal IvaIncluido(int totalCop)
+    {
+        var iva = _facturacion.IvaEfectivo;
+        return iva <= 0 ? 0 : totalCop - Math.Round(totalCop / (1 + iva / 100m), 2, MidpointRounding.AwayFromZero);
+    }
+
+    private CotizacionDto ADto(CotizacionBeneficio c)
+        => new(c.PrecioBaseCop, c.DescuentoPorcentaje, c.PuntosACanjear, c.TotalCop, IvaIncluido(c.TotalCop));
 
     private async Task<Usuario> CargarUsuarioAsync(Guid id)
         => await _usuarios.ObtenerPorIdAsync(id) ?? throw new AutenticacionException("Sesión no válida.");
@@ -73,15 +92,20 @@ public sealed class PagoService : IPagoService
     {
         var u = await CargarUsuarioAsync(actorId);
         var c = CotizarInterno(u, (ConceptoPago)(int)concepto, Ahora);
-        return c is null ? null : new CotizacionDto(c.PrecioBaseCop, c.DescuentoPorcentaje, c.PuntosACanjear, c.TotalCop);
+        return c is null ? null : ADto(c);
     }
 
-    private static CotizacionBeneficio? CotizarInterno(Usuario u, ConceptoPago concepto, DateTime ahora) => concepto switch
+    /// <summary>Destacar y Verificar admiten descuento por Eco-Puntos y por plan (Premium 15 %, Empresa 20 %).</summary>
+    private static CotizacionBeneficio? CotizarInterno(Usuario u, ConceptoPago concepto, DateTime ahora)
     {
-        ConceptoPago.Destacar => PoliticaEcoPuntos.Cotizar(PoliticaEcoPuntos.PrecioDestacarCop, PoliticaEcoPuntos.EscalonesDestacar, u.SaldoEcoPuntos, u.PremiumVigente(ahora)),
-        ConceptoPago.Verificar => PoliticaEcoPuntos.Cotizar(PoliticaEcoPuntos.PrecioVerificarCop, PoliticaEcoPuntos.EscalonesVerificar, u.SaldoEcoPuntos, u.PremiumVigente(ahora)),
-        _ => null
-    };
+        var descuentoPlan = PoliticaEcoPuntos.DescuentoPlan(u.PlanEfectivo(ahora));
+        return concepto switch
+        {
+            ConceptoPago.Destacar => PoliticaEcoPuntos.Cotizar(PoliticaEcoPuntos.PrecioDestacarCop, PoliticaEcoPuntos.EscalonesDestacar, u.SaldoEcoPuntos, descuentoPlan),
+            ConceptoPago.Verificar => PoliticaEcoPuntos.Cotizar(PoliticaEcoPuntos.PrecioVerificarCop, PoliticaEcoPuntos.EscalonesVerificar, u.SaldoEcoPuntos, descuentoPlan),
+            _ => null
+        };
+    }
 
     // ------------------------------------------------------------------ Iniciar (VALIDAR primero, cobrar después)
     public async Task<PagoIniciadoDto> IniciarAsync(Guid actorId, IniciarPagoRequest r, CancellationToken ct = default)
@@ -118,10 +142,10 @@ public sealed class PagoService : IPagoService
             case ConceptoPago.Verificar:
             {
                 if (r.DocumentoUrl is null) throw new ReglaDeNegocioException("Indica el enlace del documento de identidad.");
-                if (_almacen.Habilitado) await _almacen.ValidarArchivoPropioAsync(r.DocumentoUrl, actorId, TipoArchivoDto.Documento, ct);
-                else ValidadorUrls.ExigirHostPermitido(r.DocumentoUrl, _urls.HostsPermitidosDocumentos, "El documento");
-                u.ValidarPuedeSolicitarVerificacion(r.DocumentoUrl);
                 documento = r.DocumentoUrl;
+                if (_almacen.Habilitado) documento = await _almacen.ValidarArchivoPropioAsync(r.DocumentoUrl, actorId, TipoArchivoDto.Documento, ct);
+                else ValidadorUrls.ExigirHostPermitido(r.DocumentoUrl, _urls.HostsPermitidosDocumentos, "El documento");
+                u.ValidarPuedeSolicitarVerificacion(documento);
                 cotizacion = CotizarInterno(u, concepto, ahora)!;
                 monto = cotizacion.TotalCop;
                 break;
@@ -157,8 +181,7 @@ public sealed class PagoService : IPagoService
         var expira = ahora.AddMinutes(_opciones.MinutosParaExpirarPendientes);
         return new PagoIniciadoDto(referencia, concepto.ToString(), monto, pago.MontoEnCentavos, Moneda, _proveedor.Nombre,
             _proveedor.LlavePublica, _proveedor.FirmaIntegridad(referencia, pago.MontoEnCentavos, Moneda),
-            cotizacion is null ? null : new CotizacionDto(cotizacion.PrecioBaseCop, cotizacion.DescuentoPorcentaje, cotizacion.PuntosACanjear, cotizacion.TotalCop),
-            expira);
+            cotizacion is null ? null : ADto(cotizacion), expira);
     }
 
     // ------------------------------------------------------------------ Estado (solo el dueño; reconcilia con la pasarela si sigue pendiente)
@@ -299,6 +322,9 @@ public sealed class PagoService : IPagoService
         {
             await AplicarBeneficioAsync(pago, u, ahora);
             pago.Aprobar(tx.Id, ahora);
+            // La factura nace en la MISMA transacción que aprueba el pago: ninguna venta queda sin facturar.
+            if (await _facturas.ObtenerPorPagoAsync(pago.Id) is null)
+                _facturas.Agregar(new Factura(pago, u, Mapeos.DescripcionConcepto(pago.Concepto), _facturacion.IvaEfectivo, ahora));
         }
         catch (ReglaDeNegocioException ex)
         {

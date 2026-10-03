@@ -64,6 +64,7 @@ public static class Api
             descripcion = "En buen estado",
             categoriaId = 1,
             modo,
+            condicion = "Usado",
             localidad = "Chapinero",
             precioReferenciaCop = modo == "Compra" ? 50000 : (decimal?)null,
             latitud = lat,

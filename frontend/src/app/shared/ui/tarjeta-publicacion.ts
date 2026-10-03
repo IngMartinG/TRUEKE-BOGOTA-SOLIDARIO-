@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import type { PublicacionDto } from '../../api/tipos';
+import { infoCondicion, type PublicacionDto } from '../../api/tipos';
 import { FavoritosService } from '../../core/favoritos.service';
 import { CopPipe, HacePipe } from '../pipes';
 import { Icono } from './icono';
@@ -50,7 +50,10 @@ import { InsigniaModo } from './insignia-modo';
         }
       </div>
       <div class="flex flex-1 flex-col gap-2 p-4">
-        <p class="text-xs font-medium text-tenue">{{ p.categoria?.nombre }}</p>
+        <p class="flex items-center justify-between gap-2 text-xs font-medium text-tenue">
+          <span class="truncate">{{ p.categoria?.nombre }}</span>
+          <span class="shrink-0 rounded-full bg-superficie-2 px-2 py-0.5 text-[11px] font-semibold">{{ condicion().etiqueta }}</span>
+        </p>
         <h3 class="line-clamp-2 font-display text-base leading-snug font-bold group-hover:text-bosque-700 dark:group-hover:text-bosque-300">
           {{ p.titulo }}
         </h3>
@@ -66,7 +69,7 @@ import { InsigniaModo } from './insignia-modo';
               </p>
             }
             <p class="mt-0.5 flex items-center gap-1 truncate text-xs text-tenue">
-              <app-icono nombre="pin" [tamano]="12" />{{ p.localidad }}
+              <app-icono nombre="pin" [tamano]="12" />{{ p.localidad }}@if (ciudad()) {<span>· {{ ciudad() }}</span>}
               @if (distanciaKm() !== null) {
                 · {{ distanciaKm()! < 1 ? '< 1' : distanciaKm()!.toFixed(1) }} km
               }
@@ -85,6 +88,9 @@ export class TarjetaPublicacion {
   protected readonly favorita = computed(() =>
     this.favoritos.esFavorita(this.publicacion().id, this.publicacion().esFavorita),
   );
+  protected readonly condicion = computed(() => infoCondicion(this.publicacion().condicion));
+  /** "Medellín, Antioquia" → "Medellín"; "Bogotá, D.C." → "Bogotá". */
+  protected readonly ciudad = computed(() => (this.publicacion().municipio ?? '').split(',')[0]?.trim() ?? '');
 }
 
 @Component({

@@ -56,6 +56,18 @@ Un controller nunca puede tocar un repositorio ni el DbContext.
   - los archivos se suben directo a Blob con SAS y se validan al usarlos.
 - La clave JWT se configura como `Jwt:Key` (variable `Jwt__Key`).
 
+## Estado al 2026-10-03 (escala nacional y monetización)
+- **Escala Colombia:** catálogo DANE-DIVIPOLA embebido (`Datos/Recursos/divipola.json`, clase `Divipola`); `MunicipioCodigo`/`DepartamentoCodigo` en publicaciones y usuarios (Bogotá = 11001); `GET /ubicaciones/...`; filtros por departamento/municipio. La marca sigue siendo "Trueke Bogotá Solidario" (decisión del dueño).
+- **Estado del producto** obligatorio al publicar (`CondicionProducto`: Nuevo, ComoNuevo, Usado, UsadoConDetalles, Reparado, ParaRepuestos; las tres últimas exigen `DetalleCondicion`).
+- **Fotos limpias:** `ProcesadorImagenes` (ImageSharp 3.1, NO subir a 4: exige llave) re-codifica y quita EXIF/GPS; la copia limpia se guarda con nombre nuevo.
+- **Anti-farmeo:** correo canónico único (`CorreoCanonico`), correos desechables bloqueados, bono al verificar el correo, misma pareja suma puntos/reputación 1 vez cada 30 días, 1 calificación por pareja/30 días cuenta en el promedio.
+- **Monetización:** Impulsar (20 Eco-Puntos, cada 24 h, único uso 100 % con puntos); Empresa = 10 destacados gratis, 20 % de descuento, 1.000 publicaciones, nombre comercial + NIT; Premium = 3 destacados, 15 %, 150 publicaciones; estadísticas por publicación (serie diaria solo planes pagos); vitrina de destacadas; recordatorio de vencimiento de planes; art. 53 (más de 5 ventas exige identidad verificada o Empresa).
+- **Facturación:** `Factura` por pago aprobado (misma transacción), IVA incluido, modo `Manual` en producción (equipo registra número y CUFE), `Simulado` solo dev. **PQR** con retracto y reversión. **Ingresos** y CSV solo SuperUsuario. Un reembolso revierte el beneficio.
+- **Infra:** límite de peticiones distribuido en Redis, proxies confiables configurables, CodeQL, Dependabot, ZAP (manual contra staging).
+- Migración `EscalaNacionalYMonetizacion` (con valores por defecto para datos existentes). 216 pruebas + 6 de SQL Server (CI).
+- **Endpoints anónimos añadidos** a la lista blanca: `GET /ubicaciones/...` y `GET /publicaciones/destacadas` (lectura del catálogo).
+- **Pendiente (requiere cuentas externas):** cobro recurrente con fuentes de pago de Wompi, integración API con proveedor de factura electrónica, festivos en plazos de PQR.
+
 ## Pendientes originales (completados)
 1. `.sln`, `appsettings.json` sin secretos, `appsettings.Development.json` (Pagos:Proveedor=Simulado, BD InMemory), `.gitignore`, `.env.example`.
 2. `dotnet build` en verde (TreatWarningsAsErrors) y corregir Datos/Contexto, Datos/Repositorios/Implementaciones y Presentacion.
@@ -73,7 +85,7 @@ Cliente ⊂ Administrador ⊂ SuperUsuario. **Invitado** = visitante anónimo, n
 
 ## Reglas de seguridad (no negociables)
 - El usuario que actúa SIEMPRE sale del JWT, nunca del body ni del query.
-- `[Authorize]` en cada controller; `[AllowAnonymous]` solo en: login, registro, GET del catálogo y de categorías, GET `/eco-puntos/politica`, health y webhook de Wompi (este con firma verificada).
+- `[Authorize]` en cada controller; `[AllowAnonymous]` solo en: login, registro, GET del catálogo (incluye destacadas), de categorías y de ubicaciones, GET `/eco-puntos/politica`, health y webhook de Wompi (este con firma verificada).
 - Un error 500 nunca expone `ex.Message` ni el stack trace; los 400, 404 y 409 de dominio sí pueden mostrar su mensaje.
 - Las respuestas JSON solo llevan lo necesario: nunca ClaveHash, RowVersion internos, correos de terceros, coordenadas exactas ni datos de otro usuario.
 - Swagger solo en Development. HSTS + HTTPS + cabeceras de seguridad. No enviar la cabecera `Server`.
@@ -83,11 +95,13 @@ Cliente ⊂ Administrador ⊂ SuperUsuario. **Invitado** = visitante anónimo, n
 - Sobre "F12": el código del front siempre es descargable. La protección real es que el front no tenga secretos, el build de producción sin source maps y que el backend valide todo.
 
 ## Economía Eco-Puntos
-Compra 5 · Trueke 10 · Donación 20 · Registro 10. Reputación +0.05 / +0.10 / +0.20, tope 5.0. Máximo 5 transacciones con puntos por día.
+Compra 5 · Trueke 10 · Donación 20 · Bienvenida 10 (al verificar el correo). Reputación +0.05 / +0.10 / +0.20, tope 5.0. Máximo 5 transacciones con puntos por día y 1 cada 30 días con la misma persona.
 - Destacar publicación: $6.000 (25 % de descuento con ≥200 pts, 40 % con ≥500 pts).
 - Verificar cuenta: $20.000 (20 % / 35 %).
-- Premium: $15.000/mes (3 destacados gratis + 15 % de descuento).
-- Empresa: $50.000/mes.
+- Premium: $15.000/mes (3 destacados gratis + 15 % de descuento, 150 publicaciones, estadísticas diarias).
+- Empresa: $50.000/mes (10 destacados gratis + 20 % de descuento, 1.000 publicaciones, nombre comercial + NIT, estadísticas diarias).
+- Impulsar: 20 Eco-Puntos (cada 24 h por publicación). Es el único beneficio pagado 100 % con puntos (no tiene precio en pesos).
+- Precios con IVA incluido; cada pago aprobado genera una `Factura`.
 
 Recarga: 100 COP = 1 Eco-Punto. Los Eco-Puntos nunca se convierten de vuelta a pesos. Wompi solo recibe dinero hacia la plataforma, nunca entre usuarios.
 `GET /eco-puntos/politica` se lee en vivo de PoliticaEcoPuntos.cs.

@@ -1,9 +1,10 @@
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { LOCALIDADES, type SesionDto } from '../../api/tipos';
+import { CODIGO_BOGOTA, LOCALIDADES, type SesionDto } from '../../api/tipos';
+import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
 import { AuthApi } from '../../core/api/auth.api';
 import { AvisosService } from '../../core/avisos.service';
 import { erroresDeCampos, problemaDe } from '../../core/http/problema';
@@ -18,10 +19,10 @@ import { MarcoAuth } from './marco-auth';
 import { destinoSeguro } from './redireccion';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, Icono, BotonGoogle],
+  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, Icono, BotonGoogle, SelectorMunicipio],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-marco-auth titulo="Crea tu cuenta" subtitulo="Únete gratis y recibe Eco-Puntos de bienvenida." lema="Cada objeto que circula es un residuo menos en Doña Juana.">
+    <app-marco-auth titulo="Crea tu cuenta" subtitulo="Únete gratis y recibe Eco-Puntos de bienvenida." lema="Cada objeto que circula es un residuo menos en los rellenos sanitarios.">
       <form [formGroup]="form" (ngSubmit)="registrar()" class="space-y-5" novalidate>
         <div class="campo">
           <label class="etiqueta" for="nombre">Nombre completo</label>
@@ -30,14 +31,24 @@ import { destinoSeguro } from './redireccion';
           <p class="ayuda">En público se muestra abreviado (por ejemplo, "María R.").</p>
           <app-error-campo [control]="form.controls.nombreCompleto" etiqueta="El nombre" idError="nombre-error" />
         </div>
+        <div>
+          <app-selector-municipio id="reg-ubicacion" formControlName="municipioCodigo"
+            [invalido]="form.controls.municipioCodigo.invalid && form.controls.municipioCodigo.touched" />
+          <app-error-campo [control]="form.controls.municipioCodigo" etiqueta="El municipio" />
+        </div>
         <div class="campo">
-          <label class="etiqueta" for="localidad">Localidad donde vives</label>
-          <select id="localidad" class="entrada" formControlName="localidad" aria-describedby="localidad-error">
-            <option value="" disabled>Elige tu localidad</option>
-            @for (l of localidades; track l) {
-              <option [value]="l">{{ l }}</option>
-            }
-          </select>
+          @if (esBogota()) {
+            <label class="etiqueta" for="localidad">Localidad donde vives</label>
+            <select id="localidad" class="entrada" formControlName="localidad" aria-describedby="localidad-error">
+              <option value="" disabled>Elige tu localidad</option>
+              @for (l of localidades; track l) {
+                <option [value]="l">{{ l }}</option>
+              }
+            </select>
+          } @else {
+            <label class="etiqueta" for="localidad">Barrio o sector</label>
+            <input id="localidad" class="entrada" formControlName="localidad" maxlength="60" autocomplete="address-level3" aria-describedby="localidad-error" />
+          }
           <app-error-campo [control]="form.controls.localidad" etiqueta="La localidad" idError="localidad-error" />
         </div>
         <div class="campo">
@@ -96,12 +107,23 @@ export default class Registro {
 
   protected readonly form = this.fb.group({
     nombreCompleto: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120)]],
-    localidad: ['', [Validators.required]],
+    municipioCodigo: [CODIGO_BOGOTA, [Validators.required, Validators.pattern(/^\d{5}$/)]],
+    localidad: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
     correo: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
     clave: ['', [Validators.required, claveSegura]],
     aceptoPoliticaDatos: [false, [Validators.requiredTrue]],
   });
   protected readonly aceptoPolitica = toSignal(this.form.controls.aceptoPoliticaDatos.valueChanges, { initialValue: false });
+  private readonly municipio = toSignal(this.form.controls.municipioCodigo.valueChanges, { initialValue: CODIGO_BOGOTA });
+  protected readonly esBogota = computed(() => this.municipio() === CODIGO_BOGOTA);
+
+  constructor() {
+    // La lista de localidades es de Bogotá: al cambiar de municipio se escribe el barrio.
+    effect(() => {
+      this.municipio();
+      untracked(() => this.form.controls.localidad.setValue(''));
+    });
+  }
 
   protected async registrar(): Promise<void> {
     this.form.markAllAsTouched();
@@ -114,7 +136,8 @@ export default class Registro {
       const sesion = await firstValueFrom(
         this.authApi.registrar({
           nombreCompleto: v.nombreCompleto.trim(),
-          localidad: v.localidad,
+          municipioCodigo: v.municipioCodigo,
+          localidad: v.localidad.trim(),
           correo: v.correo.trim(),
           clave: v.clave,
           aceptoPoliticaDatos: true,

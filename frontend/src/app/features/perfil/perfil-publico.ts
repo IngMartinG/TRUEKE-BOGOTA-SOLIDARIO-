@@ -28,7 +28,10 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
             <app-avatar [nombre]="p.nombre" [tamano]="104" [verificado]="!!p.verificado" />
             <div class="flex-1">
               <div class="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                <h1 class="text-3xl font-extrabold">{{ p.nombre }}</h1>
+                <h1 class="text-3xl font-extrabold">{{ p.nombreComercial || p.nombre }}</h1>
+                @if (p.nombreComercial) {
+                  <span class="text-sm text-tenue">({{ p.nombre }})</span>
+                }
                 @if (p.verificado) {
                   <span class="insignia-agua"><app-icono nombre="verificado" [tamano]="12" />Verificada</span>
                 }
@@ -37,7 +40,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
                 }
               </div>
               <p class="mt-1 flex items-center justify-center gap-3 text-sm text-tenue sm:justify-start">
-                <span class="flex items-center gap-1"><app-icono nombre="pin" [tamano]="14" />{{ p.localidad }}</span>
+                <span class="flex items-center gap-1"><app-icono nombre="pin" [tamano]="14" />{{ p.localidad }}@if (p.municipio) {<span>, {{ p.municipio }}</span>}</span>
                 <span>Miembro desde {{ p.miembroDesde | fecha }}</span>
               </p>
               @if (p.calificacionPromedio) {

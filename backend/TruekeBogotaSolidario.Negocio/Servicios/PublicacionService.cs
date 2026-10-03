@@ -14,11 +14,18 @@ public interface IPublicacionService
     /// <summary>Solo el dueño y solo si está Disponible. Reemplaza todos los campos (incluida la lista de fotos).</summary>
     Task<PublicacionDto> EditarAsync(Guid actorId, Guid id, CrearPublicacionRequest r);
     Task<PaginaDto<PublicacionDto>> ListarAsync(Guid? actorId, FiltroPublicacionesRequest f);
-    Task<PublicacionDto> ObtenerAsync(Guid? actorId, Guid id);
+    /// <param name="visitante">Identificador anónimo de quien mira (usuario o hash de IP) para contar vistas; null = no contar.</param>
+    Task<PublicacionDto> ObtenerAsync(Guid? actorId, Guid id, string? visitante = null);
     Task<IReadOnlyList<PublicacionCercanaDto>> ListarCercanasAsync(Guid? actorId, CercanasRequest r);
+    /// <summary>Vitrina: destacadas vigentes en orden aleatorio (se muestran sobre el catálogo con cualquier orden o filtro).</summary>
+    Task<IReadOnlyList<PublicacionDto>> ListarDestacadasAsync(Guid? actorId, DestacadasRequest r);
     Task<IReadOnlyList<PublicacionDto>> ListarMiasAsync(Guid actorId);
     Task<IReadOnlyList<CategoriaDto>> ListarCategoriasAsync();
     Task CancelarAsync(Guid actorId, Guid id, string? motivo);
+    /// <summary>Sube la publicación al primer lugar de "Más recientes" a cambio de Eco-Puntos (una vez cada 24 h).</summary>
+    Task<PublicacionDto> ImpulsarAsync(Guid actorId, Guid id);
+    /// <summary>Rendimiento de la publicación (solo el dueño). La serie diaria es un beneficio de los planes pagos.</summary>
+    Task<EstadisticasPublicacionDto> ObtenerEstadisticasAsync(Guid actorId, Guid id);
     /// <summary>Perfil público; usuarios eliminados o suspendidos "no existen" (404).</summary>
     Task<PerfilUsuarioDto> ObtenerPerfilAsync(Guid usuarioId);
     Task<PaginaDto<PublicacionDto>> ListarDePerfilAsync(Guid? actorId, Guid usuarioId, int pagina, int tamano);
@@ -31,38 +38,53 @@ public sealed class PublicacionService : IPublicacionService
 {
     public const int MaxFavoritos = 500;
     private const int MaxCandidatosCercanas = 500;
+    private const int DiasSerieEstadisticas = 30;
 
     private readonly IPublicacionRepository _pubs;
     private readonly IUsuarioRepository _usuarios;
     private readonly ICategoriaRepository _categorias;
     private readonly ISolicitudRepository _solicitudes;
     private readonly IFavoritoRepository _favoritos;
+    private readonly IEstadisticaRepository _estadisticas;
     private readonly IUnidadDeTrabajo _uow;
     private readonly UrlsOpciones _urls;
     private readonly TimeProvider _reloj;
     private readonly INotificador _notificador;
     private readonly IAlmacenArchivos _almacen;
+    private readonly IRegistroVistas _vistas;
 
     public PublicacionService(IPublicacionRepository pubs, IUsuarioRepository usuarios, ICategoriaRepository categorias,
-        ISolicitudRepository solicitudes, IFavoritoRepository favoritos, IUnidadDeTrabajo uow, IOptions<UrlsOpciones> urls,
-        TimeProvider reloj, INotificador notificador, IAlmacenArchivos almacen)
+        ISolicitudRepository solicitudes, IFavoritoRepository favoritos, IEstadisticaRepository estadisticas, IUnidadDeTrabajo uow,
+        IOptions<UrlsOpciones> urls, TimeProvider reloj, INotificador notificador, IAlmacenArchivos almacen, IRegistroVistas vistas)
     {
-        _pubs = pubs; _usuarios = usuarios; _categorias = categorias; _solicitudes = solicitudes; _favoritos = favoritos; _uow = uow;
-        _urls = urls.Value; _reloj = reloj; _notificador = notificador; _almacen = almacen;
+        _pubs = pubs; _usuarios = usuarios; _categorias = categorias; _solicitudes = solicitudes; _favoritos = favoritos;
+        _estadisticas = estadisticas; _uow = uow; _urls = urls.Value; _reloj = reloj; _notificador = notificador; _almacen = almacen;
+        _vistas = vistas;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
-    /// <summary>Cada foto NUEVA debe ser un archivo propio subido con SAS (o, sin almacenamiento, de un host permitido).</summary>
-    private async Task ValidarImagenesAsync(Guid actorId, IReadOnlyList<string> imagenes, IEnumerable<string> yaAceptadas)
+    /// <summary>
+    /// Cada foto NUEVA debe ser un archivo propio subido con SAS (o, sin almacenamiento, de un host permitido).
+    /// Devuelve la lista final de URLs: las fotos nuevas se reemplazan por su copia limpia (sin GPS ni metadatos).
+    /// </summary>
+    private async Task<List<string>> ValidarImagenesAsync(Guid actorId, IReadOnlyList<string> imagenes, IEnumerable<string> yaAceptadas)
     {
         if (imagenes.Count > Publicacion.MaxImagenes) throw new ReglaDeNegocioException($"Puedes subir como máximo {Publicacion.MaxImagenes} fotos.");
+        if (imagenes.Distinct(StringComparer.Ordinal).Count() != imagenes.Count) throw new ReglaDeNegocioException("Hay fotos repetidas.");
         var existentes = yaAceptadas.ToHashSet(StringComparer.Ordinal);
-        foreach (var url in imagenes.Where(u => !existentes.Contains(u)))
+        var finales = new List<string>(imagenes.Count);
+        foreach (var url in imagenes)
         {
-            if (_almacen.Habilitado) await _almacen.ValidarArchivoPropioAsync(url, actorId, TipoArchivoDto.Imagen);
-            else ValidadorUrls.ExigirHostPermitido(url, _urls.HostsPermitidosImagenes, "La imagen");
+            if (existentes.Contains(url)) finales.Add(url);
+            else if (_almacen.Habilitado) finales.Add(await _almacen.ValidarArchivoPropioAsync(url, actorId, TipoArchivoDto.Imagen));
+            else
+            {
+                ValidadorUrls.ExigirHostPermitido(url, _urls.HostsPermitidosImagenes, "La imagen");
+                finales.Add(url);
+            }
         }
+        return finales;
     }
 
     private static bool SuspendidoOEliminado(Usuario u, DateTime ahora) => u.EstaEliminado || u.SuspensionVigente(ahora);
@@ -72,24 +94,48 @@ public sealed class PublicacionService : IPublicacionService
             ? await _favoritos.FiltrarFavoritasAsync(actorId.Value, pubs.Select(p => p.Id).ToList())
             : new HashSet<Guid>();
 
+    private static DatosPublicacion Datos(CrearPublicacionRequest r, Categoria categoria, Usuario actor, IReadOnlyList<string> imagenes)
+    {
+        if (r.Condicion is null) throw new ReglaDeNegocioException("Indica el estado del producto (nuevo, usado, reparado…).");
+        return new DatosPublicacion(r.Titulo, r.Descripcion, categoria, (ModoTransaccion)(int)r.Modo, (CondicionProducto)(int)r.Condicion.Value,
+            r.DetalleCondicion, r.MunicipioCodigo ?? actor.MunicipioCodigo, r.Localidad, r.PrecioReferenciaCop, r.Latitud, r.Longitud, imagenes);
+    }
+
+    /// <summary>
+    /// Estatuto del Consumidor (Ley 1480, art. 53): quien vende de forma habitual por un portal de contacto debe estar
+    /// identificado. Más de N ventas activas exige identidad verificada o plan Empresa (que registra NIT).
+    /// </summary>
+    private async Task ExigirVendedorIdentificadoAsync(Usuario actor, ModoDto modo, Guid? excepto, DateTime ahora)
+    {
+        if (modo != ModoDto.Compra || actor.EsVerificado || actor.EmpresaVigente(ahora)) return;
+        if (await _pubs.ContarVentasActivasAsync(actor.Id, excepto) >= PoliticaEcoPuntos.MaxVentasActivasSinIdentificar)
+            throw new ReglaDeNegocioException(
+                $"Para tener más de {PoliticaEcoPuntos.MaxVentasActivasSinIdentificar} artículos a la venta al mismo tiempo debes verificar tu identidad " +
+                "o tener el plan Empresa (Estatuto del Consumidor, art. 53). Puedes hacerlo desde Eco-Puntos.");
+    }
+
     public async Task<PublicacionDto> CrearAsync(Guid actorId, CrearPublicacionRequest r)
     {
         var actor = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
         Guardas.ExigirCorreoVerificado(actor);
-        if (await _pubs.ContarActivasPorUsuarioAsync(actorId) >= Limites.MaxPublicacionesActivasPorUsuario)
-            throw new ReglaDeNegocioException($"Alcanzaste el máximo de {Limites.MaxPublicacionesActivasPorUsuario} publicaciones activas.");
+        var ahora = Ahora;
+        var plan = actor.PlanEfectivo(ahora);
+        var maximo = PoliticaEcoPuntos.MaxPublicacionesActivas(plan);
+        if (await _pubs.ContarActivasPorUsuarioAsync(actorId) >= maximo)
+            throw new ReglaDeNegocioException(plan == TipoCuenta.Individual
+                ? $"Alcanzaste el máximo de {maximo} publicaciones activas. Con el plan Premium puedes tener hasta {PoliticaEcoPuntos.MaxPublicacionesPremium}."
+                : $"Alcanzaste el máximo de {maximo} publicaciones activas de tu plan.");
+        await ExigirVendedorIdentificadoAsync(actor, r.Modo, null, ahora);
 
         var categoria = await _categorias.ObtenerPorIdAsync(r.CategoriaId) ?? throw new ReglaDeNegocioException("La categoría no existe.");
-        var imagenes = r.Imagenes ?? new List<string>();
-        await ValidarImagenesAsync(actorId, imagenes, Array.Empty<string>());
+        var imagenes = await ValidarImagenesAsync(actorId, r.Imagenes ?? new List<string>(), Array.Empty<string>());
 
-        var pub = new Publicacion(actorId, r.Titulo, r.Descripcion, categoria, (ModoTransaccion)(int)r.Modo, r.Localidad,
-            r.PrecioReferenciaCop, r.Latitud, r.Longitud, imagenes);
+        var pub = new Publicacion(actorId, Datos(r, categoria, actor, imagenes));
         _pubs.Agregar(pub);
         await _uow.GuardarCambiosAsync();
 
         var creada = await _pubs.ObtenerPorIdAsync(pub.Id) ?? throw new NoEncontradoException("Publicación no encontrada.");
-        return Mapeos.APublicacionDto(creada, actorId, veExacto: true, veModeracion: false, Ahora);
+        return Mapeos.APublicacionDto(creada, actorId, veExacto: true, veModeracion: false, ahora, vistas: 0);
     }
 
     public async Task<PublicacionDto> EditarAsync(Guid actorId, Guid id, CrearPublicacionRequest r)
@@ -98,16 +144,17 @@ public sealed class PublicacionService : IPublicacionService
         if (p is null || p.PropietarioId != actorId) throw new NoEncontradoException("Publicación no encontrada.");
         var actor = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
         Guardas.ExigirCorreoVerificado(actor);
+        var ahora = Ahora;
+        await ExigirVendedorIdentificadoAsync(actor, r.Modo, p.Id, ahora);
 
         var categoria = await _categorias.ObtenerPorIdAsync(r.CategoriaId) ?? throw new ReglaDeNegocioException("La categoría no existe.");
-        var imagenes = r.Imagenes ?? new List<string>();
-        await ValidarImagenesAsync(actorId, imagenes, p.Imagenes.Select(i => i.Url)); // las fotos que ya tenía no se revalidan
-        var ahora = Ahora;
-        p.Editar(r.Titulo, r.Descripcion, categoria, (ModoTransaccion)(int)r.Modo, r.Localidad, r.PrecioReferenciaCop,
-            r.Latitud, r.Longitud, imagenes, ahora);
+        // las fotos que ya tenía no se revalidan; las nuevas se limpian
+        var imagenes = await ValidarImagenesAsync(actorId, r.Imagenes ?? new List<string>(), p.Imagenes.Select(i => i.Url));
+        p.Editar(Datos(r, categoria, actor, imagenes), ahora);
         await _uow.GuardarCambiosAsync(); // RowVersion: si justo llegó una solicitud, 409
         var favorita = (await _favoritos.ObtenerAsync(actorId, p.Id)) is not null;
-        return Mapeos.APublicacionDto(p, actorId, veExacto: true, veModeracion: false, ahora, favorita);
+        var vistas = (await _estadisticas.TotalesAsync(new[] { p.Id })).GetValueOrDefault(p.Id);
+        return Mapeos.APublicacionDto(p, actorId, veExacto: true, veModeracion: false, ahora, favorita, vistas);
     }
 
     public async Task<PaginaDto<PublicacionDto>> ListarAsync(Guid? actorId, FiltroPublicacionesRequest f)
@@ -119,6 +166,9 @@ public sealed class PublicacionService : IPublicacionService
         {
             CategoriaId = f.CategoriaId,
             Modo = f.Modo.HasValue ? (ModoTransaccion)(int)f.Modo.Value : null,
+            Condicion = f.Condicion.HasValue ? (CondicionProducto)(int)f.Condicion.Value : null,
+            DepartamentoCodigo = f.DepartamentoCodigo,
+            MunicipioCodigo = f.MunicipioCodigo,
             Localidad = f.Localidad,
             Texto = f.Texto,
             PrecioMin = f.PrecioMin,
@@ -135,7 +185,16 @@ public sealed class PublicacionService : IPublicacionService
         return new PaginaDto<PublicacionDto>(dtos, total, Math.Max(f.Pagina, 1), Math.Clamp(f.Tamano, 1, 50));
     }
 
-    public async Task<PublicacionDto> ObtenerAsync(Guid? actorId, Guid id)
+    public async Task<IReadOnlyList<PublicacionDto>> ListarDestacadasAsync(Guid? actorId, DestacadasRequest r)
+    {
+        var ahora = Ahora;
+        var items = await _pubs.ListarDestacadasAsync(r.DepartamentoCodigo, r.MunicipioCodigo, r.CategoriaId, Math.Clamp(r.Max, 1, 12), ahora);
+        var favoritas = await FavoritasAsync(actorId, items);
+        return items.Select(p => Mapeos.APublicacionDto(p, actorId, veExacto: actorId.HasValue && p.PropietarioId == actorId,
+            veModeracion: false, ahora, favoritas.Contains(p.Id))).ToList();
+    }
+
+    public async Task<PublicacionDto> ObtenerAsync(Guid? actorId, Guid id, string? visitante = null)
     {
         var p = await _pubs.ObtenerPorIdAsync(id) ?? throw new NoEncontradoException("Publicación no encontrada.");
         var actor = actorId.HasValue ? await _usuarios.ObtenerPorIdAsync(actorId.Value) : null;
@@ -150,8 +209,13 @@ public sealed class PublicacionService : IPublicacionService
         if (!visiblePublicamente && !esDueno && !esModerador && !aceptada)
             throw new NoEncontradoException("Publicación no encontrada.");
 
+        // Vista única por persona: ni el dueño ni los moderadores inflan las estadísticas
+        if (visiblePublicamente && !esDueno && !esModerador && !string.IsNullOrWhiteSpace(visitante))
+            _vistas.Registrar(p.Id, visitante);
+
         var favorita = actor is not null && (await _favoritos.ObtenerAsync(actor.Id, p.Id)) is not null;
-        return Mapeos.APublicacionDto(p, actor?.Id, veExacto: esDueno || esModerador || aceptada, veModeracion: esModerador, ahora, favorita);
+        int? vistas = esDueno ? (await _estadisticas.TotalesAsync(new[] { p.Id })).GetValueOrDefault(p.Id) : null;
+        return Mapeos.APublicacionDto(p, actor?.Id, veExacto: esDueno || esModerador || aceptada, veModeracion: esModerador, ahora, favorita, vistas);
     }
 
     /// <summary>
@@ -170,6 +234,8 @@ public sealed class PublicacionService : IPublicacionService
         var (minLat, maxLat, minLon, maxLon) = Geo.Caja(lat, lon, radio, margenGrados: 0.006);
         var candidatos = await _pubs.ListarVisiblesEnAreaAsync(minLat, maxLat, minLon, maxLon, r.CategoriaId,
             r.Modo.HasValue ? (ModoTransaccion)(int)r.Modo.Value : null, MaxCandidatosCercanas, ahora);
+        if (r.Condicion.HasValue)
+            candidatos = candidatos.Where(p => p.Condicion == (CondicionProducto)(int)r.Condicion.Value).ToList();
 
         var cercanas = candidatos
             .Select(p =>
@@ -195,7 +261,9 @@ public sealed class PublicacionService : IPublicacionService
         var ahora = Ahora;
         var lista = await _pubs.ListarPorPropietarioAsync(actorId);
         var favoritas = await FavoritasAsync(actorId, lista);
-        return lista.Select(p => Mapeos.APublicacionDto(p, actorId, veExacto: true, veModeracion: false, ahora, favoritas.Contains(p.Id))).ToList();
+        var vistas = await _estadisticas.TotalesAsync(lista.Select(p => p.Id).ToList());
+        return lista.Select(p => Mapeos.APublicacionDto(p, actorId, veExacto: true, veModeracion: false, ahora, favoritas.Contains(p.Id),
+            vistas.GetValueOrDefault(p.Id))).ToList();
     }
 
     public async Task<IReadOnlyList<CategoriaDto>> ListarCategoriasAsync()
@@ -216,6 +284,48 @@ public sealed class PublicacionService : IPublicacionService
         if (enCurso is not null)
             await _notificador.NotificarAsync(enCurso.SolicitanteId, TiposNotificacion.SolicitudRechazada,
                 $"La publicación \"{p.Titulo}\" fue cancelada por su propietario.", enCurso.Id);
+    }
+
+    // ---------------- Impulso y estadísticas ----------------
+    public async Task<PublicacionDto> ImpulsarAsync(Guid actorId, Guid id)
+    {
+        var p = await _pubs.ObtenerPorIdAsync(id);
+        if (p is null || p.PropietarioId != actorId) throw new NoEncontradoException("Publicación no encontrada.");
+        var actor = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
+        Guardas.ExigirCorreoVerificado(actor);
+        var ahora = Ahora;
+        p.ValidarPuedeImpulsarse(ahora); // validar ANTES de cobrar los puntos
+        if (actor.SaldoEcoPuntos < PoliticaEcoPuntos.PuntosImpulsar)
+            throw new ReglaDeNegocioException($"Necesitas {PoliticaEcoPuntos.PuntosImpulsar} Eco-Puntos para impulsar. Gánalos con intercambios o recárgalos.");
+        actor.DebitarEcoPuntos(PoliticaEcoPuntos.PuntosImpulsar);
+        p.Impulsar(ahora);
+        await _uow.GuardarCambiosAsync(); // RowVersion en usuario y publicación: un doble clic no cobra dos veces
+        var vistas = (await _estadisticas.TotalesAsync(new[] { p.Id })).GetValueOrDefault(p.Id);
+        var favorita = (await _favoritos.ObtenerAsync(actorId, p.Id)) is not null;
+        return Mapeos.APublicacionDto(p, actorId, veExacto: true, veModeracion: false, ahora, favorita, vistas);
+    }
+
+    public async Task<EstadisticasPublicacionDto> ObtenerEstadisticasAsync(Guid actorId, Guid id)
+    {
+        var p = await _pubs.ObtenerPorIdAsync(id);
+        if (p is null || p.PropietarioId != actorId) throw new NoEncontradoException("Publicación no encontrada.");
+        var actor = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
+        var ahora = Ahora;
+        var desde = ahora.Date.AddDays(-(DiasSerieEstadisticas - 1));
+        var serie = await _estadisticas.SerieAsync(p.Id, desde);
+        var total = (await _estadisticas.TotalesAsync(new[] { p.Id })).GetValueOrDefault(p.Id);
+        var conPlan = actor.PlanPagoVigente(ahora);
+
+        var puntos = new List<PuntoSerieDto>();
+        if (conPlan)
+        {
+            var porDia = serie.ToDictionary(e => e.Fecha.Date, e => e.Vistas);
+            for (var d = desde; d <= ahora.Date; d = d.AddDays(1))
+                puntos.Add(new PuntoSerieDto(DateTime.SpecifyKind(d, DateTimeKind.Utc), porDia.GetValueOrDefault(d)));
+        }
+        return new EstadisticasPublicacionDto(p.Id, total, serie.Sum(e => e.Vistas), await _favoritos.ContarPorPublicacionAsync(p.Id),
+            await _solicitudes.ContarPorPublicacionAsync(p.Id), p.EstaDestacadaVigente(ahora),
+            p.EstaDestacadaVigente(ahora) ? p.DestacadaHasta : null, conPlan, puntos);
     }
 
     // ---------------- Perfil público ----------------

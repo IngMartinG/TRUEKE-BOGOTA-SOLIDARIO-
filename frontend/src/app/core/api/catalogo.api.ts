@@ -4,7 +4,9 @@ import type {
   CategoriaDto,
   ComentarioDto,
   ComentarioDtoPaginaDto,
+  CondicionDto,
   CrearPublicacionRequest,
+  EstadisticasPublicacionDto,
   ModoDto,
   OrdenPublicacionesDto,
   PublicacionCercanaDto,
@@ -17,6 +19,9 @@ export interface FiltrosCatalogo {
   texto?: string;
   categoriaId?: number | null;
   modo?: ModoDto | null;
+  condicion?: CondicionDto | null;
+  departamentoCodigo?: string | null;
+  municipioCodigo?: string | null;
   localidad?: string | null;
   precioMin?: number | null;
   precioMax?: number | null;
@@ -37,9 +42,9 @@ export class CatalogoApi {
     this.api.get<PublicacionDtoPaginaDto>('/publicaciones', {
       params: { ...f, soloVerificados: f.soloVerificados || undefined },
     });
-  cercanas = (lat: number, lon: number, radioKm = 5, modo?: ModoDto | null, categoriaId?: number | null) =>
+  cercanas = (lat: number, lon: number, radioKm = 5, modo?: ModoDto | null, categoriaId?: number | null, condicion?: CondicionDto | null) =>
     this.api.get<PublicacionCercanaDto[]>('/publicaciones/cercanas', {
-      params: { lat, lon, radioKm, modo, categoriaId, max: 60 },
+      params: { lat, lon, radioKm, modo, categoriaId, condicion, max: 50 },
     });
   obtener = (id: string) => this.api.get<PublicacionDto>(`/publicaciones/${seg(id)}`, { silencioso: true });
   crear = (r: CrearPublicacionRequest) => this.api.post<PublicacionDto>('/publicaciones', r, { silencioso: true });
@@ -49,6 +54,10 @@ export class CatalogoApi {
   cancelar = (id: string, motivo: string | null) =>
     this.api.post<void>(`/publicaciones/${seg(id)}/cancelar`, { motivo });
   destacarGratis = (id: string) => this.api.post<void>(`/publicaciones/${seg(id)}/destacar-gratis`);
+  impulsar = (id: string) => this.api.post<PublicacionDto>(`/publicaciones/${seg(id)}/impulsar`, {}, { silencioso: true });
+  estadisticas = (id: string) => this.api.get<EstadisticasPublicacionDto>(`/publicaciones/${seg(id)}/estadisticas`);
+  destacadas = (f: { departamentoCodigo?: string | null; municipioCodigo?: string | null; categoriaId?: number | null }, max = 8) =>
+    this.api.get<PublicacionDto[]>('/publicaciones/destacadas', { params: { ...f, max }, silencioso: true });
 
   marcarFavorito = (id: string) => this.api.post<void>(`/publicaciones/${seg(id)}/favorito`);
   quitarFavorito = (id: string) => this.api.delete<void>(`/publicaciones/${seg(id)}/favorito`);

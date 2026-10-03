@@ -30,6 +30,24 @@ public sealed class SeguridadOpciones
     public string ClaveCifrado { get; set; } = "";
     /// <summary>Administradores y SuperUsuarios solo pueden usar funciones de administración con una sesión iniciada con 2FA.</summary>
     public bool ExigirDosFactoresModeradores { get; set; } = true;
+    /// <summary>Dominios de correo adicionales que no se aceptan al registrarse (además de la lista de correos desechables).</summary>
+    public List<string> DominiosCorreoBloqueados { get; set; } = new();
+}
+
+public sealed class FacturacionOpciones
+{
+    public const string Seccion = "Facturacion";
+    /// <summary>
+    /// "Manual": cada pago aprobado deja una factura "Pendiente"; el equipo la emite en el sistema de facturación
+    /// (portal gratuito de la DIAN o un proveedor tecnológico) y registra número y CUFE en el panel. "Simulado" (solo
+    /// desarrollo) las marca como emitidas con datos ficticios; el arranque lo rechaza en Producción.
+    /// </summary>
+    public string Modo { get; set; } = "Manual";
+    /// <summary>false si la empresa NO es responsable de IVA (p. ej. régimen simple sin IVA): las facturas salen con IVA 0.</summary>
+    public bool ResponsableIva { get; set; } = true;
+    [Range(typeof(decimal), "0", "100")] public decimal IvaPorcentaje { get; set; } = 19m;
+    public bool EsSimulado => string.Equals(Modo, "Simulado", StringComparison.OrdinalIgnoreCase);
+    public decimal IvaEfectivo => ResponsableIva ? IvaPorcentaje : 0m;
 }
 
 public sealed class WompiOpciones
@@ -68,12 +86,21 @@ public sealed class LegalOpciones
     public const string Seccion = "Legal";
     /// <summary>Versión vigente de la política de tratamiento de datos que el front muestra al registrarse.</summary>
     [Required, StringLength(20, MinimumLength = 1)] public string VersionPoliticaDatos { get; set; } = "2026-10";
+    /// <summary>Correo de atención al usuario (PQR) que se muestra en los términos y en los correos. Vacío = no se muestra.</summary>
+    public string? CorreoContacto { get; set; }
+
+    public bool CorreoContactoValido => string.IsNullOrWhiteSpace(CorreoContacto)
+        || (CorreoContacto.Length <= 160 && CorreoContacto.IndexOf('@') > 0 && CorreoContacto.IndexOf('@') == CorreoContacto.LastIndexOf('@'));
 }
 
 public static class Limites
 {
-    public const int MaxPublicacionesActivasPorUsuario = 50;
     public const int MaxSolicitudesPendientesPorUsuario = 10;
+    public const int MaxPqrPorDia = 5;
+    /// <summary>Retracto (Ley 1480, art. 47): 5 días hábiles desde la compra.</summary>
+    public const int DiasHabilesRetracto = 5;
+    /// <summary>Una misma persona (o IP) solo suma una vista por publicación en esta ventana.</summary>
+    public static readonly TimeSpan VentanaVistaUnica = TimeSpan.FromHours(6);
     public const int MaxPagosPendientesPorHora = 5;
     public const int MaxComentariosPorHora = 20;
     /// <summary>Si solo una parte confirmó la entrega, el intercambio se completa solo pasados estos días.</summary>

@@ -23,8 +23,13 @@ public static class NegocioServiceCollectionExtensions
         services.AddHttpClient<IVerificadorCaptcha, VerificadorRecaptcha>(c => c.Timeout = TimeSpan.FromSeconds(5));
         services.AddOptions<GoogleOpciones>().Bind(config.GetSection(GoogleOpciones.Seccion));
         services.AddSingleton<IValidadorGoogle, ValidadorGoogle>();
-        services.AddOptions<LegalOpciones>().Bind(config.GetSection(LegalOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
+        services.AddOptions<LegalOpciones>().Bind(config.GetSection(LegalOpciones.Seccion)).ValidateDataAnnotations()
+            .Validate(o => o.CorreoContactoValido, "Legal:CorreoContacto no es un correo válido.").ValidateOnStart();
         services.AddOptions<PagosOpciones>().Bind(config.GetSection(PagosOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
+        services.AddOptions<FacturacionOpciones>().Bind(config.GetSection(FacturacionOpciones.Seccion)).ValidateDataAnnotations()
+            .Validate(o => o.EsSimulado || string.Equals(o.Modo, "Manual", StringComparison.OrdinalIgnoreCase),
+                "Facturacion:Modo debe ser 'Manual' o 'Simulado'.")
+            .ValidateOnStart();
 
         var pagos = config.GetSection(PagosOpciones.Seccion).Get<PagosOpciones>() ?? new PagosOpciones();
         if (!pagos.EsSimulado)
@@ -92,6 +97,11 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<IPagoService, PagoService>();
         services.AddScoped<IAdministracionService, AdministracionService>();
         services.AddScoped<IComentarioService, ComentarioService>();
+        services.AddSingleton<IUbicacionService, UbicacionService>();
+        services.AddScoped<IFacturacionService, FacturacionService>();
+        services.AddScoped<IPqrService, PqrService>();
+        services.AddSingleton<IRegistroVistas, RegistroVistasEnMemoria>();
+        services.AddHostedService<VolcadoVistasHostedService>();
         services.AddHostedService<ReconciliadorPagosHostedService>();
         services.AddHostedService<MantenimientoHostedService>();
         return services;

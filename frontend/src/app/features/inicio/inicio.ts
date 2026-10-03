@@ -28,7 +28,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
       <div class="contenedor grid items-center gap-12 pt-14 pb-24 lg:grid-cols-[1.1fr_1fr] lg:pt-20 lg:pb-32">
         <div class="animate-aparecer">
           <p class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-wide text-bosque-200 backdrop-blur">
-            <app-icono nombre="reciclar" [tamano]="14" class="text-bosque-300" /> Economía circular para las 20 localidades de Bogotá
+            <app-icono nombre="reciclar" [tamano]="14" class="text-bosque-300" /> Economía circular en los 1.122 municipios de Colombia
           </p>
           <h1 class="mt-6 font-display text-4xl leading-[1.05] font-extrabold text-white sm:text-5xl lg:text-6xl">
             Dale una <span class="relative whitespace-nowrap text-sol-300">segunda vida<svg class="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 12" aria-hidden="true"><path d="M2 9c50-6 140-8 196-3" stroke="#f2b632" stroke-width="3" fill="none" stroke-linecap="round" /></svg></span>
@@ -286,7 +286,7 @@ export default class Inicio {
   ];
 
   protected readonly pasos = [
-    { icono: 'camara', titulo: 'Publica en un minuto', texto: 'Toma fotos, elige si quieres intercambiar, vender o donar, y marca tu localidad.' },
+    { icono: 'camara', titulo: 'Publica en un minuto', texto: 'Toma fotos, elige si quieres intercambiar, vender o donar, y marca tu ciudad y barrio.' },
     { icono: 'mensaje', titulo: 'Acuerda por el chat', texto: 'Recibe solicitudes, acepta la que más te convenga y coordina la entrega sin compartir tu número.' },
     { icono: 'apreton', titulo: 'Entrega y gana', texto: 'Cuando ambas partes confirman la entrega, reciben Eco-Puntos y suben su reputación.' },
   ];

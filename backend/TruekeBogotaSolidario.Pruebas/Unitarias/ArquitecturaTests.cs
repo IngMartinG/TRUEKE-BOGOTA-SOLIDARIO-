@@ -38,6 +38,20 @@ public class ArquitecturaTests
             Assert.True(c.GetCustomAttribute<AuthorizeAttribute>() is not null, $"{c.Name} no tiene [Authorize].");
     }
 
+    /// <summary>
+    /// SqlClient lanza CultureNotFoundException al abrir la conexión si la API corre con InvariantGlobalization=true.
+    /// Las pruebas de integración no lo detectan (usan la configuración de este proyecto), por eso se revisa el csproj.
+    /// </summary>
+    [Fact]
+    public void La_API_no_usa_globalizacion_invariante()
+    {
+        var dir = new DirectoryInfo(AppContext.BaseDirectory);
+        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "TruekeBogotaSolidario.sln"))) dir = dir.Parent;
+        Assert.NotNull(dir);
+        var csproj = File.ReadAllText(Path.Combine(dir!.FullName, "TruekeBogotaSolidario.Presentacion", "TruekeBogotaSolidario.Presentacion.csproj"));
+        Assert.DoesNotContain("<InvariantGlobalization>true</InvariantGlobalization>", csproj);
+    }
+
     /// <summary>Lista blanca de CLAUDE.md: login, registro, GET de catálogo y categorías, política de Eco-Puntos y webhook de Wompi.</summary>
     [Fact]
     public void Solo_los_endpoints_permitidos_son_anonimos()
@@ -55,6 +69,11 @@ public class ArquitecturaTests
             "GET api/v1/categorias",
             "GET api/v1/publicaciones",
             "GET api/v1/publicaciones/cercanas",
+            "GET api/v1/publicaciones/destacadas",
+            "GET api/v1/ubicaciones/departamentos",
+            "GET api/v1/ubicaciones/departamentos/{codigo:regex(^\\d{{2}}$)}/municipios",
+            "GET api/v1/ubicaciones/municipios",
+            "GET api/v1/ubicaciones/municipios/{codigo:regex(^\\d{{5}}$)}",
             "GET api/v1/publicaciones/{id:guid}",
             "GET api/v1/publicaciones/{id:guid}/comentarios",
             "GET api/v1/eco-puntos/politica",

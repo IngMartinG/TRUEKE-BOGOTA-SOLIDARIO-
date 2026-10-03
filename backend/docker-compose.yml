@@ -48,6 +48,10 @@ services:
       Auth__CookieSameSite: ${COOKIE_SAMESITE:-Strict}
       Bootstrap__SuperUsuarioCorreo: ${SUPERUSUARIO_CORREO:-}
       Bootstrap__SuperUsuarioClave: ${SUPERUSUARIO_CLAVE:-}
+      Facturacion__Modo: ${FACTURACION_MODO:-Manual}
+      Facturacion__ResponsableIva: ${FACTURACION_RESPONSABLE_IVA:-true}
+      Facturacion__IvaPorcentaje: ${FACTURACION_IVA:-19}
+      Legal__CorreoContacto: ${CORREO_CONTACTO:-}
     depends_on:
       sqlserver:
         condition: service_healthy

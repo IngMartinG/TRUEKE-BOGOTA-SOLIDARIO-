@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Datos.Repositorios;
@@ -40,6 +40,8 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
     private readonly TimeProvider _reloj;
     private readonly ICalificacionRepository _calificaciones;
     private readonly IFavoritoRepository _favoritos;
+    private readonly IFacturaRepository _facturas;
+    private readonly IPqrRepository _pqrs;
     private readonly ILogger<DatosPersonalesService> _log;
 
     public DatosPersonalesService(IUsuarioRepository usuarios, IPublicacionRepository pubs, ISolicitudRepository solicitudes,
@@ -47,9 +49,10 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         INotificacionRepository notificaciones, IDenunciaRepository denuncias, ISesionRefreshRepository refrescos, IAuditoriaRepository auditoria,
         IUnidadDeTrabajo uow, IPublicacionService publicacionService, ISolicitudService solicitudService, IValidadorGoogle google,
         IAlmacenArchivos almacen, ISesionService sesiones, INotificador notificador, TimeProvider reloj,
-        ICalificacionRepository calificaciones, IFavoritoRepository favoritos, ILogger<DatosPersonalesService> log)
+        ICalificacionRepository calificaciones, IFavoritoRepository favoritos, IFacturaRepository facturas, IPqrRepository pqrs,
+        ILogger<DatosPersonalesService> log)
     {
-        _calificaciones = calificaciones; _favoritos = favoritos;
+        _calificaciones = calificaciones; _favoritos = favoritos; _facturas = facturas; _pqrs = pqrs;
         _usuarios = usuarios; _pubs = pubs; _solicitudes = solicitudes; _comentarios = comentarios; _conversaciones = conversaciones;
         _transacciones = transacciones; _pagos = pagos; _notificaciones = notificaciones; _denuncias = denuncias; _refrescos = refrescos;
         _auditoria = auditoria; _uow = uow; _publicacionService = publicacionService; _solicitudService = solicitudService; _google = google;
@@ -91,7 +94,9 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
 
         return new DatosPersonalesDto(ahora, Mapeos.AUsuarioDto(u, ahora), u.PoliticaDatosVersion, u.FechaAceptacionPolitica,
             await _publicacionService.ListarMiasAsync(actorId), await _solicitudService.ListarEnviadasAsync(actorId),
-            comentarios, mensajes, transacciones, pagos, notificaciones, denuncias, calificaciones, favoritos);
+            comentarios, mensajes, transacciones, pagos, notificaciones, denuncias, calificaciones, favoritos,
+            Mapeos.ADatosFacturacion(u), (await _facturas.ListarPorUsuarioAsync(actorId, 500)).Select(Mapeos.AFacturaDto).ToList(),
+            (await _pqrs.ListarPorUsuarioAsync(actorId, 200)).Select(Mapeos.APqrDto).ToList());
     }
 
     /// <summary>Volver a demostrar identidad: con un token robado (o un equipo desatendido) no basta para borrar la cuenta.</summary>

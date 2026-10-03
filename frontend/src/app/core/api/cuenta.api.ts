@@ -7,7 +7,13 @@ import type {
   ConfiguracionPublicaDto,
   CotizacionDto,
   CrearDenunciaRequest,
+  CrearPqrRequest,
+  DatosFacturacionDto,
+  DatosFacturacionRequest,
   DatosPersonalesDto,
+  FacturaDto,
+  PerfilEmpresaRequest,
+  PqrDto,
   DenunciaCreadaDto,
   EcoPuntosResumenDto,
   EliminarCuentaRequest,
@@ -32,6 +38,16 @@ export class CuentaApi {
 
   yo = () => this.api.get<UsuarioDto>('/usuarios/yo');
   actualizarPerfil = (r: ActualizarPerfilRequest) => this.api.put<UsuarioDto>('/usuarios/yo', r, { silencioso: true });
+  actualizarEmpresa = (r: PerfilEmpresaRequest) => this.api.put<UsuarioDto>('/usuarios/yo/empresa', r, { silencioso: true });
+
+  datosFacturacion = () => this.api.get<DatosFacturacionDto>('/cuenta/facturacion');
+  guardarFacturacion = (r: DatosFacturacionRequest) =>
+    this.api.put<DatosFacturacionDto>('/cuenta/facturacion', r, { silencioso: true });
+  borrarFacturacion = () => this.api.delete<void>('/cuenta/facturacion');
+  facturas = () => this.api.get<FacturaDto[]>('/cuenta/facturas');
+
+  crearPqr = (r: CrearPqrRequest) => this.api.post<PqrDto>('/pqr', r, { silencioso: true });
+  misPqr = () => this.api.get<PqrDto[]>('/pqr/mias');
   misDatos = () => this.api.get<DatosPersonalesDto>('/usuarios/yo/datos');
   eliminarCuenta = (r: EliminarCuentaRequest) => this.api.post<void>('/usuarios/yo/eliminar', r, { silencioso: true });
 
