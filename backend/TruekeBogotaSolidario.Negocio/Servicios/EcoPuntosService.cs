@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Options;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Datos.Repositorios;
@@ -17,10 +18,11 @@ public sealed class EcoPuntosService : IEcoPuntosService
     private readonly IUsuarioRepository _usuarios;
     private readonly ITransaccionRepository _transacciones;
     private readonly TimeProvider _reloj;
+    private readonly FacturacionOpciones _facturacion;
 
-    public EcoPuntosService(IUsuarioRepository usuarios, ITransaccionRepository transacciones, TimeProvider reloj)
+    public EcoPuntosService(IUsuarioRepository usuarios, ITransaccionRepository transacciones, TimeProvider reloj, IOptions<FacturacionOpciones> facturacion)
     {
-        _usuarios = usuarios; _transacciones = transacciones; _reloj = reloj;
+        _usuarios = usuarios; _transacciones = transacciones; _reloj = reloj; _facturacion = facturacion.Value;
     }
 
     public async Task<EcoPuntosResumenDto> ResumenAsync(Guid actorId)
@@ -28,10 +30,12 @@ public sealed class EcoPuntosService : IEcoPuntosService
         var u = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
         var ahora = _reloj.GetUtcNow().UtcDateTime;
         var hoy = await _transacciones.ContarDesdeAsync(actorId, ahora.AddHours(-24));
-        var planVigente = u.PremiumVigente(ahora) || u.EmpresaVigente(ahora);
+        var plan = u.PlanEfectivo(ahora);
+        var planVigente = plan != TipoCuenta.Individual;
         return new EcoPuntosResumenDto(u.SaldoEcoPuntos, u.Reputacion, hoy,
-            Math.Max(0, PoliticaEcoPuntos.MaxTransaccionesConPuntosPorDia - hoy), Mapeos.TipoCuentaEfectivo(u, ahora),
-            planVigente ? u.FechaVencimientoSuscripcion : null, u.PremiumVigente(ahora) ? u.DestacadosGratisRestantes : 0);
+            Math.Max(0, PoliticaEcoPuntos.MaxTransaccionesConPuntosPorDia - hoy), plan.ToString(),
+            planVigente ? u.FechaVencimientoSuscripcion : null, planVigente ? u.DestacadosGratisRestantes : 0,
+            PoliticaEcoPuntos.MaxPublicacionesActivas(plan), PoliticaEcoPuntos.DescuentoPlan(plan));
     }
 
     /// <summary>Leída en vivo de PoliticaEcoPuntos (única fuente de verdad); nada se hardcodea aquí.</summary>
@@ -45,6 +49,10 @@ public sealed class EcoPuntosService : IEcoPuntosService
             Mapear(PoliticaEcoPuntos.EscalonesDestacar), PoliticaEcoPuntos.PrecioVerificarCop, Mapear(PoliticaEcoPuntos.EscalonesVerificar),
             PoliticaEcoPuntos.PrecioPremiumCop, PoliticaEcoPuntos.DestacadosGratisPremium, PoliticaEcoPuntos.DescuentoPremiumPorcentaje,
             PoliticaEcoPuntos.PrecioEmpresaCop, PoliticaEcoPuntos.DuracionSuscripcionDias, PoliticaEcoPuntos.CopPorEcoPunto,
-            PoliticaEcoPuntos.RecargaMinimaCop, PoliticaEcoPuntos.RecargaMaximaCop);
+            PoliticaEcoPuntos.RecargaMinimaCop, PoliticaEcoPuntos.RecargaMaximaCop,
+            PoliticaEcoPuntos.PuntosImpulsar, PoliticaEcoPuntos.HorasEntreImpulsos, PoliticaEcoPuntos.DestacadosGratisEmpresa,
+            PoliticaEcoPuntos.DescuentoEmpresaPorcentaje, PoliticaEcoPuntos.MaxPublicacionesIndividual, PoliticaEcoPuntos.MaxPublicacionesPremium,
+            PoliticaEcoPuntos.MaxPublicacionesEmpresa, PoliticaEcoPuntos.MaxVentasActivasSinIdentificar,
+            PoliticaEcoPuntos.DiasEntreTransaccionesConPuntosMismaPareja, _facturacion.IvaEfectivo > 0, _facturacion.IvaEfectivo);
     }
 }

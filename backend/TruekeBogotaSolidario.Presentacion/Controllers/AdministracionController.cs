@@ -65,6 +65,47 @@ public sealed class AdministracionController : ControllerBase
     public async Task<ActionResult<PaginaDto<PagoAdminDto>>> Pagos([FromQuery] FiltroPagosAdminRequest f)
         => Ok(await _admin.ListarPagosAsync(User.IdActual(), f.Estado, f.Pagina, f.Tamano));
 
+    // ---- Facturación electrónica: cola de facturas por emitir ante la DIAN
+    [HttpGet("facturas"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<PaginaDto<FacturaAdminDto>>> Facturas([FromQuery] FiltroFacturasAdminRequest f)
+        => Ok(await _admin.ListarFacturasAsync(User.IdActual(), f.Estado, f.Pagina, f.Tamano));
+
+    /// <summary>Registra número y CUFE de una factura ya emitida en el sistema de facturación (DIAN o proveedor).</summary>
+    [HttpPost("facturas/{id:guid}/emitida"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<FacturaAdminDto>> FacturaEmitida(Guid id, [FromBody] EmitirFacturaRequest r)
+        => Ok(await _admin.MarcarFacturaEmitidaAsync(User.IdActual(), id, r.NumeroDian, r.Cufe));
+
+    /// <summary>CSV (separado por ";") con los datos del comprador, para cargar las facturas en el sistema de facturación.</summary>
+    [HttpGet("facturas.csv"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<IActionResult> FacturasCsv([FromQuery] EstadoFacturaDto estado = EstadoFacturaDto.Pendiente)
+        => ArchivoCsv(await _admin.ExportarFacturasCsvAsync(User.IdActual(), estado), $"facturas-{estado.ToString().ToLowerInvariant()}.csv");
+
+    // ---- PQR
+    [HttpGet("pqr"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<PaginaDto<PqrAdminDto>>> Pqr([FromQuery] FiltroPqrAdminRequest f)
+        => Ok(await _admin.ListarPqrAsync(User.IdActual(), f.Estado, f.Pagina, f.Tamano));
+
+    [HttpPost("pqr/{id:guid}/responder"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<PqrAdminDto>> ResponderPqr(Guid id, [FromBody] ResponderPqrRequest r)
+        => Ok(await _admin.ResponderPqrAsync(User.IdActual(), id, r.Respuesta));
+
+    // ---- Solo SuperUsuario: finanzas
+    [HttpGet("ingresos"), Authorize(Policy = Politicas.SuperUsuario)]
+    public async Task<ActionResult<IngresosDto>> Ingresos([FromQuery] RangoFechasRequest r) => Ok(await _admin.ObtenerIngresosAsync(User.IdActual(), r));
+
+    /// <summary>Pagos cobrados con su factura (conciliación con Wompi y contabilidad).</summary>
+    [HttpGet("ingresos.csv"), Authorize(Policy = Politicas.SuperUsuario)]
+    public async Task<IActionResult> IngresosCsv([FromQuery] RangoFechasRequest r)
+        => ArchivoCsv(await _admin.ExportarIngresosCsvAsync(User.IdActual(), r), "ingresos.csv");
+
+    /// <summary>UTF-8 con BOM para que Excel en español muestre bien las tildes.</summary>
+    private FileContentResult ArchivoCsv(string contenido, string nombre)
+    {
+        Response.Headers.CacheControl = "no-store";
+        return File(System.Text.Encoding.UTF8.GetPreamble().Concat(System.Text.Encoding.UTF8.GetBytes(contenido)).ToArray(),
+            "text/csv; charset=utf-8", nombre);
+    }
+
     // ---- Solo SuperUsuario
     [HttpPatch("usuarios/{usuarioId:guid}/rol"), Authorize(Policy = Politicas.SuperUsuario)]
     public async Task<ActionResult<UsuarioDto>> CambiarRol(Guid usuarioId, [FromBody] CambiarRolRequest r)

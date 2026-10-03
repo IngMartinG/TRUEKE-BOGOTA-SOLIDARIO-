@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Security.Cryptography;
@@ -169,7 +169,7 @@ public class SeguridadTests : IClassFixture<FabricaApi>
         var atacante = await Api.RegistrarAsync(_fabrica, "atacante");
         var resp = await atacante.PostAsJsonAsync("/api/v1/publicaciones", new
         {
-            titulo = "Suplantada", descripcion = "x", categoriaId = 1, modo = "Donacion", localidad = "Usme",
+            titulo = "Suplantada", descripcion = "x", categoriaId = 1, modo = "Donacion", condicion = "Usado", localidad = "Usme",
             propietarioId = victima.Usuario.Id, usuarioId = victima.Usuario.Id
         });
         Assert.Equal(HttpStatusCode.Created, resp.StatusCode);

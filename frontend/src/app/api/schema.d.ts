@@ -360,6 +360,289 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/facturas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Estado?: components["schemas"]["EstadoFacturaDto"];
+                    Pagina?: number;
+                    Tamano?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FacturaAdminDtoPaginaDto"];
+                        "application/json": components["schemas"]["FacturaAdminDtoPaginaDto"];
+                        "text/json": components["schemas"]["FacturaAdminDtoPaginaDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/facturas/{id}/emitida": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["EmitirFacturaRequest"];
+                    "text/json": components["schemas"]["EmitirFacturaRequest"];
+                    "application/*+json": components["schemas"]["EmitirFacturaRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FacturaAdminDto"];
+                        "application/json": components["schemas"]["FacturaAdminDto"];
+                        "text/json": components["schemas"]["FacturaAdminDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/facturas.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    estado?: components["schemas"]["EstadoFacturaDto"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pqr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Estado?: components["schemas"]["EstadoPqrDto"];
+                    Pagina?: number;
+                    Tamano?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PqrAdminDtoPaginaDto"];
+                        "application/json": components["schemas"]["PqrAdminDtoPaginaDto"];
+                        "text/json": components["schemas"]["PqrAdminDtoPaginaDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pqr/{id}/responder": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ResponderPqrRequest"];
+                    "text/json": components["schemas"]["ResponderPqrRequest"];
+                    "application/*+json": components["schemas"]["ResponderPqrRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PqrAdminDto"];
+                        "application/json": components["schemas"]["PqrAdminDto"];
+                        "text/json": components["schemas"]["PqrAdminDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/ingresos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Desde?: string;
+                    Hasta?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["IngresosDto"];
+                        "application/json": components["schemas"]["IngresosDto"];
+                        "text/json": components["schemas"]["IngresosDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/ingresos.csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Desde?: string;
+                    Hasta?: string;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/usuarios/{usuarioId}/rol": {
         parameters: {
             query?: never;
@@ -1647,6 +1930,124 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/cuenta/facturacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DatosFacturacionDto"];
+                        "application/json": components["schemas"]["DatosFacturacionDto"];
+                        "text/json": components["schemas"]["DatosFacturacionDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DatosFacturacionRequest"];
+                    "text/json": components["schemas"]["DatosFacturacionRequest"];
+                    "application/*+json": components["schemas"]["DatosFacturacionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DatosFacturacionDto"];
+                        "application/json": components["schemas"]["DatosFacturacionDto"];
+                        "text/json": components["schemas"]["DatosFacturacionDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/cuenta/facturas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FacturaDto"][];
+                        "application/json": components["schemas"]["FacturaDto"][];
+                        "text/json": components["schemas"]["FacturaDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notificaciones": {
         parameters: {
             query?: never;
@@ -2072,6 +2473,86 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/pqr": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CrearPqrRequest"];
+                    "text/json": components["schemas"]["CrearPqrRequest"];
+                    "application/*+json": components["schemas"]["CrearPqrRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PqrDto"];
+                        "application/json": components["schemas"]["PqrDto"];
+                        "text/json": components["schemas"]["PqrDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/pqr/mias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PqrDto"][];
+                        "application/json": components["schemas"]["PqrDto"][];
+                        "text/json": components["schemas"]["PqrDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/categorias": {
         parameters: {
             query?: never;
@@ -2121,6 +2602,9 @@ export interface paths {
                 query?: {
                     CategoriaId?: number;
                     Modo?: components["schemas"]["ModoDto"];
+                    Condicion?: components["schemas"]["CondicionDto"];
+                    DepartamentoCodigo?: string;
+                    MunicipioCodigo?: string;
                     Localidad?: string;
                     Texto?: string;
                     PrecioMin?: number;
@@ -2199,6 +2683,7 @@ export interface paths {
                     RadioKm?: number;
                     CategoriaId?: number;
                     Modo?: components["schemas"]["ModoDto"];
+                    Condicion?: components["schemas"]["CondicionDto"];
                     Max?: number;
                 };
                 header?: never;
@@ -2216,6 +2701,48 @@ export interface paths {
                         "text/plain": components["schemas"]["PublicacionCercanaDto"][];
                         "application/json": components["schemas"]["PublicacionCercanaDto"][];
                         "text/json": components["schemas"]["PublicacionCercanaDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/publicaciones/destacadas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    DepartamentoCodigo?: string;
+                    MunicipioCodigo?: string;
+                    CategoriaId?: number;
+                    Max?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PublicacionDto"][];
+                        "application/json": components["schemas"]["PublicacionDto"][];
+                        "text/json": components["schemas"]["PublicacionDto"][];
                     };
                 };
             };
@@ -2497,6 +3024,84 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/publicaciones/{id}/impulsar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PublicacionDto"];
+                        "application/json": components["schemas"]["PublicacionDto"];
+                        "text/json": components["schemas"]["PublicacionDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/publicaciones/{id}/estadisticas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EstadisticasPublicacionDto"];
+                        "application/json": components["schemas"]["EstadisticasPublicacionDto"];
+                        "text/json": components["schemas"]["EstadisticasPublicacionDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -2897,6 +3502,161 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/ubicaciones/departamentos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DepartamentoDto"][];
+                        "application/json": components["schemas"]["DepartamentoDto"][];
+                        "text/json": components["schemas"]["DepartamentoDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ubicaciones/departamentos/{codigo}/municipios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    codigo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MunicipioDto"][];
+                        "application/json": components["schemas"]["MunicipioDto"][];
+                        "text/json": components["schemas"]["MunicipioDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ubicaciones/municipios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    texto?: string;
+                    max?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MunicipioDto"][];
+                        "application/json": components["schemas"]["MunicipioDto"][];
+                        "text/json": components["schemas"]["MunicipioDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/ubicaciones/municipios/{codigo}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    codigo: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MunicipioDto"];
+                        "application/json": components["schemas"]["MunicipioDto"];
+                        "text/json": components["schemas"]["MunicipioDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/usuarios/yo/datos": {
         parameters: {
             query?: never;
@@ -3037,6 +3797,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/usuarios/yo/empresa": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["PerfilEmpresaRequest"];
+                    "text/json": components["schemas"]["PerfilEmpresaRequest"];
+                    "application/*+json": components["schemas"]["PerfilEmpresaRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UsuarioDto"];
+                        "application/json": components["schemas"]["UsuarioDto"];
+                        "text/json": components["schemas"]["UsuarioDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -3050,6 +3853,7 @@ export interface components {
         ActualizarPerfilRequest: {
             nombreCompleto: string;
             localidad: string;
+            municipioCodigo?: string | null;
         };
         CalificacionDto: {
             /** Format: uuid */
@@ -3142,6 +3946,8 @@ export interface components {
         };
         /** @enum {string} */
         ConceptoPagoDto: "Destacar" | "Verificar" | "Premium" | "Empresa" | "Recarga";
+        /** @enum {string} */
+        CondicionDto: "Nuevo" | "ComoNuevo" | "Usado" | "UsadoConDetalles" | "Reparado" | "ParaRepuestos";
         ConfiguracionDosFactoresDto: {
             secretoBase32?: string;
             uriOtpauth?: string;
@@ -3187,6 +3993,8 @@ export interface components {
             puntosACanjear?: number;
             /** Format: int32 */
             totalCop?: number;
+            /** Format: double */
+            ivaIncluidoCop?: number;
         };
         CrearComentarioRequest: {
             texto: string;
@@ -3198,12 +4006,21 @@ export interface components {
             motivo?: components["schemas"]["MotivoDenunciaDto"];
             detalle?: string | null;
         };
+        CrearPqrRequest: {
+            tipo?: components["schemas"]["TipoPqrDto"];
+            asunto: string;
+            descripcion: string;
+            pagoReferencia?: string | null;
+        };
         CrearPublicacionRequest: {
             titulo: string;
             descripcion: string;
             /** Format: int32 */
             categoriaId?: number;
             modo?: components["schemas"]["ModoDto"];
+            condicion: components["schemas"]["CondicionDto"];
+            detalleCondicion?: string | null;
+            municipioCodigo?: string | null;
             localidad: string;
             /** Format: double */
             precioReferenciaCop?: number | null;
@@ -3217,6 +4034,25 @@ export interface components {
             /** Format: uuid */
             publicacionId?: string;
             mensaje: string;
+        };
+        DatosFacturacionDto: {
+            completos?: boolean;
+            tipoDocumento?: string | null;
+            documento?: string | null;
+            nombre?: string | null;
+            correo?: string | null;
+            direccion?: string | null;
+            municipioCodigo?: string | null;
+            municipio?: string | null;
+        };
+        DatosFacturacionRequest: {
+            tipoDocumento?: components["schemas"]["TipoDocumentoFiscalDto"];
+            documento: string;
+            nombre: string;
+            /** Format: email */
+            correo: string;
+            direccion?: string | null;
+            municipioCodigo?: string | null;
         };
         DatosPersonalesDto: {
             /** Format: date-time */
@@ -3235,6 +4071,9 @@ export interface components {
             denunciasRealizadas?: components["schemas"]["DenunciaExportDto"][];
             calificacionesRealizadas?: components["schemas"]["CalificacionExportDto"][];
             favoritos?: string[];
+            datosFacturacion?: components["schemas"]["DatosFacturacionDto"];
+            facturas?: components["schemas"]["FacturaDto"][];
+            pqrs?: components["schemas"]["PqrDto"][];
         };
         DenunciaAgrupadaDto: {
             /** Format: uuid */
@@ -3273,6 +4112,10 @@ export interface components {
             /** Format: date-time */
             fechaUtc?: string;
         };
+        DepartamentoDto: {
+            codigo?: string;
+            nombre?: string;
+        };
         EcoPuntosResumenDto: {
             /** Format: int32 */
             saldo?: number;
@@ -3287,11 +4130,19 @@ export interface components {
             planVigenteHasta?: string | null;
             /** Format: int32 */
             destacadosGratisRestantes?: number;
+            /** Format: int32 */
+            maxPublicacionesActivas?: number;
+            /** Format: int32 */
+            descuentoPlanPorcentaje?: number;
         };
         EliminarCuentaRequest: {
             confirmacion: string;
             clave?: string | null;
             googleIdToken?: string | null;
+        };
+        EmitirFacturaRequest: {
+            numeroDian: string;
+            cufe: string;
         };
         EnviarMensajeRequest: {
             texto: string;
@@ -3302,10 +4153,96 @@ export interface components {
             /** Format: int32 */
             descuentoPorcentaje?: number;
         };
+        EstadisticasPublicacionDto: {
+            /** Format: uuid */
+            publicacionId?: string;
+            /** Format: int32 */
+            vistasTotales?: number;
+            /** Format: int32 */
+            vistasUltimos30Dias?: number;
+            /** Format: int32 */
+            favoritos?: number;
+            /** Format: int32 */
+            solicitudes?: number;
+            destacada?: boolean;
+            /** Format: date-time */
+            destacadaHasta?: string | null;
+            serieDisponible?: boolean;
+            serie?: components["schemas"]["PuntoSerieDto"][];
+        };
         /** @enum {string} */
         EstadoDenunciaDto: "Pendiente" | "Resuelta" | "Descartada";
         /** @enum {string} */
+        EstadoFacturaDto: "Pendiente" | "Emitida" | "Anulada";
+        /** @enum {string} */
         EstadoPagoDto: "Pendiente" | "Aprobado" | "Rechazado" | "Expirado" | "RequiereRevision" | "Reembolsado";
+        /** @enum {string} */
+        EstadoPqrDto: "Abierta" | "Respondida";
+        FacturaAdminDto: {
+            /** Format: uuid */
+            id?: string;
+            referencia?: string;
+            /** Format: uuid */
+            usuarioId?: string;
+            concepto?: string;
+            descripcion?: string;
+            /** Format: date-time */
+            fechaUtc?: string;
+            /** Format: int32 */
+            totalCop?: number;
+            /** Format: double */
+            baseCop?: number;
+            /** Format: double */
+            ivaCop?: number;
+            /** Format: double */
+            ivaPorcentaje?: number;
+            estado?: string;
+            numeroDian?: string | null;
+            cufe?: string | null;
+            /** Format: date-time */
+            fechaEmisionUtc?: string | null;
+            compradorTipoDocumento?: string | null;
+            compradorDocumento?: string;
+            compradorNombre?: string;
+            compradorCorreo?: string;
+            compradorDireccion?: string | null;
+            compradorMunicipio?: string | null;
+            requiereNotaCredito?: boolean;
+            notaInterna?: string | null;
+        };
+        FacturaAdminDtoPaginaDto: {
+            items?: components["schemas"]["FacturaAdminDto"][];
+            /** Format: int32 */
+            total?: number;
+            /** Format: int32 */
+            pagina?: number;
+            /** Format: int32 */
+            tamano?: number;
+        };
+        FacturaDto: {
+            /** Format: uuid */
+            id?: string;
+            referencia?: string;
+            concepto?: string;
+            descripcion?: string;
+            /** Format: date-time */
+            fechaUtc?: string;
+            /** Format: int32 */
+            totalCop?: number;
+            /** Format: double */
+            baseCop?: number;
+            /** Format: double */
+            ivaCop?: number;
+            /** Format: double */
+            ivaPorcentaje?: number;
+            estado?: string;
+            numeroDian?: string | null;
+            cufe?: string | null;
+            /** Format: date-time */
+            fechaEmisionUtc?: string | null;
+            compradorNombre?: string;
+            compradorDocumento?: string;
+        };
         GananciaDto: {
             modo?: string;
             /** Format: int32 */
@@ -3317,6 +4254,53 @@ export interface components {
             idToken: string;
             aceptoPoliticaDatos?: boolean;
             codigoDosFactores?: string | null;
+        };
+        IngresoConceptoDto: {
+            concepto?: string;
+            /** Format: int64 */
+            aprobadoCop?: number;
+            /** Format: int64 */
+            reembolsadoCop?: number;
+            /** Format: int32 */
+            pagos?: number;
+        };
+        IngresoMesDto: {
+            /** Format: int32 */
+            anio?: number;
+            /** Format: int32 */
+            mes?: number;
+            /** Format: int64 */
+            aprobadoCop?: number;
+            /** Format: int64 */
+            reembolsadoCop?: number;
+            /** Format: int32 */
+            pagos?: number;
+        };
+        IngresosDto: {
+            /** Format: date-time */
+            desde?: string;
+            /** Format: date-time */
+            hasta?: string;
+            /** Format: int64 */
+            aprobadoCop?: number;
+            /** Format: int64 */
+            reembolsadoCop?: number;
+            /** Format: int64 */
+            netoCop?: number;
+            /** Format: int32 */
+            pagos?: number;
+            /** Format: int32 */
+            premiumVigentes?: number;
+            /** Format: int32 */
+            empresaVigentes?: number;
+            /** Format: int64 */
+            ingresoRecurrenteMensualCop?: number;
+            /** Format: int32 */
+            facturasPendientes?: number;
+            /** Format: int32 */
+            pqrAbiertas?: number;
+            porMes?: components["schemas"]["IngresoMesDto"][];
+            porConcepto?: components["schemas"]["IngresoConceptoDto"][];
         };
         IniciarPagoRequest: {
             concepto?: components["schemas"]["ConceptoPagoDto"];
@@ -3360,6 +4344,16 @@ export interface components {
         MotivoDenunciaDto: "Spam" | "Fraude" | "ContenidoInapropiado" | "ArticuloProhibido" | "Acoso" | "Otro";
         MotivoRequest: {
             motivo: string;
+        };
+        MunicipioDto: {
+            codigo?: string;
+            nombre?: string;
+            departamentoCodigo?: string;
+            departamento?: string;
+            /** Format: double */
+            latitud?: number;
+            /** Format: double */
+            longitud?: number;
         };
         NoConcretadaRequest: {
             motivo: string;
@@ -3443,6 +4437,10 @@ export interface components {
             /** Format: date-time */
             expiraUtc?: string;
         };
+        PerfilEmpresaRequest: {
+            nombreComercial: string;
+            nit: string;
+        };
         PerfilPublicoDto: {
             /** Format: uuid */
             id?: string;
@@ -3456,6 +4454,8 @@ export interface components {
             calificacionPromedio?: number | null;
             /** Format: int32 */
             totalCalificaciones?: number;
+            municipio?: string;
+            nombreComercial?: string | null;
         };
         PerfilUsuarioDto: {
             /** Format: uuid */
@@ -3480,6 +4480,8 @@ export interface components {
             totalCalificaciones?: number;
             /** Format: int32 */
             publicacionesActivas?: number;
+            municipio?: string;
+            nombreComercial?: string | null;
         };
         PoliticaEcoPuntosDto: {
             /** Format: int32 */
@@ -3513,6 +4515,75 @@ export interface components {
             recargaMinimaCop?: number;
             /** Format: int32 */
             recargaMaximaCop?: number;
+            /** Format: int32 */
+            puntosImpulsar?: number;
+            /** Format: int32 */
+            horasEntreImpulsos?: number;
+            /** Format: int32 */
+            destacadosGratisEmpresa?: number;
+            /** Format: int32 */
+            descuentoEmpresaPorcentaje?: number;
+            /** Format: int32 */
+            maxPublicacionesIndividual?: number;
+            /** Format: int32 */
+            maxPublicacionesPremium?: number;
+            /** Format: int32 */
+            maxPublicacionesEmpresa?: number;
+            /** Format: int32 */
+            maxVentasActivasSinIdentificar?: number;
+            /** Format: int32 */
+            diasEntreTransaccionesConPuntosMismaPareja?: number;
+            preciosIncluyenIva?: boolean;
+            /** Format: double */
+            ivaPorcentaje?: number;
+        };
+        PqrAdminDto: {
+            /** Format: uuid */
+            id?: string;
+            radicado?: string;
+            tipo?: string;
+            asunto?: string;
+            descripcion?: string;
+            pagoReferencia?: string | null;
+            estado?: string;
+            /** Format: date-time */
+            fechaUtc?: string;
+            /** Format: date-time */
+            fechaLimiteUtc?: string;
+            vencida?: boolean;
+            respuesta?: string | null;
+            /** Format: date-time */
+            fechaRespuestaUtc?: string | null;
+            /** Format: uuid */
+            usuarioId?: string;
+            nombreUsuario?: string;
+            correoUsuario?: string;
+        };
+        PqrAdminDtoPaginaDto: {
+            items?: components["schemas"]["PqrAdminDto"][];
+            /** Format: int32 */
+            total?: number;
+            /** Format: int32 */
+            pagina?: number;
+            /** Format: int32 */
+            tamano?: number;
+        };
+        PqrDto: {
+            /** Format: uuid */
+            id?: string;
+            radicado?: string;
+            tipo?: string;
+            asunto?: string;
+            descripcion?: string;
+            pagoReferencia?: string | null;
+            estado?: string;
+            /** Format: date-time */
+            fechaUtc?: string;
+            /** Format: date-time */
+            fechaLimiteUtc?: string;
+            respuesta?: string | null;
+            /** Format: date-time */
+            fechaRespuestaUtc?: string | null;
         };
         PublicacionCercanaDto: {
             publicacion?: components["schemas"]["PublicacionDto"];
@@ -3548,6 +4619,15 @@ export interface components {
             esFavorita?: boolean;
             oculta?: boolean;
             motivoOcultamiento?: string | null;
+            condicion?: string;
+            detalleCondicion?: string | null;
+            municipioCodigo?: string;
+            municipio?: string;
+            departamentoCodigo?: string;
+            /** Format: int32 */
+            vistas?: number | null;
+            /** Format: date-time */
+            proximoImpulsoUtc?: string | null;
         };
         PublicacionDtoPaginaDto: {
             items?: components["schemas"]["PublicacionDto"][];
@@ -3558,6 +4638,12 @@ export interface components {
             /** Format: int32 */
             tamano?: number;
         };
+        PuntoSerieDto: {
+            /** Format: date-time */
+            fecha?: string;
+            /** Format: int32 */
+            vistas?: number;
+        };
         RechazarSolicitudRequest: {
             motivo?: string | null;
         };
@@ -3567,6 +4653,7 @@ export interface components {
         RegistroRequest: {
             nombreCompleto: string;
             localidad: string;
+            municipioCodigo?: string | null;
             /** Format: email */
             correo: string;
             clave: string;
@@ -3576,6 +4663,9 @@ export interface components {
         ResolverDenunciaRequest: {
             accion?: components["schemas"]["AccionDenunciaDto"];
             nota?: string | null;
+        };
+        ResponderPqrRequest: {
+            respuesta: string;
         };
         RestablecerClaveRequest: {
             token: string;
@@ -3641,6 +4731,10 @@ export interface components {
         TipoArchivoDto: "Imagen" | "Documento";
         /** @enum {string} */
         TipoDenunciaDto: "Publicacion" | "Comentario" | "Mensaje" | "Usuario" | "Calificacion";
+        /** @enum {string} */
+        TipoDocumentoFiscalDto: "CC" | "CE" | "NIT" | "Pasaporte";
+        /** @enum {string} */
+        TipoPqrDto: "Peticion" | "Queja" | "Reclamo" | "Sugerencia" | "Retracto" | "ReversionPago";
         TokenRequest: {
             token: string;
         };
@@ -3717,6 +4811,11 @@ export interface components {
             dosFactoresActivo?: boolean;
             /** Format: int32 */
             codigosRecuperacionRestantes?: number;
+            municipioCodigo?: string;
+            municipio?: string;
+            nombreComercial?: string | null;
+            nit?: string | null;
+            tieneDatosFacturacion?: boolean;
         };
         VerificacionPendienteDto: {
             /** Format: uuid */
@@ -3751,26 +4850,41 @@ export type ComentarioDto = components['schemas']['ComentarioDto'];
 export type ComentarioDtoPaginaDto = components['schemas']['ComentarioDtoPaginaDto'];
 export type ComentarioExportDto = components['schemas']['ComentarioExportDto'];
 export type ConceptoPagoDto = components['schemas']['ConceptoPagoDto'];
+export type CondicionDto = components['schemas']['CondicionDto'];
 export type ConfiguracionDosFactoresDto = components['schemas']['ConfiguracionDosFactoresDto'];
 export type ConfiguracionPublicaDto = components['schemas']['ConfiguracionPublicaDto'];
 export type ConversacionDto = components['schemas']['ConversacionDto'];
 export type CotizacionDto = components['schemas']['CotizacionDto'];
 export type CrearComentarioRequest = components['schemas']['CrearComentarioRequest'];
 export type CrearDenunciaRequest = components['schemas']['CrearDenunciaRequest'];
+export type CrearPqrRequest = components['schemas']['CrearPqrRequest'];
 export type CrearPublicacionRequest = components['schemas']['CrearPublicacionRequest'];
 export type CrearSolicitudRequest = components['schemas']['CrearSolicitudRequest'];
+export type DatosFacturacionDto = components['schemas']['DatosFacturacionDto'];
+export type DatosFacturacionRequest = components['schemas']['DatosFacturacionRequest'];
 export type DatosPersonalesDto = components['schemas']['DatosPersonalesDto'];
 export type DenunciaAgrupadaDto = components['schemas']['DenunciaAgrupadaDto'];
 export type DenunciaCreadaDto = components['schemas']['DenunciaCreadaDto'];
 export type DenunciaExportDto = components['schemas']['DenunciaExportDto'];
+export type DepartamentoDto = components['schemas']['DepartamentoDto'];
 export type EcoPuntosResumenDto = components['schemas']['EcoPuntosResumenDto'];
 export type EliminarCuentaRequest = components['schemas']['EliminarCuentaRequest'];
+export type EmitirFacturaRequest = components['schemas']['EmitirFacturaRequest'];
 export type EnviarMensajeRequest = components['schemas']['EnviarMensajeRequest'];
 export type EscalonDto = components['schemas']['EscalonDto'];
+export type EstadisticasPublicacionDto = components['schemas']['EstadisticasPublicacionDto'];
 export type EstadoDenunciaDto = components['schemas']['EstadoDenunciaDto'];
+export type EstadoFacturaDto = components['schemas']['EstadoFacturaDto'];
 export type EstadoPagoDto = components['schemas']['EstadoPagoDto'];
+export type EstadoPqrDto = components['schemas']['EstadoPqrDto'];
+export type FacturaAdminDto = components['schemas']['FacturaAdminDto'];
+export type FacturaAdminDtoPaginaDto = components['schemas']['FacturaAdminDtoPaginaDto'];
+export type FacturaDto = components['schemas']['FacturaDto'];
 export type GananciaDto = components['schemas']['GananciaDto'];
 export type GoogleLoginRequest = components['schemas']['GoogleLoginRequest'];
+export type IngresoConceptoDto = components['schemas']['IngresoConceptoDto'];
+export type IngresoMesDto = components['schemas']['IngresoMesDto'];
+export type IngresosDto = components['schemas']['IngresosDto'];
 export type IniciarPagoRequest = components['schemas']['IniciarPagoRequest'];
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type MensajeChatDto = components['schemas']['MensajeChatDto'];
@@ -3778,6 +4892,7 @@ export type MensajeExportDto = components['schemas']['MensajeExportDto'];
 export type ModoDto = components['schemas']['ModoDto'];
 export type MotivoDenunciaDto = components['schemas']['MotivoDenunciaDto'];
 export type MotivoRequest = components['schemas']['MotivoRequest'];
+export type MunicipioDto = components['schemas']['MunicipioDto'];
 export type NoConcretadaRequest = components['schemas']['NoConcretadaRequest'];
 export type NotificacionDto = components['schemas']['NotificacionDto'];
 export type NotificacionDtoPaginaDto = components['schemas']['NotificacionDtoPaginaDto'];
@@ -3787,16 +4902,22 @@ export type PagoAdminDto = components['schemas']['PagoAdminDto'];
 export type PagoAdminDtoPaginaDto = components['schemas']['PagoAdminDtoPaginaDto'];
 export type PagoEstadoDto = components['schemas']['PagoEstadoDto'];
 export type PagoIniciadoDto = components['schemas']['PagoIniciadoDto'];
+export type PerfilEmpresaRequest = components['schemas']['PerfilEmpresaRequest'];
 export type PerfilPublicoDto = components['schemas']['PerfilPublicoDto'];
 export type PerfilUsuarioDto = components['schemas']['PerfilUsuarioDto'];
 export type PoliticaEcoPuntosDto = components['schemas']['PoliticaEcoPuntosDto'];
+export type PqrAdminDto = components['schemas']['PqrAdminDto'];
+export type PqrAdminDtoPaginaDto = components['schemas']['PqrAdminDtoPaginaDto'];
+export type PqrDto = components['schemas']['PqrDto'];
 export type PublicacionCercanaDto = components['schemas']['PublicacionCercanaDto'];
 export type PublicacionDto = components['schemas']['PublicacionDto'];
 export type PublicacionDtoPaginaDto = components['schemas']['PublicacionDtoPaginaDto'];
+export type PuntoSerieDto = components['schemas']['PuntoSerieDto'];
 export type RechazarSolicitudRequest = components['schemas']['RechazarSolicitudRequest'];
 export type ReembolsoRequest = components['schemas']['ReembolsoRequest'];
 export type RegistroRequest = components['schemas']['RegistroRequest'];
 export type ResolverDenunciaRequest = components['schemas']['ResolverDenunciaRequest'];
+export type ResponderPqrRequest = components['schemas']['ResponderPqrRequest'];
 export type RestablecerClaveRequest = components['schemas']['RestablecerClaveRequest'];
 export type RolDto = components['schemas']['RolDto'];
 export type SesionDto = components['schemas']['SesionDto'];
@@ -3806,6 +4927,8 @@ export type SubidaArchivoDto = components['schemas']['SubidaArchivoDto'];
 export type SuspenderUsuarioRequest = components['schemas']['SuspenderUsuarioRequest'];
 export type TipoArchivoDto = components['schemas']['TipoArchivoDto'];
 export type TipoDenunciaDto = components['schemas']['TipoDenunciaDto'];
+export type TipoDocumentoFiscalDto = components['schemas']['TipoDocumentoFiscalDto'];
+export type TipoPqrDto = components['schemas']['TipoPqrDto'];
 export type TokenRequest = components['schemas']['TokenRequest'];
 export type TransaccionExportDto = components['schemas']['TransaccionExportDto'];
 export type UsuarioAdminDto = components['schemas']['UsuarioAdminDto'];

@@ -21,6 +21,8 @@ public interface IAuthService
     Task CerrarSesionAsync(string? tokenRefresco);
     Task<UsuarioDto> ObtenerPerfilAsync(Guid actorId);
     Task<UsuarioDto> ActualizarPerfilAsync(Guid actorId, ActualizarPerfilRequest r);
+    /// <summary>Nombre comercial y NIT (solo con plan Empresa vigente).</summary>
+    Task<UsuarioDto> ActualizarPerfilEmpresaAsync(Guid actorId, PerfilEmpresaRequest r);
     /// <summary>Revoca todas las sesiones y devuelve una nueva para el dispositivo actual.</summary>
     Task<ResultadoAutenticacion> CambiarClaveAsync(Guid actorId, CambiarClaveRequest r);
     /// <summary>Cierra la sesión en TODOS los dispositivos (invalida todos los tokens emitidos).</summary>
@@ -60,12 +62,15 @@ public sealed class AuthService : IAuthService
     {
         await _captcha.ExigirAsync(r.CaptchaToken, AccionesCaptcha.Registro);
         var correo = Usuario.NormalizarCorreo(r.Correo);
-        if (await _usuarios.ExisteCorreoAsync(correo))
+        if (CorreosDesechables.EsDesechable(correo, _seg.DominiosCorreoBloqueados))
+            throw new ReglaDeNegocioException("No aceptamos correos temporales o desechables. Usa tu correo personal.");
+        // Alias del mismo buzón (yo+1@gmail.com, y.o@gmail.com) cuentan como el mismo correo: una persona, una cuenta.
+        if (await _usuarios.ExisteCorreoCanonicoAsync(Usuario.CanonizarCorreo(correo)))
             throw new ReglaDeNegocioException("Ya existe una cuenta con ese correo.");
 
-        var usuario = new Usuario(r.NombreCompleto, r.Localidad, correo, r.Clave);
+        // Los Eco-Puntos de bienvenida se entregan al confirmar el correo (no al registrarse).
+        var usuario = new Usuario(r.NombreCompleto, r.Localidad, correo, r.Clave, r.MunicipioCodigo);
         usuario.AceptarPoliticaDatos(_legal.VersionPoliticaDatos, Ahora);
-        usuario.AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosBienvenida);
         _usuarios.Agregar(usuario);
         var sesion = _emisor.Emitir(usuario);
         var confirmacion = await _correos.PrepararVerificacionAsync(usuario);
@@ -79,7 +84,7 @@ public sealed class AuthService : IAuthService
     {
         await _captcha.ExigirAsync(r.CaptchaToken, AccionesCaptcha.Login);
         var ahora = Ahora;
-        var usuario = await _usuarios.ObtenerPorCorreoAsync(Usuario.NormalizarCorreo(r.Correo));
+        var usuario = await _usuarios.ObtenerPorCorreoCanonicoAsync(Usuario.CanonizarCorreo(r.Correo));
 
         if (usuario is null)
         {
@@ -143,7 +148,7 @@ public sealed class AuthService : IAuthService
         var usuario = await _usuarios.ObtenerPorGoogleSubAsync(id.Sub);
         if (usuario is null)
         {
-            usuario = await _usuarios.ObtenerPorCorreoAsync(Usuario.NormalizarCorreo(id.Correo));
+            usuario = await _usuarios.ObtenerPorCorreoCanonicoAsync(Usuario.CanonizarCorreo(id.Correo));
             if (usuario is not null)
             {
                 // Vincula una cuenta existente con el mismo correo (Google ya demostró que el correo es de esta persona).
@@ -163,9 +168,8 @@ public sealed class AuthService : IAuthService
             {
                 if (!r.AceptoPoliticaDatos)
                     throw new ReglaDeNegocioException("Para crear tu cuenta debes aceptar la política de tratamiento de datos personales.");
-                usuario = Usuario.CrearDesdeGoogle(id.Nombre ?? "", id.Correo, id.Sub, ahora);
+                usuario = Usuario.CrearDesdeGoogle(id.Nombre ?? "", id.Correo, id.Sub, ahora); // correo verificado por Google: recibe el bono
                 usuario.AceptarPoliticaDatos(_legal.VersionPoliticaDatos, ahora);
-                usuario.AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosBienvenida);
                 _usuarios.Agregar(usuario);
                 creada = true;
             }
@@ -230,7 +234,15 @@ public sealed class AuthService : IAuthService
     public async Task<UsuarioDto> ActualizarPerfilAsync(Guid actorId, ActualizarPerfilRequest r)
     {
         var u = await CargarAsync(actorId);
-        u.ActualizarPerfil(r.NombreCompleto, r.Localidad);
+        u.ActualizarPerfil(r.NombreCompleto, r.Localidad, r.MunicipioCodigo);
+        await _uow.GuardarCambiosAsync();
+        return Mapeos.AUsuarioDto(u, Ahora);
+    }
+
+    public async Task<UsuarioDto> ActualizarPerfilEmpresaAsync(Guid actorId, PerfilEmpresaRequest r)
+    {
+        var u = await CargarAsync(actorId);
+        u.ActualizarPerfilEmpresa(r.NombreComercial, r.Nit, Ahora);
         await _uow.GuardarCambiosAsync();
         return Mapeos.AUsuarioDto(u, Ahora);
     }

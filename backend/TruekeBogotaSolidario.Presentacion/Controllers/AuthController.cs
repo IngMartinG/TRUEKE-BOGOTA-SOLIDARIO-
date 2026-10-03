@@ -134,4 +134,9 @@ public sealed class UsuariosController : ControllerBase
     [HttpPut("yo")]
     public async Task<ActionResult<UsuarioDto>> ActualizarYo([FromBody] ActualizarPerfilRequest r)
         => Ok(await _auth.ActualizarPerfilAsync(User.IdActual(), r));
+
+    /// <summary>Nombre comercial y NIT visibles en el perfil público (solo con el plan Empresa vigente).</summary>
+    [HttpPut("yo/empresa"), EnableRateLimiting(Politicas.LimiteEscritura)]
+    public async Task<ActionResult<UsuarioDto>> ActualizarEmpresa([FromBody] PerfilEmpresaRequest r)
+        => Ok(await _auth.ActualizarPerfilEmpresaAsync(User.IdActual(), r));
 }

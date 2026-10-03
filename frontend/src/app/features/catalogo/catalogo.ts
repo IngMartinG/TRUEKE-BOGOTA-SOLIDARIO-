@@ -5,10 +5,13 @@ import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import {
+  CODIGO_BOGOTA,
+  CONDICIONES,
   INFO_MODO,
   LOCALIDADES,
   MODOS,
   ORDENES,
+  type CondicionDto,
   type ModoDto,
   type OrdenPublicacionesDto,
   type PublicacionDto,
@@ -22,6 +25,7 @@ import { Icono } from '../../shared/ui/icono';
 import { Mapa, type PuntoMapa } from '../../shared/ui/mapa';
 import { Modal } from '../../shared/ui/modal';
 import { Paginador } from '../../shared/ui/paginador';
+import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
 import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-publicacion';
 
 const TAMANO = 12;
@@ -39,13 +43,14 @@ const TAMANO = 12;
     Modal,
     Mapa,
     NumeroPipe,
+    SelectorMunicipio,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="border-b border-borde bg-gradient-to-b from-bosque-50 to-fondo dark:from-bosque-950/60">
       <div class="contenedor py-8 sm:py-10">
         <h1 class="text-3xl font-extrabold sm:text-4xl">Explora el catálogo</h1>
-        <p class="mt-2 text-tenue">Objetos de vecinos de toda Bogotá esperando una segunda oportunidad.</p>
+        <p class="mt-2 text-tenue">Objetos de personas de todo Colombia esperando una segunda oportunidad. Filtra por tu ciudad para encontrar lo que está cerca.</p>
 
         <div class="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
           <form class="relative flex-1" role="search" (ngSubmit)="aplicar({ texto: textoBusqueda() || null })">
@@ -131,6 +136,17 @@ const TAMANO = 12;
           </div>
         }
 
+        @if (!cercaDeMi() && (filtros().pagina ?? 1) === 1 && (destacadas.value()?.length ?? 0) > 0) {
+          <div class="mb-6 rounded-tarjeta border border-sol-200 bg-sol-50/60 p-4 dark:border-sol-500/30 dark:bg-sol-500/10">
+            <p class="mb-3 flex items-center gap-2 text-sm font-bold"><app-icono nombre="destello" [tamano]="16" class="text-sol-600" />Destacadas</p>
+            <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
+              @for (p of destacadas.value(); track p.id) {
+                <app-tarjeta-publicacion [publicacion]="p" />
+              }
+            </div>
+          </div>
+        }
+
         @if (vista() === 'mapa') {
           <app-mapa class="h-[32rem] rounded-tarjeta border border-borde shadow-suave lg:h-[40rem]" [puntos]="puntosMapa()" [centro]="miUbicacion()" [zoom]="miUbicacion() ? 14 : 12" etiqueta="Mapa de publicaciones" />
           @if (puntosMapa().length === 0 && !cargando()) {
@@ -191,12 +207,24 @@ const TAMANO = 12;
             }
           </select>
         </div>
+        <app-selector-municipio id="f-ubicacion" [filtro]="true" [apilado]="true" [ngModel]="ubicacionFiltro()" (ngModelChange)="cambiarUbicacion($event)" />
+        @if (filtros().municipioCodigo === codigoBogota) {
+          <div class="campo">
+            <label class="etiqueta" for="f-localidad">Localidad</label>
+            <select id="f-localidad" class="entrada" [ngModel]="filtros().localidad ?? ''" (ngModelChange)="aplicar({ localidad: $event || null })">
+              <option value="">Toda Bogotá</option>
+              @for (l of localidades; track l) {
+                <option [value]="l">{{ l }}</option>
+              }
+            </select>
+          </div>
+        }
         <div class="campo">
-          <label class="etiqueta" for="f-localidad">Localidad</label>
-          <select id="f-localidad" class="entrada" [ngModel]="filtros().localidad ?? ''" (ngModelChange)="aplicar({ localidad: $event || null })">
-            <option value="">Toda Bogotá</option>
-            @for (l of localidades; track l) {
-              <option [value]="l">{{ l }}</option>
+          <label class="etiqueta" for="f-condicion">Estado del producto</label>
+          <select id="f-condicion" class="entrada" [ngModel]="filtros().condicion ?? ''" (ngModelChange)="aplicar({ condicion: $event || null })">
+            <option value="">Cualquier estado</option>
+            @for (c of condiciones; track c.valor) {
+              <option [value]="c.valor">{{ c.etiqueta }}</option>
             }
           </select>
         </div>
@@ -239,6 +267,8 @@ export default class Catalogo {
   protected readonly modos = MODOS;
   protected readonly ordenes = ORDENES;
   protected readonly localidades = LOCALIDADES;
+  protected readonly condiciones = CONDICIONES;
+  protected readonly codigoBogota = CODIGO_BOGOTA;
   protected readonly tamano = TAMANO;
   protected readonly radios = [2, 5, 10, 20];
   protected readonly esqueletos = [1, 2, 3, 4, 5, 6];
@@ -259,10 +289,16 @@ export default class Catalogo {
     const q = this.parametros();
     const num = (k: string) => (q.get(k) ? Number(q.get(k)) : null);
     const modo = q.get('modo');
+    const condicion = q.get('condicion');
+    const dep = q.get('departamentoCodigo');
+    const mpio = q.get('municipioCodigo');
     return {
       texto: q.get('texto') ?? undefined,
       categoriaId: num('categoriaId'),
       modo: MODOS.includes(modo as ModoDto) ? (modo as ModoDto) : null,
+      condicion: CONDICIONES.some((c) => c.valor === condicion) ? (condicion as CondicionDto) : null,
+      departamentoCodigo: dep && /^\d{2}$/.test(dep) ? dep : null,
+      municipioCodigo: mpio && /^\d{5}$/.test(mpio) ? mpio : null,
       localidad: q.get('localidad'),
       precioMin: num('precioMin'),
       precioMax: num('precioMax'),
@@ -275,9 +311,22 @@ export default class Catalogo {
 
   protected readonly filtrosActivos = computed(() => {
     const f = this.filtros();
-    return [f.texto, f.categoriaId, f.modo, f.localidad, f.precioMin, f.precioMax, f.soloVerificados || null].filter(
+    return [f.texto, f.categoriaId, f.modo, f.condicion, f.municipioCodigo ?? f.departamentoCodigo, f.localidad, f.precioMin, f.precioMax, f.soloVerificados || null].filter(
       (v) => v !== null && v !== undefined && v !== '',
     ).length;
+  });
+
+  /** Valor del selector de ubicación: municipio (5 dígitos), solo departamento (2) o vacío (toda Colombia). */
+  protected readonly ubicacionFiltro = computed(() => this.filtros().municipioCodigo ?? this.filtros().departamentoCodigo ?? '');
+
+  /** Vitrina: destacadas de la zona elegida (se muestran con cualquier orden). */
+  protected readonly destacadas = rxResource({
+    params: () => ({
+      departamentoCodigo: this.filtros().departamentoCodigo,
+      municipioCodigo: this.filtros().municipioCodigo,
+      categoriaId: this.filtros().categoriaId,
+    }),
+    stream: ({ params }) => this.api.destacadas(params, 4).pipe(catchError(() => of([]))),
   });
 
   protected readonly resultados = rxResource({
@@ -288,9 +337,9 @@ export default class Catalogo {
   protected readonly cercanas = rxResource({
     params: () => {
       const u = this.miUbicacion();
-      return u ? { u, radio: this.radioKm(), modo: this.filtros().modo, cat: this.filtros().categoriaId } : undefined;
+      return u ? { u, radio: this.radioKm(), modo: this.filtros().modo, cat: this.filtros().categoriaId, cond: this.filtros().condicion } : undefined;
     },
-    stream: ({ params }) => this.api.cercanas(params.u[0], params.u[1], params.radio, params.modo, params.cat),
+    stream: ({ params }) => this.api.cercanas(params.u[0], params.u[1], params.radio, params.modo, params.cat, params.cond),
   });
 
   protected readonly cargando = computed(() =>
@@ -333,6 +382,15 @@ export default class Catalogo {
       queryParams: { ...cambios, pagina: null },
       queryParamsHandling: 'merge',
       replaceUrl: true,
+    });
+  }
+
+  protected cambiarUbicacion(valor: string | null): void {
+    const v = valor ?? '';
+    this.aplicar({
+      municipioCodigo: /^\d{5}$/.test(v) ? v : null,
+      departamentoCodigo: /^\d{2}$/.test(v) ? v : null,
+      localidad: null,
     });
   }
 

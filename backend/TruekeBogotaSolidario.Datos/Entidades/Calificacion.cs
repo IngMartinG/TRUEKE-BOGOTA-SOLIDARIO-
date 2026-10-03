@@ -12,8 +12,10 @@ public class Calificacion
 
     private Calificacion() { } // EF Core
 
-    public Calificacion(Guid solicitudId, Guid autorId, Guid calificadoId, int estrellas, string? comentario, DateTime ahoraUtc)
+    /// <param name="cuentaEnPromedio">false si el autor ya calificó a esta persona hace poco (anti-inflado de reputación).</param>
+    public Calificacion(Guid solicitudId, Guid autorId, Guid calificadoId, int estrellas, string? comentario, DateTime ahoraUtc, bool cuentaEnPromedio = true)
     {
+        CuentaEnPromedio = cuentaEnPromedio;
         if (estrellas is < 1 or > 5) throw new ReglaDeNegocioException("La calificación debe estar entre 1 y 5 estrellas.");
         if (autorId == calificadoId) throw new ReglaDeNegocioException("No puedes calificarte a ti mismo.");
         comentario = string.IsNullOrWhiteSpace(comentario) ? null : comentario.Trim();
@@ -37,6 +39,11 @@ public class Calificacion
     public int Estrellas { get; private set; }
     public string? Comentario { get; private set; }
     public DateTime FechaUtc { get; private set; }
+    /// <summary>
+    /// Solo la primera calificación de una persona a otra en <see cref="Common.PoliticaEcoPuntos.DiasEntreCalificacionesMismaPareja"/>
+    /// días suma al promedio: dos cuentas no pueden inflarse la reputación con intercambios repetidos.
+    /// </summary>
+    public bool CuentaEnPromedio { get; private set; }
     public bool ComentarioOculto { get; private set; }
     public string? MotivoOcultamiento { get; private set; }
 

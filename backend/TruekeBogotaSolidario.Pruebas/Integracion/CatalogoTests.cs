@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
 using TruekeBogotaSolidario.Pruebas.Infraestructura;
@@ -12,7 +12,7 @@ public class CatalogoTests : IClassFixture<FabricaApi>
     public CatalogoTests(FabricaApi fabrica) => _fabrica = fabrica;
 
     private static object Cuerpo(string titulo = "Mesa de noche", string modo = "Trueke", decimal? precio = null, string[]? imagenes = null)
-        => new { titulo, descripcion = "Madera", categoriaId = 4, modo, localidad = "Kennedy", precioReferenciaCop = precio, imagenes };
+        => new { titulo, descripcion = "Madera", categoriaId = 4, modo, condicion = "Usado", localidad = "Kennedy", precioReferenciaCop = precio, imagenes };
 
     private static async Task<Guid> CrearAsync(HttpClient c, object cuerpo)
     {

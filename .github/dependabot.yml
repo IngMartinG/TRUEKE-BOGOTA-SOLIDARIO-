@@ -1,0 +1,44 @@
+# Dependabot: abre PRs semanales con actualizaciones de dependencias (y de inmediato para vulnerabilidades conocidas).
+# Cada PR pasa por el CI (build + pruebas + auditoría) antes de poder fusionarse.
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      microsoft:
+        patterns: ["Microsoft.*", "System.*"]
+      pruebas:
+        patterns: ["xunit*", "coverlet*", "Testcontainers*", "Microsoft.NET.Test.Sdk"]
+    ignore:
+      # ImageSharp 4 exige una llave de licencia al compilar en Release; se queda en la rama 3.1 (parches de seguridad sí).
+      - dependency-name: SixLabors.ImageSharp
+        update-types: ["version-update:semver-major"]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    groups:
+      angular:
+        patterns: ["@angular/*", "@angular-devkit/*", "@schematics/*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+
+  - package-ecosystem: docker
+    directory: /backend
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: docker
+    directory: /frontend
+    schedule:
+      interval: weekly

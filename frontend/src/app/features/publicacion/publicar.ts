@@ -15,12 +15,17 @@ import { Router, RouterLink } from '@angular/router';
 import { catchError, firstValueFrom, of } from 'rxjs';
 import {
   CENTRO_LOCALIDAD,
+  CODIGO_BOGOTA,
+  CONDICIONES,
   iconoCategoria,
+  infoCondicion,
   INFO_MODO,
   LOCALIDADES,
   MODOS,
+  type CondicionDto,
   type CrearPublicacionRequest,
   type ModoDto,
+  type MunicipioDto,
 } from '../../api/tipos';
 import { CatalogoApi } from '../../core/api/catalogo.api';
 import { AvisosService } from '../../core/avisos.service';
@@ -35,6 +40,7 @@ import { Icono } from '../../shared/ui/icono';
 import { ImagenPublicacion } from '../../shared/ui/imagen-publicacion';
 import { InsigniaModo } from '../../shared/ui/insignia-modo';
 import { Mapa } from '../../shared/ui/mapa';
+import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
 
 interface Foto {
   clave: string;
@@ -48,14 +54,14 @@ interface Foto {
 const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, Icono, ErrorCampo, Mapa, InsigniaModo, ImagenPublicacion, CopPipe],
+  imports: [ReactiveFormsModule, RouterLink, Icono, ErrorCampo, Mapa, InsigniaModo, ImagenPublicacion, CopPipe, SelectorMunicipio],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor max-w-3xl py-8 sm:py-10">
       <div class="flex items-center justify-between gap-4">
         <div>
           <h1 class="text-3xl font-extrabold">{{ id() ? 'Editar publicación' : 'Publica algo' }}</h1>
-          <p class="mt-1 text-tenue">{{ id() ? 'Actualiza la información de tu publicación.' : 'En cinco pasos sencillos tu objeto estará visible para toda Bogotá.' }}</p>
+          <p class="mt-1 text-tenue">{{ id() ? 'Actualiza la información de tu publicación.' : 'En cinco pasos sencillos tu objeto estará visible para personas de todo el país.' }}</p>
         </div>
         <a [routerLink]="id() ? ['/publicacion', id()] : '/mis-publicaciones'" class="btn btn-fantasma hidden sm:inline-flex">Cancelar</a>
       </div>
@@ -132,6 +138,45 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
                   </div>
                   <app-error-campo [control]="form.controls.categoriaId" etiqueta="La categoría" />
                 </fieldset>
+
+                <fieldset>
+                  <legend class="etiqueta mb-1">¿En qué estado está?</legend>
+                  <p class="ayuda mb-2">Sé honesto: un estado claro evita reclamos y genera confianza.</p>
+                  <div class="grid gap-2 sm:grid-cols-2">
+                    @for (c of condiciones; track c.valor) {
+                      <label class="flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-3 transition"
+                        [class]="condicionActual() === c.valor ? 'border-bosque-500 bg-bosque-50 dark:bg-bosque-900/50' : 'border-borde hover:border-bosque-200'">
+                        <input type="radio" class="sr-only" formControlName="condicion" [value]="c.valor" [attr.aria-label]="c.etiqueta" />
+                        <span class="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-2 transition"
+                          [class]="condicionActual() === c.valor ? 'border-bosque-600 bg-bosque-600 text-white' : 'border-borde'">
+                          @if (condicionActual() === c.valor) {
+                            <app-icono nombre="check" [tamano]="12" [grosor]="3" />
+                          }
+                        </span>
+                        <span>
+                          <span class="block text-sm font-semibold">{{ c.etiqueta }}</span>
+                          <span class="block text-xs text-tenue">{{ c.descripcion }}</span>
+                        </span>
+                      </label>
+                    }
+                  </div>
+                  <app-error-campo [control]="form.controls.condicion" etiqueta="El estado del producto" />
+                </fieldset>
+
+                @if (requiereDetalle()) {
+                  <div class="campo animate-aparecer">
+                    <label class="etiqueta" for="detalle-condicion">
+                      {{ condicionActual() === 'Reparado' ? '¿Qué se reparó y quién lo hizo?' : condicionActual() === 'ParaRepuestos' ? '¿Qué falla y qué piezas sirven?' : '¿Qué detalles tiene?' }}
+                    </label>
+                    <textarea id="detalle-condicion" class="entrada min-h-24" formControlName="detalleCondicion" maxlength="300"
+                      placeholder="Ej: rayón en la tapa trasera; batería cambiada en servicio técnico en 2025; no enciende pero la pantalla sirve."
+                      [attr.aria-invalid]="form.controls.detalleCondicion.invalid && form.controls.detalleCondicion.touched" aria-describedby="detalle-error"></textarea>
+                    <div class="flex justify-between">
+                      <app-error-campo [control]="form.controls.detalleCondicion" etiqueta="La descripción del estado" idError="detalle-error" />
+                      <span class="ml-auto ayuda">{{ form.controls.detalleCondicion.value.length }}/300</span>
+                    </div>
+                  </div>
+                }
 
                 <div class="campo">
                   <label class="etiqueta" for="descripcion">Descripción</label>
@@ -227,14 +272,24 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
             <!-- ========== 4. UBICACIÓN ========== -->
             @case (3) {
               <div class="animate-aparecer space-y-5">
+                <div>
+                  <app-selector-municipio id="pub-ubicacion" formControlName="municipioCodigo" (cambio)="municipio.set($event)"
+                    [invalido]="form.controls.municipioCodigo.invalid && form.controls.municipioCodigo.touched" />
+                  <app-error-campo [control]="form.controls.municipioCodigo" etiqueta="El municipio" />
+                </div>
                 <div class="campo">
-                  <label class="etiqueta" for="localidad">Localidad</label>
-                  <select id="localidad" class="entrada" formControlName="localidad" aria-describedby="localidad-error">
-                    <option value="" disabled>Elige la localidad</option>
-                    @for (l of localidades; track l) {
-                      <option [value]="l">{{ l }}</option>
-                    }
-                  </select>
+                  @if (esBogota()) {
+                    <label class="etiqueta" for="localidad">Localidad</label>
+                    <select id="localidad" class="entrada" formControlName="localidad" aria-describedby="localidad-error">
+                      <option value="" disabled>Elige la localidad</option>
+                      @for (l of localidades; track l) {
+                        <option [value]="l">{{ l }}</option>
+                      }
+                    </select>
+                  } @else {
+                    <label class="etiqueta" for="localidad">Barrio, sector o vereda</label>
+                    <input id="localidad" class="entrada" formControlName="localidad" maxlength="60" placeholder="Ej: El Poblado, Centro, vereda La Esperanza" aria-describedby="localidad-error" />
+                  }
                   <app-error-campo [control]="form.controls.localidad" etiqueta="La localidad" idError="localidad-error" />
                 </div>
                 <div>
@@ -264,11 +319,16 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
                     <div class="p-4">
                       <app-insignia-modo [modo]="modoActual()" />
                       <p class="mt-2 font-display font-bold">{{ form.controls.titulo.value }}</p>
-                      <p class="mt-1 text-sm text-tenue">{{ form.controls.localidad.value }}</p>
+                      <p class="mt-1 text-sm text-tenue">{{ form.controls.localidad.value }} · {{ municipio()?.nombre }}</p>
                     </div>
                   </div>
                   <dl class="space-y-3 text-sm">
                     <div><dt class="text-tenue">Categoría</dt><dd class="font-semibold">{{ nombreCategoria() }}</dd></div>
+                    <div>
+                      <dt class="text-tenue">Estado</dt>
+                      <dd class="font-semibold">{{ etiquetaCondicion() }}@if (requiereDetalle() && form.controls.detalleCondicion.value) {<span class="block font-normal text-tenue">{{ form.controls.detalleCondicion.value }}</span>}</dd>
+                    </div>
+                    <div><dt class="text-tenue">Ubicación</dt><dd class="font-semibold">{{ form.controls.localidad.value }}, {{ municipio()?.nombre }} ({{ municipio()?.departamento }})</dd></div>
                     @if (modoActual() !== 'Donacion' && form.controls.precioReferenciaCop.value) {
                       <div><dt class="text-tenue">{{ modoActual() === 'Compra' ? 'Precio' : 'Valor de referencia' }}</dt><dd class="font-semibold">{{ form.controls.precioReferenciaCop.value | cop }}</dd></div>
                     }
@@ -326,6 +386,7 @@ export default class Publicar {
   protected readonly modos = MODOS;
   protected readonly info = INFO_MODO;
   protected readonly localidades = LOCALIDADES;
+  protected readonly condiciones = CONDICIONES;
   protected readonly iconoCategoria = iconoCategoria;
   protected readonly bordeModo: Record<string, string> = {
     Trueke: 'border-bosque-500 bg-bosque-50/60 dark:bg-bosque-900/40',
@@ -342,22 +403,39 @@ export default class Publicar {
   protected readonly enviando = signal(false);
   protected readonly cargandoEdicion = signal(false);
   protected readonly error = signal<string | null>(null);
+  /** Municipio elegido (con coordenadas para centrar el mapa). */
+  protected readonly municipio = signal<MunicipioDto | null>(null);
 
   protected readonly form = this.fb.group({
     modo: this.fb.control<ModoDto>('Trueke'),
     titulo: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120)]],
     categoriaId: this.fb.control<number | null>(null, Validators.required),
+    condicion: this.fb.control<CondicionDto | null>(null, Validators.required),
+    detalleCondicion: ['', [Validators.maxLength(300)]],
     descripcion: ['', [Validators.required, Validators.maxLength(2000)]],
     precioReferenciaCop: this.fb.control<number | null>(null, [Validators.min(0), Validators.max(1_000_000_000)]),
-    localidad: [this.sesion.usuario()?.localidad ?? '', Validators.required],
+    municipioCodigo: [this.sesion.usuario()?.municipioCodigo ?? CODIGO_BOGOTA, [Validators.required, Validators.pattern(/^\d{5}$/)]],
+    localidad: [this.sesion.usuario()?.localidad ?? '', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
   });
 
   protected readonly categorias = toSignal(this.api.categorias$.pipe(catchError(() => of([]))), { initialValue: [] });
   protected readonly modoActual = toSignal(this.form.controls.modo.valueChanges, { initialValue: this.form.controls.modo.value });
   protected readonly categoriaActual = toSignal(this.form.controls.categoriaId.valueChanges, { initialValue: null });
+  protected readonly condicionActual = toSignal(this.form.controls.condicion.valueChanges, { initialValue: null });
+  protected readonly requiereDetalle = computed(() => infoCondicion(this.condicionActual()).requiereDetalle && !!this.condicionActual());
+  protected readonly etiquetaCondicion = computed(() => (this.condicionActual() ? infoCondicion(this.condicionActual()).etiqueta : ''));
+  private readonly municipioActual = toSignal(this.form.controls.municipioCodigo.valueChanges, { initialValue: this.form.controls.municipioCodigo.value });
+  /** Último municipio visto: si cambia por elección del usuario se limpia la localidad (no al cargar una edición). */
+  private municipioPrevio = this.form.controls.municipioCodigo.value;
+  protected readonly esBogota = computed(() => this.municipioActual() === CODIGO_BOGOTA);
   private readonly localidadActual = toSignal(this.form.controls.localidad.valueChanges, { initialValue: this.form.controls.localidad.value });
   protected readonly nombreCategoria = computed(() => this.categorias().find((c) => c.id === this.categoriaActual())?.nombre ?? '');
-  protected readonly centroMapa = computed(() => this.ubicacion() ?? CENTRO_LOCALIDAD[this.localidadActual()] ?? null);
+  protected readonly centroMapa = computed<[number, number] | null>(() => {
+    if (this.ubicacion()) return this.ubicacion();
+    if (this.esBogota() && CENTRO_LOCALIDAD[this.localidadActual()]) return CENTRO_LOCALIDAD[this.localidadActual()]!;
+    const m = this.municipio();
+    return m?.latitud != null && m.longitud != null ? [m.latitud, m.longitud] : null;
+  });
   protected readonly subiendo = computed(() => this.fotos().some((f) => f.progreso < 100 && !f.error));
   protected readonly fotosListas = computed(() => this.fotos().filter((f) => f.url && !f.error).map((f) => f.url!));
 
@@ -376,6 +454,28 @@ export default class Publicar {
         );
         if (modo === 'Donacion') c.setValue(null);
         c.updateValueAndValidity();
+      });
+    });
+
+    // El detalle del estado es obligatorio para "con detalles", "reparado" y "para repuestos" (regla del backend).
+    effect(() => {
+      const requiere = this.requiereDetalle();
+      untracked(() => {
+        const c = this.form.controls.detalleCondicion;
+        c.setValidators(requiere ? [Validators.required, Validators.minLength(5), Validators.maxLength(300)] : [Validators.maxLength(300)]);
+        c.updateValueAndValidity();
+      });
+    });
+
+    // Al cambiar de municipio, la localidad de Bogotá (lista) deja de aplicar y viceversa.
+    effect(() => {
+      const actual = this.municipioActual();
+      untracked(() => {
+        if (this.municipioPrevio && actual !== this.municipioPrevio) {
+          this.form.controls.localidad.setValue('');
+          this.ubicacion.set(null);
+        }
+        this.municipioPrevio = actual;
       });
     });
 
@@ -398,10 +498,14 @@ export default class Publicar {
         modo: (p.modo as ModoDto) ?? 'Trueke',
         titulo: p.titulo ?? '',
         categoriaId: p.categoria?.id ?? null,
+        condicion: (p.condicion as CondicionDto) ?? null,
+        detalleCondicion: p.detalleCondicion ?? '',
         descripcion: p.descripcion ?? '',
         precioReferenciaCop: p.precioReferenciaCop ?? null,
+        municipioCodigo: p.municipioCodigo ?? CODIGO_BOGOTA,
         localidad: p.localidad ?? '',
       });
+      this.municipioPrevio = p.municipioCodigo ?? CODIGO_BOGOTA;
       this.fotos.set((p.imagenes ?? []).map((url) => ({ clave: url, vista: url, url, progreso: 100 })));
       if (p.latitud != null && p.longitud != null && !p.coordenadasAproximadas) this.ubicacion.set([p.latitud, p.longitud]);
       this.pasoMaximo.set(PASOS.length - 1);
@@ -438,9 +542,9 @@ export default class Publicar {
     };
     switch (paso) {
       case 1:
-        return marcar(c.titulo, c.categoriaId, c.descripcion, c.precioReferenciaCop);
+        return marcar(c.titulo, c.categoriaId, c.condicion, c.detalleCondicion, c.descripcion, c.precioReferenciaCop);
       case 3:
-        return marcar(c.localidad);
+        return marcar(c.municipioCodigo, c.localidad);
       default:
         return true;
     }
@@ -514,7 +618,10 @@ export default class Publicar {
       descripcion: v.descripcion.trim(),
       categoriaId: v.categoriaId ?? undefined,
       modo: v.modo,
-      localidad: v.localidad,
+      condicion: v.condicion!,
+      detalleCondicion: this.requiereDetalle() || v.detalleCondicion.trim() ? v.detalleCondicion.trim() || null : null,
+      municipioCodigo: v.municipioCodigo,
+      localidad: v.localidad.trim(),
       precioReferenciaCop: v.modo === 'Donacion' ? null : v.precioReferenciaCop || null,
       latitud: u?.[0] ?? null,
       longitud: u?.[1] ?? null,
@@ -530,7 +637,7 @@ export default class Publicar {
     } catch (e) {
       const errores = erroresDeCampos(e);
       if (aplicarErroresServidor(this.form.controls, errores)) {
-        this.paso.set(errores['localidad'] ? 3 : 1);
+        this.paso.set(errores['localidad'] || errores['municipioCodigo'] ? 3 : 1);
       } else {
         this.error.set(mensajeDe(e));
       }

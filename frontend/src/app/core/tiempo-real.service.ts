@@ -14,6 +14,7 @@ const AFECTAN_PERFIL = new Set([
   'IntercambioCompletado',
   'PagoAprobado',
   'PagoReembolsado',
+  'PlanPorVencer',
   'VerificacionAprobada',
   'VerificacionRechazada',
   'CalificacionRecibida',

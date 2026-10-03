@@ -1,7 +1,51 @@
 // Tipos del contrato con la API. `schema.d.ts` se genera desde docs/openapi.json (npm run api):
 // nunca se edita a mano. Aquí solo se re-exportan y se añaden etiquetas para la interfaz.
 export type * from './schema';
-import type { ModoDto, OrdenPublicacionesDto } from './schema';
+import type { CondicionDto, ModoDto, OrdenPublicacionesDto, TipoDocumentoFiscalDto, TipoPqrDto } from './schema';
+
+/** Estado físico del objeto. `requiereDetalle`: el backend exige describir qué tiene, qué se reparó o qué sirve. */
+export const CONDICIONES: readonly {
+  valor: CondicionDto;
+  etiqueta: string;
+  descripcion: string;
+  requiereDetalle: boolean;
+  clase: string;
+}[] = [
+  { valor: 'Nuevo', etiqueta: 'Nuevo', descripcion: 'Sin usar, con etiquetas o en su empaque.', requiereDetalle: false, clase: 'insignia-trueke' },
+  { valor: 'ComoNuevo', etiqueta: 'Como nuevo', descripcion: 'Usado muy poco, sin marcas visibles.', requiereDetalle: false, clase: 'insignia-agua' },
+  { valor: 'Usado', etiqueta: 'Usado', descripcion: 'Uso normal, funciona perfectamente.', requiereDetalle: false, clase: 'insignia-neutra' },
+  { valor: 'UsadoConDetalles', etiqueta: 'Usado con detalles', descripcion: 'Funciona, pero tiene rayones, golpes o piezas gastadas.', requiereDetalle: true, clase: 'insignia-sol' },
+  { valor: 'Reparado', etiqueta: 'Reparado', descripcion: 'Tuvo un daño y fue reparado o reacondicionado.', requiereDetalle: true, clase: 'insignia-sol' },
+  { valor: 'ParaRepuestos', etiqueta: 'Para repuestos', descripcion: 'No funciona completo; sirve por sus piezas.', requiereDetalle: true, clase: 'insignia-donacion' },
+];
+export const infoCondicion = (c: string | null | undefined) => CONDICIONES.find((x) => x.valor === c) ?? CONDICIONES[2]!;
+
+export const TIPOS_DOCUMENTO: readonly { valor: TipoDocumentoFiscalDto; etiqueta: string }[] = [
+  { valor: 'CC', etiqueta: 'Cédula de ciudadanía' },
+  { valor: 'CE', etiqueta: 'Cédula de extranjería' },
+  { valor: 'NIT', etiqueta: 'NIT (empresa)' },
+  { valor: 'Pasaporte', etiqueta: 'Pasaporte' },
+];
+
+export const TIPOS_PQR: readonly { valor: TipoPqrDto; etiqueta: string; descripcion: string; conPago: boolean }[] = [
+  { valor: 'Peticion', etiqueta: 'Petición', descripcion: 'Solicitar información o un trámite.', conPago: false },
+  { valor: 'Queja', etiqueta: 'Queja', descripcion: 'Inconformidad con la atención o el comportamiento de alguien.', conPago: false },
+  { valor: 'Reclamo', etiqueta: 'Reclamo', descripcion: 'Un servicio pagado no funcionó como se ofreció.', conPago: false },
+  { valor: 'Sugerencia', etiqueta: 'Sugerencia', descripcion: 'Una idea para mejorar la plataforma.', conPago: false },
+  { valor: 'Retracto', etiqueta: 'Retracto', descripcion: 'Desistir de una compra dentro de los 5 días hábiles siguientes (Ley 1480, art. 47).', conPago: true },
+  { valor: 'ReversionPago', etiqueta: 'Reversión del pago', descripcion: 'Pago no autorizado, fraude o servicio no prestado (Ley 1480, art. 51).', conPago: true },
+];
+export const etiquetaPqr = (t: string | null | undefined) => TIPOS_PQR.find((x) => x.valor === t)?.etiqueta ?? t ?? '';
+
+export const ETIQUETA_CONCEPTO: Record<string, string> = {
+  Destacar: 'Destacar publicación',
+  Verificar: 'Verificar cuenta',
+  Premium: 'Plan Premium',
+  Empresa: 'Plan Empresa',
+  Recarga: 'Recarga de Eco-Puntos',
+};
+
+export const CODIGO_BOGOTA = '11001';
 
 /** Cuerpo de error estándar de la API (RFC 7807). `title` es el mensaje mostrable. */
 export interface Problema {
@@ -48,7 +92,7 @@ export const INFO_MODO: Record<
   Donacion: {
     etiqueta: 'Donación',
     verbo: 'Solicitar donación',
-    descripcion: 'Regala lo que ya no necesitas a quien sí lo necesita en tu ciudad.',
+    descripcion: 'Regala lo que ya no necesitas a quien sí lo necesita cerca de ti.',
     clase: 'insignia-donacion',
     icono: 'heart',
     puntos: 20,
@@ -77,7 +121,7 @@ export const ORDENES: { valor: OrdenPublicacionesDto; etiqueta: string }[] = [
   { valor: 'PrecioDesc', etiqueta: 'Precio: mayor a menor' },
 ];
 
-/** Las 20 localidades de Bogotá D.C. */
+/** Las 20 localidades de Bogotá D.C. (en otros municipios la localidad, barrio o sector es texto libre). */
 export const LOCALIDADES: readonly string[] = [
   'Usaquén',
   'Chapinero',

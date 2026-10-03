@@ -23,6 +23,9 @@ public class TruekeDbContext : DbContext
     public DbSet<Denuncia> Denuncias => Set<Denuncia>();
     public DbSet<Favorito> Favoritos => Set<Favorito>();
     public DbSet<Calificacion> Calificaciones => Set<Calificacion>();
+    public DbSet<Factura> Facturas => Set<Factura>();
+    public DbSet<Pqr> Pqrs => Set<Pqr>();
+    public DbSet<EstadisticaPublicacionDiaria> EstadisticasPublicaciones => Set<EstadisticaPublicacionDiaria>();
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
@@ -52,6 +55,19 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.SecretoDosFactoresCifrado).HasMaxLength(200).IsUnicode(false);
             e.Property(x => x.CodigosRecuperacionHash).HasMaxLength(700).IsUnicode(false);
             e.HasIndex(x => x.EstaSuspendido);
+            e.Property(x => x.CorreoCanonico).HasMaxLength(160).IsRequired();
+            e.HasIndex(x => x.CorreoCanonico).IsUnique();
+            e.Property(x => x.MunicipioCodigo).HasMaxLength(5).IsUnicode(false).IsRequired();
+            e.Property(x => x.NombreComercial).HasMaxLength(120);
+            e.Property(x => x.Nit).HasMaxLength(20).IsUnicode(false);
+            e.Property(x => x.FacturacionTipoDocumento).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.FacturacionDocumento).HasMaxLength(20).IsUnicode(false);
+            e.Property(x => x.FacturacionNombre).HasMaxLength(150);
+            e.Property(x => x.FacturacionCorreo).HasMaxLength(160);
+            e.Property(x => x.FacturacionDireccion).HasMaxLength(150);
+            e.Property(x => x.FacturacionMunicipioCodigo).HasMaxLength(5).IsUnicode(false);
+            e.HasIndex(x => new { x.TipoCuenta, x.FechaVencimientoSuscripcion }); // recordatorios e ingresos recurrentes
+            e.Ignore(x => x.TieneDatosFacturacion);
             e.Ignore(x => x.EsVerificado);
             e.Ignore(x => x.TieneClave);
             e.Ignore(x => x.CalificacionPromedio);
@@ -96,11 +112,19 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.PrecioReferenciaCop).HasPrecision(18, 2);
             e.Property(x => x.Modo).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Condicion).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.DetalleCondicion).HasMaxLength(Publicacion.LongitudMaximaDetalleCondicion);
+            e.Property(x => x.MunicipioCodigo).HasMaxLength(5).IsUnicode(false).IsRequired();
+            e.Property(x => x.DepartamentoCodigo).HasMaxLength(2).IsUnicode(false).IsRequired();
+            e.Ignore(x => x.ProximoImpulsoPosible);
             e.HasOne(x => x.Categoria).WithMany().HasForeignKey(x => x.CategoriaId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Propietario).WithMany().HasForeignKey(x => x.PropietarioId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.Estado, x.EstaOculta });
             e.HasIndex(x => x.PropietarioId);
             e.HasIndex(x => x.CategoriaId);
+            e.HasIndex(x => new { x.DepartamentoCodigo, x.MunicipioCodigo }); // catálogo por departamento / municipio
+            e.HasIndex(x => x.FechaRelevancia);                              // orden "Más recientes" (con impulsos)
+            e.HasIndex(x => x.DestacadaHasta);
             e.HasIndex(x => new { x.Latitud, x.Longitud }); // prefiltro de /publicaciones/cercanas
             if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
         });
@@ -228,6 +252,7 @@ public class TruekeDbContext : DbContext
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.CalificadoId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.SolicitudId, x.AutorId }).IsUnique();
             e.HasIndex(x => new { x.CalificadoId, x.FechaUtc });
+            e.HasIndex(x => new { x.AutorId, x.CalificadoId, x.FechaUtc }); // anti-inflado: una calificación que cuenta por pareja y mes
         });
 
         mb.Entity<Transaccion>(e =>
@@ -269,6 +294,60 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => new { x.UsuarioId, x.Concepto, x.Estado });
             e.HasIndex(x => new { x.Estado, x.FechaUtc });
             if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+        });
+
+        mb.Entity<Factura>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Referencia).HasMaxLength(100).IsRequired();
+            e.Property(x => x.Concepto).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Descripcion).HasMaxLength(200).IsRequired();
+            e.Property(x => x.IvaPorcentaje).HasPrecision(5, 2);
+            e.Property(x => x.BaseCop).HasPrecision(18, 2);
+            e.Property(x => x.IvaCop).HasPrecision(18, 2);
+            e.Property(x => x.CompradorTipoDocumento).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.CompradorDocumento).HasMaxLength(20).IsUnicode(false).IsRequired();
+            e.Property(x => x.CompradorNombre).HasMaxLength(150).IsRequired();
+            e.Property(x => x.CompradorCorreo).HasMaxLength(160).IsRequired();
+            e.Property(x => x.CompradorDireccion).HasMaxLength(150);
+            e.Property(x => x.CompradorMunicipioCodigo).HasMaxLength(5).IsUnicode(false);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.NumeroDian).HasMaxLength(50);
+            e.Property(x => x.Cufe).HasMaxLength(120).IsUnicode(false);
+            e.Property(x => x.NotaInterna).HasMaxLength(300);
+            e.HasOne<Pago>().WithMany().HasForeignKey(x => x.PagoId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.PagoId).IsUnique(); // una factura por pago (idempotencia)
+            e.HasIndex(x => new { x.UsuarioId, x.FechaUtc });
+            e.HasIndex(x => new { x.Estado, x.FechaUtc });
+            if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+        });
+
+        mb.Entity<Pqr>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Radicado).HasMaxLength(30).IsUnicode(false).IsRequired();
+            e.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Asunto).HasMaxLength(120).IsRequired();
+            e.Property(x => x.Descripcion).HasMaxLength(Pqr.LongitudMaximaTexto).IsRequired();
+            e.Property(x => x.Respuesta).HasMaxLength(Pqr.LongitudMaximaTexto);
+            e.Property(x => x.PagoReferencia).HasMaxLength(100);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.Radicado).IsUnique();
+            e.HasIndex(x => new { x.UsuarioId, x.FechaUtc });
+            e.HasIndex(x => new { x.Estado, x.FechaLimiteUtc });
+            if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+        });
+
+        mb.Entity<EstadisticaPublicacionDiaria>(e =>
+        {
+            e.ToTable("EstadisticasPublicaciones");
+            e.HasKey(x => new { x.PublicacionId, x.Fecha });
+            if (sqlServer) e.Property(x => x.Fecha).HasColumnType("date");
+            e.HasOne<Publicacion>().WithMany().HasForeignKey(x => x.PublicacionId).OnDelete(DeleteBehavior.Cascade);
         });
     }
 }

@@ -18,4 +18,9 @@
     </PackageReference>
   </ItemGroup>
 
+  <!-- Catálogo oficial de departamentos y municipios (DANE - DIVIPOLA): datos de referencia de solo lectura -->
+  <ItemGroup>
+    <EmbeddedResource Include="Recursos\divipola.json" LogicalName="TruekeBogotaSolidario.Datos.divipola.json" />
+  </ItemGroup>
+
 </Project>
