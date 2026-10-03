@@ -81,6 +81,29 @@ public sealed class EntornoNegocio : IDisposable
         await db.SaveChangesAsync();
     }
 
+    /// <summary>Atajo de pruebas: modifica el usuario directamente en la base (rol, verificación, saldo…).</summary>
+    public async Task ModificarUsuarioAsync(Guid usuarioId, Action<Datos.Entidades.Usuario> cambio)
+    {
+        using var scope = _sp.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<TruekeDbContext>();
+        cambio((await db.Usuarios.FindAsync(usuarioId))!);
+        await db.SaveChangesAsync();
+    }
+
+    public Task HacerModeradorAsync(Guid usuarioId, Datos.Entidades.RolUsuarioEnum rol = Datos.Entidades.RolUsuarioEnum.SuperUsuario)
+        => ModificarUsuarioAsync(usuarioId, u => u.CambiarRol(rol));
+
+    public Task VerificarIdentidadAsync(Guid usuarioId)
+        => ModificarUsuarioAsync(usuarioId, u => { u.SolicitarVerificacion("https://docs.test/cedula.pdf"); u.AprobarVerificacion(); });
+
+    /// <summary>Paga un concepto con la pasarela simulada y devuelve la referencia.</summary>
+    public async Task<string> PagarAsync(Guid usuarioId, IniciarPagoRequest r, bool aprobado = true)
+    {
+        var pago = await EnScopeAsync<IPagoService, PagoIniciadoDto>(p => p.IniciarAsync(usuarioId, r));
+        await EnScopeAsync<IPagoService, PagoEstadoDto>(p => p.SimularResultadoAsync(usuarioId, pago.Referencia, aprobado));
+        return pago.Referencia;
+    }
+
     public IServiceProvider Proveedor => _sp;
 
     public void Dispose() => _sp.Dispose();

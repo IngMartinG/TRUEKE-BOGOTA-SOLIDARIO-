@@ -32,7 +32,7 @@ export default class Privacidad {
     {
       titulo: 'Datos que recolectamos',
       parrafos: [
-        'Nombre, correo electrónico, localidad de residencia y, si decides usarla, la ubicación aproximada de tus publicaciones. Si vinculas tu cuenta de Google, recibimos tu nombre y correo verificados por Google.',
+        'Nombre, correo electrónico, municipio y barrio o localidad de residencia, datos de facturación si los registras (documento, nombre o razón social, correo y dirección) y, si decides usarla, la ubicación aproximada de tus publicaciones. Si vinculas tu cuenta de Google, recibimos tu nombre y correo verificados por Google.',
         'También guardamos el contenido que publicas (publicaciones, fotos, comentarios y mensajes del chat), tus intercambios, calificaciones y movimientos de Eco-Puntos.',
         'Si solicitas la verificación de tu cuenta, recibimos una imagen de tu documento de identidad, que se elimina en cuanto se resuelve la solicitud.',
       ],

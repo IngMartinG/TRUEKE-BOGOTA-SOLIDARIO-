@@ -136,7 +136,7 @@ public sealed class CuentaService : ICuentaService
     public async Task OlvideClaveAsync(string correo, string? captchaToken)
     {
         await _captcha.ExigirAsync(captchaToken, AccionesCaptcha.OlvideClave);
-        var u = await _usuarios.ObtenerPorCorreoAsync(Usuario.NormalizarCorreo(correo));
+        var u = await _usuarios.ObtenerPorCorreoCanonicoAsync(Usuario.CanonizarCorreo(correo));
         if (u is null || u.EstaEliminado) return;
         if (await _tokens.ContarDesdeAsync(u.Id, PropositoToken.RestablecerClave, Ahora.AddHours(-1)) >= MaxEnlacesPorHora) return;
         var mensaje = await _correos.PrepararRestablecimientoAsync(u);

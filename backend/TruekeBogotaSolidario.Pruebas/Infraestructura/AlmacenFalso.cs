@@ -26,7 +26,8 @@ public sealed class AlmacenFalso : IAlmacenArchivos
 
     public void Subir(string url, string contentType, byte[] datos) => _blobs[url] = (contentType, datos);
 
-    public Task ValidarArchivoPropioAsync(string url, Guid usuarioId, TipoArchivoDto tipo, CancellationToken ct = default)
+    /// <summary>Mismas validaciones que Azure; no re-codifica (eso se prueba con imágenes reales en ProcesadorImagenesTests).</summary>
+    public Task<string> ValidarArchivoPropioAsync(string url, Guid usuarioId, TipoArchivoDto tipo, CancellationToken ct = default)
     {
         var a = ReglasArchivos.AnalizarUrl(url, Contenedor(tipo), usuarioId)
                 ?? throw new ReglaDeNegocioException("El archivo debe subirse primero con POST /api/v1/archivos/subidas.");
@@ -35,7 +36,7 @@ public sealed class AlmacenFalso : IAlmacenArchivos
         if (ReglasArchivos.Extension(tipo, b.ContentType) != a.Extension) throw new ReglaDeNegocioException("El tipo del archivo no coincide con su extensión.");
         if (!ReglasArchivos.FirmaCoincide(a.Extension, b.Datos.AsSpan(0, Math.Min(ReglasArchivos.BytesFirma, b.Datos.Length))))
             throw new ReglaDeNegocioException("El contenido del archivo no corresponde a una imagen o documento válido.");
-        return Task.CompletedTask;
+        return Task.FromResult(url);
     }
 
     public Task<string?> UrlLecturaTemporalAsync(string url, CancellationToken ct = default) => Task.FromResult<string?>(url + "?sas=lectura");

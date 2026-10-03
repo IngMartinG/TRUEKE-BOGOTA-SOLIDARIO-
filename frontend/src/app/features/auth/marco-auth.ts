@@ -41,7 +41,7 @@ import { Logo } from '../../shared/ui/logo';
 export class MarcoAuth {
   readonly titulo = input.required<string>();
   readonly subtitulo = input('');
-  readonly lema = input('Lo que tú ya no usas, alguien en Bogotá lo necesita.');
+  readonly lema = input('Lo que tú ya no usas, alguien cerca de ti lo necesita.');
   protected readonly beneficios = [
     { icono: 'repeat', texto: 'Intercambia sin dinero de por medio' },
     { icono: 'escudo', texto: 'Chat interno: sin compartir tu número' },

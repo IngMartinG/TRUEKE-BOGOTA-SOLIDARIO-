@@ -29,8 +29,14 @@ public sealed class PublicacionesController : ControllerBase
     public async Task<ActionResult<IReadOnlyList<PublicacionCercanaDto>>> Cercanas([FromQuery] CercanasRequest r)
         => Ok(await _pubs.ListarCercanasAsync(User.IdActualOpcional(), r));
 
+    /// <summary>Vitrina: publicaciones destacadas vigentes (orden aleatorio). El front la muestra sobre el catálogo con cualquier filtro.</summary>
+    [HttpGet("publicaciones/destacadas"), AllowAnonymous]
+    public async Task<ActionResult<IReadOnlyList<PublicacionDto>>> Destacadas([FromQuery] DestacadasRequest r)
+        => Ok(await _pubs.ListarDestacadasAsync(User.IdActualOpcional(), r));
+
     [HttpGet("publicaciones/{id:guid}"), AllowAnonymous]
-    public async Task<ActionResult<PublicacionDto>> Obtener(Guid id) => Ok(await _pubs.ObtenerAsync(User.IdActualOpcional(), id));
+    public async Task<ActionResult<PublicacionDto>> Obtener(Guid id)
+        => Ok(await _pubs.ObtenerAsync(User.IdActualOpcional(), id, HttpContext.VisitanteParaEstadisticas()));
 
     // ---- Requieren sesión
     [HttpGet("publicaciones/mias")]
@@ -74,11 +80,20 @@ public sealed class PublicacionesController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Beneficio Premium: usa uno de los destacados gratis del mes.</summary>
+    /// <summary>Beneficio de los planes Premium y Empresa: usa uno de los destacados gratis del mes.</summary>
     [HttpPost("publicaciones/{id:guid}/destacar-gratis")]
     public async Task<IActionResult> DestacarGratis(Guid id)
     {
         await _pagos.DestacarGratisAsync(User.IdActual(), id);
         return NoContent();
     }
+
+    /// <summary>Sube la publicación al primer lugar de "Más recientes" a cambio de Eco-Puntos (una vez cada 24 h).</summary>
+    [HttpPost("publicaciones/{id:guid}/impulsar"), EnableRateLimiting(Politicas.LimiteEscritura)]
+    public async Task<ActionResult<PublicacionDto>> Impulsar(Guid id) => Ok(await _pubs.ImpulsarAsync(User.IdActual(), id));
+
+    /// <summary>Vistas, favoritos y solicitudes (solo el dueño). La serie diaria de 30 días es para planes Premium y Empresa.</summary>
+    [HttpGet("publicaciones/{id:guid}/estadisticas")]
+    public async Task<ActionResult<EstadisticasPublicacionDto>> Estadisticas(Guid id)
+        => Ok(await _pubs.ObtenerEstadisticasAsync(User.IdActual(), id));
 }

@@ -27,6 +27,12 @@ public static class TiposNotificacion
     public const string IntercambioNoConcretado = "IntercambioNoConcretado";
     public const string CalificacionRecibida = "CalificacionRecibida";
     public const string PagoReembolsado = "PagoReembolsado";
+    public const string PlanPorVencer = "PlanPorVencer";
+    public const string FacturaEmitida = "FacturaEmitida";
+    public const string PqrRespondida = "PqrRespondida";
+    // Solo para moderadores
+    public const string AlertaPagoEnRevision = "AlertaPagoEnRevision";
+    public const string PqrNueva = "PqrNueva";
 }
 
 /// <summary>Carga mínima: el front pide el detalle al API (con su JWT) si lo necesita. Nunca datos de terceros.</summary>

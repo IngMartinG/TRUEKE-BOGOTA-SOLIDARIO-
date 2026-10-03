@@ -4,14 +4,16 @@ namespace TruekeBogotaSolidario.Datos.Entidades;
 
 public class Usuario
 {
-    private Usuario() { NombreCompleto = ""; Localidad = ""; Correo = ""; ClaveHash = ""; } // EF Core
+    private Usuario() { NombreCompleto = ""; Localidad = ""; Correo = ""; CorreoCanonico = ""; ClaveHash = ""; MunicipioCodigo = Divipola.CodigoBogota; } // EF Core
 
-    public Usuario(string nombreCompleto, string localidad, string correo, string claveEnClaro)
+    public Usuario(string nombreCompleto, string localidad, string correo, string claveEnClaro, string? municipioCodigo = null)
     {
         Id = Guid.NewGuid();
         (NombreCompleto, Localidad) = ValidarPerfil(nombreCompleto, localidad);
+        MunicipioCodigo = Divipola.Exigir(municipioCodigo ?? Divipola.CodigoBogota).Codigo;
         Correo = NormalizarCorreo(correo);
         if (Correo.Length is 0 or > 160 || !Correo.Contains('@')) throw new ReglaDeNegocioException("El correo no es válido.");
+        CorreoCanonico = CanonizarCorreo(Correo);
         ClaveHash = "";
         EstablecerClave(claveEnClaro);
         Rol = RolUsuarioEnum.Cliente;
@@ -22,10 +24,36 @@ public class Usuario
 
     public Guid Id { get; private set; }
     public string NombreCompleto { get; private set; }
+    /// <summary>Barrio, localidad o sector (texto libre). El municipio va en <see cref="MunicipioCodigo"/>.</summary>
     public string Localidad { get; private set; }
+    /// <summary>Código DIVIPOLA del municipio de residencia (Bogotá = 11001).</summary>
+    public string MunicipioCodigo { get; private set; }
     public string Correo { get; private set; }
+    /// <summary>
+    /// Forma canónica del correo (sin alias "+algo" y, en Gmail, sin puntos). Es ÚNICA: impide abrir varias cuentas
+    /// con el mismo buzón (yo+1@gmail.com, y.o@gmail.com…) para farmear Eco-Puntos o reputación.
+    /// </summary>
+    public string CorreoCanonico { get; private set; }
     public string ClaveHash { get; private set; }
     public DateTime FechaRegistro { get; private set; }
+
+    /// <summary>Los Eco-Puntos de bienvenida se dan una sola vez, al demostrar que el correo es propio.</summary>
+    public bool BonoBienvenidaOtorgado { get; private set; }
+
+    // Perfil de empresa (solo se muestra con el plan Empresa vigente)
+    public string? NombreComercial { get; private set; }
+    public string? Nit { get; private set; }
+
+    // Datos para la factura electrónica (opcionales: sin ellos se factura a "consumidor final")
+    public TipoDocumentoFiscal? FacturacionTipoDocumento { get; private set; }
+    public string? FacturacionDocumento { get; private set; }
+    public string? FacturacionNombre { get; private set; }
+    public string? FacturacionCorreo { get; private set; }
+    public string? FacturacionDireccion { get; private set; }
+    public string? FacturacionMunicipioCodigo { get; private set; }
+
+    /// <summary>Vencimiento del plan para el que ya se envió el recordatorio (evita repetirlo).</summary>
+    public DateTime? RecordatorioVencimientoPara { get; private set; }
 
     /// <summary>Se incrementa al cambiar rol o contraseña: invalida todos los JWT emitidos antes (revocación de sesiones).</summary>
     public int VersionSeguridad { get; private set; }
@@ -88,6 +116,21 @@ public class Usuario
     // ---------------- Perfil ----------------
     public static string NormalizarCorreo(string correo) => (correo ?? "").Trim().ToLowerInvariant();
 
+    /// <summary>"Ana.Perez+promo@GoogleMail.com" → "anaperez@gmail.com". Para otros dominios solo se quita el alias "+…".</summary>
+    public static string CanonizarCorreo(string correo)
+    {
+        var c = NormalizarCorreo(correo);
+        var arroba = c.LastIndexOf('@');
+        if (arroba <= 0) return c;
+        var local = c[..arroba];
+        var dominio = c[(arroba + 1)..];
+        if (dominio == "googlemail.com") dominio = "gmail.com";
+        var mas = local.IndexOf('+');
+        if (mas > 0) local = local[..mas];
+        if (dominio == "gmail.com") local = local.Replace(".", "", StringComparison.Ordinal);
+        return local.Length == 0 ? c : $"{local}@{dominio}";
+    }
+
     private static (string nombre, string localidad) ValidarPerfil(string nombreCompleto, string localidad)
     {
         var n = (nombreCompleto ?? "").Trim();
@@ -98,8 +141,53 @@ public class Usuario
         return (n, l);
     }
 
-    public void ActualizarPerfil(string nombreCompleto, string localidad)
-        => (NombreCompleto, Localidad) = ValidarPerfil(nombreCompleto, localidad);
+    public void ActualizarPerfil(string nombreCompleto, string localidad, string? municipioCodigo = null)
+    {
+        (NombreCompleto, Localidad) = ValidarPerfil(nombreCompleto, localidad);
+        if (municipioCodigo is not null) MunicipioCodigo = Divipola.Exigir(municipioCodigo).Codigo;
+    }
+
+    /// <summary>Nombre comercial y NIT visibles en el perfil público mientras el plan Empresa esté vigente.</summary>
+    public void ActualizarPerfilEmpresa(string nombreComercial, string nit, DateTime ahoraUtc)
+    {
+        if (!EmpresaVigente(ahoraUtc)) throw new ReglaDeNegocioException("El perfil de empresa está disponible con el plan Empresa vigente.");
+        var nombre = (nombreComercial ?? "").Trim();
+        if (nombre.Length is < 2 or > 120 || nombre.Any(char.IsControl)) throw new ReglaDeNegocioException("El nombre comercial debe tener entre 2 y 120 caracteres.");
+        NombreComercial = nombre;
+        Nit = DocumentosFiscales.NormalizarNit(nit);
+    }
+
+    // ---------------- Facturación electrónica ----------------
+    public bool TieneDatosFacturacion => FacturacionTipoDocumento.HasValue;
+
+    public void ActualizarDatosFacturacion(TipoDocumentoFiscal tipo, string documento, string nombre, string correo, string? direccion, string? municipioCodigo)
+    {
+        if (!Enum.IsDefined(tipo)) throw new ReglaDeNegocioException("Tipo de documento no válido.");
+        var doc = DocumentosFiscales.Normalizar(tipo, documento);
+        var n = (nombre ?? "").Trim();
+        if (n.Length is < 3 or > 150 || n.Any(char.IsControl)) throw new ReglaDeNegocioException("El nombre o razón social debe tener entre 3 y 150 caracteres.");
+        var c = NormalizarCorreo(correo);
+        if (c.Length is < 5 or > 160 || !c.Contains('@')) throw new ReglaDeNegocioException("El correo para la factura no es válido.");
+        var dir = string.IsNullOrWhiteSpace(direccion) ? null : direccion.Trim();
+        if (dir is { Length: > 150 } || dir?.Any(char.IsControl) == true) throw new ReglaDeNegocioException("La dirección admite como máximo 150 caracteres.");
+        var mpio = string.IsNullOrWhiteSpace(municipioCodigo) ? null : Divipola.Exigir(municipioCodigo).Codigo;
+        FacturacionTipoDocumento = tipo;
+        FacturacionDocumento = doc;
+        FacturacionNombre = n;
+        FacturacionCorreo = c;
+        FacturacionDireccion = dir;
+        FacturacionMunicipioCodigo = mpio;
+    }
+
+    public void BorrarDatosFacturacion()
+    {
+        FacturacionTipoDocumento = null;
+        FacturacionDocumento = null;
+        FacturacionNombre = null;
+        FacturacionCorreo = null;
+        FacturacionDireccion = null;
+        FacturacionMunicipioCodigo = null;
+    }
 
     // ---------------- Contraseña y bloqueo ----------------
     public void EstablecerClave(string claveEnClaro)
@@ -137,11 +225,17 @@ public class Usuario
     }
 
     // ---------------- Correo, Google y datos personales ----------------
+    /// <summary>Al demostrar que el correo es propio se entregan (una sola vez) los Eco-Puntos de bienvenida.</summary>
     public void MarcarCorreoVerificado(DateTime ahoraUtc)
     {
         if (CorreoVerificado) return;
         CorreoVerificado = true;
         FechaVerificacionCorreo = ahoraUtc;
+        if (!BonoBienvenidaOtorgado && !EstaEliminado)
+        {
+            AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosBienvenida);
+            BonoBienvenidaOtorgado = true;
+        }
     }
 
     public void AceptarPoliticaDatos(string version, DateTime ahoraUtc)
@@ -160,8 +254,10 @@ public class Usuario
         {
             Id = Guid.NewGuid(),
             NombreCompleto = nombreValido,
-            Localidad = "Bogotá",
+            Localidad = "Sin especificar",
+            MunicipioCodigo = Divipola.CodigoBogota,
             Correo = NormalizarCorreo(correo),
+            CorreoCanonico = CanonizarCorreo(correo),
             ClaveHash = "",
             Rol = RolUsuarioEnum.Cliente,
             TipoCuenta = TipoCuenta.Individual,
@@ -199,10 +295,14 @@ public class Usuario
     {
         if (EstaEliminado) throw new ReglaDeNegocioException("La cuenta ya fue eliminada.");
         NombreCompleto = "Usuario eliminado";
-        Localidad = "Bogotá";
+        Localidad = "Sin especificar";
         Correo = $"eliminado-{Id:N}@trueke.invalid";
+        CorreoCanonico = Correo;
         ClaveHash = "";
         GoogleSub = null;
+        NombreComercial = null;
+        Nit = null;
+        BorrarDatosFacturacion();
         DocumentoVerificacionUrl = null;
         MotivoRechazoVerificacion = null;
         SaldoEcoPuntos = 0;
@@ -351,6 +451,45 @@ public class Usuario
     public bool EmpresaVigente(DateTime ahoraUtc)
         => TipoCuenta == TipoCuenta.Empresa && FechaVencimientoSuscripcion.HasValue && FechaVencimientoSuscripcion.Value > ahoraUtc;
 
+    /// <summary>Plan que realmente aplica hoy (un plan vencido vuelve a Individual).</summary>
+    public TipoCuenta PlanEfectivo(DateTime ahoraUtc)
+        => PremiumVigente(ahoraUtc) ? TipoCuenta.Premium : EmpresaVigente(ahoraUtc) ? TipoCuenta.Empresa : TipoCuenta.Individual;
+
+    public bool PlanPagoVigente(DateTime ahoraUtc) => PlanEfectivo(ahoraUtc) != TipoCuenta.Individual;
+
+    public void MarcarRecordatorioVencimiento(DateTime vencimiento) => RecordatorioVencimientoPara = vencimiento;
+
+    /// <summary>
+    /// Reembolso de un mes de plan (retracto o reversión): se descuentan los días pagados. Si el plan queda vencido,
+    /// se pierden los destacados gratis restantes.
+    /// </summary>
+    public void RevertirMesDePlan(TipoCuenta plan, DateTime ahoraUtc)
+    {
+        if (TipoCuenta != plan || FechaVencimientoSuscripcion is null) return;
+        FechaVencimientoSuscripcion = FechaVencimientoSuscripcion.Value.AddDays(-PoliticaEcoPuntos.DuracionSuscripcionDias);
+        if (FechaVencimientoSuscripcion <= ahoraUtc)
+        {
+            FechaVencimientoSuscripcion = ahoraUtc;
+            DestacadosGratisRestantes = 0;
+        }
+    }
+
+    /// <summary>Reembolso de una recarga: se retiran los puntos acreditados que aún queden (el saldo nunca queda negativo).</summary>
+    public int RetirarEcoPuntosHasta(int puntos)
+    {
+        var retirados = Math.Clamp(puntos, 0, SaldoEcoPuntos);
+        SaldoEcoPuntos -= retirados;
+        return retirados;
+    }
+
+    /// <summary>Reembolso de la verificación antes de que un moderador la resuelva.</summary>
+    public void CancelarVerificacionPendiente()
+    {
+        if (EstadoVerificacion != EstadoVerificacion.Pendiente) return;
+        EstadoVerificacion = EstadoVerificacion.NoVerificado;
+        DocumentoVerificacionUrl = null;
+    }
+
     public void ValidarPuedeSuscribirse(TipoCuenta plan, DateTime ahoraUtc)
     {
         if (plan == TipoCuenta.Individual) throw new ReglaDeNegocioException("El plan Individual es gratuito.");
@@ -369,7 +508,7 @@ public class Usuario
     {
         ValidarPuedeSuscribirse(TipoCuenta.Empresa, ahoraUtc);
         Renovar(TipoCuenta.Empresa, ahoraUtc);
-        DestacadosGratisRestantes = 0;
+        DestacadosGratisRestantes = PoliticaEcoPuntos.DestacadosGratisEmpresa; // se resetea en cada renovación pagada
     }
 
     private void Renovar(TipoCuenta plan, DateTime ahoraUtc)
@@ -379,11 +518,11 @@ public class Usuario
         FechaVencimientoSuscripcion = baseFecha.AddDays(PoliticaEcoPuntos.DuracionSuscripcionDias);
     }
 
-    public bool PuedeUsarDestacadoGratis(DateTime ahoraUtc) => PremiumVigente(ahoraUtc) && DestacadosGratisRestantes > 0;
+    public bool PuedeUsarDestacadoGratis(DateTime ahoraUtc) => PlanPagoVigente(ahoraUtc) && DestacadosGratisRestantes > 0;
 
     public void UsarDestacadoGratis(DateTime ahoraUtc)
     {
-        if (!PremiumVigente(ahoraUtc)) throw new ReglaDeNegocioException("Tu plan Premium no está vigente.");
+        if (!PlanPagoVigente(ahoraUtc)) throw new ReglaDeNegocioException("Los destacados gratis son un beneficio de los planes Premium y Empresa vigentes.");
         if (DestacadosGratisRestantes <= 0) throw new ReglaDeNegocioException("No te quedan destacados gratis este mes.");
         DestacadosGratisRestantes--;
     }

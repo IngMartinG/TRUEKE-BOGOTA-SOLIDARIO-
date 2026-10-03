@@ -20,7 +20,10 @@ public sealed class CabecerasSeguridadMiddleware
             if (!esSwagger)
             {
                 h["Content-Security-Policy"] = "default-src 'none'; frame-ancestors 'none'";
-                h["Cache-Control"] = "no-store";
+                // Solo los datos públicos de referencia (p. ej. el catálogo de municipios) se marcan "public" a propósito;
+                // todo lo demás nunca se guarda en cachés.
+                if (!h.CacheControl.ToString().StartsWith("public", StringComparison.Ordinal) || ctx.Response.StatusCode != StatusCodes.Status200OK)
+                    h["Cache-Control"] = "no-store";
             }
             return Task.CompletedTask;
         });

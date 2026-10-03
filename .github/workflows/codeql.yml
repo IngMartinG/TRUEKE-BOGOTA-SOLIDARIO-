@@ -1,0 +1,53 @@
+name: CodeQL (análisis de seguridad del código)
+
+# Busca vulnerabilidades en el código (inyecciones, XSS, secretos, deserialización insegura…) de la API y del front.
+# Los hallazgos aparecen en la pestaña "Security" del repositorio.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "17 6 * * 1" # cada lunes: nuevas reglas de CodeQL también revisan el código ya fusionado
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analizar:
+    name: Analizar (${{ matrix.lenguaje }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - lenguaje: csharp
+            modo: manual
+          - lenguaje: javascript-typescript
+            modo: none
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        if: matrix.lenguaje == 'csharp'
+        with:
+          global-json-file: backend/global.json
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.lenguaje }}
+          build-mode: ${{ matrix.modo }}
+          queries: security-extended
+
+      - name: Compilar la API
+        if: matrix.lenguaje == 'csharp'
+        working-directory: backend
+        run: dotnet build TruekeBogotaSolidario.sln -c Release
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.lenguaje }}"

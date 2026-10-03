@@ -77,7 +77,7 @@ interface Servicio {
         <div class="tarjeta p-5">
           <app-icono nombre="regalo" [tamano]="28" class="text-sol-500" />
           <p class="mt-3 font-display text-3xl font-extrabold">+{{ politica()?.puntosBienvenida ?? 10 }}</p>
-          <p class="text-sm text-tenue">Al registrarte</p>
+          <p class="text-sm text-tenue">Al confirmar tu correo</p>
         </div>
         @for (g of politica()?.ganancias ?? []; track g.modo) {
           <div class="tarjeta p-5">
@@ -89,16 +89,35 @@ interface Servicio {
       </div>
       @if (politica(); as p) {
         <p class="mt-4 text-sm text-tenue">
-          Puedes usar puntos en hasta {{ p.maxTransaccionesConPuntosPorDia }} pagos al día. La reputación máxima es {{ p.reputacionMaxima }}.
-          Los Eco-Puntos no se convierten en dinero.
+          Ganas puntos en hasta {{ p.maxTransaccionesConPuntosPorDia }} intercambios al día, y con una misma persona una vez cada
+          {{ p.diasEntreTransaccionesConPuntosMismaPareja }} días (así nadie puede inflar sus puntos con cuentas de amigos).
+          La reputación máxima es {{ p.reputacionMaxima }}. Los Eco-Puntos no se convierten en dinero.
         </p>
       }
+    </section>
+
+    <!-- Usar puntos: impulsar -->
+    <section class="contenedor mt-14" aria-labelledby="titulo-impulsar">
+      <div class="tarjeta grid gap-6 p-6 sm:p-8 md:grid-cols-[auto_1fr] md:items-center">
+        <span class="grid size-16 place-items-center rounded-2xl bg-sol-100 text-sol-600 dark:bg-sol-500/15"><app-icono nombre="cohete" [tamano]="32" /></span>
+        <div>
+          <h2 id="titulo-impulsar" class="titulo-seccion">Impulsa tus publicaciones con puntos</h2>
+          <p class="mt-2 text-tenue">
+            Por <strong>{{ politica()?.puntosImpulsar ?? 20 }} Eco-Puntos</strong> tu publicación vuelve al primer lugar de «Más recientes».
+            Puedes hacerlo una vez cada {{ politica()?.horasEntreImpulsos ?? 24 }} horas por publicación, desde
+            <a routerLink="/mis-publicaciones" class="enlace">Mis publicaciones</a>.
+          </p>
+        </div>
+      </div>
     </section>
 
     <!-- Servicios -->
     <section class="contenedor mt-16" aria-labelledby="titulo-servicios">
       <h2 id="titulo-servicios" class="titulo-seccion">Servicios y planes</h2>
-      <p class="mt-1 text-tenue">Mientras más Eco-Puntos tengas, mayor es tu descuento.</p>
+      <p class="mt-1 text-tenue">
+        Mientras más Eco-Puntos tengas, mayor es tu descuento. Publicar, intercambiar y donar es gratis: el plan Individual permite
+        {{ politica()?.maxPublicacionesIndividual ?? 50 }} publicaciones activas.
+      </p>
       <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         @for (s of servicios(); track s.concepto) {
           <article class="tarjeta relative flex flex-col p-6" [class.ring-2]="s.destacado" [class.ring-sol-400]="s.destacado">
@@ -115,11 +134,17 @@ interface Servicio {
               }
             </ul>
             <button type="button" class="btn mt-6 w-full" [class]="s.destacado ? 'btn-sol' : 'btn-primario'" (click)="abrirCompra(s.concepto)">
-              {{ s.concepto === 'Destacar' ? 'Destacar una publicación' : s.concepto === 'Verificar' ? 'Verificar mi cuenta' : 'Elegir plan' }}
+              {{ s.concepto === 'Destacar' ? 'Destacar una publicación' : s.concepto === 'Verificar' ? 'Verificar mi cuenta' : planActual() === s.concepto ? 'Renovar plan' : 'Elegir plan' }}
             </button>
           </article>
         }
       </div>
+      <p class="mt-4 text-xs text-tenue">
+        Precios en pesos colombianos{{ politica()?.preciosIncluyenIva ? ', IVA (' + politica()?.ivaPorcentaje + ' %) incluido' : '' }}. Cada pago genera factura electrónica
+        (agrega tus datos en <a routerLink="/cuenta/facturacion" class="enlace">Facturación</a>). Los planes no se renuevan solos: te avisamos
+        3 días antes de que venzan y, si renuevas antes, los días se suman. Tienes derecho de retracto dentro de los 5 días hábiles siguientes a la compra
+        (<a routerLink="/cuenta/soporte" [queryParams]="{ tipo: 'Retracto' }" class="enlace">solicitarlo</a>).
+      </p>
     </section>
 
     <!-- Recargar -->
@@ -128,7 +153,8 @@ interface Servicio {
         <div>
           <h2 id="titulo-recarga" class="titulo-seccion">Recarga Eco-Puntos</h2>
           <p class="mt-2 text-tenue">
-            {{ politica()?.copPorEcoPunto ?? 100 | cop }} = 1 Eco-Punto. Útil para alcanzar un escalón de descuento. El pago se procesa de forma segura con Wompi.
+            {{ politica()?.copPorEcoPunto ?? 100 | cop }} = 1 Eco-Punto. Úsalos para impulsar tus publicaciones ({{ politica()?.puntosImpulsar ?? 20 }} puntos cada vez)
+            o para alcanzar un escalón de descuento. El pago se procesa de forma segura con Wompi.
           </p>
         </div>
         <form class="flex flex-col gap-3 sm:flex-row sm:items-end" (ngSubmit)="recargar()">
@@ -178,20 +204,38 @@ interface Servicio {
           </div>
         }
 
-        @if (cotizacion.value(); as c) {
+        @if (esPlan()) {
+          <dl class="space-y-2 rounded-2xl bg-superficie-2 p-4 text-sm">
+            <div class="flex justify-between"><dt>{{ tituloCompra() }} · {{ politica()?.duracionSuscripcionDias ?? 30 }} días</dt><dd>{{ precioPlan() | cop }}</dd></div>
+            @if (politica()?.preciosIncluyenIva) {
+              <div class="flex justify-between text-tenue"><dt>IVA incluido</dt><dd>{{ ivaDe(precioPlan()) | cop }}</dd></div>
+            }
+            <div class="flex justify-between border-t border-borde pt-2 text-base font-bold"><dt>Total</dt><dd>{{ precioPlan() | cop }}</dd></div>
+          </dl>
+          @if (planActual() === conceptoCompra()) {
+            <p class="text-sm text-tenue">Tu plan vence el {{ resumen.value()?.planVigenteHasta | fecha }}: los {{ politica()?.duracionSuscripcionDias ?? 30 }} días se suman a partir de esa fecha.</p>
+          }
+        } @else if (cotizacion.value(); as c) {
           <dl class="space-y-2 rounded-2xl bg-superficie-2 p-4 text-sm">
             <div class="flex justify-between"><dt>Precio</dt><dd>{{ c.precioBaseCop | cop }}</dd></div>
             @if (c.descuentoPorcentaje) {
               <div class="flex justify-between text-bosque-700 dark:text-bosque-300">
-                <dt>Descuento Eco-Puntos ({{ c.descuentoPorcentaje }}%)</dt><dd>−{{ (c.precioBaseCop ?? 0) - (c.totalCop ?? 0) | cop }}</dd>
+                <dt>Descuento ({{ c.descuentoPorcentaje }}%{{ (resumen.value()?.descuentoPlanPorcentaje ?? 0) > 0 ? ', incluye ' + resumen.value()?.descuentoPlanPorcentaje + '% de tu plan' : '' }})</dt>
+                <dd>−{{ (c.precioBaseCop ?? 0) - (c.totalCop ?? 0) | cop }}</dd>
               </div>
-              <div class="flex justify-between text-tenue"><dt>Puntos que se canjean</dt><dd>{{ c.puntosACanjear | numero }}</dd></div>
+              @if (c.puntosACanjear) {
+                <div class="flex justify-between text-tenue"><dt>Eco-Puntos que se canjean</dt><dd>{{ c.puntosACanjear | numero }}</dd></div>
+              }
+            }
+            @if (c.ivaIncluidoCop) {
+              <div class="flex justify-between text-tenue"><dt>IVA incluido</dt><dd>{{ c.ivaIncluidoCop | cop }}</dd></div>
             }
             <div class="flex justify-between border-t border-borde pt-2 text-base font-bold"><dt>Total</dt><dd>{{ c.totalCop | cop }}</dd></div>
           </dl>
         } @else if (cotizacion.isLoading()) {
           <div class="esqueleto h-28"></div>
         }
+        <p class="text-xs text-tenue">Al pagar aceptas los <a routerLink="/terminos" class="enlace" target="_blank">términos</a>. Recibirás factura electrónica.</p>
         @if (errorCompra()) {
           <p class="error-campo" role="alert">{{ errorCompra() }}</p>
         }
@@ -258,20 +302,48 @@ export default class EcoPuntos {
         icono: 'corona',
         precio: p?.precioPremiumCop ?? 15000,
         extra: ' / mes',
-        beneficios: [`${p?.destacadosGratisPremium ?? 3} destacados gratis al mes`, `${p?.descuentoPremiumPorcentaje ?? 15}% de descuento adicional`],
+        beneficios: [
+          `${p?.destacadosGratisPremium ?? 3} destacados gratis al mes`,
+          `${p?.descuentoPremiumPorcentaje ?? 15}% de descuento adicional en destacar y verificar`,
+          `Hasta ${p?.maxPublicacionesPremium ?? 150} publicaciones activas`,
+          'Gráfica diaria de vistas de tus publicaciones',
+          'Insignia Premium en tu perfil',
+        ],
         destacado: true,
       },
       {
         concepto: 'Empresa',
         titulo: 'Empresa',
-        descripcion: 'Para fundaciones, tiendas y emprendimientos circulares.',
+        descripcion: 'Para tiendas de segunda mano, reparadores, fundaciones y emprendimientos circulares.',
         icono: 'edificio',
         precio: p?.precioEmpresaCop ?? 50000,
         extra: ' / mes',
-        beneficios: ['Perfil de empresa', `Vigencia de ${p?.duracionSuscripcionDias ?? 30} días`],
+        beneficios: [
+          `${p?.destacadosGratisEmpresa ?? 10} destacados gratis al mes`,
+          `${p?.descuentoEmpresaPorcentaje ?? 20}% de descuento adicional`,
+          `Hasta ${p?.maxPublicacionesEmpresa ?? 1000} publicaciones activas`,
+          'Nombre comercial y NIT en tus publicaciones',
+          'Vende sin el límite de artículos para cuentas sin verificar',
+          'Gráfica diaria de vistas y factura a nombre de tu empresa',
+        ],
       },
     ];
   });
+
+  protected readonly planActual = computed(() => {
+    const t = this.resumen.value()?.tipoCuenta;
+    return t === 'Premium' || t === 'Empresa' ? t : null;
+  });
+  protected readonly esPlan = computed(() => this.conceptoCompra() === 'Premium' || this.conceptoCompra() === 'Empresa');
+  protected readonly precioPlan = computed(() =>
+    this.conceptoCompra() === 'Empresa' ? (this.politica()?.precioEmpresaCop ?? 50000) : (this.politica()?.precioPremiumCop ?? 15000),
+  );
+
+  /** Parte del precio que corresponde al IVA (los precios lo incluyen). */
+  protected ivaDe(total: number): number {
+    const iva = this.politica()?.ivaPorcentaje ?? 0;
+    return iva > 0 ? total - Math.round((total / (1 + iva / 100)) * 100) / 100 : 0;
+  }
 
   // Recarga
   protected readonly montoRecarga = signal<number | null>(20000);
@@ -291,8 +363,12 @@ export default class EcoPuntos {
   protected readonly pagando = signal(false);
   protected readonly errorCompra = signal<string | null>(null);
   protected readonly tituloCompra = computed(() => this.servicios().find((s) => s.concepto === this.conceptoCompra())?.titulo ?? '');
+  /** Solo Destacar y Verificar tienen descuento por Eco-Puntos (los planes tienen precio fijo). */
   protected readonly cotizacion = rxResource({
-    params: () => (this.compraAbierta() && this.conceptoCompra() ? this.conceptoCompra()! : undefined),
+    params: () => {
+      const c = this.conceptoCompra();
+      return this.compraAbierta() && (c === 'Destacar' || c === 'Verificar') ? c : undefined;
+    },
     stream: ({ params }) => this.api.cotizacion(params),
   });
   protected readonly compraLista = computed(() => {

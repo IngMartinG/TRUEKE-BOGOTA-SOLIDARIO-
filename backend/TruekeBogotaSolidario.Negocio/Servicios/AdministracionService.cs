@@ -1,3 +1,4 @@
+using System.Text;
 using Microsoft.Extensions.Logging;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
@@ -22,10 +23,24 @@ public interface IAdministracionService
     Task<UsuarioAdminDto> SuspenderAsync(Guid actorId, Guid usuarioId, string motivo, int? dias);
     Task<UsuarioAdminDto> ReactivarAsync(Guid actorId, Guid usuarioId);
     Task<PaginaDto<PagoAdminDto>> ListarPagosAsync(Guid actorId, EstadoPagoDto estado, int pagina, int tamano);
+    // Facturación y PQR (Administrador y SuperUsuario)
+    Task<PaginaDto<FacturaAdminDto>> ListarFacturasAsync(Guid actorId, EstadoFacturaDto estado, int pagina, int tamano);
+    /// <summary>Registra el número y el CUFE asignados por la DIAN (o el proveedor tecnológico) a una factura pendiente.</summary>
+    Task<FacturaAdminDto> MarcarFacturaEmitidaAsync(Guid actorId, Guid facturaId, string numeroDian, string cufe);
+    /// <summary>CSV con los datos del comprador para cargar las facturas en el sistema de facturación.</summary>
+    Task<string> ExportarFacturasCsvAsync(Guid actorId, EstadoFacturaDto estado);
+    Task<PaginaDto<PqrAdminDto>> ListarPqrAsync(Guid actorId, EstadoPqrDto estado, int pagina, int tamano);
+    Task<PqrAdminDto> ResponderPqrAsync(Guid actorId, Guid pqrId, string respuesta);
     // Solo SuperUsuario
     Task<UsuarioDto> CambiarRolAsync(Guid actorId, Guid usuarioObjetivoId, RolDto nuevoRol);
-    /// <summary>Registra que el dinero ya se devolvió por el panel de Wompi (la API nunca mueve dinero hacia afuera).</summary>
+    /// <summary>
+    /// Registra que el dinero ya se devolvió por el panel de Wompi (la API nunca mueve dinero hacia afuera). Si el pago
+    /// estaba aprobado, revierte el beneficio (plan, puntos, destacado o verificación pendiente) y marca la factura.
+    /// </summary>
     Task<PagoAdminDto> MarcarReembolsadoAsync(Guid actorId, string referencia, string nota);
+    Task<IngresosDto> ObtenerIngresosAsync(Guid actorId, RangoFechasRequest r);
+    /// <summary>Pagos cobrados en el rango con su factura (para contabilidad y conciliación con Wompi).</summary>
+    Task<string> ExportarIngresosCsvAsync(Guid actorId, RangoFechasRequest r);
 }
 
 /// <summary>
@@ -45,15 +60,18 @@ public sealed class AdministracionService : IAdministracionService
     private readonly IAlmacenArchivos _almacen;
     private readonly IPagoRepository _pagos;
     private readonly ICorreoSaliente _correo;
+    private readonly IFacturaRepository _facturas;
+    private readonly IPqrRepository _pqrs;
     private readonly ILogger<AdministracionService> _log;
 
     public AdministracionService(IUsuarioRepository usuarios, IPublicacionRepository pubs, IUnidadDeTrabajo uow,
         IAuditoriaRepository auditoria, ISesionService sesiones, TimeProvider reloj, INotificador notificador,
         ISesionRefreshRepository refrescos, IAlmacenArchivos almacen, IPagoRepository pagos, ICorreoSaliente correo,
-        ILogger<AdministracionService> log)
+        IFacturaRepository facturas, IPqrRepository pqrs, ILogger<AdministracionService> log)
     {
         _usuarios = usuarios; _pubs = pubs; _uow = uow; _auditoria = auditoria; _sesiones = sesiones; _reloj = reloj;
-        _notificador = notificador; _refrescos = refrescos; _almacen = almacen; _pagos = pagos; _correo = correo; _log = log;
+        _notificador = notificador; _refrescos = refrescos; _almacen = almacen; _pagos = pagos; _correo = correo;
+        _facturas = facturas; _pqrs = pqrs; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
@@ -130,11 +148,162 @@ public sealed class AdministracionService : IAdministracionService
     {
         await ExigirRolAsync(actorId, RolUsuarioEnum.SuperUsuario);
         var p = await _pagos.ObtenerPorReferenciaAsync(referencia) ?? throw new NoEncontradoException("Pago no encontrado.");
+        var ahora = Ahora;
+        var estabaAprobado = p.Estado == EstadoPago.Aprobado;
         p.MarcarReembolsado(nota.Trim());
+        if (estabaAprobado) await RevertirBeneficioAsync(p, ahora);
+        (await _facturas.ObtenerPorPagoAsync(p.Id))?.RegistrarReembolso($"Reembolsado: {nota.Trim()}");
         Auditar(actorId, "PAGO_REEMBOLSADO", "Pago", p.Id, nota);
         await _uow.GuardarCambiosAsync();
         await NotificarAsync(p.UsuarioId, TiposNotificacion.PagoReembolsado, $"Te reembolsamos {p.MontoCop:N0} COP ({p.Concepto}).", null);
         return APagoAdmin(p);
+    }
+
+    /// <summary>Retira lo que el pago dio: un reembolso no puede dejar el beneficio activo.</summary>
+    private async Task RevertirBeneficioAsync(Pago p, DateTime ahora)
+    {
+        var u = await _usuarios.ObtenerPorIdAsync(p.UsuarioId);
+        if (u is null) return;
+        switch (p.Concepto)
+        {
+            case ConceptoPago.Premium: u.RevertirMesDePlan(TipoCuenta.Premium, ahora); break;
+            case ConceptoPago.Empresa: u.RevertirMesDePlan(TipoCuenta.Empresa, ahora); break;
+            case ConceptoPago.Recarga:
+                var retirados = u.RetirarEcoPuntosHasta(p.MontoCop / PoliticaEcoPuntos.CopPorEcoPunto);
+                _log.LogInformation("Reembolso {Referencia}: {Puntos} Eco-Puntos retirados", p.Referencia, retirados);
+                break;
+            case ConceptoPago.Destacar:
+                if (p.PublicacionId is { } pubId && await _pubs.ObtenerPorIdAsync(pubId) is { } pub) pub.QuitarDestacado(ahora);
+                break;
+            case ConceptoPago.Verificar:
+                u.CancelarVerificacionPendiente(); // si ya se aprobó, el servicio se prestó y la verificación se conserva
+                break;
+        }
+    }
+
+    // ---------------- Facturación ----------------
+    public async Task<PaginaDto<FacturaAdminDto>> ListarFacturasAsync(Guid actorId, EstadoFacturaDto estado, int pagina, int tamano)
+    {
+        await ExigirRolAsync(actorId, RolUsuarioEnum.Administrador);
+        var (items, total) = await _facturas.ListarPorEstadoAsync((EstadoFactura)(int)estado, pagina, tamano);
+        return new PaginaDto<FacturaAdminDto>(items.Select(Mapeos.AFacturaAdminDto).ToList(), total, Math.Max(pagina, 1), Math.Clamp(tamano, 1, 100));
+    }
+
+    public async Task<FacturaAdminDto> MarcarFacturaEmitidaAsync(Guid actorId, Guid facturaId, string numeroDian, string cufe)
+    {
+        await ExigirRolAsync(actorId, RolUsuarioEnum.Administrador);
+        var f = await _facturas.ObtenerAsync(facturaId) ?? throw new NoEncontradoException("Factura no encontrada.");
+        f.MarcarEmitida(numeroDian, cufe, Ahora);
+        Auditar(actorId, "FACTURA_EMITIDA", "Factura", f.Id, f.NumeroDian);
+        await _uow.GuardarCambiosAsync();
+        await NotificarAsync(f.UsuarioId, TiposNotificacion.FacturaEmitida,
+            $"Tu factura electrónica {f.NumeroDian} por {f.TotalCop:N0} COP ya fue emitida. Llegará a {f.CompradorCorreo}.", null);
+        return Mapeos.AFacturaAdminDto(f);
+    }
+
+    public async Task<string> ExportarFacturasCsvAsync(Guid actorId, EstadoFacturaDto estado)
+    {
+        await ExigirRolAsync(actorId, RolUsuarioEnum.Administrador);
+        var (items, _) = await _facturas.ListarPorEstadoAsync((EstadoFactura)(int)estado, 1, 100);
+        var sb = new StringBuilder();
+        Csv.Fila(sb, "Id", "Referencia", "FechaUtc", "Concepto", "Descripcion", "TotalCop", "BaseCop", "IvaCop", "IvaPorcentaje",
+            "TipoDocumento", "Documento", "Nombre", "Correo", "Direccion", "Municipio", "Estado", "NumeroDian", "Cufe", "RequiereNotaCredito");
+        foreach (var f in items)
+            Csv.Fila(sb, f.Id, f.Referencia, f.FechaUtc, f.Concepto, f.Descripcion, f.TotalCop, f.BaseCop, f.IvaCop, f.IvaPorcentaje,
+                f.CompradorTipoDocumento?.ToString() ?? "ConsumidorFinal", f.CompradorDocumento, f.CompradorNombre, f.CompradorCorreo,
+                f.CompradorDireccion, f.CompradorMunicipioCodigo is null ? null : Divipola.NombreCompleto(f.CompradorMunicipioCodigo),
+                f.Estado, f.NumeroDian, f.Cufe, f.RequiereNotaCredito ? "Sí" : "No");
+        Auditar(actorId, "FACTURAS_EXPORTADAS", "Factura", Guid.Empty, $"{estado}: {items.Count}");
+        await _uow.GuardarCambiosAsync();
+        return sb.ToString();
+    }
+
+    // ---------------- PQR ----------------
+    private static PqrAdminDto APqrAdmin(Pqr p, Usuario? u, DateTime ahora)
+        => new(p.Id, p.Radicado, p.Tipo.ToString(), p.Asunto, p.Descripcion, p.PagoReferencia, p.Estado.ToString(), p.FechaUtc,
+            p.FechaLimiteUtc, p.Estado == EstadoPqr.Abierta && p.FechaLimiteUtc < ahora, p.Respuesta, p.FechaRespuestaUtc,
+            p.UsuarioId, u?.NombreCompleto ?? "Usuario eliminado", u?.Correo ?? "");
+
+    public async Task<PaginaDto<PqrAdminDto>> ListarPqrAsync(Guid actorId, EstadoPqrDto estado, int pagina, int tamano)
+    {
+        await ExigirRolAsync(actorId, RolUsuarioEnum.Administrador);
+        var (items, total) = await _pqrs.ListarPorEstadoAsync((EstadoPqr)(int)estado, pagina, tamano);
+        var ahora = Ahora;
+        var resultado = new List<PqrAdminDto>(items.Count);
+        foreach (var p in items) resultado.Add(APqrAdmin(p, await _usuarios.ObtenerPorIdAsync(p.UsuarioId), ahora));
+        return new PaginaDto<PqrAdminDto>(resultado, total, Math.Max(pagina, 1), Math.Clamp(tamano, 1, 50));
+    }
+
+    public async Task<PqrAdminDto> ResponderPqrAsync(Guid actorId, Guid pqrId, string respuesta)
+    {
+        await ExigirRolAsync(actorId, RolUsuarioEnum.Administrador);
+        var p = await _pqrs.ObtenerAsync(pqrId) ?? throw new NoEncontradoException("Solicitud no encontrada.");
+        var ahora = Ahora;
+        p.Responder(actorId, respuesta, ahora);
+        Auditar(actorId, "PQR_RESPONDIDA", "Pqr", p.Id, p.Radicado);
+        await _uow.GuardarCambiosAsync();
+        var u = await _usuarios.ObtenerPorIdAsync(p.UsuarioId);
+        if (u is not null && !u.EstaEliminado)
+        {
+            await NotificarAsync(u.Id, TiposNotificacion.PqrRespondida, $"Respondimos tu solicitud {p.Radicado}.", p.Id);
+            _correo.Encolar(PlantillaCorreo.Crear(u.Correo, $"Respuesta a tu solicitud {p.Radicado}",
+                $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:",
+                new[] { $"Asunto: {p.Asunto}", p.Respuesta! }));
+        }
+        return APqrAdmin(p, u, ahora);
+    }
+
+    // ---------------- Ingresos ----------------
+    private (DateTime Desde, DateTime Hasta) Rango(RangoFechasRequest r)
+    {
+        var hasta = (r.Hasta ?? Ahora).ToUniversalTime();
+        var desde = (r.Desde ?? hasta.AddMonths(-12)).ToUniversalTime();
+        if (desde >= hasta) throw new ReglaDeNegocioException("La fecha inicial debe ser anterior a la final.");
+        if (hasta - desde > TimeSpan.FromDays(3 * 366)) throw new ReglaDeNegocioException("El rango máximo es de 3 años.");
+        return (desde, hasta);
+    }
+
+    public async Task<IngresosDto> ObtenerIngresosAsync(Guid actorId, RangoFechasRequest r)
+    {
+        await ExigirRolAsync(actorId, RolUsuarioEnum.SuperUsuario);
+        var (desde, hasta) = Rango(r);
+        var resumen = await _pagos.ResumirIngresosAsync(desde, hasta);
+        var (premium, empresa) = await _usuarios.ContarPlanesVigentesAsync(Ahora);
+        var (_, facturasPendientes) = await _facturas.ListarPorEstadoAsync(EstadoFactura.Pendiente, 1, 1);
+        var (_, pqrAbiertas) = await _pqrs.ListarPorEstadoAsync(EstadoPqr.Abierta, 1, 1);
+
+        long Suma(IEnumerable<ResumenIngresos> xs) => xs.Sum(x => x.TotalCop);
+        var cobrado = Suma(resumen); // aprobados + luego reembolsados (todo lo que entró)
+        var reembolsado = Suma(resumen.Where(x => x.Estado == EstadoPago.Reembolsado));
+        var porMes = resumen.GroupBy(x => (x.Anio, x.Mes)).OrderBy(g => g.Key)
+            .Select(g => new IngresoMesDto(g.Key.Anio, g.Key.Mes, Suma(g), Suma(g.Where(x => x.Estado == EstadoPago.Reembolsado)), g.Sum(x => x.Cantidad)))
+            .ToList();
+        var porConcepto = resumen.GroupBy(x => x.Concepto).OrderByDescending(g => Suma(g))
+            .Select(g => new IngresoConceptoDto(g.Key.ToString(), Suma(g), Suma(g.Where(x => x.Estado == EstadoPago.Reembolsado)), g.Sum(x => x.Cantidad)))
+            .ToList();
+        var recurrente = (long)premium * PoliticaEcoPuntos.PrecioPremiumCop + (long)empresa * PoliticaEcoPuntos.PrecioEmpresaCop;
+        return new IngresosDto(desde, hasta, cobrado, reembolsado, cobrado - reembolsado, resumen.Sum(x => x.Cantidad), premium, empresa,
+            recurrente, facturasPendientes, pqrAbiertas, porMes, porConcepto);
+    }
+
+    public async Task<string> ExportarIngresosCsvAsync(Guid actorId, RangoFechasRequest r)
+    {
+        await ExigirRolAsync(actorId, RolUsuarioEnum.SuperUsuario);
+        var (desde, hasta) = Rango(r);
+        var pagos = await _pagos.ListarCobradosAsync(desde, hasta, 50_000);
+        var facturas = (await _facturas.ListarPorPagosAsync(pagos.Select(p => p.Id).ToList())).ToDictionary(f => f.PagoId);
+        var sb = new StringBuilder();
+        Csv.Fila(sb, "Referencia", "FechaResolucionUtc", "Concepto", "Estado", "MontoCop", "PuntosCanjeados", "TransaccionWompi", "UsuarioId",
+            "FacturaEstado", "NumeroDian", "Cufe", "BaseCop", "IvaCop");
+        foreach (var p in pagos)
+        {
+            facturas.TryGetValue(p.Id, out var f);
+            Csv.Fila(sb, p.Referencia, p.FechaResolucionUtc, p.Concepto, p.Estado, p.MontoCop, p.PuntosCanjeados, p.ProveedorTransaccionId, p.UsuarioId,
+                f?.Estado, f?.NumeroDian, f?.Cufe, f?.BaseCop, f?.IvaCop);
+        }
+        Auditar(actorId, "INGRESOS_EXPORTADOS", "Pago", Guid.Empty, $"{desde:yyyy-MM-dd}..{hasta:yyyy-MM-dd}: {pagos.Count}");
+        await _uow.GuardarCambiosAsync();
+        return sb.ToString();
     }
 
     private Task NotificarAsync(Guid usuarioId, string tipo, string mensaje, Guid? recursoId)

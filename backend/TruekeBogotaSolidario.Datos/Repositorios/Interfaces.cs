@@ -8,6 +8,9 @@ public class FiltroPublicaciones
 {
     public int? CategoriaId { get; set; }
     public ModoTransaccion? Modo { get; set; }
+    public CondicionProducto? Condicion { get; set; }
+    public string? DepartamentoCodigo { get; set; }
+    public string? MunicipioCodigo { get; set; }
     public string? Localidad { get; set; }
     public string? Texto { get; set; }
     public decimal? PrecioMin { get; set; }
@@ -34,6 +37,14 @@ public interface IUsuarioRepository
     Task<Usuario?> ObtenerPorCorreoAsync(string correoNormalizado);
     Task<Usuario?> ObtenerPorGoogleSubAsync(string googleSub);
     Task<bool> ExisteCorreoAsync(string correoNormalizado);
+    /// <summary>Busca por la forma canónica del correo (sin alias "+…" ni puntos de Gmail).</summary>
+    Task<Usuario?> ObtenerPorCorreoCanonicoAsync(string correoCanonico);
+    Task<bool> ExisteCorreoCanonicoAsync(string correoCanonico);
+    /// <summary>Administradores y SuperUsuarios activos (para alertas internas).</summary>
+    Task<IReadOnlyList<Guid>> ListarIdsModeradoresAsync();
+    /// <summary>Con tracking: planes pagos que vencen entre las fechas y a los que aún no se les envió recordatorio.</summary>
+    Task<IReadOnlyList<Usuario>> ListarPlanesPorVencerAsync(DateTime desdeUtc, DateTime hastaUtc, int maximo);
+    Task<(int Premium, int Empresa)> ContarPlanesVigentesAsync(DateTime ahoraUtc);
     Task<IReadOnlyList<Usuario>> ObtenerPorVerificacionAsync(EstadoVerificacion estado);
     Task<int> ContarPorRolAsync(RolUsuarioEnum rol);
     /// <summary>Búsqueda para administración por nombre o correo (contiene). Más recientes primero.</summary>
@@ -64,6 +75,10 @@ public interface IPublicacionRepository
     Task<IReadOnlyList<Publicacion>> ListarPorIdsAsync(IReadOnlyCollection<Guid> ids);
     Task<IReadOnlyList<Publicacion>> ListarPorPropietarioAsync(Guid propietarioId);
     Task<int> ContarActivasPorUsuarioAsync(Guid usuarioId);
+    /// <summary>Publicaciones de venta (modo Compra) disponibles o en negociación del usuario, sin contar <paramref name="excepto"/>.</summary>
+    Task<int> ContarVentasActivasAsync(Guid usuarioId, Guid? excepto = null);
+    /// <summary>Destacadas vigentes y visibles, en orden aleatorio (vitrina del catálogo).</summary>
+    Task<IReadOnlyList<Publicacion>> ListarDestacadasAsync(string? departamentoCodigo, string? municipioCodigo, int? categoriaId, int maximo, DateTime ahoraUtc);
     /// <summary>Disponibles o en negociación del usuario, CON tracking (para cancelarlas).</summary>
     Task<IReadOnlyList<Publicacion>> ListarActivasParaActualizarAsync(Guid propietarioId);
     void Agregar(Publicacion publicacion);
@@ -88,6 +103,8 @@ public interface ISolicitudRepository
     Task<IReadOnlyList<Guid>> ListarParaCierreAutomaticoAsync(DateTime limiteConConfirmacion, DateTime limiteSinConfirmacion, int maximo);
     /// <summary>En curso (Pendientes o Aceptadas) enviadas o recibidas por el usuario, CON tracking e incluyendo la Publicacion.</summary>
     Task<IReadOnlyList<Solicitud>> ListarPendientesDelUsuarioAsync(Guid usuarioId);
+    /// <summary>Total de solicitudes que ha recibido la publicación (interés), en cualquier estado.</summary>
+    Task<int> ContarPorPublicacionAsync(Guid publicacionId);
     void Agregar(Solicitud solicitud);
 }
 
@@ -95,6 +112,8 @@ public interface ITransaccionRepository
 {
     /// <summary>Transacciones desde <paramref name="desdeUtc"/> en las que ESTE usuario recibió puntos (tope anti-farmeo).</summary>
     Task<int> ContarDesdeAsync(Guid usuarioId, DateTime desdeUtc);
+    /// <summary>¿Estas dos personas ya completaron, desde la fecha, un intercambio que otorgó puntos (en cualquier sentido)?</summary>
+    Task<bool> ExisteConPuntosEntreDesdeAsync(Guid usuarioA, Guid usuarioB, DateTime desdeUtc);
     Task<IReadOnlyList<Transaccion>> ListarPorUsuarioAsync(Guid usuarioId);
     void Agregar(Transaccion transaccion);
 }
@@ -110,7 +129,43 @@ public interface IPagoRepository
     Task<IReadOnlyList<Pago>> ListarPorUsuarioAsync(Guid usuarioId, int maximo);
     /// <summary>Para administración (p. ej. RequiereRevision). Más antiguos primero.</summary>
     Task<(IReadOnlyList<Pago> Items, int Total)> ListarPorEstadoAsync(EstadoPago estado, int pagina, int tamano);
+    /// <summary>Ingresos agrupados por mes, concepto y estado (aprobados y reembolsados) entre las fechas de resolución.</summary>
+    Task<IReadOnlyList<ResumenIngresos>> ResumirIngresosAsync(DateTime desdeUtc, DateTime hastaUtc);
+    /// <summary>Pagos aprobados o reembolsados resueltos entre las fechas (exportación contable), más antiguos primero.</summary>
+    Task<IReadOnlyList<Pago>> ListarCobradosAsync(DateTime desdeUtc, DateTime hastaUtc, int maximo);
     void Agregar(Pago pago);
+}
+
+public sealed record ResumenIngresos(int Anio, int Mes, ConceptoPago Concepto, EstadoPago Estado, int Cantidad, long TotalCop);
+
+public interface IFacturaRepository
+{
+    Task<Factura?> ObtenerAsync(Guid id);
+    Task<Factura?> ObtenerPorPagoAsync(Guid pagoId);
+    Task<IReadOnlyList<Factura>> ListarPorUsuarioAsync(Guid usuarioId, int maximo);
+    /// <summary>Más antiguas primero (cola de emisión).</summary>
+    Task<(IReadOnlyList<Factura> Items, int Total)> ListarPorEstadoAsync(EstadoFactura estado, int pagina, int tamano);
+    Task<IReadOnlyList<Factura>> ListarPorPagosAsync(IReadOnlyCollection<Guid> pagoIds);
+    void Agregar(Factura factura);
+}
+
+public interface IPqrRepository
+{
+    Task<Pqr?> ObtenerAsync(Guid id);
+    Task<IReadOnlyList<Pqr>> ListarPorUsuarioAsync(Guid usuarioId, int maximo);
+    /// <summary>Las de plazo más próximo primero.</summary>
+    Task<(IReadOnlyList<Pqr> Items, int Total)> ListarPorEstadoAsync(EstadoPqr estado, int pagina, int tamano);
+    Task<bool> ExisteAbiertaParaPagoAsync(string pagoReferencia);
+    Task<int> ContarDelUsuarioDesdeAsync(Guid usuarioId, DateTime desdeUtc);
+    void Agregar(Pqr pqr);
+}
+
+public interface IEstadisticaRepository
+{
+    /// <summary>Suma (y guarda) vistas por publicación y día. Seguro con varias instancias de la API a la vez.</summary>
+    Task SumarVistasAsync(IReadOnlyCollection<(Guid PublicacionId, DateTime Dia, int Vistas)> vistas);
+    Task<IReadOnlyList<EstadisticaPublicacionDiaria>> SerieAsync(Guid publicacionId, DateTime desdeUtc);
+    Task<IReadOnlyDictionary<Guid, int>> TotalesAsync(IReadOnlyCollection<Guid> publicacionIds);
 }
 
 /// <summary>Usado por el health check de readiness.</summary>
@@ -201,6 +256,8 @@ public interface IFavoritoRepository
     /// <summary>Ids de las favoritas, más recientes primero.</summary>
     Task<(IReadOnlyList<Guid> Ids, int Total)> ListarAsync(Guid usuarioId, int pagina, int tamano);
     Task<int> ContarAsync(Guid usuarioId);
+    /// <summary>Cuántas personas guardaron la publicación.</summary>
+    Task<int> ContarPorPublicacionAsync(Guid publicacionId);
     void Agregar(Favorito favorito);
     void Quitar(Favorito favorito);
 }
@@ -214,6 +271,8 @@ public interface ICalificacionRepository
     /// <summary>Recibidas por el usuario, más recientes primero; incluye Autor.</summary>
     Task<(IReadOnlyList<Calificacion> Items, int Total)> ListarRecibidasAsync(Guid calificadoId, int pagina, int tamano);
     Task<IReadOnlyList<Calificacion>> ListarDelAutorAsync(Guid autorId, int maximo);
+    /// <summary>¿El autor ya dejó a esa persona, desde la fecha, una calificación que cuenta en el promedio?</summary>
+    Task<bool> ExisteContadaEntreDesdeAsync(Guid autorId, Guid calificadoId, DateTime desdeUtc);
     void Agregar(Calificacion calificacion);
 }
 

@@ -3,7 +3,14 @@ import type {
   AccionDenunciaDto,
   DenunciaAgrupadaDto,
   EstadoDenunciaDto,
+  EstadoFacturaDto,
   EstadoPagoDto,
+  EstadoPqrDto,
+  FacturaAdminDto,
+  FacturaAdminDtoPaginaDto,
+  IngresosDto,
+  PqrAdminDto,
+  PqrAdminDtoPaginaDto,
   PagoAdminDto,
   PagoAdminDtoPaginaDto,
   RolDto,
@@ -48,4 +55,20 @@ export class AdminApi {
     this.api.get<PagoAdminDtoPaginaDto>('/admin/pagos', { params: { estado, pagina, tamano } });
   marcarReembolsado = (ref: string, nota: string) =>
     this.api.post<PagoAdminDto>(`/admin/pagos/${seg(ref)}/reembolsado`, { nota });
+
+  facturas = (estado: EstadoFacturaDto, pagina = 1, tamano = 20) =>
+    this.api.get<FacturaAdminDtoPaginaDto>('/admin/facturas', { params: { estado, pagina, tamano } });
+  marcarFacturaEmitida = (id: string, numeroDian: string, cufe: string) =>
+    this.api.post<FacturaAdminDto>(`/admin/facturas/${seg(id)}/emitida`, { numeroDian, cufe }, { silencioso: true });
+  facturasCsv = (estado: EstadoFacturaDto) => this.api.archivo('/admin/facturas.csv', { params: { estado } });
+
+  pqr = (estado: EstadoPqrDto, pagina = 1, tamano = 20) =>
+    this.api.get<PqrAdminDtoPaginaDto>('/admin/pqr', { params: { estado, pagina, tamano } });
+  responderPqr = (id: string, respuesta: string) =>
+    this.api.post<PqrAdminDto>(`/admin/pqr/${seg(id)}/responder`, { respuesta }, { silencioso: true });
+
+  ingresos = (desde?: string | null, hasta?: string | null) =>
+    this.api.get<IngresosDto>('/admin/ingresos', { params: { desde, hasta } });
+  ingresosCsv = (desde?: string | null, hasta?: string | null) =>
+    this.api.archivo('/admin/ingresos.csv', { params: { desde, hasta } });
 }

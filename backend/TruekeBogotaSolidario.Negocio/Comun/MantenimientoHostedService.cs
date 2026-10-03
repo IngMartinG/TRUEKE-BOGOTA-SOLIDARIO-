@@ -1,7 +1,11 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using TruekeBogotaSolidario.Datos.Common;
+using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Datos.Repositorios;
+using TruekeBogotaSolidario.Negocio.Correo;
 using TruekeBogotaSolidario.Negocio.Servicios;
 
 namespace TruekeBogotaSolidario.Negocio.Comun;
@@ -35,6 +39,14 @@ public sealed class MantenimientoHostedService : BackgroundService
             catch (Exception ex) { _log.LogError(ex, "Fallo en el mantenimiento periódico"); }
             try { await CerrarSolicitudesVencidasAsync(ct); }
             catch (Exception ex) when (ex is not OperationCanceledException) { _log.LogError(ex, "Fallo cerrando solicitudes vencidas"); }
+            try { await RecordarVencimientosAsync(); }
+            catch (Exception ex) { _log.LogError(ex, "Fallo enviando recordatorios de vencimiento de planes"); }
+            try
+            {
+                using var scope = _fabrica.CreateScope();
+                await scope.ServiceProvider.GetRequiredService<IFacturacionService>().EmitirSimuladasAsync(200);
+            }
+            catch (Exception ex) { _log.LogError(ex, "Fallo en la facturación simulada"); }
 
             try { await Task.Delay(Intervalo, ct); }
             catch (OperationCanceledException) { break; }
@@ -62,6 +74,44 @@ public sealed class MantenimientoHostedService : BackgroundService
         }
         if (ids.Count > 0) _log.LogInformation("Cierre automático: {Total} solicitudes procesadas", ids.Count);
         return ids.Count;
+    }
+
+    /// <summary>
+    /// Avisa (una sola vez por vencimiento) a quien tiene un plan Premium o Empresa que vence en los próximos días.
+    /// Sin cobro automático, este aviso es lo que evita que el plan se pierda por olvido.
+    /// </summary>
+    internal async Task<int> RecordarVencimientosAsync()
+    {
+        var ahora = _reloj.GetUtcNow().UtcDateTime;
+        using var scope = _fabrica.CreateScope();
+        var sp = scope.ServiceProvider;
+        var usuarios = await sp.GetRequiredService<IUsuarioRepository>()
+            .ListarPlanesPorVencerAsync(ahora, ahora.AddDays(PoliticaEcoPuntos.DiasRecordatorioVencimiento), 200);
+        if (usuarios.Count == 0) return 0;
+        foreach (var u in usuarios) u.MarcarRecordatorioVencimiento(u.FechaVencimientoSuscripcion!.Value);
+        await sp.GetRequiredService<IUnidadDeTrabajo>().GuardarCambiosAsync(); // primero se marca: nunca se envía dos veces
+
+        var notificador = sp.GetRequiredService<INotificador>();
+        var correo = sp.GetRequiredService<ICorreoSaliente>();
+        var frontend = sp.GetRequiredService<IOptions<UrlsOpciones>>().Value.Frontend.TrimEnd('/');
+        foreach (var u in usuarios)
+        {
+            var plan = u.TipoCuenta == TipoCuenta.Empresa ? "Empresa" : "Premium";
+            var vence = u.FechaVencimientoSuscripcion!.Value;
+            await notificador.NotificarAsync(u.Id, TiposNotificacion.PlanPorVencer,
+                $"Tu plan {plan} vence el {vence:yyyy-MM-dd}. Renuévalo para no perder tus beneficios.");
+            correo.Encolar(PlantillaCorreo.Crear(u.Correo, $"Tu plan {plan} vence pronto",
+                $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:",
+                new[]
+                {
+                    $"Tu plan {plan} de Trueke vence el {vence:yyyy-MM-dd} (UTC).",
+                    "Si lo renuevas antes, los días se suman al final del periodo actual: no pierdes ni un día.",
+                    "Al vencer, tus publicaciones siguen visibles, pero pierdes los destacados gratis, el descuento y las estadísticas detalladas."
+                },
+                ("Renovar mi plan", $"{frontend}/eco-puntos")));
+        }
+        _log.LogInformation("Recordatorios de vencimiento enviados: {Total}", usuarios.Count);
+        return usuarios.Count;
     }
 
     internal async Task<int> LimpiarAsync()
