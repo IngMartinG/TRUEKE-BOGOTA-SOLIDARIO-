@@ -20,7 +20,7 @@ RUN dotnet publish TruekeBogotaSolidario.Presentacion/TruekeBogotaSolidario.Pres
     -c Release -o /app/publish --no-restore /p:UseAppHost=false /p:DebugType=None /p:DebugSymbols=false
 
 # ---------- 2) Ejecución (solo runtime, sin SDK ni código fuente) ----------
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
 
 ENV ASPNETCORE_ENVIRONMENT=Production \
