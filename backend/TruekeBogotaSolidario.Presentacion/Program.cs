@@ -45,6 +45,8 @@ if (esProduccion)
         throw new InvalidOperationException("Correo:Proveedor=Simulado no está permitido en Producción (configura Correo:Smtp).");
     if (!Uri.TryCreate(config["Urls:Frontend"], UriKind.Absolute, out var front) || front.Scheme != Uri.UriSchemeHttps)
         throw new InvalidOperationException("Urls:Frontend debe ser la URL https del front (los enlaces de los correos apuntan ahí).");
+    if (string.Equals(config["Facturacion:Modo"], "Simulado", StringComparison.OrdinalIgnoreCase))
+        throw new InvalidOperationException("Facturacion:Modo=Simulado no está permitido en Producción (usa Manual: el equipo registra número y CUFE de la DIAN).");
 }
 
 // ---------- Kestrel: sin cabecera Server, cuerpo máximo 1 MB ----------
@@ -76,12 +78,17 @@ var signalR = builder.Services.AddSignalR(o =>
     o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
     o.PayloadSerializerOptions.Converters.Add(new FechaUtcJsonConverter());
 });
-if (config.GetValue<bool>("Redis:Habilitado"))
+var redisHabilitado = config.GetValue<bool>("Redis:Habilitado");
+if (redisHabilitado)
 {
     var redis = config["Redis:Conexion"];
     if (string.IsNullOrWhiteSpace(redis))
         throw new InvalidOperationException("Redis:Habilitado=true requiere Redis:Conexion (variable de entorno Redis__Conexion).");
     signalR.AddStackExchangeRedis(redis, o => o.Configuration.ChannelPrefix = StackExchange.Redis.RedisChannel.Literal("trueke"));
+    // Conexión compartida para el límite de peticiones distribuido (abortConnect=false: si Redis no está, la API arranca igual)
+    var opcionesRedis = StackExchange.Redis.ConfigurationOptions.Parse(redis);
+    opcionesRedis.AbortOnConnectFail = false;
+    builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(_ => StackExchange.Redis.ConnectionMultiplexer.Connect(opcionesRedis));
 }
 builder.Services.AddSingleton<IUserIdProvider, UsuarioIdPorSub>();
 builder.Services.Replace(ServiceDescriptor.Singleton<IEmisorTiempoReal, EmisorSignalR>());
@@ -125,7 +132,14 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
             .AllowCredentials().SetPreflightMaxAge(TimeSpan.FromHours(1));
 }));
 
-// ---------- Rate limiting por IP ----------
+// ---------- Rate limiting por IP (en memoria por instancia; con Redis, además, un límite global compartido) ----------
+var limites = new LimitesPorMinuto(
+    Global: config.GetValue("RateLimiting:GlobalPorMinuto", 300),
+    Auth: config.GetValue("RateLimiting:AuthPorMinuto", 10),
+    Webhook: config.GetValue("RateLimiting:WebhookPorMinuto", 120),
+    Escritura: config.GetValue("RateLimiting:EscrituraPorMinuto", 20),
+    Refresco: config.GetValue("RateLimiting:RefrescoPorMinuto", 60));
+builder.Services.AddSingleton(limites);
 builder.Services.AddRateLimiter(o =>
 {
     o.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
@@ -136,11 +150,11 @@ builder.Services.AddRateLimiter(o =>
         await Problemas.EscribirAsync(ctx.HttpContext, StatusCodes.Status429TooManyRequests, ct: ct);
     };
     static string Ip(HttpContext c) => c.Connection.RemoteIpAddress?.ToString() ?? "desconocida";
-    var limiteAuth = config.GetValue("RateLimiting:AuthPorMinuto", 10);
-    var limiteWebhook = config.GetValue("RateLimiting:WebhookPorMinuto", 120);
-    var limiteGlobal = config.GetValue("RateLimiting:GlobalPorMinuto", 300);
-    var limiteEscritura = config.GetValue("RateLimiting:EscrituraPorMinuto", 20);
-    var limiteRefresco = config.GetValue("RateLimiting:RefrescoPorMinuto", 60);
+    var limiteAuth = limites.Auth;
+    var limiteWebhook = limites.Webhook;
+    var limiteGlobal = limites.Global;
+    var limiteEscritura = limites.Escritura;
+    var limiteRefresco = limites.Refresco;
     o.AddPolicy(Politicas.LimiteRefresco, c => RateLimitPartition.GetFixedWindowLimiter(Ip(c),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = limiteRefresco, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     o.AddPolicy(Politicas.LimiteEscritura, c => RateLimitPartition.GetFixedWindowLimiter(
@@ -155,12 +169,32 @@ builder.Services.AddRateLimiter(o =>
 });
 
 // ---------- Detrás de proxy / balanceador (Azure App Service, Nginx, Ingress): IP real del cliente ----------
+// La IP real decide el límite de peticiones: solo se aceptan X-Forwarded-* de proxies conocidos. Si la API fuera
+// alcanzable directamente con "confiar en todos", un atacante falsificaría X-Forwarded-For y evadiría el límite.
+var redesConfiables = config.GetSection("Proxy:RedesConfiables").Get<string[]>() ?? Array.Empty<string>();   // CIDR, p. ej. 10.0.1.0/24
+var proxiesConfiables = config.GetSection("Proxy:ProxiesConfiables").Get<string[]>() ?? Array.Empty<string>(); // IPs exactas
 builder.Services.Configure<ForwardedHeadersOptions>(o =>
 {
     o.ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
-    if (config.GetValue<bool>("Proxy:Confiar"))
+    o.ForwardLimit = config.GetValue("Proxy:Saltos", 1);
+    if (redesConfiables.Length > 0 || proxiesConfiables.Length > 0)
     {
-        o.KnownNetworks.Clear(); // el proxy es la única vía de entrada (red privada): se confía en sus cabeceras
+        o.KnownNetworks.Clear();
+        o.KnownProxies.Clear();
+        foreach (var red in redesConfiables)
+        {
+            var partes = red.Split('/');
+            if (partes.Length != 2 || !IPAddress.TryParse(partes[0], out var ipRed) || !int.TryParse(partes[1], out var prefijo))
+                throw new InvalidOperationException($"Proxy:RedesConfiables contiene un CIDR inválido: '{red}'.");
+            o.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(ipRed, prefijo));
+        }
+        foreach (var proxy in proxiesConfiables)
+            o.KnownProxies.Add(IPAddress.TryParse(proxy, out var ip) ? ip : throw new InvalidOperationException($"Proxy:ProxiesConfiables contiene una IP inválida: '{proxy}'."));
+    }
+    else if (config.GetValue<bool>("Proxy:Confiar"))
+    {
+        // Solo si la API NO es alcanzable directamente (App Service con restricciones de acceso / red privada).
+        o.KnownNetworks.Clear();
         o.KnownProxies.Clear();
     }
 });
@@ -209,6 +243,11 @@ if (esProduccion)
         app.Logger.LogWarning("Cors:Origenes está vacío: el front Angular no podrá llamar a la API desde el navegador.");
     if (string.IsNullOrWhiteSpace(appInsights))
         app.Logger.LogWarning("APPLICATIONINSIGHTS_CONNECTION_STRING no está definida: no habrá monitoreo de errores ni rendimiento.");
+    if (config.GetValue<bool>("Proxy:Confiar") && redesConfiables.Length == 0 && proxiesConfiables.Length == 0)
+        app.Logger.LogWarning("Proxy:Confiar=true sin Proxy:RedesConfiables: asegúrate de que la API solo sea alcanzable a través del proxy " +
+                              "(restricciones de acceso de App Service), o se podrá falsificar X-Forwarded-For.");
+    if (!redisHabilitado)
+        app.Logger.LogWarning("Redis deshabilitado: el límite de peticiones es por instancia. Con varias instancias, habilita Redis.");
 }
 
 // ---------- Pipeline (el orden importa) ----------
@@ -242,6 +281,7 @@ app.UseRouting();
 app.UseCors();
 app.UseAuthentication();
 app.UseRateLimiter();   // después de autenticar: la política "escritura" particiona por usuario
+if (redisHabilitado) app.UseMiddleware<LimitadorDistribuidoMiddleware>(); // límite compartido entre instancias
 app.UseAuthorization();
 
 app.MapControllers();

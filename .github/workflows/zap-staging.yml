@@ -1,0 +1,38 @@
+name: OWASP ZAP (escaneo del entorno de staging)
+
+# Escaneo pasivo ("baseline") de la aplicación desplegada: cabeceras, cookies, CSP, fugas de información, etc.
+# Se ejecuta a mano (Actions → OWASP ZAP → Run workflow) indicando la URL de STAGING. Nunca contra producción.
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL https del front en staging (p. ej. https://staging.trueke.co)"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  zap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      issues: write # ZAP abre un issue con el resumen de alertas
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validar la URL
+        env:
+          URL_OBJETIVO: ${{ inputs.url }}
+        run: |
+          case "$URL_OBJETIVO" in
+            https://*) ;;
+            *) echo "::error::La URL debe empezar por https://"; exit 1 ;;
+          esac
+      - name: Escaneo baseline de ZAP
+        uses: zaproxy/action-baseline@v0.12.0 # Dependabot propone las versiones nuevas
+        with:
+          target: ${{ inputs.url }}
+          allow_issue_writing: true
+          fail_action: false

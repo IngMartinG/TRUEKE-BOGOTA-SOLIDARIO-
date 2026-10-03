@@ -6,7 +6,9 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <RootNamespace>TruekeBogotaSolidario.Presentacion</RootNamespace>
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
-    <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- false: Microsoft.Data.SqlClient no funciona en modo de globalización invariante (falla al abrir la conexión).
+         La imagen aspnet:8.0 (Debian) ya incluye ICU. ArquitecturaTests lo verifica. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <UserSecretsId>trueke-bogota-solidario-api</UserSecretsId>
   </PropertyGroup>

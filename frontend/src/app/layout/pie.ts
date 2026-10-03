@@ -16,7 +16,7 @@ import { Logo } from '../shared/ui/logo';
         <div>
           <app-logo [claro]="true" />
           <p class="mt-4 max-w-sm text-sm text-bosque-200/80">
-            La plataforma comunitaria de economía circular de Bogotá. Cada objeto que circula es un residuo menos en el relleno.
+            La plataforma comunitaria de economía circular de Colombia, nacida en Bogotá. Cada objeto que circula es un residuo menos en el relleno.
           </p>
           <p class="mt-4 inline-flex items-center gap-2 rounded-full bg-white/5 px-3 py-1.5 text-xs text-bosque-200">
             <app-icono nombre="hoja" [tamano]="14" class="text-bosque-300" /> Hecho en Bogotá con energía verde

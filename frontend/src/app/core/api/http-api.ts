@@ -38,6 +38,11 @@ export class HttpApi {
     return this.http.delete<T>(apiBase() + ruta, this.opciones(op));
   }
 
+  /** Archivo binario (CSV de administración): viaja con el token como cualquier otra petición. */
+  archivo(ruta: string, op: OpcionesApi = {}): Observable<Blob> {
+    return this.http.get(apiBase() + ruta, { ...this.opciones(op), responseType: 'blob' });
+  }
+
   private opciones(op: OpcionesApi) {
     let params = new HttpParams();
     for (const [clave, valor] of Object.entries(op.params ?? {})) {

@@ -1,4 +1,4 @@
-using TruekeBogotaSolidario.Datos.Common;
+﻿using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Dtos;
 using TruekeBogotaSolidario.Negocio.Servicios;
@@ -14,7 +14,7 @@ public class EntregaTests
         var duenio = (await e.RegistrarAsync("duenia")).Usuario.Id;
         var solicitante = (await e.RegistrarAsync("solicitante")).Usuario.Id;
         var pub = await e.EnScopeAsync<IPublicacionService, PublicacionDto>(s => s.CrearAsync(duenio, new CrearPublicacionRequest
-        { Titulo = "Licuadora", Descripcion = "Funciona", CategoriaId = 3, Modo = ModoDto.Donacion, Localidad = "Usaquén" }));
+        { Titulo = "Licuadora", Descripcion = "Funciona", CategoriaId = 3, Modo = ModoDto.Donacion, Condicion = CondicionDto.Usado, Localidad = "Usaquén" }));
         var sol = await e.EnScopeAsync<ISolicitudService, SolicitudDto>(s => s.CrearAsync(solicitante, new CrearSolicitudRequest { PublicacionId = pub.Id, Mensaje = "La necesito" }));
         await e.EnScopeAsync<ISolicitudService, SolicitudDto>(s => s.AceptarAsync(duenio, sol.Id));
         return (duenio, solicitante, sol.Id, pub.Id);

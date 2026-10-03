@@ -187,23 +187,34 @@ public sealed class SolicitudService : ISolicitudService
         var oferente = pub.Propietario ?? await _usuarios.ObtenerPorIdAsync(pub.PropietarioId) ?? throw new NoEncontradoException("Usuario no encontrado.");
         var receptor = s.Solicitante ?? await _usuarios.ObtenerPorIdAsync(s.SolicitanteId) ?? throw new NoEncontradoException("Usuario no encontrado.");
 
-        // Tope anti-farmeo: máximo N transacciones con puntos por persona en una ventana de 24 h
+        // Anti-farmeo 1: máximo N transacciones con puntos por persona en una ventana de 24 h.
         var desde = ahora.AddHours(-24);
         var puntosOferente = await _transacciones.ContarDesdeAsync(oferente.Id, desde) < PoliticaEcoPuntos.MaxTransaccionesConPuntosPorDia;
         var puntosReceptor = await _transacciones.ContarDesdeAsync(receptor.Id, desde) < PoliticaEcoPuntos.MaxTransaccionesConPuntosPorDia;
+
+        // Anti-farmeo 2: la misma pareja solo suma puntos y reputación una vez por ventana. Con dos cuentas propias
+        // (o con un amigo) no se puede "fabricar" saldo para descuentos ni una reputación falsa para estafar.
+        var parejaRepetida = await _transacciones.ExisteConPuntosEntreDesdeAsync(oferente.Id, receptor.Id,
+            ahora.AddDays(-PoliticaEcoPuntos.DiasEntreTransaccionesConPuntosMismaPareja));
+        if (parejaRepetida)
+        {
+            puntosOferente = false;
+            puntosReceptor = false;
+        }
 
         s.Completar(ahora);
         pub.ConfirmarIntercambio();
         oferente.RegistrarTransaccionCompletada(pub.Modo, puntosOferente);
         receptor.RegistrarTransaccionCompletada(pub.Modo, puntosReceptor);
-        _transacciones.Agregar(new Transaccion(pub.Id, s.Id, oferente.Id, receptor.Id, pub.Modo, puntosOferente, puntosReceptor));
+        _transacciones.Agregar(new Transaccion(pub.Id, s.Id, oferente.Id, receptor.Id, pub.Modo, puntosOferente, puntosReceptor, ahora));
 
         // Un solo SaveChanges = todo o nada. Con RowVersion, dos confirmaciones simultáneas no duplican puntos (la segunda recibe 409).
         await _uow.GuardarCambiosAsync();
         _log.LogInformation("Transacción completada {SolicitudId} modo {Modo}", s.Id, pub.Modo);
         foreach (var id in new[] { oferente.Id, receptor.Id })
-            await NotificarAsync(id, TiposNotificacion.IntercambioCompletado,
-                $"¡Intercambio de \"{pub.Titulo}\" completado! Ya puedes calificar a la otra persona.", s.Id);
+            await NotificarAsync(id, TiposNotificacion.IntercambioCompletado, parejaRepetida
+                ? $"¡Intercambio de \"{pub.Titulo}\" completado! Como ya intercambiaron hace poco, este no suma Eco-Puntos (se suman una vez cada {PoliticaEcoPuntos.DiasEntreTransaccionesConPuntosMismaPareja} días por pareja)."
+                : $"¡Intercambio de \"{pub.Titulo}\" completado! Ya puedes calificar a la otra persona.", s.Id);
     }
 
     public async Task<IReadOnlyList<Guid>> ListarParaCierreAutomaticoAsync(int maximo)
@@ -250,9 +261,12 @@ public sealed class SolicitudService : ISolicitudService
         var calificadoId = s.Publicacion!.PropietarioId == actorId ? s.SolicitanteId : s.Publicacion.PropietarioId;
         var calificado = await _usuarios.ObtenerPorIdAsync(calificadoId) ?? throw new NoEncontradoException("Usuario no encontrado.");
 
-        var c = new Calificacion(s.Id, actorId, calificadoId, r.Estrellas, r.Comentario, ahora);
+        // Solo la primera calificación a la misma persona en la ventana suma al promedio (anti-inflado de reputación).
+        var cuenta = !await _calificaciones.ExisteContadaEntreDesdeAsync(actorId, calificadoId,
+            ahora.AddDays(-PoliticaEcoPuntos.DiasEntreCalificacionesMismaPareja));
+        var c = new Calificacion(s.Id, actorId, calificadoId, r.Estrellas, r.Comentario, ahora, cuenta);
         _calificaciones.Agregar(c);
-        calificado.RegistrarCalificacion(r.Estrellas);
+        if (cuenta) calificado.RegistrarCalificacion(r.Estrellas);
         await _uow.GuardarCambiosAsync(); // índice único (solicitud, autor): un doble envío simultáneo → 409
         await NotificarAsync(calificadoId, TiposNotificacion.CalificacionRecibida, $"Recibiste una calificación de {r.Estrellas} estrella(s).", s.Id);
         return new CalificacionDto(c.Id, Mapeos.APerfilPublico(autor, ahora), c.Estrellas, c.Comentario, c.FechaUtc);

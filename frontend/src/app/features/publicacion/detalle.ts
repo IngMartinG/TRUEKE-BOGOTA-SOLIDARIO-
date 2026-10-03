@@ -4,10 +4,11 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Title } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
-import { firstValueFrom, map } from 'rxjs';
-import { ETIQUETA_ESTADO_PUBLICACION, INFO_MODO, type ModoDto } from '../../api/tipos';
+import { catchError, firstValueFrom, map, of } from 'rxjs';
+import { ETIQUETA_ESTADO_PUBLICACION, infoCondicion, INFO_MODO, type ModoDto } from '../../api/tipos';
 import { AdminApi } from '../../core/api/admin.api';
 import { CatalogoApi } from '../../core/api/catalogo.api';
+import { CuentaApi } from '../../core/api/cuenta.api';
 import { IntercambiosApi } from '../../core/api/intercambios.api';
 import { AvisosService } from '../../core/avisos.service';
 import { FavoritosService } from '../../core/favoritos.service';
@@ -137,6 +138,7 @@ import { Comentarios } from './comentarios';
                 <span class="insignia-neutra" [class.!bg-bosque-100]="p.estado === 'Disponible'" [class.!text-bosque-800]="p.estado === 'Disponible'">
                   {{ etiquetaEstado[p.estado ?? ''] ?? p.estado }}
                 </span>
+                <span [class]="condicion().clase"><app-icono nombre="etiqueta" [tamano]="12" />{{ condicion().etiqueta }}</span>
               </div>
               <h1 class="mt-4 text-2xl leading-tight font-extrabold break-words sm:text-3xl">{{ p.titulo }}</h1>
 
@@ -155,12 +157,19 @@ import { Comentarios } from './comentarios';
 
               <dl class="mt-5 grid grid-cols-2 gap-3 text-sm">
                 <div class="rounded-xl bg-superficie-2 p-3">
-                  <dt class="flex items-center gap-1 text-xs text-tenue"><app-icono nombre="pin" [tamano]="12" />Localidad</dt>
-                  <dd class="mt-0.5 font-semibold">{{ p.localidad }}</dd>
+                  <dt class="flex items-center gap-1 text-xs text-tenue"><app-icono nombre="pin" [tamano]="12" />Ubicación</dt>
+                  <dd class="mt-0.5 font-semibold">{{ p.localidad }}<span class="block text-xs font-normal text-tenue">{{ p.municipio }}</span></dd>
                 </div>
                 <div class="rounded-xl bg-superficie-2 p-3">
                   <dt class="flex items-center gap-1 text-xs text-tenue"><app-icono nombre="calendario" [tamano]="12" />Publicado</dt>
                   <dd class="mt-0.5 font-semibold" [title]="p.fechaPublicacion | fecha">{{ p.fechaPublicacion | hace }}</dd>
+                </div>
+                <div class="col-span-2 rounded-xl bg-superficie-2 p-3">
+                  <dt class="flex items-center gap-1 text-xs text-tenue"><app-icono nombre="etiqueta" [tamano]="12" />Estado del producto</dt>
+                  <dd class="mt-0.5 font-semibold">{{ condicion().etiqueta }} <span class="font-normal text-tenue">· {{ condicion().descripcion }}</span></dd>
+                  @if (p.detalleCondicion) {
+                    <dd class="mt-1 whitespace-pre-line text-tenue">{{ p.detalleCondicion }}</dd>
+                  }
                 </div>
               </dl>
 
@@ -185,6 +194,15 @@ import { Comentarios } from './comentarios';
                         </a>
                       }
                     }
+                    <div class="grid grid-cols-2 gap-2">
+                      <button type="button" class="btn btn-secundario" (click)="impulsar()" [disabled]="trabajando() || !puedeImpulsar()"
+                        [title]="puedeImpulsar() ? 'Sube tu publicación al primer lugar de «Más recientes»' : 'Podrás impulsarla de nuevo ' + (p.proximoImpulsoUtc | hace)">
+                        <app-icono nombre="cohete" [tamano]="16" />Impulsar ({{ puntosImpulsar() }} pts)
+                      </button>
+                      <a routerLink="/mis-publicaciones" [queryParams]="{ estadisticas: p.id }" class="btn btn-secundario">
+                        <app-icono nombre="grafica" [tamano]="16" />{{ p.vistas ?? 0 }} vistas
+                      </a>
+                    </div>
                   }
                 } @else if (p.estado === 'Disponible') {
                   <button type="button" class="btn btn-primario btn-lg w-full" (click)="abrirSolicitud()">
@@ -328,6 +346,7 @@ export default class Detalle {
   private readonly intercambios = inject(IntercambiosApi);
   private readonly adminApi = inject(AdminApi);
   private readonly avisos = inject(AvisosService);
+  private readonly cuentaApi = inject(CuentaApi);
   private readonly router = inject(Router);
   private readonly titulo = inject(Title);
   protected readonly sesion = inject(SesionService);
@@ -350,6 +369,13 @@ export default class Detalle {
   protected readonly indice = signal(0);
   protected readonly infoModo = computed(() => INFO_MODO[(this.p()?.modo as ModoDto) ?? 'Trueke'] ?? INFO_MODO.Trueke);
   protected readonly favorita = computed(() => this.favoritos.esFavorita(this.p()?.id, this.p()?.esFavorita));
+  protected readonly condicion = computed(() => infoCondicion(this.p()?.condicion));
+  private readonly politica = toSignal(this.cuentaApi.politica$.pipe(catchError(() => of(null))), { initialValue: null });
+  protected readonly puntosImpulsar = computed(() => this.politica()?.puntosImpulsar ?? 20);
+  protected readonly puedeImpulsar = computed(() => {
+    const proximo = this.p()?.proximoImpulsoUtc;
+    return !proximo || Date.parse(proximo) <= Date.now();
+  });
   protected readonly sugerencia = computed(() => {
     switch (this.p()?.modo) {
       case 'Compra':
@@ -446,6 +472,26 @@ export default class Detalle {
       this.recurso.reload();
     } catch {
       // El interceptor ya mostró el error.
+    } finally {
+      this.trabajando.set(false);
+    }
+  }
+
+  protected async impulsar(): Promise<void> {
+    const id = this.p()?.id;
+    if (!id) return;
+    if ((this.sesion.usuario()?.saldoEcoPuntos ?? 0) < this.puntosImpulsar()) {
+      this.avisos.info(`Necesitas ${this.puntosImpulsar()} Eco-Puntos para impulsar`, 'Gánalos completando intercambios o recárgalos en Eco-Puntos.');
+      return;
+    }
+    this.trabajando.set(true);
+    try {
+      await firstValueFrom(this.api.impulsar(id));
+      this.avisos.puntos('¡Publicación impulsada!', 'Ahora aparece entre las primeras de «Más recientes».');
+      this.sesion.recargarUsuario();
+      this.recurso.reload();
+    } catch (e) {
+      this.avisos.error(mensajeDe(e));
     } finally {
       this.trabajando.set(false);
     }

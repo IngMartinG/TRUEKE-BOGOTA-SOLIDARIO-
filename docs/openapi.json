@@ -397,6 +397,338 @@
         }
       }
     },
+    "/api/v1/admin/facturas": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "Estado",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EstadoFacturaDto"
+            }
+          },
+          {
+            "name": "Pagina",
+            "in": "query",
+            "schema": {
+              "maximum": 10000,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Tamano",
+            "in": "query",
+            "schema": {
+              "maximum": 100,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaAdminDtoPaginaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaAdminDtoPaginaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaAdminDtoPaginaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/facturas/{id}/emitida": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmitirFacturaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmitirFacturaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/EmitirFacturaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaAdminDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaAdminDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaAdminDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/facturas.csv": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "estado",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EstadoFacturaDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pqr": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "Estado",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EstadoPqrDto"
+            }
+          },
+          {
+            "name": "Pagina",
+            "in": "query",
+            "schema": {
+              "maximum": 10000,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Tamano",
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrAdminDtoPaginaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrAdminDtoPaginaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrAdminDtoPaginaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pqr/{id}/responder": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResponderPqrRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResponderPqrRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/ResponderPqrRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrAdminDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrAdminDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrAdminDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/ingresos": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "Desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngresosDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngresosDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IngresosDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/ingresos.csv": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "Desde",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          },
+          {
+            "name": "Hasta",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/admin/usuarios/{usuarioId}/rol": {
       "patch": {
         "tags": [
@@ -1714,6 +2046,129 @@
         }
       }
     },
+    "/api/v1/cuenta/facturacion": {
+      "get": {
+        "tags": [
+          "Facturacion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosFacturacionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosFacturacionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosFacturacionDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Facturacion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatosFacturacionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatosFacturacionRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/DatosFacturacionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosFacturacionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosFacturacionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosFacturacionDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Facturacion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/cuenta/facturas": {
+      "get": {
+        "tags": [
+          "Facturacion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FacturaDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FacturaDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FacturaDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/notificaciones": {
       "get": {
         "tags": [
@@ -2145,6 +2600,92 @@
         }
       }
     },
+    "/api/v1/pqr": {
+      "post": {
+        "tags": [
+          "Pqr"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPqrRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPqrRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPqrRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pqr/mias": {
+      "get": {
+        "tags": [
+          "Pqr"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PqrDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PqrDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PqrDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/categorias": {
       "get": {
         "tags": [
@@ -2202,6 +2743,29 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/ModoDto"
+            }
+          },
+          {
+            "name": "Condicion",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/CondicionDto"
+            }
+          },
+          {
+            "name": "DepartamentoCodigo",
+            "in": "query",
+            "schema": {
+              "pattern": "^[0-9]{2}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "MunicipioCodigo",
+            "in": "query",
+            "schema": {
+              "pattern": "^[0-9]{5}$",
+              "type": "string"
             }
           },
           {
@@ -2399,6 +2963,13 @@
             }
           },
           {
+            "name": "Condicion",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/CondicionDto"
+            }
+          },
+          {
             "name": "Max",
             "in": "query",
             "schema": {
@@ -2434,6 +3005,80 @@
                   "type": "array",
                   "items": {
                     "$ref": "#/components/schemas/PublicacionCercanaDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publicaciones/destacadas": {
+      "get": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "DepartamentoCodigo",
+            "in": "query",
+            "schema": {
+              "pattern": "^[0-9]{2}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "MunicipioCodigo",
+            "in": "query",
+            "schema": {
+              "pattern": "^[0-9]{5}$",
+              "type": "string"
+            }
+          },
+          {
+            "name": "CategoriaId",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Max",
+            "in": "query",
+            "schema": {
+              "maximum": 12,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicacionDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicacionDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/PublicacionDto"
                   }
                 }
               }
@@ -2733,6 +3378,86 @@
         "responses": {
           "200": {
             "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/publicaciones/{id}/impulsar": {
+      "post": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/publicaciones/{id}/estadisticas": {
+      "get": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadisticasPublicacionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadisticasPublicacionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadisticasPublicacionDto"
+                }
+              }
+            }
           }
         }
       }
@@ -3136,6 +3861,189 @@
         }
       }
     },
+    "/api/v1/ubicaciones/departamentos": {
+      "get": {
+        "tags": [
+          "Ubicaciones"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DepartamentoDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DepartamentoDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DepartamentoDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ubicaciones/departamentos/{codigo}/municipios": {
+      "get": {
+        "tags": [
+          "Ubicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "codigo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^\\d{2}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MunicipioDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MunicipioDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MunicipioDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ubicaciones/municipios": {
+      "get": {
+        "tags": [
+          "Ubicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "texto",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "max",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "default": 20
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MunicipioDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MunicipioDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MunicipioDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/ubicaciones/municipios/{codigo}": {
+      "get": {
+        "tags": [
+          "Ubicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "codigo",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "pattern": "^\\d{5}$",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MunicipioDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MunicipioDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MunicipioDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/usuarios/yo/datos": {
       "get": {
         "tags": [
@@ -3270,6 +4178,54 @@
           }
         }
       }
+    },
+    "/api/v1/usuarios/yo/empresa": {
+      "put": {
+        "tags": [
+          "Usuarios"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PerfilEmpresaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PerfilEmpresaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/PerfilEmpresaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -3313,6 +4269,11 @@
             "maxLength": 60,
             "minLength": 2,
             "type": "string"
+          },
+          "municipioCodigo": {
+            "pattern": "^[0-9]{5}$",
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -3582,6 +4543,17 @@
         ],
         "type": "string"
       },
+      "CondicionDto": {
+        "enum": [
+          "Nuevo",
+          "ComoNuevo",
+          "Usado",
+          "UsadoConDetalles",
+          "Reparado",
+          "ParaRepuestos"
+        ],
+        "type": "string"
+      },
       "ConfiguracionDosFactoresDto": {
         "type": "object",
         "properties": {
@@ -3693,6 +4665,10 @@
           "totalCop": {
             "type": "integer",
             "format": "int32"
+          },
+          "ivaIncluidoCop": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -3732,8 +4708,37 @@
         },
         "additionalProperties": false
       },
+      "CrearPqrRequest": {
+        "required": [
+          "asunto",
+          "descripcion"
+        ],
+        "type": "object",
+        "properties": {
+          "tipo": {
+            "$ref": "#/components/schemas/TipoPqrDto"
+          },
+          "asunto": {
+            "maxLength": 120,
+            "minLength": 5,
+            "type": "string"
+          },
+          "descripcion": {
+            "maxLength": 2000,
+            "minLength": 10,
+            "type": "string"
+          },
+          "pagoReferencia": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CrearPublicacionRequest": {
         "required": [
+          "condicion",
           "descripcion",
           "localidad",
           "titulo"
@@ -3758,6 +4763,19 @@
           },
           "modo": {
             "$ref": "#/components/schemas/ModoDto"
+          },
+          "condicion": {
+            "$ref": "#/components/schemas/CondicionDto"
+          },
+          "detalleCondicion": {
+            "maxLength": 300,
+            "type": "string",
+            "nullable": true
+          },
+          "municipioCodigo": {
+            "pattern": "^[0-9]{5}$",
+            "type": "string",
+            "nullable": true
           },
           "localidad": {
             "maxLength": 60,
@@ -3810,6 +4828,83 @@
             "maxLength": 500,
             "minLength": 1,
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DatosFacturacionDto": {
+        "type": "object",
+        "properties": {
+          "completos": {
+            "type": "boolean"
+          },
+          "tipoDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "documento": {
+            "type": "string",
+            "nullable": true
+          },
+          "nombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "correo": {
+            "type": "string",
+            "nullable": true
+          },
+          "direccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "municipioCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "municipio": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "DatosFacturacionRequest": {
+        "required": [
+          "correo",
+          "documento",
+          "nombre"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoDocumento": {
+            "$ref": "#/components/schemas/TipoDocumentoFiscalDto"
+          },
+          "documento": {
+            "maxLength": 20,
+            "minLength": 3,
+            "type": "string"
+          },
+          "nombre": {
+            "maxLength": 150,
+            "minLength": 3,
+            "type": "string"
+          },
+          "correo": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string",
+            "format": "email"
+          },
+          "direccion": {
+            "maxLength": 150,
+            "type": "string",
+            "nullable": true
+          },
+          "municipioCodigo": {
+            "pattern": "^[0-9]{5}$",
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -3892,6 +4987,21 @@
             "items": {
               "type": "string",
               "format": "uuid"
+            }
+          },
+          "datosFacturacion": {
+            "$ref": "#/components/schemas/DatosFacturacionDto"
+          },
+          "facturas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FacturaDto"
+            }
+          },
+          "pqrs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PqrDto"
             }
           }
         },
@@ -3996,6 +5106,18 @@
         },
         "additionalProperties": false
       },
+      "DepartamentoDto": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "EcoPuntosResumenDto": {
         "type": "object",
         "properties": {
@@ -4026,6 +5148,14 @@
           "destacadosGratisRestantes": {
             "type": "integer",
             "format": "int32"
+          },
+          "maxPublicacionesActivas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "descuentoPlanPorcentaje": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -4051,6 +5181,26 @@
             "minLength": 0,
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "EmitirFacturaRequest": {
+        "required": [
+          "cufe",
+          "numeroDian"
+        ],
+        "type": "object",
+        "properties": {
+          "numeroDian": {
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string"
+          },
+          "cufe": {
+            "maxLength": 120,
+            "minLength": 10,
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -4083,11 +5233,62 @@
         },
         "additionalProperties": false
       },
+      "EstadisticasPublicacionDto": {
+        "type": "object",
+        "properties": {
+          "publicacionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "vistasTotales": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "vistasUltimos30Dias": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "favoritos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "solicitudes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "destacada": {
+            "type": "boolean"
+          },
+          "destacadaHasta": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "serieDisponible": {
+            "type": "boolean"
+          },
+          "serie": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PuntoSerieDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "EstadoDenunciaDto": {
         "enum": [
           "Pendiente",
           "Resuelta",
           "Descartada"
+        ],
+        "type": "string"
+      },
+      "EstadoFacturaDto": {
+        "enum": [
+          "Pendiente",
+          "Emitida",
+          "Anulada"
         ],
         "type": "string"
       },
@@ -4101,6 +5302,185 @@
           "Reembolsado"
         ],
         "type": "string"
+      },
+      "EstadoPqrDto": {
+        "enum": [
+          "Abierta",
+          "Respondida"
+        ],
+        "type": "string"
+      },
+      "FacturaAdminDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "referencia": {
+            "type": "string"
+          },
+          "usuarioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "concepto": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "totalCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "baseCop": {
+            "type": "number",
+            "format": "double"
+          },
+          "ivaCop": {
+            "type": "number",
+            "format": "double"
+          },
+          "ivaPorcentaje": {
+            "type": "number",
+            "format": "double"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "numeroDian": {
+            "type": "string",
+            "nullable": true
+          },
+          "cufe": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaEmisionUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "compradorTipoDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "compradorDocumento": {
+            "type": "string"
+          },
+          "compradorNombre": {
+            "type": "string"
+          },
+          "compradorCorreo": {
+            "type": "string"
+          },
+          "compradorDireccion": {
+            "type": "string",
+            "nullable": true
+          },
+          "compradorMunicipio": {
+            "type": "string",
+            "nullable": true
+          },
+          "requiereNotaCredito": {
+            "type": "boolean"
+          },
+          "notaInterna": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FacturaAdminDtoPaginaDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FacturaAdminDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pagina": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tamano": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "FacturaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "referencia": {
+            "type": "string"
+          },
+          "concepto": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "totalCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "baseCop": {
+            "type": "number",
+            "format": "double"
+          },
+          "ivaCop": {
+            "type": "number",
+            "format": "double"
+          },
+          "ivaPorcentaje": {
+            "type": "number",
+            "format": "double"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "numeroDian": {
+            "type": "string",
+            "nullable": true
+          },
+          "cufe": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaEmisionUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "compradorNombre": {
+            "type": "string"
+          },
+          "compradorDocumento": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
       },
       "GananciaDto": {
         "type": "object",
@@ -4137,6 +5517,115 @@
             "maxLength": 20,
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "IngresoConceptoDto": {
+        "type": "object",
+        "properties": {
+          "concepto": {
+            "type": "string"
+          },
+          "aprobadoCop": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reembolsadoCop": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pagos": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "IngresoMesDto": {
+        "type": "object",
+        "properties": {
+          "anio": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "aprobadoCop": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reembolsadoCop": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pagos": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "IngresosDto": {
+        "type": "object",
+        "properties": {
+          "desde": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "aprobadoCop": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "reembolsadoCop": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "netoCop": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "pagos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "premiumVigentes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "empresaVigentes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "ingresoRecurrenteMensualCop": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "facturasPendientes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pqrAbiertas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "porMes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IngresoMesDto"
+            }
+          },
+          "porConcepto": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/IngresoConceptoDto"
+            }
           }
         },
         "additionalProperties": false
@@ -4278,6 +5767,32 @@
             "maxLength": 300,
             "minLength": 3,
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MunicipioDto": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "departamentoCodigo": {
+            "type": "string"
+          },
+          "departamento": {
+            "type": "string"
+          },
+          "latitud": {
+            "type": "number",
+            "format": "double"
+          },
+          "longitud": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -4513,6 +6028,26 @@
         },
         "additionalProperties": false
       },
+      "PerfilEmpresaRequest": {
+        "required": [
+          "nit",
+          "nombreComercial"
+        ],
+        "type": "object",
+        "properties": {
+          "nombreComercial": {
+            "maxLength": 120,
+            "minLength": 2,
+            "type": "string"
+          },
+          "nit": {
+            "maxLength": 20,
+            "minLength": 6,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "PerfilPublicoDto": {
         "type": "object",
         "properties": {
@@ -4544,6 +6079,13 @@
           "totalCalificaciones": {
             "type": "integer",
             "format": "int32"
+          },
+          "municipio": {
+            "type": "string"
+          },
+          "nombreComercial": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -4599,6 +6141,13 @@
           "publicacionesActivas": {
             "type": "integer",
             "format": "int32"
+          },
+          "municipio": {
+            "type": "string"
+          },
+          "nombreComercial": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -4679,6 +6228,178 @@
           "recargaMaximaCop": {
             "type": "integer",
             "format": "int32"
+          },
+          "puntosImpulsar": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "horasEntreImpulsos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "destacadosGratisEmpresa": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "descuentoEmpresaPorcentaje": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxPublicacionesIndividual": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxPublicacionesPremium": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxPublicacionesEmpresa": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxVentasActivasSinIdentificar": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "diasEntreTransaccionesConPuntosMismaPareja": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "preciosIncluyenIva": {
+            "type": "boolean"
+          },
+          "ivaPorcentaje": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PqrAdminDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "radicado": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "asunto": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "pagoReferencia": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaLimiteUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "vencida": {
+            "type": "boolean"
+          },
+          "respuesta": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaRespuestaUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "usuarioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombreUsuario": {
+            "type": "string"
+          },
+          "correoUsuario": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PqrAdminDtoPaginaDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PqrAdminDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pagina": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tamano": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PqrDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "radicado": {
+            "type": "string"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "asunto": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "pagoReferencia": {
+            "type": "string",
+            "nullable": true
+          },
+          "estado": {
+            "type": "string"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaLimiteUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "respuesta": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaRespuestaUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -4777,6 +6498,32 @@
           "motivoOcultamiento": {
             "type": "string",
             "nullable": true
+          },
+          "condicion": {
+            "type": "string"
+          },
+          "detalleCondicion": {
+            "type": "string",
+            "nullable": true
+          },
+          "municipioCodigo": {
+            "type": "string"
+          },
+          "municipio": {
+            "type": "string"
+          },
+          "departamentoCodigo": {
+            "type": "string"
+          },
+          "vistas": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "proximoImpulsoUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -4799,6 +6546,20 @@
             "format": "int32"
           },
           "tamano": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PuntoSerieDto": {
+        "type": "object",
+        "properties": {
+          "fecha": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "vistas": {
             "type": "integer",
             "format": "int32"
           }
@@ -4849,6 +6610,11 @@
             "minLength": 2,
             "type": "string"
           },
+          "municipioCodigo": {
+            "pattern": "^[0-9]{5}$",
+            "type": "string",
+            "nullable": true
+          },
           "correo": {
             "maxLength": 160,
             "minLength": 1,
@@ -4882,6 +6648,20 @@
             "minLength": 3,
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResponderPqrRequest": {
+        "required": [
+          "respuesta"
+        ],
+        "type": "object",
+        "properties": {
+          "respuesta": {
+            "maxLength": 2000,
+            "minLength": 10,
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -5088,6 +6868,26 @@
         ],
         "type": "string"
       },
+      "TipoDocumentoFiscalDto": {
+        "enum": [
+          "CC",
+          "CE",
+          "NIT",
+          "Pasaporte"
+        ],
+        "type": "string"
+      },
+      "TipoPqrDto": {
+        "enum": [
+          "Peticion",
+          "Queja",
+          "Reclamo",
+          "Sugerencia",
+          "Retracto",
+          "ReversionPago"
+        ],
+        "type": "string"
+      },
       "TokenRequest": {
         "required": [
           "token"
@@ -5285,6 +7085,23 @@
           "codigosRecuperacionRestantes": {
             "type": "integer",
             "format": "int32"
+          },
+          "municipioCodigo": {
+            "type": "string"
+          },
+          "municipio": {
+            "type": "string"
+          },
+          "nombreComercial": {
+            "type": "string",
+            "nullable": true
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "tieneDatosFacturacion": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
