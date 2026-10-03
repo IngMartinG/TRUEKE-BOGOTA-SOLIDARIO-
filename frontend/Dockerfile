@@ -3,7 +3,7 @@
 #   docker build -t trueke-web .
 #   docker run -p 8081:8080 -e API_UPSTREAM=http://api:8080 trueke-web
 # Etapa 1: compilación (Node solo existe aquí; la imagen final no lleva código fuente ni herramientas).
-FROM node:24-alpine AS compilacion
+FROM node:26-alpine AS compilacion
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
