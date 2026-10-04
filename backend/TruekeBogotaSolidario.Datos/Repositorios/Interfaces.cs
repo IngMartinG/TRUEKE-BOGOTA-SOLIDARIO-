@@ -245,7 +245,19 @@ public interface IDenunciaRepository
     /// <summary>Pendientes sobre el mismo objetivo (con tracking): se resuelven juntas.</summary>
     Task<IReadOnlyList<Denuncia>> PendientesDelObjetivoAsync(TipoObjetoDenuncia tipo, Guid objetivoId);
     Task<IReadOnlyList<Denuncia>> ListarDelDenuncianteAsync(Guid denuncianteId, int maximo);
+    /// <summary>Denuncias procedentes (Resuelta) contra el usuario, más recientes primero.</summary>
+    Task<IReadOnlyList<Denuncia>> ListarRecibidasAsync(Guid denunciadoId, int maximo);
+    Task<IReadOnlyList<Denuncia>> DeResolucionAsync(Guid resolucionId);
     void Agregar(Denuncia denuncia);
+
+    // ---- Apelaciones (descargos de la persona denunciada)
+    Task<Apelacion?> ObtenerApelacionAsync(Guid id);
+    Task<bool> ExisteApelacionAsync(Guid resolucionId);
+    Task<IReadOnlyDictionary<Guid, Apelacion>> ApelacionesDeResolucionesAsync(IReadOnlyCollection<Guid> resolucionIds);
+    /// <summary>Más antiguas primero (cola de moderación).</summary>
+    Task<IReadOnlyList<Apelacion>> ListarApelacionesAsync(EstadoApelacion estado, int maximo);
+    Task<IReadOnlyList<Apelacion>> ListarApelacionesDelUsuarioAsync(Guid usuarioId, int maximo);
+    void AgregarApelacion(Apelacion apelacion);
 }
 
 public interface IFavoritoRepository

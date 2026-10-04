@@ -53,6 +53,11 @@
 
 **Estado de verificación:** 216 pruebas aprobadas y 6 de SQL Server que corren en el CI (incluye aplicar la migración nueva sobre datos existentes); `-warnaserror` limpio; sin paquetes vulnerables. Front: lint, 13 pruebas y build de producción en verde.
 
+## Hecho el 2026-10-04 — respuestas en el chat y denuncias con debido proceso
+- **Responder un mensaje en particular** (como en WhatsApp): deslizar a la derecha en el celular o botón "Responder" con el mouse; la respuesta muestra la cita y al tocarla lleva al original.
+- **Denuncias escuchando a ambas partes:** si el moderador la considera procedente, la persona denunciada recibe el aviso (sin saber quién la denunció) y tiene 15 días para contar su versión una vez. Otro moderador (o un SuperUsuario) revisa la apelación; si la acepta, el contenido vuelve a mostrarse y también se avisa a quienes denunciaron. Pantallas: Cuenta → "Reportes sobre ti" y Moderación → "Apelaciones".
+- Migración `ChatRespuestasYApelaciones` (solo columnas que admiten nulos y una tabla nueva). 227 pruebas en verde (incluye SQL Server real).
+
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
 - **Instalar Docker en local:** activar la virtualización en la BIOS, `wsl --install` y Docker Desktop (para correr también las pruebas de SQL Server en tu PC).

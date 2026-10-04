@@ -106,6 +106,31 @@ public class ChatTests : IClassFixture<FabricaApi>
         Assert.Equal(conv, m.ConversacionId);
     }
 
+    [Fact]
+    public async Task Se_puede_responder_un_mensaje_en_particular_de_la_misma_conversacion()
+    {
+        var (duenio, otro, _, _, conv) = await PrepararAsync();
+        var original = (await otro.GetFromJsonAsync<List<MensajeChatDto>>($"/api/v1/conversaciones/{conv}/mensajes"))!.Single();
+
+        var r = await duenio.PostAsJsonAsync($"/api/v1/conversaciones/{conv}/mensajes", new { texto = "¡Sí, me interesa el libro!", respuestaAId = original.Id });
+        Assert.Equal(HttpStatusCode.Created, r.StatusCode);
+        var enviada = (await r.Content.ReadFromJsonAsync<MensajeChatDto>())!;
+        Assert.NotNull(enviada.RespuestaA);
+        Assert.False(enviada.RespuestaA!.EsMio);                     // para el dueño, la cita es del otro
+        Assert.Equal(original.Texto, enviada.RespuestaA.Texto);
+
+        var vista = (await otro.GetFromJsonAsync<List<MensajeChatDto>>($"/api/v1/conversaciones/{conv}/mensajes"))!.Last();
+        Assert.Equal(original.Id, vista.RespuestaA!.Id);
+        Assert.True(vista.RespuestaA.EsMio);                         // para quien escribió el original, es suyo
+
+        // No se puede citar un mensaje de otra conversación (ni uno inexistente)
+        Assert.Equal(HttpStatusCode.NotFound, (await duenio.PostAsJsonAsync($"/api/v1/conversaciones/{conv}/mensajes", new { texto = "x", respuestaAId = Guid.NewGuid() })).StatusCode);
+        var (duenio2, _, _, _, conv2) = await PrepararAsync();
+        Assert.Equal(HttpStatusCode.Created, (await duenio2.PostAsJsonAsync($"/api/v1/conversaciones/{conv2}/mensajes", new { texto = "Hola" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await duenio2.PostAsJsonAsync($"/api/v1/conversaciones/{conv2}/mensajes",
+            new { texto = "Cito un chat ajeno", respuestaAId = original.Id })).StatusCode);
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData(null)]

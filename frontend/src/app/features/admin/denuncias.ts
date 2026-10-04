@@ -81,7 +81,8 @@ import { Modal } from '../../shared/ui/modal';
       <app-estado-vacio icono="checkCirculo" [titulo]="estado() === 'Pendiente' ? '¡Todo en orden!' : 'Sin denuncias en este estado'" descripcion="No hay denuncias para revisar." />
     }
 
-    <app-modal [(abierto)]="abierto" [titulo]="titulos[accion()]" subtitulo="Quienes reportaron recibirán una notificación.">
+    <app-modal [(abierto)]="abierto" [titulo]="titulos[accion()]"
+      [subtitulo]="accion() === 'Descartar' ? 'Quienes reportaron recibirán una notificación.' : 'Se avisa a quienes reportaron y a la persona denunciada (sin decirle quién fue), que podrá contar su versión.'">
       <form id="form-resolver" (ngSubmit)="resolver()" class="campo">
         <label for="nota" class="etiqueta">Nota {{ accion() === 'OcultarContenido' ? '(motivo que verá el autor)' : '(opcional)' }}</label>
         <textarea id="nota" name="nota" class="entrada" maxlength="300" [(ngModel)]="nota"></textarea>

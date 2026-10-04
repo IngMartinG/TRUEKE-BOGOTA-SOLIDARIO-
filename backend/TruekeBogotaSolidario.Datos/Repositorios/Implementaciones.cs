@@ -567,7 +567,7 @@ public sealed class ConversacionRepository : IConversacionRepository
 
     public async Task<IReadOnlyList<Mensaje>> ListarMensajesAsync(Guid conversacionId, DateTime? antesDeUtc, int tamano)
     {
-        var q = _db.Mensajes.AsNoTracking().Where(m => m.ConversacionId == conversacionId);
+        var q = _db.Mensajes.AsNoTracking().Include(m => m.RespuestaA).Where(m => m.ConversacionId == conversacionId);
         if (antesDeUtc.HasValue) q = q.Where(m => m.FechaUtc < antesDeUtc.Value);
         return await q.OrderByDescending(m => m.FechaUtc).Take(Math.Clamp(tamano, 1, 100)).ToListAsync();
     }
@@ -612,7 +612,30 @@ public sealed class DenunciaRepository : IDenunciaRepository
     public async Task<IReadOnlyList<Denuncia>> ListarDelDenuncianteAsync(Guid denuncianteId, int maximo)
         => await _db.Denuncias.AsNoTracking().Where(d => d.DenuncianteId == denuncianteId).OrderByDescending(d => d.FechaUtc).Take(maximo).ToListAsync();
 
+    public async Task<IReadOnlyList<Denuncia>> ListarRecibidasAsync(Guid denunciadoId, int maximo)
+        => await _db.Denuncias.AsNoTracking()
+            .Where(d => d.DenunciadoId == denunciadoId && d.Estado == EstadoDenuncia.Resuelta && d.ResolucionId != null)
+            .OrderByDescending(d => d.FechaResolucionUtc).Take(Math.Clamp(maximo, 1, 1000)).ToListAsync();
+
+    public async Task<IReadOnlyList<Denuncia>> DeResolucionAsync(Guid resolucionId)
+        => await _db.Denuncias.AsNoTracking().Where(d => d.ResolucionId == resolucionId).OrderBy(d => d.FechaUtc).ToListAsync();
+
     public void Agregar(Denuncia denuncia) => _db.Denuncias.Add(denuncia);
+
+    public Task<Apelacion?> ObtenerApelacionAsync(Guid id) => _db.Apelaciones.FirstOrDefaultAsync(a => a.Id == id);
+
+    public Task<bool> ExisteApelacionAsync(Guid resolucionId) => _db.Apelaciones.AnyAsync(a => a.ResolucionId == resolucionId);
+
+    public async Task<IReadOnlyDictionary<Guid, Apelacion>> ApelacionesDeResolucionesAsync(IReadOnlyCollection<Guid> resolucionIds)
+        => await _db.Apelaciones.AsNoTracking().Where(a => resolucionIds.Contains(a.ResolucionId)).ToDictionaryAsync(a => a.ResolucionId);
+
+    public async Task<IReadOnlyList<Apelacion>> ListarApelacionesAsync(EstadoApelacion estado, int maximo)
+        => await _db.Apelaciones.AsNoTracking().Where(a => a.Estado == estado).OrderBy(a => a.FechaUtc).Take(Math.Clamp(maximo, 1, 500)).ToListAsync();
+
+    public async Task<IReadOnlyList<Apelacion>> ListarApelacionesDelUsuarioAsync(Guid usuarioId, int maximo)
+        => await _db.Apelaciones.AsNoTracking().Where(a => a.UsuarioId == usuarioId).OrderByDescending(a => a.FechaUtc).Take(maximo).ToListAsync();
+
+    public void AgregarApelacion(Apelacion apelacion) => _db.Apelaciones.Add(apelacion);
 }
 
 public sealed class FavoritoRepository : IFavoritoRepository

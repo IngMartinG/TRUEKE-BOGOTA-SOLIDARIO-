@@ -22,6 +22,70 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Apelacion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("AccionOriginal")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("FechaResolucionUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<Guid?>("ModeradorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("NotaResolucion")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<Guid>("ObjetivoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("ResolucionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ResolucionId")
+                        .IsUnique();
+
+                    b.HasIndex("UsuarioId");
+
+                    b.HasIndex("Estado", "FechaUtc");
+
+                    b.ToTable("Apelaciones");
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.AuditoriaEvento", b =>
                 {
                     b.Property<Guid>("Id")
@@ -251,6 +315,13 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("Accion")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<Guid?>("DenunciadoId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<Guid>("DenuncianteId")
                         .HasColumnType("uniqueidentifier");
 
@@ -284,6 +355,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<Guid>("ObjetivoId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("ResolucionId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -295,6 +369,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasColumnType("nvarchar(20)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("ResolucionId");
+
+                    b.HasIndex("DenunciadoId", "Estado");
 
                     b.HasIndex("Estado", "FechaUtc");
 
@@ -480,12 +558,17 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
 
+                    b.Property<Guid?>("RespuestaAId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Texto")
                         .IsRequired()
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RespuestaAId");
 
                     b.HasIndex("AutorId", "FechaUtc");
 
@@ -1193,6 +1276,15 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("Usuarios");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Apelacion", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Calificacion", b =>
                 {
                     b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", "Autor")
@@ -1330,7 +1422,14 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Mensaje", "RespuestaA")
+                        .WithMany()
+                        .HasForeignKey("RespuestaAId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.Navigation("Conversacion");
+
+                    b.Navigation("RespuestaA");
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Notificacion", b =>

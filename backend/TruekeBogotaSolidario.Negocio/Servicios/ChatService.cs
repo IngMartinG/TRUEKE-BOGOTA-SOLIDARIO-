@@ -12,7 +12,7 @@ public interface IChatService
     Task<IReadOnlyList<ConversacionDto>> ListarAsync(Guid actorId);
     /// <summary>Página de mensajes en orden cronológico (los más antiguos primero).</summary>
     Task<IReadOnlyList<MensajeChatDto>> ListarMensajesAsync(Guid actorId, Guid conversacionId, DateTime? antesDeUtc, int tamano);
-    Task<MensajeChatDto> EnviarAsync(Guid actorId, Guid conversacionId, string texto);
+    Task<MensajeChatDto> EnviarAsync(Guid actorId, Guid conversacionId, string texto, Guid? respuestaAId = null);
     Task MarcarLeidosAsync(Guid actorId, Guid conversacionId);
 }
 
@@ -51,8 +51,14 @@ public sealed class ChatService : IChatService
         return c;
     }
 
+    public const int LongitudCita = 150;
+
     public static MensajeChatDto ADto(Mensaje m, Guid lectorId)
-        => new(m.Id, m.ConversacionId, m.AutorId == lectorId, m.EstaOculto ? TextoOculto : m.Texto, m.FechaUtc, m.LeidoUtc is not null, m.EstaOculto);
+        => new(m.Id, m.ConversacionId, m.AutorId == lectorId, m.EstaOculto ? TextoOculto : m.Texto, m.FechaUtc, m.LeidoUtc is not null, m.EstaOculto,
+            m.RespuestaA is { } r
+                ? new MensajeCitadoDto(r.Id, r.AutorId == lectorId,
+                    r.EstaOculto ? TextoOculto : r.Texto.Length > LongitudCita ? r.Texto[..LongitudCita] + "…" : r.Texto, r.EstaOculto)
+                : null);
 
     public async Task<IReadOnlyList<ConversacionDto>> ListarAsync(Guid actorId)
     {
@@ -82,7 +88,7 @@ public sealed class ChatService : IChatService
         return pagina.OrderBy(m => m.FechaUtc).Select(m => ADto(m, actorId)).ToList();
     }
 
-    public async Task<MensajeChatDto> EnviarAsync(Guid actorId, Guid conversacionId, string texto)
+    public async Task<MensajeChatDto> EnviarAsync(Guid actorId, Guid conversacionId, string texto, Guid? respuestaAId = null)
     {
         var c = await CargarAsync(actorId, conversacionId);
         var actor = actorId == c.DuenioId ? c.Duenio! : c.Solicitante!;
@@ -93,7 +99,15 @@ public sealed class ChatService : IChatService
         if (await _conversaciones.ContarMensajesDelAutorDesdeAsync(actorId, ahora.AddHours(-1)) >= MaxMensajesPorHora)
             throw new ReglaDeNegocioException("Estás enviando demasiados mensajes. Intenta de nuevo más tarde.");
 
-        var m = new Mensaje(c.Id, actorId, texto, ahora);
+        Mensaje? citado = null;
+        if (respuestaAId is { } idCitado)
+        {
+            citado = await _conversaciones.ObtenerMensajeAsync(idCitado);
+            if (citado is null || citado.ConversacionId != c.Id) throw new NoEncontradoException("El mensaje que quieres responder no existe.");
+            if (citado.EstaOculto) throw new ReglaDeNegocioException("No puedes responder un mensaje ocultado por moderación.");
+        }
+
+        var m = new Mensaje(c.Id, actorId, texto, ahora, citado);
         _conversaciones.AgregarMensaje(m);
         c.RegistrarMensaje(ahora);
         await _uow.GuardarCambiosAsync();

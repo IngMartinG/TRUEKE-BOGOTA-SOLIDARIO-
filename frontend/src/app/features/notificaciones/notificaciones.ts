@@ -21,6 +21,10 @@ function destino(n: NotificacionDto): { icono: string; color: string; ruta: unkn
     return { icono: t === 'CalificacionRecibida' ? 'estrella' : 'checkCirculo', color: 'bg-sol-100 text-sol-600', ruta: ['/intercambios'] };
   if (t === 'AlertaPagoEnRevision') return { icono: 'alerta', color: 'bg-tierra-100 text-tierra-700', ruta: ['/admin/pagos'] };
   if (t === 'PqrNueva') return { icono: 'soporte', color: 'bg-agua-100 text-agua-700', ruta: ['/admin/pqr'] };
+  if (t === 'ApelacionNueva') return { icono: 'balanza', color: 'bg-tierra-100 text-tierra-700', ruta: ['/admin/apelaciones'] };
+  if (t === 'DenunciaRecibida' || t === 'ApelacionResuelta')
+    return { icono: 'balanza', color: 'bg-tierra-100 text-tierra-700', ruta: ['/cuenta/reportes'], ...(n.recursoId ? { query: { r: n.recursoId } } : {}) };
+  if (t === 'DenunciaRevisada') return { icono: 'bandera', color: 'bg-agua-100 text-agua-700', ruta: [] };
   if (t === 'PqrRespondida') return { icono: 'soporte', color: 'bg-agua-100 text-agua-700', ruta: ['/cuenta/soporte'] };
   if (t === 'FacturaEmitida') return { icono: 'factura', color: 'bg-cielo-100 text-cielo-700', ruta: ['/cuenta/facturacion'] };
   if (t === 'PlanPorVencer') return { icono: 'corona', color: 'bg-sol-100 text-sol-600', ruta: ['/eco-puntos'] };

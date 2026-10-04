@@ -46,18 +46,23 @@ public class Mensaje
 
     private Mensaje() { Texto = ""; } // EF Core
 
-    public Mensaje(Guid conversacionId, Guid autorId, string texto, DateTime ahoraUtc)
+    /// <param name="respuestaA">Mensaje citado (como "responder" en WhatsApp). Debe ser de la misma conversación.</param>
+    public Mensaje(Guid conversacionId, Guid autorId, string texto, DateTime ahoraUtc, Mensaje? respuestaA = null)
     {
         texto = (texto ?? "").Trim();
         if (texto.Length is < 1 or > LongitudMaxima)
             throw new ReglaDeNegocioException($"El mensaje debe tener entre 1 y {LongitudMaxima} caracteres.");
         if (texto.Any(c => char.IsControl(c) && c is not '\n' and not '\r'))
             throw new ReglaDeNegocioException("El mensaje contiene caracteres no permitidos.");
+        if (respuestaA is not null && respuestaA.ConversacionId != conversacionId)
+            throw new ReglaDeNegocioException("Solo puedes responder mensajes de esta conversación.");
         Id = Guid.NewGuid();
         ConversacionId = conversacionId;
         AutorId = autorId;
         Texto = texto;
         FechaUtc = ahoraUtc;
+        RespuestaAId = respuestaA?.Id;
+        RespuestaA = respuestaA;
     }
 
     public Guid Id { get; private set; }
@@ -65,6 +70,8 @@ public class Mensaje
     public Conversacion? Conversacion { get; private set; }
     public Guid AutorId { get; private set; }
     public string Texto { get; private set; }
+    public Guid? RespuestaAId { get; private set; }
+    public Mensaje? RespuestaA { get; private set; }
     public DateTime FechaUtc { get; private set; }
     public DateTime? LeidoUtc { get; private set; }
     public bool EstaOculto { get; private set; }
@@ -78,5 +85,12 @@ public class Mensaje
         if (EstaOculto) throw new ReglaDeNegocioException("El mensaje ya está oculto.");
         EstaOculto = true;
         MotivoOcultamiento = motivo.Trim();
+    }
+
+    public void Mostrar()
+    {
+        if (!EstaOculto) throw new ReglaDeNegocioException("El mensaje no está oculto.");
+        EstaOculto = false;
+        MotivoOcultamiento = null;
     }
 }
