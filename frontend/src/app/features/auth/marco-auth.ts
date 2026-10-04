@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ConfigService } from '../../core/config.service';
 import { Icono } from '../../shared/ui/icono';
 import { Logo } from '../../shared/ui/logo';
 
@@ -34,6 +35,17 @@ import { Logo } from '../../shared/ui/logo';
           <p class="mt-2 text-tenue">{{ subtitulo() }}</p>
         }
         <div class="mt-8"><ng-content /></div>
+        @if (conCaptcha() && config.captchaClave()) {
+          <!-- reCAPTCHA v3 es invisible; Google permite ocultar su insignia si se muestra este aviso -->
+          <p class="mt-6 flex items-start gap-1.5 text-xs text-tenue">
+            <app-icono nombre="escudo" [tamano]="14" class="mt-px shrink-0 text-bosque-600" />
+            <span>
+              Protegido por reCAPTCHA de Google. Se aplican la
+              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" class="enlace">Política de privacidad</a> y los
+              <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" class="enlace">Términos del servicio</a> de Google.
+            </span>
+          </p>
+        }
       </section>
     </div>
   `,
@@ -42,6 +54,9 @@ export class MarcoAuth {
   readonly titulo = input.required<string>();
   readonly subtitulo = input('');
   readonly lema = input('Lo que tú ya no usas, alguien cerca de ti lo necesita.');
+  /** El formulario usa reCAPTCHA v3: se muestra el aviso que Google exige. */
+  readonly conCaptcha = input(false);
+  protected readonly config = inject(ConfigService);
   protected readonly beneficios = [
     { icono: 'repeat', texto: 'Intercambia sin dinero de por medio' },
     { icono: 'escudo', texto: 'Chat interno: sin compartir tu número' },

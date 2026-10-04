@@ -50,7 +50,7 @@ TruekeBogotaSolidario.sln
 | **Administrador** | Lo del Cliente más moderación: denuncias, ocultar contenido, suspender Clientes, verificaciones y pagos. **Requiere sesión con 2FA** |
 | **SuperUsuario** | Lo del Administrador más cambiar roles, suspender Administradores y registrar reembolsos. **Requiere sesión con 2FA** |
 
-Nadie puede suspender a un SuperUsuario, y siempre queda al menos uno. El primero se crea con `Bootstrap:SuperUsuarioCorreo` y `Bootstrap:SuperUsuarioClave`; quita esas variables después del primer arranque.
+Nadie puede suspender a un SuperUsuario, y siempre queda al menos uno. El primero se crea con `Bootstrap:SuperUsuarioCorreo` y `Bootstrap:SuperUsuarioClave` solo en la primera instalación (si ya existe una cuenta con ese correo, el arranque no hace nada); quita la clave después. Los siguientes se nombran desde Moderación → Usuarios.
 
 ## 4. Autenticación
 
@@ -327,7 +327,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
   - textos de usuarios siempre con interpolación de Angular (nunca `innerHTML`);
   - sin secretos en el código y sin source maps en producción;
   - CSP que permita solo la API, Google (gsi y recaptcha) y el Blob.
-- **Cliente TypeScript:** `npx @openapitools/openapi-generator-cli generate -i docs/openapi.json -g typescript-angular -o src/app/api`. Si cambia la API, se regenera el contrato con `ACTUALIZAR_OPENAPI=1 dotnet test --filter OpenApiTests`.
+- **Tipos TypeScript del front:** desde `frontend/`, `npm run api` (openapi-typescript genera `src/app/api/schema.d.ts`). Si cambia la API, primero se regenera el contrato con `ACTUALIZAR_OPENAPI=1 dotnet test --filter OpenApiTests`.
 
 ## 11. Seguridad (resumen)
 

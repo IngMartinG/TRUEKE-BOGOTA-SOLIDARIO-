@@ -1,4 +1,6 @@
 # Etapa 3 — UI/UX & Prototipado Generativo con IA
+
+> **Archivo histórico.** Este prototipo estático fue el punto de partida del diseño; la aplicación real está en `frontend/`.
 **Proyecto:** Trueke Bogotá Solidario
 
 ## 1. Prompt utilizado en Figma AI
@@ -16,7 +18,7 @@ El prototipo generado (4 pantallas: catálogo en modo Trueke, catálogo en modo 
 catálogo en modo Donación y detalle de producto) fue exportado como PDF de
 especificación oficial:
 
-[`docs/Especificaciones_UIUX_Proyecto.pdf`](../docs/Especificaciones_UIUX_Proyecto.pdf)
+[`docs/diseno/Especificaciones_UIUX_Proyecto.pdf`](../../diseno/Especificaciones_UIUX_Proyecto.pdf)
 
 ## 3. Tokens de diseño extraídos
 

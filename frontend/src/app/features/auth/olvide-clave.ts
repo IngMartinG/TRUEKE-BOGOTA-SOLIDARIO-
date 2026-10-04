@@ -13,7 +13,7 @@ import { MarcoAuth } from './marco-auth';
   imports: [ReactiveFormsModule, RouterLink, MarcoAuth, ErrorCampo, Icono],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-marco-auth titulo="¿Olvidaste tu contraseña?" subtitulo="Te enviaremos un enlace para crear una nueva.">
+    <app-marco-auth [conCaptcha]="true" titulo="¿Olvidaste tu contraseña?" subtitulo="Te enviaremos un enlace para crear una nueva.">
       @if (enviado()) {
         <div class="rounded-tarjeta border border-bosque-200 bg-bosque-50 p-6 text-center dark:border-bosque-800 dark:bg-bosque-950/50" role="status">
           <span class="mx-auto grid size-14 place-items-center rounded-full bg-bosque-600 text-white"><app-icono nombre="correo" [tamano]="26" /></span>

@@ -14,7 +14,7 @@ import { SubidasService } from '../../core/subidas.service';
 import { CopPipe, FechaPipe, NumeroPipe } from '../../shared/pipes';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
-import { abrirCheckoutWompi } from './wompi';
+import { abrirCheckoutWompi, esOrigenLocal, urlCheckoutWompi } from './wompi';
 
 interface Servicio {
   concepto: Exclude<ConceptoPagoDto, 'Recarga'>;
@@ -450,16 +450,29 @@ export default class EcoPuntos {
   private async iniciar(r: IniciarPagoRequest): Promise<void> {
     this.pagando.set(true);
     this.errorCompra.set(null);
+    // En localhost Wompi no acepta volver a la app: se paga en otra pestaña. Se abre AHORA (dentro del clic)
+    // para que el navegador no la bloquee como ventana emergente.
+    const pestana = esOrigenLocal() ? window.open('', '_blank') : null;
     try {
       const pago = await firstValueFrom(this.api.iniciarPago(r));
       this.compraAbierta.set(false);
       if (pago.proveedor === 'Wompi' && pago.llavePublica) {
-        abrirCheckoutWompi(pago, `${window.location.origin}/pagos/${encodeURIComponent(pago.referencia ?? '')}`);
+        if (esOrigenLocal()) {
+          const url = urlCheckoutWompi(pago, null);
+          if (pestana) pestana.location.href = url;
+          else window.open(url, '_blank');
+          this.avisos.info('Completa el pago en la pestaña de Wompi', 'Esta página se actualiza sola cuando Wompi lo apruebe.');
+          await this.router.navigate(['/pagos', pago.referencia]);
+        } else {
+          abrirCheckoutWompi(pago, `${window.location.origin}/pagos/${encodeURIComponent(pago.referencia ?? '')}`);
+        }
       } else {
+        pestana?.close();
         // Pasarela simulada (solo en desarrollo: el backend no arranca con ella en producción).
         await this.router.navigate(['/pagos', pago.referencia], { queryParams: { simulado: 1 } });
       }
     } catch (e) {
+      pestana?.close();
       if (this.compraAbierta()) this.errorCompra.set(mensajeDe(e));
       else this.avisos.error(mensajeDe(e));
     } finally {

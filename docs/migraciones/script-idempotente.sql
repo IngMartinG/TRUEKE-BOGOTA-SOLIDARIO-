@@ -1229,3 +1229,288 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004033703_ChatRespuestasYApelaciones'
+)
+BEGIN
+    ALTER TABLE [Mensajes] ADD [RespuestaAId] uniqueidentifier NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004033703_ChatRespuestasYApelaciones'
+)
+BEGIN
+    ALTER TABLE [Denuncias] ADD [Accion] nvarchar(20) NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004033703_ChatRespuestasYApelaciones'
+)
+BEGIN
+    ALTER TABLE [Denuncias] ADD [DenunciadoId] uniqueidentifier NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004033703_ChatRespuestasYApelaciones'
+)
+BEGIN
+    ALTER TABLE [Denuncias] ADD [ResolucionId] uniqueidentifier NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004033703_ChatRespuestasYApelaciones'
+)
+BEGIN
+    CREATE TABLE [Apelaciones] (
+        [Id] uniqueidentifier NOT NULL,
+        [ResolucionId] uniqueidentifier NOT NULL,
+        [UsuarioId] uniqueidentifier NOT NULL,
+        [Tipo] nvarchar(20) NOT NULL,
+        [ObjetivoId] uniqueidentifier NOT NULL,
+        [AccionOriginal] nvarchar(20) NOT NULL,
+        [Texto] nvarchar(1000) NOT NULL,
+        [FechaUtc] datetime2 NOT NULL,
+        [Estado] nvarchar(20) NOT NULL,
+        [ModeradorId] uniqueidentifier NULL,
+        [FechaResolucionUtc] datetime2 NULL,
+        [NotaResolucion] nvarchar(300) NULL,
+        [RowVersion] rowversion NULL,
+        CONSTRAINT [PK_Apelaciones] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_Apelaciones_Usuarios_UsuarioId] FOREIGN KEY ([UsuarioId]) REFERENCES [Usuarios] ([Id]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004033703_ChatRespuestasYApelaciones'
+)
+BEGIN
+    CREATE INDEX [IX_Mensajes_RespuestaAId] ON [Mensajes] ([RespuestaAId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004033703_ChatRespuestasYApelaciones'
+)
+BEGIN
+    CREATE INDEX [IX_Denuncias_DenunciadoId_Estado] ON [Denuncias] ([DenunciadoId], [Estado]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004033703_ChatRespuestasYApelaciones'
+)
+BEGIN
+    CREATE INDEX [IX_Denuncias_ResolucionId] ON [Denuncias] ([ResolucionId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004033703_ChatRespuestasYApelaciones'
+)
+BEGIN
+    CREATE INDEX [IX_Apelaciones_Estado_FechaUtc] ON [Apelaciones] ([Estado], [FechaUtc]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004033703_ChatRespuestasYApelaciones'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_Apelaciones_ResolucionId] ON [Apelaciones] ([ResolucionId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004033703_ChatRespuestasYApelaciones'
+)
+BEGIN
+    CREATE INDEX [IX_Apelaciones_UsuarioId] ON [Apelaciones] ([UsuarioId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004033703_ChatRespuestasYApelaciones'
+)
+BEGIN
+    ALTER TABLE [Mensajes] ADD CONSTRAINT [FK_Mensajes_Mensajes_RespuestaAId] FOREIGN KEY ([RespuestaAId]) REFERENCES [Mensajes] ([Id]) ON DELETE NO ACTION;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004033703_ChatRespuestasYApelaciones'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261004033703_ChatRespuestasYApelaciones', N'8.0.31');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004045210_ChatEstadosYPresencia'
+)
+BEGIN
+    ALTER TABLE [Mensajes] ADD [EntregadoUtc] datetime2 NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004045210_ChatEstadosYPresencia'
+)
+BEGIN
+    UPDATE Mensajes SET EntregadoUtc = LeidoUtc WHERE LeidoUtc IS NOT NULL AND EntregadoUtc IS NULL
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004045210_ChatEstadosYPresencia'
+)
+BEGIN
+    CREATE INDEX [IX_Mensajes_ConversacionId_AutorId_EntregadoUtc] ON [Mensajes] ([ConversacionId], [AutorId], [EntregadoUtc]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004045210_ChatEstadosYPresencia'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261004045210_ChatEstadosYPresencia', N'8.0.31');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004045913_FotoPerfil'
+)
+BEGIN
+    ALTER TABLE [Usuarios] ADD [FotoUrl] nvarchar(500) NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004045913_FotoPerfil'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261004045913_FotoPerfil', N'8.0.31');
+END;
+GO
+
+COMMIT;
+GO
+
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004051728_BloqueosYPreferenciasAvisos'
+)
+BEGIN
+    ALTER TABLE [Usuarios] ADD [AceptaNovedades] bit NOT NULL DEFAULT CAST(0 AS bit);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004051728_BloqueosYPreferenciasAvisos'
+)
+BEGIN
+    ALTER TABLE [Usuarios] ADD [AvisosCorreoIntercambios] bit NOT NULL DEFAULT CAST(1 AS bit);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004051728_BloqueosYPreferenciasAvisos'
+)
+BEGIN
+    ALTER TABLE [Usuarios] ADD [AvisosCorreoMensajes] bit NOT NULL DEFAULT CAST(1 AS bit);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004051728_BloqueosYPreferenciasAvisos'
+)
+BEGIN
+    ALTER TABLE [Usuarios] ADD [AvisosCorreoPlanes] bit NOT NULL DEFAULT CAST(1 AS bit);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004051728_BloqueosYPreferenciasAvisos'
+)
+BEGIN
+    CREATE TABLE [Bloqueos] (
+        [BloqueadorId] uniqueidentifier NOT NULL,
+        [BloqueadoId] uniqueidentifier NOT NULL,
+        [FechaUtc] datetime2 NOT NULL,
+        CONSTRAINT [PK_Bloqueos] PRIMARY KEY ([BloqueadorId], [BloqueadoId]),
+        CONSTRAINT [FK_Bloqueos_Usuarios_BloqueadoId] FOREIGN KEY ([BloqueadoId]) REFERENCES [Usuarios] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_Bloqueos_Usuarios_BloqueadorId] FOREIGN KEY ([BloqueadorId]) REFERENCES [Usuarios] ([Id]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004051728_BloqueosYPreferenciasAvisos'
+)
+BEGIN
+    CREATE INDEX [IX_Bloqueos_BloqueadoId] ON [Bloqueos] ([BloqueadoId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261004051728_BloqueosYPreferenciasAvisos'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261004051728_BloqueosYPreferenciasAvisos', N'8.0.31');
+END;
+GO
+
+COMMIT;
+GO
+

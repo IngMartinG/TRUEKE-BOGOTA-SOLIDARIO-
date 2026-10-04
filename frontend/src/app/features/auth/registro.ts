@@ -22,7 +22,7 @@ import { destinoSeguro } from './redireccion';
   imports: [ReactiveFormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, Icono, BotonGoogle, SelectorMunicipio],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-marco-auth titulo="Crea tu cuenta" subtitulo="Únete gratis y recibe Eco-Puntos de bienvenida." lema="Cada objeto que circula es un residuo menos en los rellenos sanitarios.">
+    <app-marco-auth [conCaptcha]="true" titulo="Crea tu cuenta" subtitulo="Únete gratis y recibe Eco-Puntos de bienvenida." lema="Cada objeto que circula es un residuo menos en los rellenos sanitarios.">
       <form [formGroup]="form" (ngSubmit)="registrar()" class="space-y-5" novalidate>
         <div class="campo">
           <label class="etiqueta" for="nombre">Nombre completo</label>
