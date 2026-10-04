@@ -53,7 +53,7 @@ const TAMANO = 40;
                 <a [routerLink]="['/mensajes', c.id]" class="flex gap-3 border-l-4 px-4 py-3.5 transition hover:bg-superficie-2"
                   [class]="c.id === id() ? 'border-bosque-500 bg-bosque-50 dark:bg-bosque-900/30' : 'border-transparent'">
                   <span class="relative shrink-0">
-                    <app-avatar [nombre]="c.contraparte?.nombre" [tamano]="44" [verificado]="!!c.contraparte?.verificado" />
+                    <app-avatar [nombre]="c.contraparte?.nombre" [foto]="c.contraparte?.fotoUrl" [tamano]="44" [verificado]="!!c.contraparte?.verificado" />
                     @if (estaEnLinea(c)) {
                       <span class="absolute right-0 bottom-0 size-3 rounded-full border-2 border-superficie bg-bosque-500" title="En línea"></span>
                     }
@@ -99,7 +99,7 @@ const TAMANO = 40;
               <a routerLink="/mensajes" class="btn-icono md:hidden" aria-label="Volver a conversaciones"><app-icono nombre="izquierda" /></a>
               @if (actual(); as c) {
                 <a [routerLink]="['/usuarios', c.contraparte?.id]" class="flex min-w-0 flex-1 items-center gap-3">
-                  <app-avatar [nombre]="c.contraparte?.nombre" [tamano]="40" [verificado]="!!c.contraparte?.verificado" />
+                  <app-avatar [nombre]="c.contraparte?.nombre" [foto]="c.contraparte?.fotoUrl" [tamano]="40" [verificado]="!!c.contraparte?.verificado" />
                   <div class="min-w-0">
                     <p class="truncate font-semibold">{{ c.contraparte?.nombre }}</p>
                     @if (tiempoReal.escribiendoEn().has(c.id ?? '')) {

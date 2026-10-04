@@ -42,6 +42,39 @@ public class ImagenesTests : IClassFixture<FabricaApi>
     }
 
     [Fact]
+    public async Task Foto_de_perfil_propia_se_ve_en_el_perfil_publico_y_al_cambiarla_se_borra_la_anterior()
+    {
+        var ses = await Api.RegistrarSesionAsync(_f, "conFoto");
+        var c = Api.ConToken(_f, ses.Token);
+        var s1 = await SubidaAsync(c);
+        _almacen.Subir(s1.UrlArchivo, "image/png", AlmacenFalso.Png());
+        var r = await c.PutAsJsonAsync("/api/v1/usuarios/yo/foto", new { url = s1.UrlArchivo });
+        Assert.Equal(HttpStatusCode.OK, r.StatusCode);
+        Assert.Equal(s1.UrlArchivo, (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("fotoUrl").GetString());
+
+        // Un tercero (incluso anónimo) la ve en el perfil público
+        var perfil = await _f.CreateClient().GetFromJsonAsync<JsonElement>($"/api/v1/usuarios/{ses.Usuario.Id}/perfil");
+        Assert.Equal(s1.UrlArchivo, perfil.GetProperty("fotoUrl").GetString());
+
+        // Cambiarla borra la anterior del almacenamiento; quitarla vuelve a las iniciales
+        var s2 = await SubidaAsync(c);
+        _almacen.Subir(s2.UrlArchivo, "image/png", AlmacenFalso.Png());
+        (await c.PutAsJsonAsync("/api/v1/usuarios/yo/foto", new { url = s2.UrlArchivo })).EnsureSuccessStatusCode();
+        Assert.False(_almacen.Existe(s1.UrlArchivo));
+        var sinFoto = await (await c.DeleteAsync("/api/v1/usuarios/yo/foto")).Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal(JsonValueKind.Null, sinFoto.GetProperty("fotoUrl").ValueKind);
+        Assert.False(_almacen.Existe(s2.UrlArchivo));
+
+        // No se puede usar la imagen de otra persona ni una URL externa
+        var ajeno = await Api.RegistrarAsync(_f, "ajenoFoto");
+        var sa = await SubidaAsync(ajeno);
+        _almacen.Subir(sa.UrlArchivo, "image/png", AlmacenFalso.Png());
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PutAsJsonAsync("/api/v1/usuarios/yo/foto", new { url = sa.UrlArchivo })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PutAsJsonAsync("/api/v1/usuarios/yo/foto", new { url = "https://rastreador.example/x.png" })).StatusCode);
+        Assert.True(_almacen.Existe(sa.UrlArchivo));
+    }
+
+    [Fact]
     public async Task No_se_puede_usar_la_imagen_de_otro_usuario_ni_una_url_externa()
     {
         var ajeno = await Api.RegistrarAsync(_f, "ajeno");

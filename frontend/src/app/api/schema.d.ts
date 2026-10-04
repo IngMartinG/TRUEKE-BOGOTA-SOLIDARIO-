@@ -3819,6 +3819,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/usuarios/yo/foto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CambiarFotoRequest"];
+                    "text/json": components["schemas"]["CambiarFotoRequest"];
+                    "application/*+json": components["schemas"]["CambiarFotoRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UsuarioDto"];
+                        "application/json": components["schemas"]["UsuarioDto"];
+                        "text/json": components["schemas"]["UsuarioDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UsuarioDto"];
+                        "application/json": components["schemas"]["UsuarioDto"];
+                        "text/json": components["schemas"]["UsuarioDto"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/usuarios/yo/datos": {
         parameters: {
             query?: never;
@@ -4086,6 +4150,9 @@ export interface components {
         CambiarClaveRequest: {
             claveActual?: string | null;
             claveNueva: string;
+        };
+        CambiarFotoRequest: {
+            url: string;
         };
         CambiarRolRequest: {
             rol?: components["schemas"]["RolDto"];
@@ -4685,6 +4752,7 @@ export interface components {
             totalCalificaciones?: number;
             municipio?: string;
             nombreComercial?: string | null;
+            fotoUrl?: string | null;
         };
         PerfilUsuarioDto: {
             /** Format: uuid */
@@ -4711,6 +4779,7 @@ export interface components {
             publicacionesActivas?: number;
             municipio?: string;
             nombreComercial?: string | null;
+            fotoUrl?: string | null;
         };
         PoliticaEcoPuntosDto: {
             /** Format: int32 */
@@ -5049,6 +5118,7 @@ export interface components {
             nombreComercial?: string | null;
             nit?: string | null;
             tieneDatosFacturacion?: boolean;
+            fotoUrl?: string | null;
         };
         VerificacionPendienteDto: {
             /** Format: uuid */
@@ -5076,6 +5146,7 @@ export type CalificacionDtoPaginaDto = components['schemas']['CalificacionDtoPag
 export type CalificacionExportDto = components['schemas']['CalificacionExportDto'];
 export type CalificarRequest = components['schemas']['CalificarRequest'];
 export type CambiarClaveRequest = components['schemas']['CambiarClaveRequest'];
+export type CambiarFotoRequest = components['schemas']['CambiarFotoRequest'];
 export type CambiarRolRequest = components['schemas']['CambiarRolRequest'];
 export type CancelarPublicacionRequest = components['schemas']['CancelarPublicacionRequest'];
 export type CategoriaDto = components['schemas']['CategoriaDto'];

@@ -13,7 +13,7 @@ import { Icono } from '../../shared/ui/icono';
     <div class="contenedor grid grid-cols-1 gap-8 py-8 sm:py-10 lg:grid-cols-[16rem_1fr]">
       <aside class="min-w-0">
         <div class="flex items-center gap-3">
-          <app-avatar [nombre]="sesion.usuario()?.nombreCompleto" [tamano]="52" [verificado]="!!sesion.usuario()?.verificado" />
+          <app-avatar [nombre]="sesion.usuario()?.nombreCompleto" [foto]="sesion.usuario()?.fotoUrl" [tamano]="52" [verificado]="!!sesion.usuario()?.verificado" />
           <div class="min-w-0">
             <p class="truncate font-display font-bold">{{ sesion.usuario()?.nombreCompleto }}</p>
             <p class="flex items-center gap-1 text-sm font-semibold text-sol-600 dark:text-sol-300">

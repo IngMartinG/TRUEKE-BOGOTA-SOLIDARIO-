@@ -46,6 +46,7 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.TipoCuenta).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.EstadoVerificacion).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.DocumentoVerificacionUrl).HasMaxLength(500);
+            e.Property(x => x.FotoUrl).HasMaxLength(500);
             e.Property(x => x.MotivoRechazoVerificacion).HasMaxLength(300);
             e.HasIndex(x => x.Correo).IsUnique();
             e.HasIndex(x => x.EstadoVerificacion);

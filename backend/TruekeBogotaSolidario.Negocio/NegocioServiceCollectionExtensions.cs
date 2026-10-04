@@ -71,6 +71,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<INotificador, NotificadorPersistente>();
         services.AddScoped<INotificacionService, NotificacionService>();
         services.AddScoped<IChatService, ChatService>();
+        services.AddScoped<IFotoPerfilService, FotoPerfilService>();
         services.AddScoped<IArchivoService, ArchivoService>();
         services.AddScoped<IDenunciaService, DenunciaService>();
         services.AddScoped<IDatosPersonalesService, DatosPersonalesService>();

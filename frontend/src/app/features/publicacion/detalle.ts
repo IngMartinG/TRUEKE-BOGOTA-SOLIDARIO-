@@ -239,7 +239,7 @@ import { Comentarios } from './comentarios';
 
             <!-- Propietario -->
             <a [routerLink]="['/usuarios', p.propietario?.id]" class="tarjeta-interactiva flex items-center gap-4 p-5">
-              <app-avatar [nombre]="p.propietario?.nombre" [tamano]="56" [verificado]="!!p.propietario?.verificado" />
+              <app-avatar [nombre]="p.propietario?.nombre" [foto]="p.propietario?.fotoUrl" [tamano]="56" [verificado]="!!p.propietario?.verificado" />
               <div class="min-w-0 flex-1">
                 <p class="text-xs text-tenue">Publicado por</p>
                 <p class="truncate font-display font-bold">{{ p.propietario?.nombre }}</p>

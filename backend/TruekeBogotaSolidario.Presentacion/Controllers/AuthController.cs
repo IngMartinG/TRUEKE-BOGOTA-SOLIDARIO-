@@ -110,7 +110,16 @@ public sealed class UsuariosController : ControllerBase
 {
     private readonly IAuthService _auth;
     private readonly IDatosPersonalesService _datos;
-    public UsuariosController(IAuthService auth, IDatosPersonalesService datos) { _auth = auth; _datos = datos; }
+    private readonly IFotoPerfilService _foto;
+    public UsuariosController(IAuthService auth, IDatosPersonalesService datos, IFotoPerfilService foto) { _auth = auth; _datos = datos; _foto = foto; }
+
+    /// <summary>Foto de perfil: la URL es la de POST /archivos/subidas (tipo Imagen) tras subirla con PUT. Se guarda una copia limpia.</summary>
+    [HttpPut("yo/foto"), EnableRateLimiting(Politicas.LimiteEscritura)]
+    public async Task<ActionResult<UsuarioDto>> CambiarFoto([FromBody] CambiarFotoRequest r)
+        => Ok(await _foto.CambiarAsync(User.IdActual(), r.Url));
+
+    [HttpDelete("yo/foto"), EnableRateLimiting(Politicas.LimiteEscritura)]
+    public async Task<ActionResult<UsuarioDto>> QuitarFoto() => Ok(await _foto.QuitarAsync(User.IdActual()));
 
     /// <summary>Ley 1581 — derecho de acceso: todos tus datos en JSON.</summary>
     [HttpGet("yo/datos"), EnableRateLimiting(Politicas.LimiteAuth)]

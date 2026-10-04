@@ -26,14 +26,18 @@ internal static class Mapeos
 
     public static PerfilPublicoDto APerfilPublico(Usuario u, DateTime ahora)
         => new(u.Id, NombrePublico(u.NombreCompleto), u.Localidad, u.Reputacion, u.EsVerificado, TipoCuentaEfectivo(u, ahora),
-            u.CalificacionPromedio, u.CalificacionesTotal, Divipola.NombreCompleto(u.MunicipioCodigo), NombreComercialVisible(u, ahora));
+            u.CalificacionPromedio, u.CalificacionesTotal, Divipola.NombreCompleto(u.MunicipioCodigo), NombreComercialVisible(u, ahora),
+            FotoVisible(u));
+
+    /// <summary>Cuentas eliminadas o suspendidas no muestran foto.</summary>
+    private static string? FotoVisible(Usuario u) => u.EstaEliminado || u.EstaSuspendido ? null : u.FotoUrl;
 
     public static PerfilUsuarioDto APerfilUsuario(Usuario u, int publicacionesActivas, DateTime ahora)
         => new(u.Id, NombrePublico(u.NombreCompleto), u.Localidad, u.Reputacion, u.EsVerificado, TipoCuentaEfectivo(u, ahora),
             new DateTime(u.FechaRegistro.Year, u.FechaRegistro.Month, 1, 0, 0, 0, DateTimeKind.Utc), // solo mes y año
             u.TotalTruekesCompletados, u.TotalComprasRealizadas, u.TotalDonacionesRealizadas,
             u.CalificacionPromedio, u.CalificacionesTotal, publicacionesActivas, Divipola.NombreCompleto(u.MunicipioCodigo),
-            NombreComercialVisible(u, ahora));
+            NombreComercialVisible(u, ahora), FotoVisible(u));
 
     public static UsuarioDto AUsuarioDto(Usuario u, DateTime ahora)
     {
@@ -43,7 +47,7 @@ internal static class Mapeos
             u.SaldoEcoPuntos, u.Reputacion, u.TotalTruekesCompletados, u.TotalComprasRealizadas, u.TotalDonacionesRealizadas,
             planVigente ? u.DestacadosGratisRestantes : 0,
             u.CorreoVerificado, u.TieneClave, u.GoogleSub is not null, u.DosFactoresActivo, u.CodigosRecuperacionRestantes,
-            u.MunicipioCodigo, Divipola.NombreCompleto(u.MunicipioCodigo), u.NombreComercial, u.Nit, u.TieneDatosFacturacion);
+            u.MunicipioCodigo, Divipola.NombreCompleto(u.MunicipioCodigo), u.NombreComercial, u.Nit, u.TieneDatosFacturacion, u.FotoUrl);
     }
 
     public static CategoriaDto ACategoriaDto(Categoria c) => new(c.Id, c.NombreCategoria, c.Descripcion);

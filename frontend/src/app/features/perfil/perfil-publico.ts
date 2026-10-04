@@ -25,7 +25,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
       <section class="bg-gradient-to-b from-bosque-100 to-fondo dark:from-bosque-950/70">
         <div class="contenedor flex flex-col items-center gap-6 py-10 text-center sm:flex-row sm:text-left">
           @if (perfil.value(); as p) {
-            <app-avatar [nombre]="p.nombre" [tamano]="104" [verificado]="!!p.verificado" />
+            <app-avatar [nombre]="p.nombre" [foto]="p.fotoUrl" [tamano]="104" [verificado]="!!p.verificado" />
             <div class="flex-1">
               <div class="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <h1 class="text-3xl font-extrabold">{{ p.nombreComercial || p.nombre }}</h1>
@@ -92,7 +92,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
             @for (c of calificaciones.value()?.items ?? []; track c.id) {
               <li class="tarjeta p-4">
                 <div class="flex items-center gap-3">
-                  <app-avatar [nombre]="c.autor?.nombre" [tamano]="32" />
+                  <app-avatar [nombre]="c.autor?.nombre" [foto]="c.autor?.fotoUrl" [tamano]="32" />
                   <div class="min-w-0 flex-1">
                     <p class="truncate text-sm font-semibold">{{ c.autor?.nombre }}</p>
                     <app-estrellas [valor]="c.estrellas ?? 0" [tamano]="12" />

@@ -31,7 +31,7 @@ const TAMANO = 10;
       @if (sesion.autenticado()) {
         @if (sesion.correoVerificado()) {
           <form class="mt-5 flex gap-3" (ngSubmit)="publicar()">
-            <app-avatar [nombre]="sesion.usuario()?.nombreCompleto" [tamano]="38" class="hidden sm:inline-flex" />
+            <app-avatar [nombre]="sesion.usuario()?.nombreCompleto" [foto]="sesion.usuario()?.fotoUrl" [tamano]="38" class="hidden sm:inline-flex" />
             <div class="flex-1">
               <label for="nuevo-comentario" class="sr-only">Escribe un comentario</label>
               <textarea id="nuevo-comentario" name="texto" class="entrada min-h-20" maxlength="500" [(ngModel)]="texto"
@@ -59,7 +59,7 @@ const TAMANO = 10;
         @for (c of comentarios(); track c.id) {
           <li class="flex gap-3" [class.opacity-60]="c.oculto">
             <a [routerLink]="['/usuarios', c.autor?.id]" class="shrink-0" [attr.aria-label]="'Perfil de ' + c.autor?.nombre">
-              <app-avatar [nombre]="c.autor?.nombre" [tamano]="36" [verificado]="!!c.autor?.verificado" />
+              <app-avatar [nombre]="c.autor?.nombre" [foto]="c.autor?.fotoUrl" [tamano]="36" [verificado]="!!c.autor?.verificado" />
             </a>
             <div class="min-w-0 flex-1">
               <div class="flex flex-wrap items-center gap-x-2 text-sm">
