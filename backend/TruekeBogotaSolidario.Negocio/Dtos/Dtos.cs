@@ -455,14 +455,19 @@ public sealed record ComentarioDto(Guid Id, Guid PublicacionId, PerfilPublicoDto
 
 /// <summary>Mensaje de chat. EsMio es relativo a quien lo recibe. Si fue ocultado por moderación, Texto trae un aviso.</summary>
 public sealed record MensajeChatDto(Guid Id, Guid ConversacionId, bool EsMio, string Texto, DateTime FechaUtc, bool Leido, bool Oculto,
-    MensajeCitadoDto? RespuestaA = null);
+    MensajeCitadoDto? RespuestaA = null, EstadoMensajeDto Estado = EstadoMensajeDto.Enviado);
+
+/// <summary>✓ enviado · ✓✓ entregado (llegó al dispositivo) · ✓✓ de color leído.</summary>
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<EstadoMensajeDto>))]
+public enum EstadoMensajeDto { Enviado = 1, Entregado = 2, Leido = 3 }
 
 /// <summary>Vista previa del mensaje al que se responde (texto recortado; si está oculto, trae el aviso).</summary>
 public sealed record MensajeCitadoDto(Guid Id, bool EsMio, string Texto, bool Oculto);
 
 /// <summary>Resumen de una conversación para la bandeja de chats.</summary>
 public sealed record ConversacionDto(Guid Id, Guid SolicitudId, Guid PublicacionId, string PublicacionTitulo, string EstadoSolicitud,
-    bool SoyDuenio, PerfilPublicoDto Contraparte, string? UltimoMensaje, DateTime UltimoMensajeUtc, int NoLeidos, bool Escribible);
+    bool SoyDuenio, PerfilPublicoDto Contraparte, string? UltimoMensaje, DateTime UltimoMensajeUtc, int NoLeidos, bool Escribible,
+    bool ContraparteEnLinea = false);
 
 /// <summary>
 /// Autorización de subida directa a Azure Blob: el navegador hace PUT del archivo a <see cref="UrlSubida"/> con

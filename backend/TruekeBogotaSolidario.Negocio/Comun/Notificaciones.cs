@@ -51,17 +51,28 @@ public interface INotificador
     Task NotificarAsync(Guid usuarioId, string tipo, string mensaje, Guid? recursoId = null);
 }
 
+/// <summary>Al autor: sus mensajes de la conversación hasta esas fechas ya llegaron (✓✓) o ya se leyeron (✓✓ de color).</summary>
+public sealed record EstadoMensajesDto(Guid ConversacionId, DateTime? EntregadosHastaUtc, DateTime? LeidosHastaUtc);
+public sealed record EscribiendoDto(Guid ConversacionId);
+public sealed record PresenciaDto(Guid UsuarioId, bool EnLinea);
+
 /// <summary>Canal en tiempo real (SignalR en Presentacion). Por defecto no hace nada (pruebas de Negocio, workers).</summary>
 public interface IEmisorTiempoReal
 {
     Task NotificacionAsync(Guid usuarioId, NotificacionDto notificacion);
     Task MensajeChatAsync(Guid usuarioId, MensajeChatDto mensaje);
+    Task EstadoMensajesAsync(Guid usuarioId, EstadoMensajesDto estado);
+    Task EscribiendoAsync(Guid usuarioId, EscribiendoDto escribiendo);
+    Task PresenciaAsync(IReadOnlyCollection<Guid> usuarioIds, PresenciaDto presencia);
 }
 
 public sealed class EmisorTiempoRealNulo : IEmisorTiempoReal
 {
     public Task NotificacionAsync(Guid usuarioId, NotificacionDto notificacion) => Task.CompletedTask;
     public Task MensajeChatAsync(Guid usuarioId, MensajeChatDto mensaje) => Task.CompletedTask;
+    public Task EstadoMensajesAsync(Guid usuarioId, EstadoMensajesDto estado) => Task.CompletedTask;
+    public Task EscribiendoAsync(Guid usuarioId, EscribiendoDto escribiendo) => Task.CompletedTask;
+    public Task PresenciaAsync(IReadOnlyCollection<Guid> usuarioIds, PresenciaDto presencia) => Task.CompletedTask;
 }
 
 public sealed class NotificadorPersistente : INotificador

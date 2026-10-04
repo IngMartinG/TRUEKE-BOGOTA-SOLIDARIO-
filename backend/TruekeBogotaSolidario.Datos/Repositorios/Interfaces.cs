@@ -225,8 +225,13 @@ public interface IConversacionRepository
     Task<IReadOnlyDictionary<Guid, Mensaje>> UltimosMensajesAsync(IReadOnlyCollection<Guid> conversacionIds);
     /// <summary>Más recientes primero, anteriores a <paramref name="antesDeUtc"/> si se indica.</summary>
     Task<IReadOnlyList<Mensaje>> ListarMensajesAsync(Guid conversacionId, DateTime? antesDeUtc, int tamano);
-    /// <summary>Marca (sin guardar) como leídos los mensajes que recibió <paramref name="lectorId"/>.</summary>
-    Task MarcarLeidosAsync(Guid conversacionId, Guid lectorId, DateTime ahoraUtc);
+    /// <summary>Marca (sin guardar) como leídos los mensajes que recibió <paramref name="lectorId"/>. Devuelve la fecha del más reciente marcado.</summary>
+    Task<DateTime?> MarcarLeidosAsync(Guid conversacionId, Guid lectorId, DateTime ahoraUtc);
+    /// <summary>
+    /// Marca (sin guardar) como entregados los mensajes que recibió <paramref name="receptorId"/> (de una conversación o de todas las suyas).
+    /// Devuelve, por conversación, el autor y la fecha del mensaje más reciente marcado.
+    /// </summary>
+    Task<IReadOnlyList<(Guid ConversacionId, Guid AutorId, DateTime HastaUtc)>> MarcarEntregadosAsync(Guid receptorId, Guid? conversacionId, DateTime ahoraUtc);
     /// <summary>Incluye la Conversacion.</summary>
     Task<Mensaje?> ObtenerMensajeAsync(Guid id);
     Task<int> ContarMensajesDelAutorDesdeAsync(Guid autorId, DateTime desdeUtc);

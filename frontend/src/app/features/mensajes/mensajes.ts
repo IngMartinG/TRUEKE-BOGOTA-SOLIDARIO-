@@ -2,6 +2,7 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  DestroyRef,
   effect,
   ElementRef,
   inject,
@@ -14,7 +15,7 @@ import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { ETIQUETA_ESTADO_SOLICITUD, type MensajeChatDto } from '../../api/tipos';
+import { ETIQUETA_ESTADO_SOLICITUD, type ConversacionDto, type MensajeChatDto } from '../../api/tipos';
 import { IntercambiosApi } from '../../core/api/intercambios.api';
 import { AvisosService } from '../../core/avisos.service';
 import { mensajeDe } from '../../core/http/problema';
@@ -51,7 +52,12 @@ const TAMANO = 40;
               <li>
                 <a [routerLink]="['/mensajes', c.id]" class="flex gap-3 border-l-4 px-4 py-3.5 transition hover:bg-superficie-2"
                   [class]="c.id === id() ? 'border-bosque-500 bg-bosque-50 dark:bg-bosque-900/30' : 'border-transparent'">
-                  <app-avatar [nombre]="c.contraparte?.nombre" [tamano]="44" [verificado]="!!c.contraparte?.verificado" />
+                  <span class="relative shrink-0">
+                    <app-avatar [nombre]="c.contraparte?.nombre" [tamano]="44" [verificado]="!!c.contraparte?.verificado" />
+                    @if (estaEnLinea(c)) {
+                      <span class="absolute right-0 bottom-0 size-3 rounded-full border-2 border-superficie bg-bosque-500" title="En línea"></span>
+                    }
+                  </span>
                   <div class="min-w-0 flex-1">
                     <div class="flex items-baseline justify-between gap-2">
                       <p class="truncate font-semibold">{{ c.contraparte?.nombre }}</p>
@@ -59,7 +65,11 @@ const TAMANO = 40;
                     </div>
                     <p class="truncate text-xs font-medium text-bosque-700 dark:text-bosque-300">{{ c.publicacionTitulo }}</p>
                     <div class="flex items-center justify-between gap-2">
-                      <p class="truncate text-sm" [class]="c.noLeidos ? 'font-semibold text-tinta' : 'text-tenue'">{{ c.ultimoMensaje || 'Sin mensajes todavía' }}</p>
+                      @if (tiempoReal.escribiendoEn().has(c.id ?? '')) {
+                        <p class="truncate text-sm font-semibold text-bosque-600 italic dark:text-bosque-300">escribiendo…</p>
+                      } @else {
+                        <p class="truncate text-sm" [class]="c.noLeidos ? 'font-semibold text-tinta' : 'text-tenue'">{{ c.ultimoMensaje || 'Sin mensajes todavía' }}</p>
+                      }
                       @if (c.noLeidos) {
                         <span class="grid min-w-5 shrink-0 place-items-center rounded-full bg-bosque-600 px-1.5 text-[11px] font-bold text-white">{{ c.noLeidos }}</span>
                       }
@@ -92,7 +102,15 @@ const TAMANO = 40;
                   <app-avatar [nombre]="c.contraparte?.nombre" [tamano]="40" [verificado]="!!c.contraparte?.verificado" />
                   <div class="min-w-0">
                     <p class="truncate font-semibold">{{ c.contraparte?.nombre }}</p>
-                    <p class="truncate text-xs text-tenue">{{ c.publicacionTitulo }} · {{ estado(c.estadoSolicitud) }}</p>
+                    @if (tiempoReal.escribiendoEn().has(c.id ?? '')) {
+                      <p class="truncate text-xs font-semibold text-bosque-600 italic dark:text-bosque-300" aria-live="polite">escribiendo…</p>
+                    } @else if (estaEnLinea(c)) {
+                      <p class="flex items-center gap-1.5 truncate text-xs font-medium text-bosque-700 dark:text-bosque-300">
+                        <span class="size-2 shrink-0 rounded-full bg-bosque-500"></span>en línea · <span class="truncate text-tenue">{{ c.publicacionTitulo }}</span>
+                      </p>
+                    } @else {
+                      <p class="truncate text-xs text-tenue">{{ c.publicacionTitulo }} · {{ estado(c.estadoSolicitud) }}</p>
+                    }
                   </div>
                 </a>
                 <a [routerLink]="['/publicacion', c.publicacionId]" class="btn btn-secundario btn-sm hidden sm:inline-flex">Ver publicación</a>
@@ -149,7 +167,10 @@ const TAMANO = 40;
                     <p class="mt-0.5 flex items-center justify-end gap-1 text-[10px]" [class]="m.esMio ? 'text-white/70' : 'text-tenue'">
                       {{ m.fechaUtc | hora }}
                       @if (m.esMio) {
-                        <app-icono [nombre]="m.leido ? 'checkCirculo' : 'check'" [tamano]="11" [etiqueta]="m.leido ? 'Leído' : 'Enviado'" />
+                        <!-- ✓ enviado · ✓✓ entregado · ✓✓ celeste leído (como en WhatsApp) -->
+                        <app-icono [nombre]="m.estado === 'Enviado' ? 'check' : 'checkDoble'" [tamano]="15"
+                          [class]="m.estado === 'Leido' ? 'text-sky-300' : ''"
+                          [etiqueta]="m.estado === 'Leido' ? 'Leído' : m.estado === 'Entregado' ? 'Entregado' : 'Enviado'" />
                       }
                     </p>
                   </div>
@@ -186,7 +207,7 @@ const TAMANO = 40;
               <form class="flex items-end gap-2 border-t border-borde p-3" [class.border-t-0]="respondiendoA()" (ngSubmit)="enviar()">
                 <label for="nuevo-mensaje" class="sr-only">Escribe un mensaje</label>
                 <textarea #entrada id="nuevo-mensaje" name="texto" rows="1" class="entrada max-h-32 min-h-11 resize-none rounded-2xl py-2.5" maxlength="1000"
-                  [(ngModel)]="texto" (keydown.enter)="alPresionarEnter($event)" (keydown.escape)="cancelarRespuesta()" placeholder="Escribe un mensaje…"></textarea>
+                  [(ngModel)]="texto" (input)="alEscribir()" (keydown.enter)="alPresionarEnter($event)" (keydown.escape)="cancelarRespuesta()" placeholder="Escribe un mensaje…"></textarea>
                 <button type="submit" class="grid size-11 shrink-0 place-items-center rounded-full bg-bosque-600 text-white transition hover:bg-bosque-700 disabled:opacity-50"
                   [disabled]="!texto().trim() || enviando()" aria-label="Enviar">
                   <app-icono nombre="enviar" [tamano]="18" />
@@ -251,9 +272,37 @@ export default class Mensajes {
           this.bajar();
         }
         // Primero se marca como leída y luego se recarga la lista, para no mostrar un "no leído" falso.
-        if (!m.esMio) await firstValueFrom(this.api.marcarLeida(m.conversacionId!)).catch(() => undefined);
+        // Solo si la pantalla se ve: con la pestaña oculta el autor ve ✓✓ (entregado), no "leído".
+        if (!m.esMio && document.visibilityState === 'visible')
+          await firstValueFrom(this.api.marcarLeida(m.conversacionId!)).catch(() => undefined);
       }
       this.conversaciones.reload();
+    });
+    // Al volver a la pestaña con la conversación abierta, lo que llegó mientras tanto queda leído.
+    const alVolver = () => {
+      const id = this.id();
+      if (document.visibilityState === 'visible' && id && this.mensajes().some((m) => !m.esMio))
+        void firstValueFrom(this.api.marcarLeida(id))
+          .then(() => this.tiempoReal.sincronizarContadores())
+          .catch(() => undefined);
+    };
+    document.addEventListener('visibilitychange', alVolver);
+    inject(DestroyRef).onDestroy(() => document.removeEventListener('visibilitychange', alVolver));
+
+    // ✓✓ y ✓✓ de color en mis mensajes, en vivo
+    this.tiempoReal.estadoMensajes$.pipe(takeUntilDestroyed()).subscribe((e) => {
+      if (e.conversacionId !== this.id()) return;
+      const leidos = e.leidosHastaUtc ? Date.parse(e.leidosHastaUtc) : null;
+      const entregados = e.entregadosHastaUtc ? Date.parse(e.entregadosHastaUtc) : null;
+      this.mensajes.update((l) =>
+        l.map((m) => {
+          if (!m.esMio || !m.fechaUtc) return m;
+          const fecha = Date.parse(m.fechaUtc);
+          if (leidos !== null && fecha <= leidos) return { ...m, estado: 'Leido', leido: true };
+          if (entregados !== null && fecha <= entregados && m.estado === 'Enviado') return { ...m, estado: 'Entregado' };
+          return m;
+        }),
+      );
     });
     this.tiempoReal.resincronizar$.pipe(takeUntilDestroyed()).subscribe(() => {
       this.conversaciones.reload();
@@ -309,6 +358,7 @@ export default class Mensajes {
       const m = await firstValueFrom(this.api.enviarMensaje(id, texto, this.respondiendoA()?.id ?? null));
       this.texto.set('');
       this.respondiendoA.set(null);
+      this.tiempoReal.reiniciarEscribiendo(id);
       if (!this.mensajes().some((x) => x.id === m.id)) this.mensajes.update((l) => [...l, m]);
       this.bajar();
       this.conversaciones.reload();
@@ -325,6 +375,16 @@ export default class Mensajes {
       k.preventDefault();
       void this.enviar();
     }
+  }
+
+  protected estaEnLinea(c: ConversacionDto): boolean {
+    const id = c.contraparte?.id;
+    return (id ? this.tiempoReal.enLinea().get(id) : undefined) ?? !!c.contraparteEnLinea;
+  }
+
+  protected alEscribir(): void {
+    const id = this.id();
+    if (id && this.texto().trim()) this.tiempoReal.avisarEscribiendo(id);
   }
 
   // ---------------- Responder un mensaje en particular ----------------

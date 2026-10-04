@@ -67,6 +67,7 @@ public static class NegocioServiceCollectionExtensions
 
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IEmisorTiempoReal, EmisorTiempoRealNulo>(); // Presentacion lo reemplaza por SignalR
+        services.TryAddSingleton<IPresencia, PresenciaEnMemoria>();          // con Redis, Presentacion usa la distribuida
         services.AddScoped<INotificador, NotificadorPersistente>();
         services.AddScoped<INotificacionService, NotificacionService>();
         services.AddScoped<IChatService, ChatService>();

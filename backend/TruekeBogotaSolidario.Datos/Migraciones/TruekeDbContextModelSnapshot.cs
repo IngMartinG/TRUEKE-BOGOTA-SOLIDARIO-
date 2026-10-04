@@ -545,6 +545,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<Guid>("ConversacionId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTime?>("EntregadoUtc")
+                        .HasColumnType("datetime2");
+
                     b.Property<bool>("EstaOculto")
                         .HasColumnType("bit");
 
@@ -573,6 +576,8 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.HasIndex("AutorId", "FechaUtc");
 
                     b.HasIndex("ConversacionId", "FechaUtc");
+
+                    b.HasIndex("ConversacionId", "AutorId", "EntregadoUtc");
 
                     b.HasIndex("ConversacionId", "AutorId", "LeidoUtc");
 

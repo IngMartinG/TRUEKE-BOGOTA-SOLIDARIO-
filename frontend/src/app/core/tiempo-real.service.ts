@@ -9,6 +9,12 @@ import { AvisosService } from './avisos.service';
 import { hubUrl } from './entorno';
 import { SesionService } from './sesion.service';
 
+export interface EstadoMensajes {
+  conversacionId: string;
+  entregadosHastaUtc?: string | null;
+  leidosHastaUtc?: string | null;
+}
+
 /** Notificaciones que cambian el saldo o la reputación: tras recibirlas se recarga el perfil. */
 const AFECTAN_PERFIL = new Set([
   'IntercambioCompletado',
@@ -46,6 +52,14 @@ export class TiempoRealService {
 
   readonly notificacion$ = new Subject<NotificacionDto>();
   readonly mensaje$ = new Subject<MensajeChatDto>();
+  /** Mis mensajes de una conversación ya llegaron (✓✓) o ya se leyeron (✓✓ de color) hasta esas fechas. */
+  readonly estadoMensajes$ = new Subject<EstadoMensajes>();
+  /** Conversaciones donde la otra persona está escribiendo ahora mismo. */
+  readonly escribiendoEn = signal<ReadonlySet<string>>(new Set());
+  /** "En línea" de las contrapartes (llega por evento; el valor inicial viene en cada conversación). */
+  readonly enLinea = signal<ReadonlyMap<string, boolean>>(new Map());
+  private readonly temporizadoresEscribiendo = new Map<string, ReturnType<typeof setTimeout>>();
+  private ultimoAvisoEscribiendo = new Map<string, number>();
   /** Emite tras reconectar: las pantallas abiertas recargan sus datos. */
   readonly resincronizar$ = new Subject<void>();
 
@@ -109,6 +123,11 @@ export class TiempoRealService {
 
     conexion.on('notificacion', (n: NotificacionDto) => this.alRecibirNotificacion(n));
     conexion.on('mensaje', (m: MensajeChatDto) => this.alRecibirMensaje(m));
+    conexion.on('estadoMensajes', (e: EstadoMensajes) => this.estadoMensajes$.next(e));
+    conexion.on('escribiendo', (e: { conversacionId: string }) => this.alEscribir(e.conversacionId));
+    conexion.on('presencia', (p: { usuarioId: string; enLinea: boolean }) =>
+      this.enLinea.update((m) => new Map(m).set(p.usuarioId, p.enLinea)),
+    );
     conexion.onreconnecting(() => this.conectado.set(false));
     conexion.onreconnected(() => {
       this.conectado.set(true);
@@ -158,7 +177,41 @@ export class TiempoRealService {
     else this.avisos.info('Nueva notificación', n.mensaje);
   }
 
+  /** Avisa que estoy escribiendo (como mucho cada 3 s por conversación). */
+  avisarEscribiendo(conversacionId: string): void {
+    const ahora = Date.now();
+    if (ahora - (this.ultimoAvisoEscribiendo.get(conversacionId) ?? 0) < 3000) return;
+    this.ultimoAvisoEscribiendo.set(conversacionId, ahora);
+    if (String(this.conexion?.state) === 'Connected') void this.conexion!.invoke('Escribiendo', conversacionId).catch(() => undefined);
+  }
+
+  /** Al enviar, el "escribiendo…" de la otra pantalla debe poder volver a mostrarse enseguida. */
+  reiniciarEscribiendo(conversacionId: string): void {
+    this.ultimoAvisoEscribiendo.delete(conversacionId);
+  }
+
+  private alEscribir(conversacionId: string): void {
+    this.escribiendoEn.update((s) => new Set(s).add(conversacionId));
+    clearTimeout(this.temporizadoresEscribiendo.get(conversacionId));
+    this.temporizadoresEscribiendo.set(conversacionId, setTimeout(() => this.dejarDeEscribir(conversacionId), 4000));
+  }
+
+  private dejarDeEscribir(conversacionId: string): void {
+    clearTimeout(this.temporizadoresEscribiendo.get(conversacionId));
+    this.temporizadoresEscribiendo.delete(conversacionId);
+    this.escribiendoEn.update((s) => {
+      const n = new Set(s);
+      n.delete(conversacionId);
+      return n;
+    });
+  }
+
   private alRecibirMensaje(m: MensajeChatDto): void {
+    // Llegó el mensaje: ya no está "escribiendo", y el autor ve ✓✓ (entregado).
+    if (!m.esMio && m.conversacionId) {
+      this.dejarDeEscribir(m.conversacionId);
+      void this.conexion?.invoke('Recibido', m.conversacionId).catch(() => undefined);
+    }
     this.mensaje$.next(m);
     if (m.esMio || m.conversacionId === this.conversacionAbierta()) return;
     this.mensajesNoLeidos.update((v) => v + 1);

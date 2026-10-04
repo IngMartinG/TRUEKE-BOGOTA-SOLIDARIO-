@@ -216,6 +216,7 @@ public class TruekeDbContext : DbContext
             e.HasOne(x => x.RespuestaA).WithMany().HasForeignKey(x => x.RespuestaAId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.ConversacionId, x.FechaUtc });
             e.HasIndex(x => new { x.ConversacionId, x.AutorId, x.LeidoUtc });
+            e.HasIndex(x => new { x.ConversacionId, x.AutorId, x.EntregadoUtc });
             e.HasIndex(x => new { x.AutorId, x.FechaUtc });
         });
 
