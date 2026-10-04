@@ -28,7 +28,7 @@ export class IntercambiosApi {
   conversaciones = () => this.api.get<ConversacionDto[]>('/conversaciones');
   mensajes = (id: string, antesDe?: string, tamano = 40) =>
     this.api.get<MensajeChatDto[]>(`/conversaciones/${seg(id)}/mensajes`, { params: { antesDe, tamano } });
-  enviarMensaje = (id: string, texto: string) =>
-    this.api.post<MensajeChatDto>(`/conversaciones/${seg(id)}/mensajes`, { texto });
+  enviarMensaje = (id: string, texto: string, respuestaAId: string | null = null) =>
+    this.api.post<MensajeChatDto>(`/conversaciones/${seg(id)}/mensajes`, { texto, respuestaAId });
   marcarLeida = (id: string) => this.api.post<void>(`/conversaciones/${seg(id)}/leer`, {}, { silencioso: true });
 }

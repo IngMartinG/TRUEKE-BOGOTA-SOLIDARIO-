@@ -22,6 +22,9 @@ public static class TiposNotificacion
     public const string VerificacionAprobada = "VerificacionAprobada";
     public const string VerificacionRechazada = "VerificacionRechazada";
     public const string DenunciaRevisada = "DenunciaRevisada";
+    /// <summary>Al denunciado, cuando un moderador consideró procedente una denuncia en su contra (RecursoId = ResolucionId).</summary>
+    public const string DenunciaRecibida = "DenunciaRecibida";
+    public const string ApelacionResuelta = "ApelacionResuelta";
     public const string EntregaConfirmada = "EntregaConfirmada";
     public const string IntercambioCompletado = "IntercambioCompletado";
     public const string IntercambioNoConcretado = "IntercambioNoConcretado";
@@ -33,6 +36,7 @@ public static class TiposNotificacion
     // Solo para moderadores
     public const string AlertaPagoEnRevision = "AlertaPagoEnRevision";
     public const string PqrNueva = "PqrNueva";
+    public const string ApelacionNueva = "ApelacionNueva";
 }
 
 /// <summary>Carga mínima: el front pide el detalle al API (con su JWT) si lo necesita. Nunca datos de terceros.</summary>

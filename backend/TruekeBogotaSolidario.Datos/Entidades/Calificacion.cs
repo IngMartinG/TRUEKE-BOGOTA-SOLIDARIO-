@@ -54,4 +54,11 @@ public class Calificacion
         ComentarioOculto = true;
         MotivoOcultamiento = motivo.Trim();
     }
+
+    public void MostrarComentario()
+    {
+        if (!ComentarioOculto) throw new ReglaDeNegocioException("El comentario no está oculto.");
+        ComentarioOculto = false;
+        MotivoOcultamiento = null;
+    }
 }

@@ -1688,6 +1688,103 @@
         }
       }
     },
+    "/api/v1/denuncias/recibidas": {
+      "get": {
+        "tags": [
+          "Denuncias"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DenunciaRecibidaDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DenunciaRecibidaDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DenunciaRecibidaDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/denuncias/recibidas/{resolucionId}/apelacion": {
+      "post": {
+        "tags": [
+          "Denuncias"
+        ],
+        "parameters": [
+          {
+            "name": "resolucionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearApelacionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearApelacionRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearApelacionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApelacionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApelacionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApelacionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/denuncias": {
       "get": {
         "tags": [
@@ -1766,6 +1863,95 @@
             "application/*\u002Bjson": {
               "schema": {
                 "$ref": "#/components/schemas/ResolverDenunciaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/apelaciones": {
+      "get": {
+        "tags": [
+          "Denuncias"
+        ],
+        "parameters": [
+          {
+            "name": "Estado",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EstadoApelacionDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApelacionAdminDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApelacionAdminDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ApelacionAdminDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/apelaciones/{id}/resolver": {
+      "post": {
+        "tags": [
+          "Denuncias"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolverApelacionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolverApelacionRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolverApelacionRequest"
               }
             }
           }
@@ -4278,6 +4464,96 @@
         },
         "additionalProperties": false
       },
+      "ApelacionAdminDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "resolucionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "objetivoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "accionOriginal": {
+            "type": "string"
+          },
+          "motivos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "detallesDenuncias": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "notaOriginal": {
+            "type": "string",
+            "nullable": true
+          },
+          "vistaPrevia": {
+            "type": "string",
+            "nullable": true
+          },
+          "texto": {
+            "type": "string"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "notaResolucion": {
+            "type": "string",
+            "nullable": true
+          },
+          "puedoResolver": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ApelacionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "estado": {
+            "type": "string"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "respuesta": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaRespuestaUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "CalificacionDto": {
         "type": "object",
         "properties": {
@@ -4673,6 +4949,20 @@
         },
         "additionalProperties": false
       },
+      "CrearApelacionRequest": {
+        "required": [
+          "texto"
+        ],
+        "type": "object",
+        "properties": {
+          "texto": {
+            "maxLength": 1000,
+            "minLength": 20,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "CrearComentarioRequest": {
         "required": [
           "texto"
@@ -5003,6 +5293,12 @@
             "items": {
               "$ref": "#/components/schemas/PqrDto"
             }
+          },
+          "apelaciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApelacionDto"
+            }
           }
         },
         "additionalProperties": false
@@ -5102,6 +5398,52 @@
           "fechaUtc": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DenunciaRecibidaDto": {
+        "type": "object",
+        "properties": {
+          "resolucionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "tipo": {
+            "type": "string"
+          },
+          "objetivoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "motivos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "accion": {
+            "type": "string"
+          },
+          "notaModerador": {
+            "type": "string",
+            "nullable": true
+          },
+          "vistaPrevia": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaResolucionUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "apelableHastaUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "apelacion": {
+            "$ref": "#/components/schemas/ApelacionDto"
           }
         },
         "additionalProperties": false
@@ -5215,6 +5557,11 @@
             "maxLength": 1000,
             "minLength": 1,
             "type": "string"
+          },
+          "respuestaAId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -5275,6 +5622,14 @@
           }
         },
         "additionalProperties": false
+      },
+      "EstadoApelacionDto": {
+        "enum": [
+          "Pendiente",
+          "Aceptada",
+          "Rechazada"
+        ],
+        "type": "string"
       },
       "EstadoDenunciaDto": {
         "enum": [
@@ -5710,6 +6065,28 @@
           },
           "leido": {
             "type": "boolean"
+          },
+          "oculto": {
+            "type": "boolean"
+          },
+          "respuestaA": {
+            "$ref": "#/components/schemas/MensajeCitadoDto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MensajeCitadoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "esMio": {
+            "type": "boolean"
+          },
+          "texto": {
+            "type": "string"
           },
           "oculto": {
             "type": "boolean"
@@ -6633,6 +7010,23 @@
             "maxLength": 4096,
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResolverApelacionRequest": {
+        "required": [
+          "nota"
+        ],
+        "type": "object",
+        "properties": {
+          "aceptar": {
+            "type": "boolean"
+          },
+          "nota": {
+            "maxLength": 300,
+            "minLength": 3,
+            "type": "string"
           }
         },
         "additionalProperties": false
