@@ -83,6 +83,29 @@ public sealed class AlmacenBlobAzure : IAlmacenArchivos
     private BlobContainerClient Contenedor(TipoArchivoDto tipo)
         => _servicio.GetBlobContainerClient(tipo == TipoArchivoDto.Documento ? _o.ContenedorDocumentos : _o.ContenedorImagenes);
 
+    /// <summary>Azurite (desarrollo) usa siempre la cuenta "devstoreaccount1"; una cuenta real de Azure nunca se llama así.</summary>
+    private bool EsEmuladorLocal => string.Equals(_servicio.AccountName, "devstoreaccount1", StringComparison.Ordinal);
+
+    /// <summary>
+    /// Solo en Azurite: el navegador sube las fotos directo al emulador (PUT con SAS) desde otro origen, así que necesita
+    /// una regla CORS. En Azure la regla se configura en la cuenta de Storage limitada al dominio del front (README §9).
+    /// </summary>
+    private async Task PermitirSubidasDelNavegadorEnEmuladorAsync(CancellationToken ct)
+    {
+        var propiedades = (await _servicio.GetPropertiesAsync(ct)).Value;
+        if (propiedades.Cors.Count > 0) return;
+        propiedades.Cors.Add(new BlobCorsRule
+        {
+            AllowedOrigins = "*",
+            AllowedMethods = "PUT,GET,HEAD,OPTIONS",
+            AllowedHeaders = "*",
+            ExposedHeaders = "*",
+            MaxAgeInSeconds = 3600
+        });
+        await _servicio.SetPropertiesAsync(propiedades, ct);
+        _log.LogInformation("Azurite: regla CORS de desarrollo creada para las subidas desde el navegador");
+    }
+
     /// <summary>Crea los contenedores si no existen (en Azure lo normal es crearlos por infraestructura; en Azurite, aquí).</summary>
     private async Task AsegurarContenedoresAsync(CancellationToken ct)
     {
@@ -91,6 +114,7 @@ public sealed class AlmacenBlobAzure : IAlmacenArchivos
         {
             await Contenedor(TipoArchivoDto.Imagen).CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: ct);
             await Contenedor(TipoArchivoDto.Documento).CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: ct);
+            if (EsEmuladorLocal) await PermitirSubidasDelNavegadorEnEmuladorAsync(ct);
         }
         catch (RequestFailedException ex)
         {
