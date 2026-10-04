@@ -26,9 +26,10 @@ import { InsigniaModo } from '../../shared/ui/insignia-modo';
 import { Mapa } from '../../shared/ui/mapa';
 import { Modal } from '../../shared/ui/modal';
 import { Comentarios } from './comentarios';
+import { Volver } from '../../shared/ui/volver';
 
 @Component({
-  imports: [
+  imports: [Volver, 
     RouterLink,
     FormsModule,
     Icono,
@@ -48,7 +49,7 @@ import { Comentarios } from './comentarios';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (recurso.isLoading() && !p()) {
-      <div class="contenedor grid gap-8 py-8 lg:grid-cols-[1.3fr_1fr]" aria-busy="true">
+      <div class="contenedor grid grid-cols-1 gap-8 py-8 lg:grid-cols-[1.3fr_1fr]" aria-busy="true">
         <div class="esqueleto aspect-[4/3] rounded-tarjeta"></div>
         <div class="space-y-4">
           <div class="esqueleto h-6 w-1/3"></div>
@@ -63,10 +64,12 @@ import { Comentarios } from './comentarios';
       </app-estado-vacio>
     } @else if (p(); as p) {
       <div class="contenedor py-6 sm:py-8">
-        <nav class="mb-5 flex items-center gap-2 text-sm text-tenue" aria-label="Ruta de navegación">
-          <a routerLink="/explorar" class="flex items-center gap-1 hover:text-tinta"><app-icono nombre="izquierda" [tamano]="16" />Catálogo</a>
-          <span aria-hidden="true">/</span>
-          <a routerLink="/explorar" [queryParams]="{ categoriaId: p.categoria?.id }" class="hover:text-tinta">{{ p.categoria?.nombre }}</a>
+        <nav class="mb-5 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-tenue" aria-label="Ruta de navegación">
+          <app-volver respaldo="/explorar" />
+          <span class="hidden sm:inline" aria-hidden="true">·</span>
+          <a routerLink="/explorar" class="hidden hover:text-tinta sm:inline">Catálogo</a>
+          <span class="hidden sm:inline" aria-hidden="true">/</span>
+          <a routerLink="/explorar" [queryParams]="{ categoriaId: p.categoria?.id }" class="hover:text-tinta max-sm:ml-auto">{{ p.categoria?.nombre }}</a>
         </nav>
 
         @if (p.oculta) {
@@ -76,7 +79,7 @@ import { Comentarios } from './comentarios';
           </div>
         }
 
-        <div class="grid gap-8 lg:grid-cols-[1.3fr_1fr]">
+        <div class="grid grid-cols-1 gap-8 lg:grid-cols-[1.3fr_1fr]">
           <!-- Galería -->
           <div>
             <div class="relative overflow-hidden rounded-tarjeta bg-superficie-2 shadow-suave">

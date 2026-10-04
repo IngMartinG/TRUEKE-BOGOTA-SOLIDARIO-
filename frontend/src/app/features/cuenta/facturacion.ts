@@ -40,7 +40,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
         }
       </div>
 
-      <div class="grid gap-4 sm:grid-cols-[14rem_1fr]">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-[14rem_1fr]">
         <div class="campo">
           <label for="tipo-doc" class="etiqueta">Tipo de documento</label>
           <select id="tipo-doc" class="entrada" formControlName="tipoDocumento">
@@ -61,7 +61,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
         <input id="nombre-fact" class="entrada" formControlName="nombre" maxlength="150" autocomplete="name" />
         <app-error-campo [control]="form.controls.nombre" etiqueta="El nombre" />
       </div>
-      <div class="grid gap-4 sm:grid-cols-2">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div class="campo">
           <label for="correo-fact" class="etiqueta">Correo para recibir la factura</label>
           <input id="correo-fact" type="email" class="entrada" formControlName="correo" maxlength="160" autocomplete="email" />

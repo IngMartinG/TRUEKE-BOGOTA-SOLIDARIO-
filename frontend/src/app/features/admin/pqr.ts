@@ -24,7 +24,7 @@ const TAMANO = 20;
         <h2 class="text-xl font-bold">PQR</h2>
         <p class="text-sm text-tenue">Responde por escrito antes de la fecha límite. Retractos y reversiones: reembolsa en Wompi y regístralo en <a routerLink="../pagos" class="enlace">Pagos</a>.</p>
       </div>
-      <select class="entrada w-44" [ngModel]="estado()" (ngModelChange)="estado.set($event); pagina.set(1)" aria-label="Filtrar por estado">
+      <select class="entrada w-full sm:w-44" [ngModel]="estado()" (ngModelChange)="estado.set($event); pagina.set(1)" aria-label="Filtrar por estado">
         <option value="Abierta">Abiertas</option>
         <option value="Respondida">Respondidas</option>
       </select>

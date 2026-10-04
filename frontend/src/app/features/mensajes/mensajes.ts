@@ -33,7 +33,7 @@ const TAMANO = 40;
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor py-4 sm:py-8">
-      <div class="tarjeta grid h-[calc(100dvh-10rem)] min-h-[28rem] overflow-hidden sm:h-[calc(100dvh-9rem)] md:grid-cols-[20rem_1fr]">
+      <div class="tarjeta grid h-[calc(100dvh-10rem)] min-h-[28rem] grid-cols-1 overflow-hidden md:grid-cols-[18rem_1fr] lg:h-[calc(100dvh-9rem)] xl:grid-cols-[20rem_1fr]">
         <!-- Lista de conversaciones -->
         <aside class="min-h-0 flex-col border-r border-borde" [class]="id() ? 'hidden md:flex' : 'flex'" aria-label="Conversaciones">
           <header class="flex items-center justify-between border-b border-borde px-5 py-4">

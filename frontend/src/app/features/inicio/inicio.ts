@@ -25,7 +25,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
         <path fill="currentColor" d="M400 0v400H80c60-40 100-110 90-190C160 120 260 30 400 0Z" />
       </svg>
 
-      <div class="contenedor grid items-center gap-12 pt-14 pb-24 lg:grid-cols-[1.1fr_1fr] lg:pt-20 lg:pb-32">
+      <div class="contenedor grid grid-cols-1 items-center gap-12 pt-14 pb-24 lg:grid-cols-[1.1fr_1fr] lg:pt-20 lg:pb-32">
         <div class="animate-aparecer">
           <p class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-wide text-bosque-200 backdrop-blur">
             <app-icono nombre="reciclar" [tamano]="14" class="text-bosque-300" /> Economía circular en los 1.122 municipios de Colombia
@@ -117,7 +117,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
     <!-- ============ MODOS ============ -->
     <section class="contenedor -mt-6 relative z-10" aria-labelledby="titulo-modos">
       <h2 id="titulo-modos" class="sr-only">Tres formas de participar</h2>
-      <div class="grid gap-4 md:grid-cols-3">
+      <div class="grid grid-cols-1 gap-4 md:grid-cols-3">
         @for (m of modos; track m) {
           <a
             [routerLink]="['/explorar']"
@@ -192,7 +192,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
           <p class="text-sm font-bold tracking-wide text-bosque-600 uppercase dark:text-bosque-400">Así de fácil</p>
           <h2 id="titulo-pasos" class="titulo-seccion mt-1">Tres pasos para hacer circular tus cosas</h2>
         </div>
-        <ol class="mt-12 grid gap-6 md:grid-cols-3">
+        <ol class="mt-12 grid grid-cols-1 gap-6 md:grid-cols-3">
           @for (paso of pasos; track paso.titulo; let i = $index) {
             <li class="relative rounded-tarjeta bg-superficie p-7 shadow-suave">
               <span class="absolute -top-4 left-7 grid size-9 place-items-center rounded-full bg-sol-400 font-display font-extrabold text-bosque-950 shadow">{{ i + 1 }}</span>
@@ -211,7 +211,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
         <svg class="absolute -right-10 -bottom-16 size-80 text-white/25" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" aria-hidden="true">
           <circle cx="8" cy="8" r="6" /><path d="M18.09 10.37A6 6 0 1 1 10.34 18" /><path d="M7 6h1v4" />
         </svg>
-        <div class="relative grid items-center gap-8 lg:grid-cols-2">
+        <div class="relative grid grid-cols-1 items-center gap-8 lg:grid-cols-2">
           <div>
             <p class="insignia bg-bosque-950/10 text-bosque-950"><app-icono nombre="destello" [tamano]="12" /> Eco-Puntos</p>
             <h2 class="mt-4 text-3xl font-extrabold text-bosque-950 sm:text-4xl">Tu buena acción vale puntos</h2>

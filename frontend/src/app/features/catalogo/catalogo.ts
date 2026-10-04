@@ -85,7 +85,7 @@ const TAMANO = 12;
       </div>
     </section>
 
-    <div class="contenedor grid gap-8 py-8 lg:grid-cols-[17rem_1fr]">
+    <div class="contenedor grid grid-cols-1 gap-8 py-8 lg:grid-cols-[17rem_1fr]">
       <!-- Filtros (escritorio) -->
       <aside class="hidden lg:block" aria-label="Filtros">
         <div class="sticky top-24 tarjeta p-5">
@@ -105,7 +105,7 @@ const TAMANO = 12;
               <button type="button" class="enlace ml-2 text-xs" (click)="limpiar()">Limpiar filtros</button>
             }
           </p>
-          <div class="flex items-center gap-2">
+          <div class="flex flex-wrap items-center gap-2">
             <button type="button" class="btn btn-secundario btn-sm lg:hidden" (click)="filtrosMovil.set(true)">
               <app-icono nombre="ajustes" [tamano]="16" /> Filtros
               @if (filtrosActivos() > 0) {
@@ -148,7 +148,7 @@ const TAMANO = 12;
         }
 
         @if (vista() === 'mapa') {
-          <app-mapa class="h-[32rem] rounded-tarjeta border border-borde shadow-suave lg:h-[40rem]" [puntos]="puntosMapa()" [centro]="miUbicacion()" [zoom]="miUbicacion() ? 14 : 12" etiqueta="Mapa de publicaciones" />
+          <app-mapa class="h-[60dvh] min-h-[22rem] rounded-tarjeta border border-borde shadow-suave sm:h-[32rem] lg:h-[40rem]" [puntos]="puntosMapa()" [centro]="miUbicacion()" [zoom]="miUbicacion() ? 14 : 12" etiqueta="Mapa de publicaciones" />
           @if (puntosMapa().length === 0 && !cargando()) {
             <p class="mt-3 text-center text-sm text-tenue">Ninguna publicación de esta búsqueda tiene ubicación en el mapa.</p>
           }

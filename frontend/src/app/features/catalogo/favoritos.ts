@@ -5,14 +5,16 @@ import { CatalogoApi } from '../../core/api/catalogo.api';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Paginador } from '../../shared/ui/paginador';
 import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-publicacion';
+import { Volver } from '../../shared/ui/volver';
 
 const TAMANO = 12;
 
 @Component({
-  imports: [RouterLink, TarjetaPublicacion, TarjetaEsqueleto, EstadoVacio, Paginador],
+  imports: [Volver, RouterLink, TarjetaPublicacion, TarjetaEsqueleto, EstadoVacio, Paginador],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor py-8 sm:py-10">
+      <app-volver respaldo="/" class="mb-1" />
       <h1 class="text-3xl font-extrabold">Tus favoritos</h1>
       <p class="mt-1 text-tenue">Lo que guardaste para no perderlo de vista.</p>
 

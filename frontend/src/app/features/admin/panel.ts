@@ -16,9 +16,12 @@ import { Icono } from '../../shared/ui/icono';
             <p class="text-sm text-white/75">Mantén la comunidad segura y confiable · rol {{ sesion.usuario()?.rol }}</p>
           </div>
         </div>
-        @if (!sesion.usuario()?.dosFactoresActivo) {
-          <a routerLink="/cuenta/seguridad" class="btn btn-sol btn-sm"><app-icono nombre="alerta" [tamano]="14" />Activa la verificación en dos pasos</a>
-        }
+        <div class="flex flex-wrap items-center gap-2">
+          @if (!sesion.usuario()?.dosFactoresActivo) {
+            <a routerLink="/cuenta/seguridad" class="btn btn-sol btn-sm"><app-icono nombre="alerta" [tamano]="14" />Activa la verificación en dos pasos</a>
+          }
+          <a routerLink="/" class="btn btn-sm border border-white/30 text-white hover:bg-white/10"><app-icono nombre="izquierda" [tamano]="14" />Volver al sitio</a>
+        </div>
       </div>
       <nav class="contenedor flex gap-1 overflow-x-auto" aria-label="Secciones de moderación">
         @for (e of enlaces(); track e.ruta) {
