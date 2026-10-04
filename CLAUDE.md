@@ -68,6 +68,10 @@ Un controller nunca puede tocar un repositorio ni el DbContext.
 - **Endpoints anónimos añadidos** a la lista blanca: `GET /ubicaciones/...` y `GET /publicaciones/destacadas` (lectura del catálogo).
 - **Pendiente (requiere cuentas externas):** cobro recurrente con fuentes de pago de Wompi, integración API con proveedor de factura electrónica, festivos en plazos de PQR.
 
+## Estado al 2026-10-04
+- Chat: responder un mensaje en particular (`respuestaAId`; deslizar en celular, botón con mouse).
+- Denuncias con debido proceso: si es procedente se avisa al denunciado (`DenunciaRecibida`, sin revelar al denunciante) y puede apelar una vez en 15 días; la apelación la resuelve otro moderador o un SuperUsuario y, si se acepta, se revierte la medida. Migración `ChatRespuestasYApelaciones`. 227 pruebas.
+
 ## Pendientes originales (completados)
 1. `.sln`, `appsettings.json` sin secretos, `appsettings.Development.json` (Pagos:Proveedor=Simulado, BD InMemory), `.gitignore`, `.env.example`.
 2. `dotnet build` en verde (TreatWarningsAsErrors) y corregir Datos/Contexto, Datos/Repositorios/Implementaciones y Presentacion.

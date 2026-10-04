@@ -296,7 +296,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
   3. enviar `imagenes: [urlArchivo, …]` (máximo 5; la primera es la principal) al crear o editar (`PUT /publicaciones/{id}`, que reemplaza la lista).
 - **Perfil público:** `publicacion.propietario.id` → `/usuarios/{id}/perfil`, `/publicaciones` y `/calificaciones`.
 - **Intercambio:**
-  - el dueño acepta y ambos escriben por `/conversaciones/{id}/mensajes`;
+  - el dueño acepta y ambos escriben por `/conversaciones/{id}/mensajes`; para responder un mensaje en particular se envía `respuestaAId` (de la misma conversación) y cada mensaje trae `respuestaA { id, esMio, texto, oculto }`;
   - cada uno pulsa `POST /solicitudes/{id}/confirmar-entrega`; mostrar `cierreAutomaticoUtc` mientras siga `Aceptada`;
   - si no se dio, `POST /solicitudes/{id}/no-concretada { motivo }`;
   - con `puedoCalificar`, enviar `POST /solicitudes/{id}/calificar { estrellas, comentario }`.
@@ -305,6 +305,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 - **Ubicaciones (públicas, cacheables):** `GET /ubicaciones/departamentos`, `/ubicaciones/departamentos/{dd}/municipios`, `/ubicaciones/municipios?texto=` y `/ubicaciones/municipios/{ddmmm}`.
 - **Dueño:** `PublicacionDto.vistas` y `proximoImpulsoUtc` solo llegan al dueño; `POST /publicaciones/{id}/impulsar` y `GET /publicaciones/{id}/estadisticas`.
 - **Cuenta:** `PUT /usuarios/yo/empresa { nombreComercial, nit }`, `GET|PUT|DELETE /cuenta/facturacion`, `GET /cuenta/facturas`, `POST /pqr`, `GET /pqr/mias`.
+- **Denuncias con debido proceso:** si el moderador considera procedente una denuncia, la persona denunciada recibe `DenunciaRecibida` (`recursoId` = `resolucionId`, nunca se dice quién denunció). En `GET /denuncias/recibidas` ve la decisión y, mientras `apelableHastaUtc` no sea null (15 días), puede apelar una vez con `POST /denuncias/recibidas/{resolucionId}/apelacion { texto }`. Si se descarta, no se le avisa.
 - **Coordenadas:** en público llegan redondeadas a 2 decimales; las exactas, solo al dueño, a los moderadores o con una solicitud aceptada.
 - **Tiempo real:**
   - `new HubConnectionBuilder().withUrl(api + '/hubs/notificaciones', { accessTokenFactory })`, con los eventos `notificacion` y `mensaje`;
@@ -313,6 +314,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 - **Administración** (solo con sesión 2FA):
   - `GET /admin/usuarios?texto&soloSuspendidos`, `POST /admin/usuarios/{id}/suspender { motivo, dias? }` y `/reactivar`;
   - `GET /admin/denuncias` y `POST /admin/denuncias/{id}/resolver`;
+  - `GET /admin/apelaciones?estado` y `POST /admin/apelaciones/{id}/resolver { aceptar, nota }` (aceptar revierte la medida; la resuelve otro moderador o un SuperUsuario);
   - `GET /admin/pagos?estado=RequiereRevision` y `POST /admin/pagos/{ref}/reembolsado`;
   - `/admin/verificaciones` y `PATCH /admin/usuarios/{id}/rol`;
   - `GET /admin/facturas?estado`, `GET /admin/facturas.csv`, `POST /admin/facturas/{id}/emitida { numeroDian, cufe }`;

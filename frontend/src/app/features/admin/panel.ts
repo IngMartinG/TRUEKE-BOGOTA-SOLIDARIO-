@@ -35,6 +35,7 @@ export default class Panel {
   protected readonly sesion = inject(SesionService);
   protected readonly enlaces = computed(() => [
     { ruta: 'denuncias', texto: 'Denuncias', icono: 'bandera' },
+    { ruta: 'apelaciones', texto: 'Apelaciones', icono: 'balanza' },
     { ruta: 'usuarios', texto: 'Usuarios', icono: 'usuarios' },
     { ruta: 'verificaciones', texto: 'Verificaciones', icono: 'verificado' },
     { ruta: 'pagos', texto: 'Pagos en revisión', icono: 'billetera' },

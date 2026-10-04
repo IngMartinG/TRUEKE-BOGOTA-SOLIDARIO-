@@ -1571,6 +1571,88 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/denuncias/recibidas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DenunciaRecibidaDto"][];
+                        "application/json": components["schemas"]["DenunciaRecibidaDto"][];
+                        "text/json": components["schemas"]["DenunciaRecibidaDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/denuncias/recibidas/{resolucionId}/apelacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    resolucionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CrearApelacionRequest"];
+                    "text/json": components["schemas"]["CrearApelacionRequest"];
+                    "application/*+json": components["schemas"]["CrearApelacionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApelacionDto"];
+                        "application/json": components["schemas"]["ApelacionDto"];
+                        "text/json": components["schemas"]["ApelacionDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/denuncias": {
         parameters: {
             query?: never;
@@ -1633,6 +1715,86 @@ export interface paths {
                     "application/json": components["schemas"]["ResolverDenunciaRequest"];
                     "text/json": components["schemas"]["ResolverDenunciaRequest"];
                     "application/*+json": components["schemas"]["ResolverDenunciaRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/apelaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Estado?: components["schemas"]["EstadoApelacionDto"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ApelacionAdminDto"][];
+                        "application/json": components["schemas"]["ApelacionAdminDto"][];
+                        "text/json": components["schemas"]["ApelacionAdminDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/apelaciones/{id}/resolver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ResolverApelacionRequest"];
+                    "text/json": components["schemas"]["ResolverApelacionRequest"];
+                    "application/*+json": components["schemas"]["ResolverApelacionRequest"];
                 };
             };
             responses: {
@@ -3855,6 +4017,37 @@ export interface components {
             localidad: string;
             municipioCodigo?: string | null;
         };
+        ApelacionAdminDto: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            resolucionId?: string;
+            tipo?: string;
+            /** Format: uuid */
+            objetivoId?: string;
+            accionOriginal?: string;
+            motivos?: string[];
+            detallesDenuncias?: string[];
+            notaOriginal?: string | null;
+            vistaPrevia?: string | null;
+            texto?: string;
+            /** Format: date-time */
+            fechaUtc?: string;
+            estado?: string;
+            notaResolucion?: string | null;
+            puedoResolver?: boolean;
+        };
+        ApelacionDto: {
+            /** Format: uuid */
+            id?: string;
+            estado?: string;
+            texto?: string;
+            /** Format: date-time */
+            fechaUtc?: string;
+            respuesta?: string | null;
+            /** Format: date-time */
+            fechaRespuestaUtc?: string | null;
+        };
         CalificacionDto: {
             /** Format: uuid */
             id?: string;
@@ -3996,6 +4189,9 @@ export interface components {
             /** Format: double */
             ivaIncluidoCop?: number;
         };
+        CrearApelacionRequest: {
+            texto: string;
+        };
         CrearComentarioRequest: {
             texto: string;
         };
@@ -4074,6 +4270,7 @@ export interface components {
             datosFacturacion?: components["schemas"]["DatosFacturacionDto"];
             facturas?: components["schemas"]["FacturaDto"][];
             pqrs?: components["schemas"]["PqrDto"][];
+            apelaciones?: components["schemas"]["ApelacionDto"][];
         };
         DenunciaAgrupadaDto: {
             /** Format: uuid */
@@ -4112,6 +4309,22 @@ export interface components {
             /** Format: date-time */
             fechaUtc?: string;
         };
+        DenunciaRecibidaDto: {
+            /** Format: uuid */
+            resolucionId?: string;
+            tipo?: string;
+            /** Format: uuid */
+            objetivoId?: string;
+            motivos?: string[];
+            accion?: string;
+            notaModerador?: string | null;
+            vistaPrevia?: string | null;
+            /** Format: date-time */
+            fechaResolucionUtc?: string;
+            /** Format: date-time */
+            apelableHastaUtc?: string | null;
+            apelacion?: components["schemas"]["ApelacionDto"];
+        };
         DepartamentoDto: {
             codigo?: string;
             nombre?: string;
@@ -4146,6 +4359,8 @@ export interface components {
         };
         EnviarMensajeRequest: {
             texto: string;
+            /** Format: uuid */
+            respuestaAId?: string | null;
         };
         EscalonDto: {
             /** Format: int32 */
@@ -4170,6 +4385,8 @@ export interface components {
             serieDisponible?: boolean;
             serie?: components["schemas"]["PuntoSerieDto"][];
         };
+        /** @enum {string} */
+        EstadoApelacionDto: "Pendiente" | "Aceptada" | "Rechazada";
         /** @enum {string} */
         EstadoDenunciaDto: "Pendiente" | "Resuelta" | "Descartada";
         /** @enum {string} */
@@ -4327,6 +4544,14 @@ export interface components {
             /** Format: date-time */
             fechaUtc?: string;
             leido?: boolean;
+            oculto?: boolean;
+            respuestaA?: components["schemas"]["MensajeCitadoDto"];
+        };
+        MensajeCitadoDto: {
+            /** Format: uuid */
+            id?: string;
+            esMio?: boolean;
+            texto?: string;
             oculto?: boolean;
         };
         MensajeExportDto: {
@@ -4660,6 +4885,10 @@ export interface components {
             aceptoPoliticaDatos?: boolean;
             captchaToken?: string | null;
         };
+        ResolverApelacionRequest: {
+            aceptar?: boolean;
+            nota: string;
+        };
         ResolverDenunciaRequest: {
             accion?: components["schemas"]["AccionDenunciaDto"];
             nota?: string | null;
@@ -4836,6 +5065,8 @@ export interface components {
 export type AccionDenunciaDto = components['schemas']['AccionDenunciaDto'];
 export type ActivacionDosFactoresDto = components['schemas']['ActivacionDosFactoresDto'];
 export type ActualizarPerfilRequest = components['schemas']['ActualizarPerfilRequest'];
+export type ApelacionAdminDto = components['schemas']['ApelacionAdminDto'];
+export type ApelacionDto = components['schemas']['ApelacionDto'];
 export type CalificacionDto = components['schemas']['CalificacionDto'];
 export type CalificacionDtoPaginaDto = components['schemas']['CalificacionDtoPaginaDto'];
 export type CalificacionExportDto = components['schemas']['CalificacionExportDto'];
@@ -4855,6 +5086,7 @@ export type ConfiguracionDosFactoresDto = components['schemas']['ConfiguracionDo
 export type ConfiguracionPublicaDto = components['schemas']['ConfiguracionPublicaDto'];
 export type ConversacionDto = components['schemas']['ConversacionDto'];
 export type CotizacionDto = components['schemas']['CotizacionDto'];
+export type CrearApelacionRequest = components['schemas']['CrearApelacionRequest'];
 export type CrearComentarioRequest = components['schemas']['CrearComentarioRequest'];
 export type CrearDenunciaRequest = components['schemas']['CrearDenunciaRequest'];
 export type CrearPqrRequest = components['schemas']['CrearPqrRequest'];
@@ -4866,6 +5098,7 @@ export type DatosPersonalesDto = components['schemas']['DatosPersonalesDto'];
 export type DenunciaAgrupadaDto = components['schemas']['DenunciaAgrupadaDto'];
 export type DenunciaCreadaDto = components['schemas']['DenunciaCreadaDto'];
 export type DenunciaExportDto = components['schemas']['DenunciaExportDto'];
+export type DenunciaRecibidaDto = components['schemas']['DenunciaRecibidaDto'];
 export type DepartamentoDto = components['schemas']['DepartamentoDto'];
 export type EcoPuntosResumenDto = components['schemas']['EcoPuntosResumenDto'];
 export type EliminarCuentaRequest = components['schemas']['EliminarCuentaRequest'];
@@ -4873,6 +5106,7 @@ export type EmitirFacturaRequest = components['schemas']['EmitirFacturaRequest']
 export type EnviarMensajeRequest = components['schemas']['EnviarMensajeRequest'];
 export type EscalonDto = components['schemas']['EscalonDto'];
 export type EstadisticasPublicacionDto = components['schemas']['EstadisticasPublicacionDto'];
+export type EstadoApelacionDto = components['schemas']['EstadoApelacionDto'];
 export type EstadoDenunciaDto = components['schemas']['EstadoDenunciaDto'];
 export type EstadoFacturaDto = components['schemas']['EstadoFacturaDto'];
 export type EstadoPagoDto = components['schemas']['EstadoPagoDto'];
@@ -4888,6 +5122,7 @@ export type IngresosDto = components['schemas']['IngresosDto'];
 export type IniciarPagoRequest = components['schemas']['IniciarPagoRequest'];
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type MensajeChatDto = components['schemas']['MensajeChatDto'];
+export type MensajeCitadoDto = components['schemas']['MensajeCitadoDto'];
 export type MensajeExportDto = components['schemas']['MensajeExportDto'];
 export type ModoDto = components['schemas']['ModoDto'];
 export type MotivoDenunciaDto = components['schemas']['MotivoDenunciaDto'];
@@ -4916,6 +5151,7 @@ export type PuntoSerieDto = components['schemas']['PuntoSerieDto'];
 export type RechazarSolicitudRequest = components['schemas']['RechazarSolicitudRequest'];
 export type ReembolsoRequest = components['schemas']['ReembolsoRequest'];
 export type RegistroRequest = components['schemas']['RegistroRequest'];
+export type ResolverApelacionRequest = components['schemas']['ResolverApelacionRequest'];
 export type ResolverDenunciaRequest = components['schemas']['ResolverDenunciaRequest'];
 export type ResponderPqrRequest = components['schemas']['ResponderPqrRequest'];
 export type RestablecerClaveRequest = components['schemas']['RestablecerClaveRequest'];

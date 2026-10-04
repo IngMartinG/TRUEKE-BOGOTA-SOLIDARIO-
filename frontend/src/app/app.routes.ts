@@ -72,6 +72,7 @@ export const routes: Routes = [
       { path: 'seguridad', title: 'Seguridad', loadComponent: () => import('./features/cuenta/seguridad') },
       { path: 'facturacion', title: 'Facturación', loadComponent: () => import('./features/cuenta/facturacion') },
       { path: 'soporte', title: 'Soporte y PQR', loadComponent: () => import('./features/cuenta/soporte') },
+      { path: 'reportes', title: 'Reportes sobre ti', loadComponent: () => import('./features/cuenta/reportes') },
       { path: 'privacidad', title: 'Privacidad y datos', loadComponent: () => import('./features/cuenta/privacidad') },
     ],
   },

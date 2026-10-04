@@ -13,6 +13,7 @@ export default [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'denuncias' },
       { path: 'denuncias', title: 'Moderación · Denuncias', loadComponent: () => import('./denuncias') },
+      { path: 'apelaciones', title: 'Moderación · Apelaciones', loadComponent: () => import('./apelaciones') },
       { path: 'usuarios', title: 'Moderación · Usuarios', loadComponent: () => import('./usuarios') },
       { path: 'verificaciones', title: 'Moderación · Verificaciones', loadComponent: () => import('./verificaciones') },
       { path: 'pagos', title: 'Moderación · Pagos', loadComponent: () => import('./pagos') },

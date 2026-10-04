@@ -14,7 +14,9 @@ import type {
   FacturaDto,
   PerfilEmpresaRequest,
   PqrDto,
+  ApelacionDto,
   DenunciaCreadaDto,
+  DenunciaRecibidaDto,
   EcoPuntosResumenDto,
   EliminarCuentaRequest,
   IniciarPagoRequest,
@@ -76,4 +78,7 @@ export class CuentaApi {
   solicitarSubida = (r: SolicitarSubidaRequest) =>
     this.api.post<SubidaArchivoDto>('/archivos/subidas', r, { silencioso: true });
   denunciar = (r: CrearDenunciaRequest) => this.api.post<DenunciaCreadaDto>('/denuncias', r, { silencioso: true });
+  denunciasRecibidas = () => this.api.get<DenunciaRecibidaDto[]>('/denuncias/recibidas');
+  apelar = (resolucionId: string, texto: string) =>
+    this.api.post<ApelacionDto>(`/denuncias/recibidas/${seg(resolucionId)}/apelacion`, { texto }, { silencioso: true });
 }
