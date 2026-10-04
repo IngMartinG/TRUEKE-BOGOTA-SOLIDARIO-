@@ -1,7 +1,7 @@
 /* ==========================================================================
    Trueke Bogotá Solidario — sistema de diseño
-   Tokens tomados del prototipo de la Etapa 3 (prototipo/styles.css) y ampliados
-   a una paleta ecológica completa con modo claro y oscuro.
+   Paleta ecológica con modo claro y oscuro (los tokens originales vienen del
+   prototipo archivado en docs/historico/prototipo-etapa3/).
    ========================================================================== */
 @import 'tailwindcss';
 
@@ -143,6 +143,10 @@
   }
   ::selection {
     @apply bg-bosque-200 text-bosque-950;
+  }
+  /* Insignia de reCAPTCHA oculta: los formularios muestran el aviso de texto que Google acepta en su lugar (marco-auth) */
+  .grecaptcha-badge {
+    visibility: hidden;
   }
   @media (prefers-reduced-motion: reduce) {
     *,

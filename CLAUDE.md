@@ -10,7 +10,7 @@ El modelo C4 en `docs/c4/` es la fuente de verdad de la arquitectura.
 ## Stack obligatorio (no cambiar)
 ASP.NET Core 8 (C#) + SignalR · SQL Server (PostgreSQL rechazado) · Redis (backplane de SignalR / caché) · Wompi (solo recargas entrantes) · Docker / Compose · GitHub Actions · Azure App Service + VNet + Blob Storage · Front-end: Angular.
 
-## Arquitectura (exigencia del profesor: un proyecto por capa)
+## Arquitectura (un proyecto por capa, obligatorio)
 ```
 TruekeBogotaSolidario.sln
 ├── TruekeBogotaSolidario.Datos         (EF Core, entidades, repositorios, PoliticaEcoPuntos, PasswordHasher)
@@ -20,60 +20,23 @@ TruekeBogotaSolidario.sln
 ```
 Un controller nunca puede tocar un repositorio ni el DbContext.
 
-## Estado al 2026-10-02
-- Los 10 pendientes de abajo están **hechos**. Además, se cerraron las brechas previas al front:
-  - refresh token en cookie HttpOnly;
-  - verificación de correo y recuperación de clave;
-  - Google;
-  - chat interno;
-  - imágenes en Azure Blob;
-  - notificaciones persistentes;
-  - denuncias;
-  - Habeas Data.
+## Estado actual
+El detalle de lo hecho y lo pendiente está en `docs/ESTADO_Y_PENDIENTES.md` (fuente única; no repetirlo aquí). Resumen al 2026-10-04:
+backend y front completos (234 pruebas + build `-warnaserror`; front: lint, 15 pruebas y build de producción), 6 migraciones,
+diseño adaptable a celular/tablet/PC, chat en tiempo real con respuestas, entregado/leído, escribiendo y en línea.
+Estructura: `backend/`, `frontend/`, `docs/` (c4, openapi.json, migraciones, diseno, historico). Lo académico (prototipo, C4 viejo) está archivado en `docs/historico/`.
+SuperUsuario: martincolombia15@gmail.com (con 2FA).
 
-  Segunda tanda, también hecha:
-  - perfil público;
-  - editar publicaciones y varias fotos;
-  - confirmación de entrega por ambas partes;
-  - calificaciones;
-  - favoritos y filtros;
-  - suspensión de cuentas;
-  - pagos en revisión;
-  - correos HTML;
-  - reCAPTCHA v3;
-  - 2FA TOTP para administradores;
-  - Application Insights;
-  - pruebas contra SQL Server real (Testcontainers).
-
-  Build `-warnaserror` y 175 pruebas en verde (más 4 de SQL Server que corren en el CI). Ver `backend/ESTADO_Y_PENDIENTES.md` y `backend/README.md` (sección 10: contrato para Angular).
-- **Front-end Angular hecho** en `frontend/` (rama `feature/frontend-angular`): Angular 22 con signals y sin Zone.js, Tailwind v4 con sistema de diseño ecológico, todas las pantallas del contrato (catálogo con mapa, publicar, intercambios, chat SignalR, notificaciones, Eco-Puntos/pagos, cuenta con 2FA y Habeas Data, moderación). Lint, 13 pruebas y build de producción en verde; imagen nginx sin root con CSP; CI en `.github/workflows/frontend-ci.yml`. Ver `frontend/README.md`.
-- La solución y los proyectos viven en `backend/`. El backend anterior (Etapa4) se eliminó. Estructura del repo: `backend/`, `frontend/`, `prototipo/`, `docs/`.
-- **Reglas añadidas:**
-  - los Eco-Puntos se otorgan solo al completarse el intercambio (ambas partes confirman la entrega);
-  - las funciones de administración exigen una sesión con 2FA (`amr=mfa`);
-  - publicar, solicitar, comentar, chatear, denunciar y pagar exigen correo verificado (`Guardas.ExigirCorreoVerificado`);
-  - la API nunca comparte correos entre usuarios (se usa el chat);
-  - los archivos se suben directo a Blob con SAS y se validan al usarlos.
-- La clave JWT se configura como `Jwt:Key` (variable `Jwt__Key`).
-
-## Estado al 2026-10-03 (escala nacional y monetización)
-- **Escala Colombia:** catálogo DANE-DIVIPOLA embebido (`Datos/Recursos/divipola.json`, clase `Divipola`); `MunicipioCodigo`/`DepartamentoCodigo` en publicaciones y usuarios (Bogotá = 11001); `GET /ubicaciones/...`; filtros por departamento/municipio. La marca sigue siendo "Trueke Bogotá Solidario" (decisión del dueño).
-- **Estado del producto** obligatorio al publicar (`CondicionProducto`: Nuevo, ComoNuevo, Usado, UsadoConDetalles, Reparado, ParaRepuestos; las tres últimas exigen `DetalleCondicion`).
-- **Fotos limpias:** `ProcesadorImagenes` (ImageSharp 3.1, NO subir a 4: exige llave) re-codifica y quita EXIF/GPS; la copia limpia se guarda con nombre nuevo.
-- **Anti-farmeo:** correo canónico único (`CorreoCanonico`), correos desechables bloqueados, bono al verificar el correo, misma pareja suma puntos/reputación 1 vez cada 30 días, 1 calificación por pareja/30 días cuenta en el promedio.
-- **Monetización:** Impulsar (20 Eco-Puntos, cada 24 h, único uso 100 % con puntos); Empresa = 10 destacados gratis, 20 % de descuento, 1.000 publicaciones, nombre comercial + NIT; Premium = 3 destacados, 15 %, 150 publicaciones; estadísticas por publicación (serie diaria solo planes pagos); vitrina de destacadas; recordatorio de vencimiento de planes; art. 53 (más de 5 ventas exige identidad verificada o Empresa).
-- **Facturación:** `Factura` por pago aprobado (misma transacción), IVA incluido, modo `Manual` en producción (equipo registra número y CUFE), `Simulado` solo dev. **PQR** con retracto y reversión. **Ingresos** y CSV solo SuperUsuario. Un reembolso revierte el beneficio.
-- **Infra:** límite de peticiones distribuido en Redis, proxies confiables configurables, CodeQL, Dependabot, ZAP (manual contra staging).
-- Migración `EscalaNacionalYMonetizacion` (con valores por defecto para datos existentes). 216 pruebas + 6 de SQL Server (CI).
-- **Endpoints anónimos añadidos** a la lista blanca: `GET /ubicaciones/...` y `GET /publicaciones/destacadas` (lectura del catálogo).
-- **Pendiente (requiere cuentas externas):** cobro recurrente con fuentes de pago de Wompi, integración API con proveedor de factura electrónica, festivos en plazos de PQR.
-
-## Estado al 2026-10-04
-- Chat: responder un mensaje en particular (`respuestaAId`; deslizar en celular, botón con mouse).
-- Denuncias con debido proceso: si es procedente se avisa al denunciado (`DenunciaRecibida`, sin revelar al denunciante) y puede apelar una vez en 15 días; la apelación la resuelve otro moderador o un SuperUsuario y, si se acepta, se revierte la medida. Migración `ChatRespuestasYApelaciones`. 227 pruebas.
-
-- Segunda tanda del 2026-10-04: sesión estable (solo 401/403 al refrescar cierran sesión; candado entre pestañas), chat con entregado/leído/escribiendo/en línea (`IPresencia`), foto de perfil (`PUT /usuarios/yo/foto`), diseño adaptable (barra inferior < 1024 px, `app-volver`), "Pagos y facturas", bloqueo de usuarios, preferencias de avisos por correo (`IAvisosCorreo`) y `/ayuda`. 234 pruebas.
-
+## Decisiones y reglas técnicas vigentes
+- Los Eco-Puntos se otorgan solo al completarse el intercambio (ambas partes confirman la entrega).
+- Administración exige sesión con 2FA (`amr=mfa`). Publicar, solicitar, comentar, chatear, denunciar y pagar exigen correo verificado (`Guardas.ExigirCorreoVerificado`).
+- La API nunca comparte correos entre usuarios (se usa el chat). Los archivos se suben directo a Blob con SAS y se validan al usarlos; `ProcesadorImagenes` (ImageSharp 3.1, NO subir a 4: exige llave) quita EXIF/GPS.
+- La clave JWT es `Jwt:Key` (variable `Jwt__Key`). La sesión solo se cierra con 401/403 al refrescar (candado entre pestañas en el front).
+- Escala Colombia (DANE-DIVIPOLA, Bogotá = 11001); la marca sigue siendo "Trueke Bogotá Solidario" (decisión del dueño). Logo oficial en `frontend/public/logo-emblema.png` y `logo-completo.png`.
+- Anti-farmeo: correo canónico único, correos desechables bloqueados, misma pareja suma 1 vez cada 30 días.
+- Facturación: `Factura` por pago aprobado (IVA incluido), modo `Manual` en producción, `Simulado` solo en dev. Un reembolso revierte el beneficio.
+- Denuncias con debido proceso (aviso al denunciado sin revelar al denunciante, apelación en 15 días resuelta por otro moderador). Bloqueos en ambas direcciones; avisos por correo opcionales (`IAvisosCorreo`) solo si la persona no está en línea (`IPresencia`).
+- Endpoints anónimos permitidos: ver "Reglas de seguridad".
 ## Pendientes originales (completados)
 1. `.sln`, `appsettings.json` sin secretos, `appsettings.Development.json` (Pagos:Proveedor=Simulado, BD InMemory), `.gitignore`, `.env.example`.
 2. `dotnet build` en verde (TreatWarningsAsErrors) y corregir Datos/Contexto, Datos/Repositorios/Implementaciones y Presentacion.

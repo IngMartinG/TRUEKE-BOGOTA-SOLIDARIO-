@@ -16,6 +16,8 @@ permissions:
 jobs:
   analizar:
     name: Analizar (${{ matrix.lenguaje }})
+    # CodeQL es gratis solo en repositorios públicos: con el repo privado (cuenta gratuita) se omite en vez de fallar.
+    if: ${{ !github.event.repository.private }}
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
