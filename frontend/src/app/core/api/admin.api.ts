@@ -1,7 +1,9 @@
 import { inject, Injectable } from '@angular/core';
 import type {
   AccionDenunciaDto,
+  ApelacionAdminDto,
   DenunciaAgrupadaDto,
+  EstadoApelacionDto,
   EstadoDenunciaDto,
   EstadoFacturaDto,
   EstadoPagoDto,
@@ -38,6 +40,10 @@ export class AdminApi {
     this.api.get<DenunciaAgrupadaDto[]>('/admin/denuncias', { params: { estado } });
   resolverDenuncia = (id: string, accion: AccionDenunciaDto, nota: string | null) =>
     this.api.post<void>(`/admin/denuncias/${seg(id)}/resolver`, { accion, nota });
+  apelaciones = (estado: EstadoApelacionDto) =>
+    this.api.get<ApelacionAdminDto[]>('/admin/apelaciones', { params: { estado } });
+  resolverApelacion = (id: string, aceptar: boolean, nota: string) =>
+    this.api.post<void>(`/admin/apelaciones/${seg(id)}/resolver`, { aceptar, nota });
 
   ocultarPublicacion = (id: string, motivo: string) =>
     this.api.post<void>(`/admin/publicaciones/${seg(id)}/ocultar`, { motivo });

@@ -262,6 +262,8 @@ public sealed class PaginacionRequest
 public sealed class EnviarMensajeRequest
 {
     [Required, StringLength(1000, MinimumLength = 1)] public string Texto { get; init; } = "";
+    /// <summary>Mensaje de la misma conversación al que se responde (opcional).</summary>
+    public Guid? RespuestaAId { get; init; }
 }
 
 public sealed class MensajesRequest
@@ -304,6 +306,26 @@ public sealed class ResolverDenunciaRequest
     /// <summary>OcultarContenido: oculta la publicación, comentario o mensaje. MarcarRevisada: procedente sin ocultar (p. ej. denuncias a usuarios).</summary>
     [EnumDataType(typeof(AccionDenunciaDto))] public AccionDenunciaDto Accion { get; init; }
     [StringLength(300, MinimumLength = 3)] public string? Nota { get; init; }
+}
+
+public enum EstadoApelacionDto { Pendiente = 1, Aceptada = 2, Rechazada = 3 }
+
+public sealed class CrearApelacionRequest
+{
+    /// <summary>La versión de la persona denunciada.</summary>
+    [Required, StringLength(1000, MinimumLength = 20)] public string Texto { get; init; } = "";
+}
+
+public sealed class FiltroApelacionesRequest
+{
+    [EnumDataType(typeof(EstadoApelacionDto))] public EstadoApelacionDto Estado { get; init; } = EstadoApelacionDto.Pendiente;
+}
+
+public sealed class ResolverApelacionRequest
+{
+    /// <summary>true: se revierte la medida (el contenido vuelve a mostrarse). false: se mantiene.</summary>
+    public bool Aceptar { get; init; }
+    [Required, StringLength(300, MinimumLength = 3)] public string Nota { get; init; } = "";
 }
 
 /// <summary>Derecho de supresión (Ley 1581). Exige volver a demostrar identidad: la clave, o un ID token de Google si la cuenta no tiene clave.</summary>
@@ -432,7 +454,11 @@ public sealed record ComentarioDto(Guid Id, Guid PublicacionId, PerfilPublicoDto
     bool EsMio, bool Oculto, string? MotivoOcultamiento);
 
 /// <summary>Mensaje de chat. EsMio es relativo a quien lo recibe. Si fue ocultado por moderación, Texto trae un aviso.</summary>
-public sealed record MensajeChatDto(Guid Id, Guid ConversacionId, bool EsMio, string Texto, DateTime FechaUtc, bool Leido, bool Oculto);
+public sealed record MensajeChatDto(Guid Id, Guid ConversacionId, bool EsMio, string Texto, DateTime FechaUtc, bool Leido, bool Oculto,
+    MensajeCitadoDto? RespuestaA = null);
+
+/// <summary>Vista previa del mensaje al que se responde (texto recortado; si está oculto, trae el aviso).</summary>
+public sealed record MensajeCitadoDto(Guid Id, bool EsMio, string Texto, bool Oculto);
 
 /// <summary>Resumen de una conversación para la bandeja de chats.</summary>
 public sealed record ConversacionDto(Guid Id, Guid SolicitudId, Guid PublicacionId, string PublicacionTitulo, string EstadoSolicitud,
@@ -461,6 +487,20 @@ public sealed record DenunciaCreadaDto(Guid Id, string Estado, DateTime FechaUtc
 public sealed record DenunciaAgrupadaDto(Guid DenunciaId, string Tipo, Guid ObjetivoId, int Total, IReadOnlyList<string> Motivos,
     IReadOnlyList<string> Detalles, string? VistaPrevia, bool ObjetivoExiste, DateTime PrimeraUtc, DateTime UltimaUtc, string Estado);
 
+/// <summary>
+/// Denuncia procedente contra el usuario (lo que el moderador decidió). Nunca revela quién denunció ni sus textos.
+/// ApelableHastaUtc es null si ya no se puede apelar (venció el plazo o ya apeló).
+/// </summary>
+public sealed record DenunciaRecibidaDto(Guid ResolucionId, string Tipo, Guid ObjetivoId, IReadOnlyList<string> Motivos, string Accion,
+    string? NotaModerador, string? VistaPrevia, DateTime FechaResolucionUtc, DateTime? ApelableHastaUtc, ApelacionDto? Apelacion);
+
+public sealed record ApelacionDto(Guid Id, string Estado, string Texto, DateTime FechaUtc, string? Respuesta, DateTime? FechaRespuestaUtc);
+
+/// <summary>Cola de apelaciones para moderación. PuedoResolver es false si quien la mira resolvió la denuncia original (y no es SuperUsuario).</summary>
+public sealed record ApelacionAdminDto(Guid Id, Guid ResolucionId, string Tipo, Guid ObjetivoId, string AccionOriginal, IReadOnlyList<string> Motivos,
+    IReadOnlyList<string> DetallesDenuncias, string? NotaOriginal, string? VistaPrevia, string Texto, DateTime FechaUtc, string Estado,
+    string? NotaResolucion, bool PuedoResolver);
+
 // ---------------- Exportación de datos personales (Ley 1581: derecho de acceso) ----------------
 public sealed record ComentarioExportDto(Guid Id, Guid PublicacionId, string Texto, DateTime FechaUtc, bool Oculto);
 public sealed record MensajeExportDto(Guid Id, Guid ConversacionId, string Texto, DateTime FechaUtc);
@@ -472,7 +512,8 @@ public sealed record DatosPersonalesDto(DateTime GeneradoUtc, UsuarioDto Perfil,
     IReadOnlyList<MensajeExportDto> MensajesEnviados, IReadOnlyList<TransaccionExportDto> Transacciones, IReadOnlyList<PagoEstadoDto> Pagos,
     IReadOnlyList<NotificacionDto> Notificaciones, IReadOnlyList<DenunciaExportDto> DenunciasRealizadas,
     IReadOnlyList<CalificacionExportDto> CalificacionesRealizadas, IReadOnlyList<Guid> Favoritos,
-    DatosFacturacionDto DatosFacturacion, IReadOnlyList<FacturaDto> Facturas, IReadOnlyList<PqrDto> Pqrs);
+    DatosFacturacionDto DatosFacturacion, IReadOnlyList<FacturaDto> Facturas, IReadOnlyList<PqrDto> Pqrs,
+    IReadOnlyList<ApelacionDto> Apelaciones);
 
 public sealed record CalificacionExportDto(Guid Id, Guid SolicitudId, int Estrellas, string? Comentario, DateTime FechaUtc);
 

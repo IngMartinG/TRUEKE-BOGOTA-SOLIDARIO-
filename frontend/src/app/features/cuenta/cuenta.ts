@@ -9,8 +9,9 @@ import { Icono } from '../../shared/ui/icono';
   imports: [RouterOutlet, RouterLink, RouterLinkActive, Avatar, Icono, NumeroPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="contenedor grid gap-8 py-8 sm:py-10 lg:grid-cols-[16rem_1fr]">
-      <aside>
+    <!-- grid-cols-1 (minmax(0,1fr)): sin él, en pantallas medianas la columna toma el ancho de las pestañas y desborda la página -->
+    <div class="contenedor grid grid-cols-1 gap-8 py-8 sm:py-10 lg:grid-cols-[16rem_1fr]">
+      <aside class="min-w-0">
         <div class="flex items-center gap-3">
           <app-avatar [nombre]="sesion.usuario()?.nombreCompleto" [tamano]="52" [verificado]="!!sesion.usuario()?.verificado" />
           <div class="min-w-0">
@@ -42,6 +43,7 @@ export default class Cuenta {
     { ruta: '/cuenta/seguridad', texto: 'Seguridad', icono: 'escudo' },
     { ruta: '/cuenta/facturacion', texto: 'Facturación', icono: 'factura' },
     { ruta: '/cuenta/soporte', texto: 'Soporte y PQR', icono: 'soporte' },
+    { ruta: '/cuenta/reportes', texto: 'Reportes sobre ti', icono: 'balanza' },
     { ruta: '/cuenta/privacidad', texto: 'Privacidad y datos', icono: 'candado' },
   ];
 }

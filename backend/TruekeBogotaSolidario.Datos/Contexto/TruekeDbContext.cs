@@ -21,6 +21,7 @@ public class TruekeDbContext : DbContext
     public DbSet<Conversacion> Conversaciones => Set<Conversacion>();
     public DbSet<Mensaje> Mensajes => Set<Mensaje>();
     public DbSet<Denuncia> Denuncias => Set<Denuncia>();
+    public DbSet<Apelacion> Apelaciones => Set<Apelacion>();
     public DbSet<Favorito> Favoritos => Set<Favorito>();
     public DbSet<Calificacion> Calificaciones => Set<Calificacion>();
     public DbSet<Factura> Facturas => Set<Factura>();
@@ -212,6 +213,7 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.MotivoOcultamiento).HasMaxLength(300);
             e.HasOne(x => x.Conversacion).WithMany().HasForeignKey(x => x.ConversacionId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.AutorId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.RespuestaA).WithMany().HasForeignKey(x => x.RespuestaAId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.ConversacionId, x.FechaUtc });
             e.HasIndex(x => new { x.ConversacionId, x.AutorId, x.LeidoUtc });
             e.HasIndex(x => new { x.AutorId, x.FechaUtc });
@@ -226,10 +228,29 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.Detalle).HasMaxLength(500);
             e.Property(x => x.NotaResolucion).HasMaxLength(300);
+            e.Property(x => x.Accion).HasConversion<string>().HasMaxLength(20);
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.DenuncianteId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.DenuncianteId, x.Tipo, x.ObjetivoId }).IsUnique();
             e.HasIndex(x => new { x.Estado, x.FechaUtc });
             e.HasIndex(x => new { x.Tipo, x.ObjetivoId, x.Estado });
+            e.HasIndex(x => new { x.DenunciadoId, x.Estado });
+            e.HasIndex(x => x.ResolucionId);
+            if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+        });
+
+        mb.Entity<Apelacion>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Tipo).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.AccionOriginal).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Texto).HasMaxLength(Apelacion.LongitudMaxima).IsRequired();
+            e.Property(x => x.NotaResolucion).HasMaxLength(300);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.ResolucionId).IsUnique();   // una apelación por resolución
+            e.HasIndex(x => new { x.Estado, x.FechaUtc });
+            e.HasIndex(x => x.UsuarioId);
             if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
         });
 

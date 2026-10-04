@@ -96,7 +96,8 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
             await _publicacionService.ListarMiasAsync(actorId), await _solicitudService.ListarEnviadasAsync(actorId),
             comentarios, mensajes, transacciones, pagos, notificaciones, denuncias, calificaciones, favoritos,
             Mapeos.ADatosFacturacion(u), (await _facturas.ListarPorUsuarioAsync(actorId, 500)).Select(Mapeos.AFacturaDto).ToList(),
-            (await _pqrs.ListarPorUsuarioAsync(actorId, 200)).Select(Mapeos.APqrDto).ToList());
+            (await _pqrs.ListarPorUsuarioAsync(actorId, 200)).Select(Mapeos.APqrDto).ToList(),
+            (await _denuncias.ListarApelacionesDelUsuarioAsync(actorId, Maximo)).Select(DenunciaService.AApelacionDto).ToList());
     }
 
     /// <summary>Volver a demostrar identidad: con un token robado (o un equipo desatendido) no basta para borrar la cuenta.</summary>
