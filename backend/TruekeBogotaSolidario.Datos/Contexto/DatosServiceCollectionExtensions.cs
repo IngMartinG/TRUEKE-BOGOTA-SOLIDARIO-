@@ -74,7 +74,9 @@ public static class DatosInicializador
 
         if (string.IsNullOrWhiteSpace(superCorreo) || string.IsNullOrWhiteSpace(superClave)) return;
         var correo = Usuario.NormalizarCorreo(superCorreo);
-        if (await db.Usuarios.AnyAsync(u => u.Correo == correo)) return;
+        // También por correo canónico (índice único): si ya hay una cuenta equivalente, no se crea otra ni se cae el arranque.
+        var canonico = Usuario.CanonizarCorreo(correo);
+        if (await db.Usuarios.AnyAsync(u => u.Correo == correo || u.CorreoCanonico == canonico)) return;
 
         var su = new Usuario("Super Usuario Trueke", "Bogotá", correo, superClave);
         su.CambiarRol(RolUsuarioEnum.SuperUsuario);
