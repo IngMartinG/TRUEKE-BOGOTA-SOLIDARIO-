@@ -33,7 +33,7 @@ import { ConfigService } from '../../core/config.service';
 import { erroresDeCampos, mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
 import { SubidasService } from '../../core/subidas.service';
-import { comprimirImagen } from '../../shared/imagenes';
+import { comprimirImagen, urlPublica } from '../../shared/imagenes';
 import { CopPipe } from '../../shared/pipes';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
 import { Icono } from '../../shared/ui/icono';
@@ -506,7 +506,7 @@ export default class Publicar {
         localidad: p.localidad ?? '',
       });
       this.municipioPrevio = p.municipioCodigo ?? CODIGO_BOGOTA;
-      this.fotos.set((p.imagenes ?? []).map((url) => ({ clave: url, vista: url, url, progreso: 100 })));
+      this.fotos.set((p.imagenes ?? []).map((url) => ({ clave: url, vista: urlPublica(url), url, progreso: 100 })));
       if (p.latitud != null && p.longitud != null && !p.coordenadasAproximadas) this.ubicacion.set([p.latitud, p.longitud]);
       this.pasoMaximo.set(PASOS.length - 1);
       this.paso.set(1);

@@ -14,6 +14,7 @@ import { AvisosService } from '../../core/avisos.service';
 import { FavoritosService } from '../../core/favoritos.service';
 import { mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
+import { urlPublica } from '../../shared/imagenes';
 import { CopPipe, FechaPipe, HacePipe } from '../../shared/pipes';
 import { Avatar } from '../../shared/ui/avatar';
 import { Denunciar } from '../../shared/ui/denunciar';
@@ -96,7 +97,7 @@ import { Comentarios } from './comentarios';
                   <button type="button" class="size-20 shrink-0 overflow-hidden rounded-xl border-2 transition"
                     [class]="i === indice() ? 'border-bosque-500' : 'border-transparent opacity-70 hover:opacity-100'"
                     (click)="indice.set(i)" [attr.aria-label]="'Ver foto ' + (i + 1)">
-                    <img [src]="img" alt="" class="size-full object-cover" loading="lazy" referrerpolicy="no-referrer" />
+                    <img [src]="urlPublica(img)" alt="" class="size-full object-cover" loading="lazy" referrerpolicy="no-referrer" />
                   </button>
                 }
               </div>
@@ -366,6 +367,7 @@ export default class Detalle {
   });
   protected readonly p = computed(() => this.recurso.value());
   protected readonly imagenes = computed(() => this.p()?.imagenes ?? []);
+  protected readonly urlPublica = urlPublica;
   protected readonly indice = signal(0);
   protected readonly infoModo = computed(() => INFO_MODO[(this.p()?.modo as ModoDto) ?? 'Trueke'] ?? INFO_MODO.Trueke);
   protected readonly favorita = computed(() => this.favoritos.esFavorita(this.p()?.id, this.p()?.esFavorita));
