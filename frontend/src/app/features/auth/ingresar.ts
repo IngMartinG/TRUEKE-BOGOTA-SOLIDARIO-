@@ -20,7 +20,7 @@ import { destinoSeguro } from './redireccion';
   imports: [ReactiveFormsModule, FormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, Icono, BotonGoogle, Modal],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <app-marco-auth
+    <app-marco-auth [conCaptcha]="true"
       [titulo]="pedirCodigo() ? 'Verificación en dos pasos' : 'Hola de nuevo'"
       [subtitulo]="pedirCodigo() ? 'Escribe el código de 6 dígitos de tu app autenticadora o uno de tus códigos de recuperación.' : 'Ingresa para seguir intercambiando con tu comunidad.'"
     >
