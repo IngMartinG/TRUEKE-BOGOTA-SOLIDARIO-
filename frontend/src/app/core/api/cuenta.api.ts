@@ -40,7 +40,9 @@ export class CuentaApi {
 
   yo = () => this.api.get<UsuarioDto>('/usuarios/yo');
   actualizarPerfil = (r: ActualizarPerfilRequest) => this.api.put<UsuarioDto>('/usuarios/yo', r, { silencioso: true });
-  actualizarEmpresa = (r: PerfilEmpresaRequest) => this.api.put<UsuarioDto>('/usuarios/yo/empresa', r, { silencioso: true });
+  cambiarFoto = (url: string) => this.api.put<UsuarioDto>('/usuarios/yo/foto', { url }, { silencioso: true });
+  quitarFoto = () => this.api.delete<UsuarioDto>('/usuarios/yo/foto');
+  actualizarEmpresa =(r: PerfilEmpresaRequest) => this.api.put<UsuarioDto>('/usuarios/yo/empresa', r, { silencioso: true });
 
   datosFacturacion = () => this.api.get<DatosFacturacionDto>('/cuenta/facturacion');
   guardarFacturacion = (r: DatosFacturacionRequest) =>

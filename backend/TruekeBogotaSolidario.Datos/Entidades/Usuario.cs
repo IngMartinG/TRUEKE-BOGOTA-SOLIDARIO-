@@ -78,6 +78,8 @@ public class Usuario
     // Verificación de identidad
     public EstadoVerificacion EstadoVerificacion { get; private set; }
     public string? DocumentoVerificacionUrl { get; private set; }
+    /// <summary>Foto de perfil pública (copia limpia, sin GPS ni metadatos). null = se muestran las iniciales.</summary>
+    public string? FotoUrl { get; private set; }
     public string? MotivoRechazoVerificacion { get; private set; }
 
     // Identidad y cumplimiento (Ley 1581 de 2012)
@@ -145,6 +147,22 @@ public class Usuario
     {
         (NombreCompleto, Localidad) = ValidarPerfil(nombreCompleto, localidad);
         if (municipioCodigo is not null) MunicipioCodigo = Divipola.Exigir(municipioCodigo).Codigo;
+    }
+
+    /// <summary>La URL ya debe venir validada (archivo propio y limpio). Devuelve la foto anterior para borrarla.</summary>
+    public string? CambiarFoto(string url)
+    {
+        if (string.IsNullOrWhiteSpace(url) || url.Length > 500) throw new ReglaDeNegocioException("La foto no es válida.");
+        var anterior = FotoUrl;
+        FotoUrl = url;
+        return anterior;
+    }
+
+    public string? QuitarFoto()
+    {
+        var anterior = FotoUrl;
+        FotoUrl = null;
+        return anterior;
     }
 
     /// <summary>Nombre comercial y NIT visibles en el perfil público mientras el plan Empresa esté vigente.</summary>
@@ -305,6 +323,7 @@ public class Usuario
         BorrarDatosFacturacion();
         DocumentoVerificacionUrl = null;
         MotivoRechazoVerificacion = null;
+        FotoUrl = null;
         SaldoEcoPuntos = 0;
         DestacadosGratisRestantes = 0;
         IntentosFallidosLogin = 0;

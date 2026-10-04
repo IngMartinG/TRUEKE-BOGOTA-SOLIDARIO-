@@ -39,6 +39,8 @@ public interface IAlmacenArchivos
     Task EliminarDelUsuarioAsync(Guid usuarioId, CancellationToken ct = default);
     /// <summary>Borra un documento privado (p. ej. el de identidad una vez resuelta la verificación). Ignora URLs ajenas.</summary>
     Task EliminarDocumentoAsync(string url, CancellationToken ct = default);
+    /// <summary>Borra una imagen del usuario (p. ej. la foto de perfil anterior). Ignora URLs que no sean suyas.</summary>
+    Task EliminarImagenPropiaAsync(string url, Guid usuarioId, CancellationToken ct = default);
 }
 
 public sealed class AlmacenDeshabilitado : IAlmacenArchivos
@@ -50,6 +52,7 @@ public sealed class AlmacenDeshabilitado : IAlmacenArchivos
     public Task<string?> UrlLecturaTemporalAsync(string url, CancellationToken ct = default) => Task.FromResult<string?>(url);
     public Task EliminarDelUsuarioAsync(Guid usuarioId, CancellationToken ct = default) => Task.CompletedTask;
     public Task EliminarDocumentoAsync(string url, CancellationToken ct = default) => Task.CompletedTask;
+    public Task EliminarImagenPropiaAsync(string url, Guid usuarioId, CancellationToken ct = default) => Task.CompletedTask;
 }
 
 /// <summary>
@@ -252,6 +255,14 @@ public sealed class AlmacenBlobAzure : IAlmacenArchivos
         if (Documento(url) is not { } blob) return;
         try { await blob.DeleteIfExistsAsync(cancellationToken: ct); }
         catch (RequestFailedException ex) { _log.LogWarning(ex, "No se pudo borrar un documento de verificación"); }
+    }
+
+    public async Task EliminarImagenPropiaAsync(string url, Guid usuarioId, CancellationToken ct = default)
+    {
+        var contenedor = Contenedor(TipoArchivoDto.Imagen);
+        if (ReglasArchivos.AnalizarUrl(url, contenedor.Uri, usuarioId) is not { } analisis) return;
+        try { await contenedor.DeleteBlobIfExistsAsync(analisis.Nombre, cancellationToken: ct); }
+        catch (RequestFailedException ex) { _log.LogWarning(ex, "No se pudo borrar la imagen anterior del usuario {UsuarioId}", usuarioId); }
     }
 
     public async Task EliminarDelUsuarioAsync(Guid usuarioId, CancellationToken ct = default)

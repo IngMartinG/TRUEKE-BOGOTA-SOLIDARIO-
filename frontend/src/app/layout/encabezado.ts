@@ -85,7 +85,7 @@ import { Logo } from '../shared/ui/logo';
               [cdkMenuTriggerFor]="menuUsuario"
               aria-label="Menú de tu cuenta"
             >
-              <app-avatar [nombre]="sesion.usuario()?.nombreCompleto" [tamano]="32" [verificado]="!!sesion.usuario()?.verificado" />
+              <app-avatar [nombre]="sesion.usuario()?.nombreCompleto" [foto]="sesion.usuario()?.fotoUrl" [tamano]="32" [verificado]="!!sesion.usuario()?.verificado" />
               <span class="hidden items-center gap-1 text-sm font-bold text-sol-600 sm:flex dark:text-sol-300">
                 <app-icono nombre="moneda" [tamano]="16" />{{ sesion.usuario()?.saldoEcoPuntos | numero }}
               </span>

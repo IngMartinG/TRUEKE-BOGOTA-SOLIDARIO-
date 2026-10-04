@@ -4230,6 +4230,81 @@
         }
       }
     },
+    "/api/v1/usuarios/yo/foto": {
+      "put": {
+        "tags": [
+          "Usuarios"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarFotoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarFotoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarFotoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Usuarios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/usuarios/yo/datos": {
       "get": {
         "tags": [
@@ -4660,6 +4735,20 @@
           "claveNueva": {
             "maxLength": 128,
             "minLength": 8,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CambiarFotoRequest": {
+        "required": [
+          "url"
+        ],
+        "type": "object",
+        "properties": {
+          "url": {
+            "maxLength": 500,
+            "minLength": 0,
             "type": "string"
           }
         },
@@ -6477,6 +6566,10 @@
           "nombreComercial": {
             "type": "string",
             "nullable": true
+          },
+          "fotoUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6537,6 +6630,10 @@
             "type": "string"
           },
           "nombreComercial": {
+            "type": "string",
+            "nullable": true
+          },
+          "fotoUrl": {
             "type": "string",
             "nullable": true
           }
@@ -7510,6 +7607,10 @@
           },
           "tieneDatosFacturacion": {
             "type": "boolean"
+          },
+          "fotoUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

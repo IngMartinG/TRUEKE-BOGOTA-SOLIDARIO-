@@ -27,7 +27,7 @@ export type AccionSolicitud = 'aceptar' | 'rechazar' | 'cancelar' | 'confirmar' 
       <div class="grid gap-5 p-5 md:grid-cols-[1fr_auto]">
         <div class="min-w-0">
           <a [routerLink]="['/usuarios', otra()?.id]" class="inline-flex items-center gap-3">
-            <app-avatar [nombre]="otra()?.nombre" [tamano]="44" [verificado]="!!otra()?.verificado" />
+            <app-avatar [nombre]="otra()?.nombre" [foto]="otra()?.fotoUrl" [tamano]="44" [verificado]="!!otra()?.verificado" />
             <span>
               <span class="block text-xs text-tenue">{{ s.soyDuenio ? 'Solicitado por' : 'Publicado por' }}</span>
               <span class="block font-semibold">{{ otra()?.nombre }}</span>

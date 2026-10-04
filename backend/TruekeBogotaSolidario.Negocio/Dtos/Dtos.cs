@@ -380,7 +380,7 @@ public sealed record UsuarioDto(Guid Id, string NombreCompleto, string Localidad
     DateTime? PlanVigenteHasta, bool Verificado, string EstadoVerificacion, int SaldoEcoPuntos, decimal Reputacion,
     int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas, int DestacadosGratisRestantes,
     bool CorreoVerificado, bool TieneClave, bool VinculadoGoogle, bool DosFactoresActivo, int CodigosRecuperacionRestantes,
-    string MunicipioCodigo, string Municipio, string? NombreComercial, string? Nit, bool TieneDatosFacturacion);
+    string MunicipioCodigo, string Municipio, string? NombreComercial, string? Nit, bool TieneDatosFacturacion, string? FotoUrl = null);
 
 public sealed record SesionDto(string Token, DateTime ExpiraUtc, UsuarioDto Usuario);
 
@@ -414,11 +414,18 @@ public sealed record ResultadoAutenticacion(SesionDto Sesion, string TokenRefres
 /// </summary>
 /// <summary>Municipio = "Medellín, Antioquia". NombreComercial solo para cuentas con plan Empresa vigente.</summary>
 public sealed record PerfilPublicoDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
-    decimal? CalificacionPromedio, int TotalCalificaciones, string Municipio, string? NombreComercial);
+    decimal? CalificacionPromedio, int TotalCalificaciones, string Municipio, string? NombreComercial, string? FotoUrl = null);
 
 public sealed record PerfilUsuarioDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
     DateTime MiembroDesde, int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas,
-    decimal? CalificacionPromedio, int TotalCalificaciones, int PublicacionesActivas, string Municipio, string? NombreComercial);
+    decimal? CalificacionPromedio, int TotalCalificaciones, int PublicacionesActivas, string Municipio, string? NombreComercial,
+    string? FotoUrl = null);
+
+public sealed class CambiarFotoRequest
+{
+    /// <summary>urlArchivo devuelto por POST /archivos/subidas (tipo Imagen), ya subido con PUT.</summary>
+    [Required, StringLength(500)] public string Url { get; init; } = "";
+}
 
 public sealed record CategoriaDto(int Id, string Nombre, string Descripcion);
 
