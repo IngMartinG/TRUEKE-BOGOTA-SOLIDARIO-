@@ -17,6 +17,13 @@ updates:
       # ImageSharp 4 exige una llave de licencia al compilar en Release; se queda en la rama 3.1 (parches de seguridad sí).
       - dependency-name: SixLabors.ImageSharp
         update-types: ["version-update:semver-major"]
+      # El proyecto es .NET 8 (LTS). EF Core y Microsoft.Extensions 9/10 exigen otro runtime: se migra a propósito, no por Dependabot.
+      - dependency-name: "Microsoft.EntityFrameworkCore*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.Extensions.*"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "Microsoft.AspNetCore.*"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /frontend
@@ -27,6 +34,10 @@ updates:
     groups:
       angular:
         patterns: ["@angular/*", "@angular-devkit/*", "@schematics/*"]
+    ignore:
+      # Angular fija el rango de TypeScript que soporta: TypeScript sube junto con Angular, no antes.
+      - dependency-name: typescript
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
 
   - package-ecosystem: github-actions
     directory: /
@@ -37,8 +48,18 @@ updates:
     directory: /backend
     schedule:
       interval: weekly
+    ignore:
+      # Imágenes de .NET 8 (parches sí; .NET 10 se adopta a propósito, junto con el código)
+      - dependency-name: "dotnet/aspnet"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "dotnet/sdk"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker
     directory: /frontend
     schedule:
       interval: weekly
+    ignore:
+      # Node: solo versiones LTS pares, y se cambian a propósito (Node 24 LTS hoy)
+      - dependency-name: node
+        update-types: ["version-update:semver-major"]

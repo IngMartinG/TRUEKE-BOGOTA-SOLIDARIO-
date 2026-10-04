@@ -305,10 +305,13 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 - **Ubicaciones (públicas, cacheables):** `GET /ubicaciones/departamentos`, `/ubicaciones/departamentos/{dd}/municipios`, `/ubicaciones/municipios?texto=` y `/ubicaciones/municipios/{ddmmm}`.
 - **Dueño:** `PublicacionDto.vistas` y `proximoImpulsoUtc` solo llegan al dueño; `POST /publicaciones/{id}/impulsar` y `GET /publicaciones/{id}/estadisticas`.
 - **Cuenta:** `PUT /usuarios/yo/empresa { nombreComercial, nit }`, `GET|PUT|DELETE /cuenta/facturacion`, `GET /cuenta/facturas`, `POST /pqr`, `GET /pqr/mias`.
+- **Foto de perfil:** subir con `POST /archivos/subidas` (Imagen) y luego `PUT /usuarios/yo/foto { url }` (se guarda una copia sin GPS ni metadatos; la anterior se borra) o `DELETE /usuarios/yo/foto`. `fotoUrl` llega en `UsuarioDto` y en los perfiles públicos.
+- **Convivencia:** `POST|DELETE /usuarios/{id}/bloqueo`, `GET /usuarios/yo/bloqueados`; `GET|PUT /usuarios/yo/preferencias-avisos { intercambios, mensajes, planes, novedades }` (correos opcionales, solo si la persona no tiene la app abierta).
 - **Denuncias con debido proceso:** si el moderador considera procedente una denuncia, la persona denunciada recibe `DenunciaRecibida` (`recursoId` = `resolucionId`, nunca se dice quién denunció). En `GET /denuncias/recibidas` ve la decisión y, mientras `apelableHastaUtc` no sea null (15 días), puede apelar una vez con `POST /denuncias/recibidas/{resolucionId}/apelacion { texto }`. Si se descarta, no se le avisa.
 - **Coordenadas:** en público llegan redondeadas a 2 decimales; las exactas, solo al dueño, a los moderadores o con una solicitud aceptada.
 - **Tiempo real:**
-  - `new HubConnectionBuilder().withUrl(api + '/hubs/notificaciones', { accessTokenFactory })`, con los eventos `notificacion` y `mensaje`;
+  - `new HubConnectionBuilder().withUrl(api + '/hubs/notificaciones', { accessTokenFactory })`, con los eventos `notificacion`, `mensaje`, `estadoMensajes` (`{ conversacionId, entregadosHastaUtc?, leidosHastaUtc? }` para ✓✓ y leído), `escribiendo` (`{ conversacionId }`) y `presencia` (`{ usuarioId, enLinea }`, solo de contrapartes);
+  - el cliente puede invocar `Escribiendo(conversacionId)` (máx. 1/s) y `Recibido(conversacionId)` (marca entregados); `MensajeChatDto.estado` es `Enviado | Entregado | Leido` y `ConversacionDto` trae `contraparteEnLinea` y `yoBloquee`;
   - al reconectar, recuperar lo pendiente con `GET /notificaciones?soloNoLeidas=true` y `GET /conversaciones`.
 - **Mis datos:** `GET /usuarios/yo/datos` y `POST /usuarios/yo/eliminar { confirmacion: "ELIMINAR", clave | googleIdToken }`.
 - **Administración** (solo con sesión 2FA):
