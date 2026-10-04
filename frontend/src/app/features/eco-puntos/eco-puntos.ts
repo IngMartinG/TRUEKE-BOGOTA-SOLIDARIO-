@@ -140,8 +140,9 @@ interface Servicio {
         }
       </div>
       <p class="mt-4 text-xs text-tenue">
-        Precios en pesos colombianos{{ politica()?.preciosIncluyenIva ? ', IVA (' + politica()?.ivaPorcentaje + ' %) incluido' : '' }}. Cada pago genera factura electrónica
-        (agrega tus datos en <a routerLink="/cuenta/facturacion" class="enlace">Facturación</a>). Los planes no se renuevan solos: te avisamos
+        Precios en pesos colombianos{{ politica()?.preciosIncluyenIva ? ', IVA (' + politica()?.ivaPorcentaje + ' %) incluido' : '' }}. Cada pago genera factura electrónica a
+        "consumidor final"; si la quieres a tu nombre o al de tu empresa,
+        <a routerLink="/cuenta/facturacion" [queryParams]="{ datos: 1 }" class="enlace">agrega tu cédula o NIT</a>. Los planes no se renuevan solos: te avisamos
         3 días antes de que venzan y, si renuevas antes, los días se suman. Tienes derecho de retracto dentro de los 5 días hábiles siguientes a la compra
         (<a routerLink="/cuenta/soporte" [queryParams]="{ tipo: 'Retracto' }" class="enlace">solicitarlo</a>).
       </p>

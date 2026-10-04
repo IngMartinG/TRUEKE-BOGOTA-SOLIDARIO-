@@ -70,7 +70,7 @@ export const routes: Routes = [
       { path: '', pathMatch: 'full', redirectTo: 'perfil' },
       { path: 'perfil', title: 'Mi cuenta', loadComponent: () => import('./features/cuenta/perfil') },
       { path: 'seguridad', title: 'Seguridad', loadComponent: () => import('./features/cuenta/seguridad') },
-      { path: 'facturacion', title: 'Facturación', loadComponent: () => import('./features/cuenta/facturacion') },
+      { path: 'facturacion', title: 'Pagos y facturas', loadComponent: () => import('./features/cuenta/facturacion') },
       { path: 'soporte', title: 'Soporte y PQR', loadComponent: () => import('./features/cuenta/soporte') },
       { path: 'reportes', title: 'Reportes sobre ti', loadComponent: () => import('./features/cuenta/reportes') },
       { path: 'privacidad', title: 'Privacidad y datos', loadComponent: () => import('./features/cuenta/privacidad') },
