@@ -28,8 +28,14 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
     return r.clone({ headers, withCredentials: esAuth || r.withCredentials });
   };
 
-  const tokenUsado = sesion.token();
-  return next(preparar(req, tokenUsado)).pipe(
+  // Token ya vencido (pestaña dormida, equipo suspendido): se renueva antes de enviar, sin esperar el 401.
+  if (!esAuth && sesion.token() !== null && sesion.venceEn() <= 5_000) {
+    return sesion.refrescar().pipe(switchMap((nuevo) => enviar(nuevo ?? sesion.token())));
+  }
+  return enviar(sesion.token());
+
+  function enviar(tokenUsado: string | null) {
+    return next(preparar(req, tokenUsado)).pipe(
     catchError((error: unknown) => {
       const reintentable =
         error instanceof HttpErrorResponse &&
@@ -43,5 +49,6 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
         switchMap((nuevo) => (nuevo ? next(preparar(req, nuevo)) : throwError(() => error))),
       );
     }),
-  );
+    );
+  }
 };

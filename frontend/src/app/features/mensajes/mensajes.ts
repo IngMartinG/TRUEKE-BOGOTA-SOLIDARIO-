@@ -37,7 +37,7 @@ const TAMANO = 40;
         <aside class="min-h-0 flex-col border-r border-borde" [class]="id() ? 'hidden md:flex' : 'flex'" aria-label="Conversaciones">
           <header class="flex items-center justify-between border-b border-borde px-5 py-4">
             <h1 class="text-xl font-extrabold">Mensajes</h1>
-            @if (!tiempoReal.conectado()) {
+            @if (tiempoReal.sinConexion()) {
               <span class="insignia-neutra" title="Reconectando…"><span class="size-2 rounded-full bg-sol-400"></span>Sin conexión</span>
             }
           </header>
