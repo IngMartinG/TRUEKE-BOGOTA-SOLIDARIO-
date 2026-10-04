@@ -22,6 +22,7 @@ import { mensajeDe } from '../../core/http/problema';
 import { TiempoRealService } from '../../core/tiempo-real.service';
 import { FechaPipe, HacePipe, HoraPipe } from '../../shared/pipes';
 import { Avatar } from '../../shared/ui/avatar';
+import { Bloquear } from '../../shared/ui/bloquear';
 import { Denunciar } from '../../shared/ui/denunciar';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Icono } from '../../shared/ui/icono';
@@ -29,7 +30,7 @@ import { Icono } from '../../shared/ui/icono';
 const TAMANO = 40;
 
 @Component({
-  imports: [FormsModule, RouterLink, Avatar, Icono, EstadoVacio, Denunciar, HacePipe, HoraPipe, FechaPipe],
+  imports: [FormsModule, RouterLink, Avatar, Icono, EstadoVacio, Denunciar, Bloquear, HacePipe, HoraPipe, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor py-4 sm:py-8">
@@ -115,6 +116,10 @@ const TAMANO = 40;
                 </a>
                 <a [routerLink]="['/publicacion', c.publicacionId]" class="btn btn-secundario btn-sm hidden sm:inline-flex">Ver publicación</a>
                 <a routerLink="/intercambios" [queryParams]="{ tab: c.soyDuenio ? 'recibidas' : 'enviadas' }" class="btn btn-primario btn-sm hidden sm:inline-flex">Intercambio</a>
+                @if (c.contraparte?.id; as contraparteId) {
+                  <app-bloquear [usuarioId]="contraparteId" [nombre]="c.contraparte.nombre ?? 'esta persona'" [bloqueado]="!!c.yoBloquee"
+                    (bloqueadoChange)="conversaciones.reload()" clase="btn btn-fantasma btn-sm shrink-0 max-sm:px-2.5" />
+                }
               } @else {
                 <div class="esqueleto h-10 flex-1"></div>
               }
@@ -193,7 +198,15 @@ const TAMANO = 40;
             </div>
 
             @if (actual()?.escribible === false) {
-              <p class="border-t border-borde px-4 py-4 text-center text-sm text-tenue">Esta conversación está cerrada porque el intercambio terminó.</p>
+              <p class="border-t border-borde px-4 py-4 text-center text-sm text-tenue">
+                @if (actual()?.yoBloquee) {
+                  Bloqueaste a {{ actual()?.contraparte?.nombre }} · desbloquéalo arriba para volver a escribirse
+                } @else if (['Pendiente', 'Aceptada', 'Completada'].includes(actual()?.estadoSolicitud ?? '')) {
+                  Ya no puedes enviar mensajes en esta conversación.
+                } @else {
+                  Esta conversación está cerrada porque el intercambio terminó.
+                }
+              </p>
             } @else {
               @if (respondiendoA(); as r) {
                 <div class="flex items-start gap-2 border-t border-borde bg-superficie-2/60 px-3 pt-2.5 animate-aparecer">

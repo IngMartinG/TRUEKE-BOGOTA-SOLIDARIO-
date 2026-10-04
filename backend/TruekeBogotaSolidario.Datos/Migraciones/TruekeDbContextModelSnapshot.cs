@@ -123,6 +123,24 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("Auditoria");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Bloqueo", b =>
+                {
+                    b.Property<Guid>("BloqueadorId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("BloqueadoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("BloqueadorId", "BloqueadoId");
+
+                    b.HasIndex("BloqueadoId");
+
+                    b.ToTable("Bloqueos");
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Calificacion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1070,6 +1088,18 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("AceptaNovedades")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AvisosCorreoIntercambios")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AvisosCorreoMensajes")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("AvisosCorreoPlanes")
+                        .HasColumnType("bit");
+
                     b.Property<DateTime?>("BloqueadoHasta")
                         .HasColumnType("datetime2");
 
@@ -1292,6 +1322,23 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Bloqueo", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", "Bloqueado")
+                        .WithMany()
+                        .HasForeignKey("BloqueadoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("BloqueadorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Bloqueado");
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Calificacion", b =>

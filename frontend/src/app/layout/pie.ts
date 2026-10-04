@@ -52,6 +52,7 @@ export class Pie {
         { ruta: '/explorar', texto: 'Explorar el catálogo' },
         { ruta: '/publicar', texto: 'Publicar un objeto' },
         { ruta: '/como-funciona', texto: 'Cómo funciona' },
+        { ruta: '/ayuda', texto: 'Centro de ayuda' },
         { ruta: '/eco-puntos', texto: 'Eco-Puntos y planes' },
       ],
     },

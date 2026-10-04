@@ -4230,6 +4230,163 @@
         }
       }
     },
+    "/api/v1/usuarios/{id}/bloqueo": {
+      "post": {
+        "tags": [
+          "Usuarios"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Usuarios"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/usuarios/yo/bloqueados": {
+      "get": {
+        "tags": [
+          "Usuarios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BloqueadoDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BloqueadoDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BloqueadoDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/usuarios/yo/preferencias-avisos": {
+      "get": {
+        "tags": [
+          "Usuarios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferenciasAvisosDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferenciasAvisosDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferenciasAvisosDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Usuarios"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarPreferenciasAvisosRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarPreferenciasAvisosRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/ActualizarPreferenciasAvisosRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferenciasAvisosDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferenciasAvisosDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PreferenciasAvisosDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/usuarios/yo/foto": {
       "put": {
         "tags": [
@@ -4539,6 +4696,24 @@
         },
         "additionalProperties": false
       },
+      "ActualizarPreferenciasAvisosRequest": {
+        "type": "object",
+        "properties": {
+          "intercambios": {
+            "type": "boolean"
+          },
+          "mensajes": {
+            "type": "boolean"
+          },
+          "planes": {
+            "type": "boolean"
+          },
+          "novedades": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "ApelacionAdminDto": {
         "type": "object",
         "properties": {
@@ -4625,6 +4800,19 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "BloqueadoDto": {
+        "type": "object",
+        "properties": {
+          "perfil": {
+            "$ref": "#/components/schemas/PerfilPublicoDto"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -5011,6 +5199,9 @@
           },
           "contraparteEnLinea": {
             "type": "boolean"
+          },
+          "yoBloquee": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -5391,6 +5582,16 @@
             "items": {
               "$ref": "#/components/schemas/ApelacionDto"
             }
+          },
+          "preferenciasAvisos": {
+            "$ref": "#/components/schemas/PreferenciasAvisosDto"
+          },
+          "bloqueados": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BloqueadoDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6888,6 +7089,24 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "PreferenciasAvisosDto": {
+        "type": "object",
+        "properties": {
+          "intercambios": {
+            "type": "boolean"
+          },
+          "mensajes": {
+            "type": "boolean"
+          },
+          "planes": {
+            "type": "boolean"
+          },
+          "novedades": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

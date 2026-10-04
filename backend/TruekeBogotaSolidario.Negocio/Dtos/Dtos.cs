@@ -421,6 +421,20 @@ public sealed record PerfilUsuarioDto(Guid Id, string Nombre, string Localidad, 
     decimal? CalificacionPromedio, int TotalCalificaciones, int PublicacionesActivas, string Municipio, string? NombreComercial,
     string? FotoUrl = null);
 
+/// <summary>Persona que bloqueaste (solo datos públicos).</summary>
+public sealed record BloqueadoDto(PerfilPublicoDto Perfil, DateTime FechaUtc);
+
+/// <summary>Avisos por correo opcionales. Los de seguridad, pagos, PQR y moderación siempre se envían.</summary>
+public sealed record PreferenciasAvisosDto(bool Intercambios, bool Mensajes, bool Planes, bool Novedades);
+
+public sealed class ActualizarPreferenciasAvisosRequest
+{
+    public bool Intercambios { get; init; }
+    public bool Mensajes { get; init; }
+    public bool Planes { get; init; }
+    public bool Novedades { get; init; }
+}
+
 public sealed class CambiarFotoRequest
 {
     /// <summary>urlArchivo devuelto por POST /archivos/subidas (tipo Imagen), ya subido con PUT.</summary>
@@ -474,7 +488,7 @@ public sealed record MensajeCitadoDto(Guid Id, bool EsMio, string Texto, bool Oc
 /// <summary>Resumen de una conversación para la bandeja de chats.</summary>
 public sealed record ConversacionDto(Guid Id, Guid SolicitudId, Guid PublicacionId, string PublicacionTitulo, string EstadoSolicitud,
     bool SoyDuenio, PerfilPublicoDto Contraparte, string? UltimoMensaje, DateTime UltimoMensajeUtc, int NoLeidos, bool Escribible,
-    bool ContraparteEnLinea = false);
+    bool ContraparteEnLinea = false, bool YoBloquee = false);
 
 /// <summary>
 /// Autorización de subida directa a Azure Blob: el navegador hace PUT del archivo a <see cref="UrlSubida"/> con
@@ -525,7 +539,7 @@ public sealed record DatosPersonalesDto(DateTime GeneradoUtc, UsuarioDto Perfil,
     IReadOnlyList<NotificacionDto> Notificaciones, IReadOnlyList<DenunciaExportDto> DenunciasRealizadas,
     IReadOnlyList<CalificacionExportDto> CalificacionesRealizadas, IReadOnlyList<Guid> Favoritos,
     DatosFacturacionDto DatosFacturacion, IReadOnlyList<FacturaDto> Facturas, IReadOnlyList<PqrDto> Pqrs,
-    IReadOnlyList<ApelacionDto> Apelaciones);
+    IReadOnlyList<ApelacionDto> Apelaciones, PreferenciasAvisosDto? PreferenciasAvisos = null, IReadOnlyList<BloqueadoDto>? Bloqueados = null);
 
 public sealed record CalificacionExportDto(Guid Id, Guid SolicitudId, int Estrellas, string? Comentario, DateTime FechaUtc);
 

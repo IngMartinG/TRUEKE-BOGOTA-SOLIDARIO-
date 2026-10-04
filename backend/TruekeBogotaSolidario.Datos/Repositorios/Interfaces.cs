@@ -240,6 +240,19 @@ public interface IConversacionRepository
     void AgregarMensaje(Mensaje mensaje);
 }
 
+public interface IBloqueoRepository
+{
+    Task<Bloqueo?> ObtenerAsync(Guid bloqueadorId, Guid bloqueadoId);
+    /// <summary>true si cualquiera de los dos bloqueó al otro.</summary>
+    Task<bool> ExisteEntreAsync(Guid a, Guid b);
+    /// <summary>Personas con las que el usuario tiene un bloqueo en cualquier dirección.</summary>
+    Task<IReadOnlySet<Guid>> RelacionadosAsync(Guid usuarioId);
+    /// <summary>A quiénes bloqueó el usuario (incluye al bloqueado), más recientes primero.</summary>
+    Task<IReadOnlyList<Bloqueo>> ListarDeAsync(Guid bloqueadorId);
+    void Agregar(Bloqueo bloqueo);
+    void Quitar(Bloqueo bloqueo);
+}
+
 public interface IDenunciaRepository
 {
     Task<Denuncia?> ObtenerAsync(Guid id);

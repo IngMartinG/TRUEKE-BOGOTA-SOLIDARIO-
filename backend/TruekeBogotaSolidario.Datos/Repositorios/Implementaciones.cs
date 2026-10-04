@@ -603,6 +603,29 @@ public sealed class ConversacionRepository : IConversacionRepository
     public void AgregarMensaje(Mensaje mensaje) => _db.Mensajes.Add(mensaje);
 }
 
+public sealed class BloqueoRepository : IBloqueoRepository
+{
+    private readonly TruekeDbContext _db;
+    public BloqueoRepository(TruekeDbContext db) => _db = db;
+
+    public Task<Bloqueo?> ObtenerAsync(Guid bloqueadorId, Guid bloqueadoId)
+        => _db.Bloqueos.FirstOrDefaultAsync(b => b.BloqueadorId == bloqueadorId && b.BloqueadoId == bloqueadoId);
+
+    public Task<bool> ExisteEntreAsync(Guid a, Guid b)
+        => _db.Bloqueos.AnyAsync(x => (x.BloqueadorId == a && x.BloqueadoId == b) || (x.BloqueadorId == b && x.BloqueadoId == a));
+
+    public async Task<IReadOnlySet<Guid>> RelacionadosAsync(Guid usuarioId)
+        => (await _db.Bloqueos.AsNoTracking().Where(x => x.BloqueadorId == usuarioId || x.BloqueadoId == usuarioId)
+            .Select(x => x.BloqueadorId == usuarioId ? x.BloqueadoId : x.BloqueadorId).ToListAsync()).ToHashSet();
+
+    public async Task<IReadOnlyList<Bloqueo>> ListarDeAsync(Guid bloqueadorId)
+        => await _db.Bloqueos.AsNoTracking().Include(x => x.Bloqueado).Where(x => x.BloqueadorId == bloqueadorId)
+            .OrderByDescending(x => x.FechaUtc).Take(500).ToListAsync();
+
+    public void Agregar(Bloqueo bloqueo) => _db.Bloqueos.Add(bloqueo);
+    public void Quitar(Bloqueo bloqueo) => _db.Bloqueos.Remove(bloqueo);
+}
+
 public sealed class DenunciaRepository : IDenunciaRepository
 {
     private readonly TruekeDbContext _db;

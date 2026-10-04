@@ -80,6 +80,21 @@ public class Usuario
     public string? DocumentoVerificacionUrl { get; private set; }
     /// <summary>Foto de perfil pública (copia limpia, sin GPS ni metadatos). null = se muestran las iniciales.</summary>
     public string? FotoUrl { get; private set; }
+
+    // Preferencias de avisos por correo. Los avisos obligatorios (seguridad, pagos, PQR, moderación) no dependen de esto.
+    public bool AvisosCorreoIntercambios { get; private set; } = true;
+    public bool AvisosCorreoMensajes { get; private set; } = true;
+    public bool AvisosCorreoPlanes { get; private set; } = true;
+    /// <summary>Novedades y consejos: comunicaciones no transaccionales, solo con consentimiento expreso (Ley 1581).</summary>
+    public bool AceptaNovedades { get; private set; }
+
+    public void ActualizarPreferenciasAvisos(bool intercambios, bool mensajes, bool planes, bool novedades)
+    {
+        AvisosCorreoIntercambios = intercambios;
+        AvisosCorreoMensajes = mensajes;
+        AvisosCorreoPlanes = planes;
+        AceptaNovedades = novedades;
+    }
     public string? MotivoRechazoVerificacion { get; private set; }
 
     // Identidad y cumplimiento (Ley 1581 de 2012)
