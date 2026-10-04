@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
 import { iconoCategoria } from '../../api/tipos';
+import { urlPublica } from '../imagenes';
 import { Icono } from './icono';
 
 /** Foto de la publicación o, si no tiene (o falla), una ilustración según categoría y modo. */
@@ -11,7 +12,7 @@ import { Icono } from './icono';
   template: `
     @if (src() && !fallo()) {
       <img
-        [src]="src()"
+        [src]="url()"
         [alt]="alt()"
         loading="lazy"
         decoding="async"
@@ -37,6 +38,7 @@ export class ImagenPublicacion {
   readonly categoriaId = input<number | null | undefined>(null);
   readonly claseImagen = input('');
   protected readonly fallo = signal(false);
+  protected readonly url = computed(() => urlPublica(this.src()));
   protected readonly icono = computed(() => iconoCategoria(this.categoriaId()));
   protected readonly fondo = computed(() => {
     switch (this.modo()) {

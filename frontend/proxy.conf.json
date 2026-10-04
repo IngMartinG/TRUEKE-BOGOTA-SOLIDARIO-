@@ -13,5 +13,10 @@
   "/health": {
     "target": "https://localhost:7180",
     "secure": false
+  },
+  "/devstoreaccount1": {
+    "target": "http://127.0.0.1:10000",
+    "secure": false,
+    "changeOrigin": true
   }
 }
