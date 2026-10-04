@@ -100,6 +100,7 @@ public sealed class MantenimientoHostedService : BackgroundService
             var vence = u.FechaVencimientoSuscripcion!.Value;
             await notificador.NotificarAsync(u.Id, TiposNotificacion.PlanPorVencer,
                 $"Tu plan {plan} vence el {vence:yyyy-MM-dd}. Renuévalo para no perder tus beneficios.");
+            if (!u.AvisosCorreoPlanes) continue; // apagado en Cuenta → Avisos (la notificación en la app sí llega)
             correo.Encolar(PlantillaCorreo.Crear(u.Correo, $"Tu plan {plan} vence pronto",
                 $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:",
                 new[]

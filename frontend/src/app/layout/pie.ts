@@ -12,7 +12,7 @@ import { Logo } from '../shared/ui/logo';
       <svg class="absolute -top-px left-0 w-full text-fondo" viewBox="0 0 1440 48" preserveAspectRatio="none" aria-hidden="true">
         <path d="M0 0h1440v16c-240 32-480 32-720 16S240 0 0 24Z" fill="currentColor" />
       </svg>
-      <div class="contenedor grid gap-10 pt-20 pb-28 sm:pb-12 md:grid-cols-[1.4fr_1fr_1fr_1fr]">
+      <div class="contenedor grid grid-cols-1 gap-10 pt-20 pb-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
         <div>
           <app-logo [claro]="true" />
           <p class="mt-4 max-w-sm text-sm text-bosque-200/80">
@@ -34,7 +34,8 @@ import { Logo } from '../shared/ui/logo';
         }
       </div>
       <div class="border-t border-white/10">
-        <div class="contenedor flex flex-col gap-2 py-6 pb-24 text-xs text-bosque-200/60 sm:flex-row sm:justify-between sm:pb-6">
+        <!-- pb-24: espacio para la barra inferior de celular y tablet -->
+        <div class="contenedor flex flex-col gap-2 py-6 pb-24 text-xs text-bosque-200/60 sm:flex-row sm:justify-between lg:pb-6">
           <p>© {{ anio }} Trueke Bogotá Solidario · Proyecto académico CUN</p>
           <p>Tus datos se tratan conforme a la Ley 1581 de 2012.</p>
         </div>
@@ -51,6 +52,7 @@ export class Pie {
         { ruta: '/explorar', texto: 'Explorar el catálogo' },
         { ruta: '/publicar', texto: 'Publicar un objeto' },
         { ruta: '/como-funciona', texto: 'Cómo funciona' },
+        { ruta: '/ayuda', texto: 'Centro de ayuda' },
         { ruta: '/eco-puntos', texto: 'Eco-Puntos y planes' },
       ],
     },

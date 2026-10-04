@@ -572,10 +572,23 @@ public sealed class ConversacionRepository : IConversacionRepository
         return await q.OrderByDescending(m => m.FechaUtc).Take(Math.Clamp(tamano, 1, 100)).ToListAsync();
     }
 
-    public async Task MarcarLeidosAsync(Guid conversacionId, Guid lectorId, DateTime ahoraUtc)
+    public async Task<DateTime?> MarcarLeidosAsync(Guid conversacionId, Guid lectorId, DateTime ahoraUtc)
     {
-        foreach (var m in await _db.Mensajes.Where(m => m.ConversacionId == conversacionId && m.AutorId != lectorId && m.LeidoUtc == null).Take(1000).ToListAsync())
-            m.MarcarLeido(ahoraUtc);
+        var pendientes = await _db.Mensajes.Where(m => m.ConversacionId == conversacionId && m.AutorId != lectorId && m.LeidoUtc == null)
+            .Take(1000).ToListAsync();
+        foreach (var m in pendientes) m.MarcarLeido(ahoraUtc);
+        return pendientes.Count == 0 ? null : pendientes.Max(m => m.FechaUtc);
+    }
+
+    public async Task<IReadOnlyList<(Guid ConversacionId, Guid AutorId, DateTime HastaUtc)>> MarcarEntregadosAsync(Guid receptorId, Guid? conversacionId, DateTime ahoraUtc)
+    {
+        var mias = _db.Conversaciones.Where(c => c.DuenioId == receptorId || c.SolicitanteId == receptorId).Select(c => c.Id);
+        var q = _db.Mensajes.Where(m => m.AutorId != receptorId && m.EntregadoUtc == null && mias.Contains(m.ConversacionId));
+        if (conversacionId is { } id) q = q.Where(m => m.ConversacionId == id);
+        var pendientes = await q.Take(1000).ToListAsync();
+        foreach (var m in pendientes) m.MarcarEntregado(ahoraUtc);
+        return pendientes.GroupBy(m => (m.ConversacionId, m.AutorId))
+            .Select(g => (g.Key.ConversacionId, g.Key.AutorId, g.Max(m => m.FechaUtc))).ToList();
     }
 
     public Task<Mensaje?> ObtenerMensajeAsync(Guid id) => _db.Mensajes.Include(m => m.Conversacion).FirstOrDefaultAsync(m => m.Id == id);
@@ -588,6 +601,29 @@ public sealed class ConversacionRepository : IConversacionRepository
 
     public void Agregar(Conversacion conversacion) => _db.Conversaciones.Add(conversacion);
     public void AgregarMensaje(Mensaje mensaje) => _db.Mensajes.Add(mensaje);
+}
+
+public sealed class BloqueoRepository : IBloqueoRepository
+{
+    private readonly TruekeDbContext _db;
+    public BloqueoRepository(TruekeDbContext db) => _db = db;
+
+    public Task<Bloqueo?> ObtenerAsync(Guid bloqueadorId, Guid bloqueadoId)
+        => _db.Bloqueos.FirstOrDefaultAsync(b => b.BloqueadorId == bloqueadorId && b.BloqueadoId == bloqueadoId);
+
+    public Task<bool> ExisteEntreAsync(Guid a, Guid b)
+        => _db.Bloqueos.AnyAsync(x => (x.BloqueadorId == a && x.BloqueadoId == b) || (x.BloqueadorId == b && x.BloqueadoId == a));
+
+    public async Task<IReadOnlySet<Guid>> RelacionadosAsync(Guid usuarioId)
+        => (await _db.Bloqueos.AsNoTracking().Where(x => x.BloqueadorId == usuarioId || x.BloqueadoId == usuarioId)
+            .Select(x => x.BloqueadorId == usuarioId ? x.BloqueadoId : x.BloqueadorId).ToListAsync()).ToHashSet();
+
+    public async Task<IReadOnlyList<Bloqueo>> ListarDeAsync(Guid bloqueadorId)
+        => await _db.Bloqueos.AsNoTracking().Include(x => x.Bloqueado).Where(x => x.BloqueadorId == bloqueadorId)
+            .OrderByDescending(x => x.FechaUtc).Take(500).ToListAsync();
+
+    public void Agregar(Bloqueo bloqueo) => _db.Bloqueos.Add(bloqueo);
+    public void Quitar(Bloqueo bloqueo) => _db.Bloqueos.Remove(bloqueo);
 }
 
 public sealed class DenunciaRepository : IDenunciaRepository

@@ -8,7 +8,7 @@ import { Logo } from '../../shared/ui/logo';
   imports: [Icono, Logo],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="contenedor grid min-h-[calc(100dvh-4rem)] items-center gap-10 py-10 lg:grid-cols-2">
+    <div class="contenedor grid grid-cols-1 min-h-[calc(100dvh-4rem)] items-center gap-10 py-10 lg:grid-cols-2">
       <aside class="relative hidden h-full max-h-[44rem] overflow-hidden rounded-[2rem] bg-bosque-900 p-10 text-white lg:flex lg:flex-col" aria-hidden="true">
         <div class="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,#269763_0%,transparent_45%),radial-gradient(circle_at_80%_90%,#0f8a86_0%,transparent_45%)] opacity-60"></div>
         <svg class="absolute -right-20 -bottom-20 size-[28rem] text-bosque-700/50 animate-flotar" viewBox="0 0 200 200">

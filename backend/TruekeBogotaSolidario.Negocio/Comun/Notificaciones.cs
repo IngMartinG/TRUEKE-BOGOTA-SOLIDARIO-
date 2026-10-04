@@ -51,17 +51,28 @@ public interface INotificador
     Task NotificarAsync(Guid usuarioId, string tipo, string mensaje, Guid? recursoId = null);
 }
 
+/// <summary>Al autor: sus mensajes de la conversación hasta esas fechas ya llegaron (✓✓) o ya se leyeron (✓✓ de color).</summary>
+public sealed record EstadoMensajesDto(Guid ConversacionId, DateTime? EntregadosHastaUtc, DateTime? LeidosHastaUtc);
+public sealed record EscribiendoDto(Guid ConversacionId);
+public sealed record PresenciaDto(Guid UsuarioId, bool EnLinea);
+
 /// <summary>Canal en tiempo real (SignalR en Presentacion). Por defecto no hace nada (pruebas de Negocio, workers).</summary>
 public interface IEmisorTiempoReal
 {
     Task NotificacionAsync(Guid usuarioId, NotificacionDto notificacion);
     Task MensajeChatAsync(Guid usuarioId, MensajeChatDto mensaje);
+    Task EstadoMensajesAsync(Guid usuarioId, EstadoMensajesDto estado);
+    Task EscribiendoAsync(Guid usuarioId, EscribiendoDto escribiendo);
+    Task PresenciaAsync(IReadOnlyCollection<Guid> usuarioIds, PresenciaDto presencia);
 }
 
 public sealed class EmisorTiempoRealNulo : IEmisorTiempoReal
 {
     public Task NotificacionAsync(Guid usuarioId, NotificacionDto notificacion) => Task.CompletedTask;
     public Task MensajeChatAsync(Guid usuarioId, MensajeChatDto mensaje) => Task.CompletedTask;
+    public Task EstadoMensajesAsync(Guid usuarioId, EstadoMensajesDto estado) => Task.CompletedTask;
+    public Task EscribiendoAsync(Guid usuarioId, EscribiendoDto escribiendo) => Task.CompletedTask;
+    public Task PresenciaAsync(IReadOnlyCollection<Guid> usuarioIds, PresenciaDto presencia) => Task.CompletedTask;
 }
 
 public sealed class NotificadorPersistente : INotificador
@@ -69,13 +80,14 @@ public sealed class NotificadorPersistente : INotificador
     private readonly INotificacionRepository _repo;
     private readonly IUnidadDeTrabajo _uow;
     private readonly IEmisorTiempoReal _emisor;
+    private readonly IAvisosCorreo _avisosCorreo;
     private readonly TimeProvider _reloj;
     private readonly ILogger<NotificadorPersistente> _log;
 
-    public NotificadorPersistente(INotificacionRepository repo, IUnidadDeTrabajo uow, IEmisorTiempoReal emisor, TimeProvider reloj,
-        ILogger<NotificadorPersistente> log)
+    public NotificadorPersistente(INotificacionRepository repo, IUnidadDeTrabajo uow, IEmisorTiempoReal emisor, IAvisosCorreo avisosCorreo,
+        TimeProvider reloj, ILogger<NotificadorPersistente> log)
     {
-        _repo = repo; _uow = uow; _emisor = emisor; _reloj = reloj; _log = log;
+        _repo = repo; _uow = uow; _emisor = emisor; _avisosCorreo = avisosCorreo; _reloj = reloj; _log = log;
     }
 
     public async Task NotificarAsync(Guid usuarioId, string tipo, string mensaje, Guid? recursoId = null)
@@ -98,6 +110,8 @@ public sealed class NotificadorPersistente : INotificador
         {
             _log.LogWarning(ex, "No se pudo enviar en tiempo real la notificación {Tipo} al usuario {UsuarioId}", tipo, usuarioId);
         }
+        // Si no tiene la app abierta y lo permite en sus preferencias, también por correo (nunca falla la operación)
+        await _avisosCorreo.NotificacionAsync(usuarioId, tipo, n.Mensaje);
     }
 
     public static NotificacionDto ADto(Notificacion n) => new(n.Id, n.Tipo, n.Mensaje, n.RecursoId, n.FechaUtc, n.LeidaUtc is not null);

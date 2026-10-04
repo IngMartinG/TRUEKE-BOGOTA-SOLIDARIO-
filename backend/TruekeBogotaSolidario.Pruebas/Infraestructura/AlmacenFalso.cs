@@ -55,6 +55,12 @@ public sealed class AlmacenFalso : IAlmacenArchivos
         return Task.CompletedTask;
     }
 
+    public Task EliminarImagenPropiaAsync(string url, Guid usuarioId, CancellationToken ct = default)
+    {
+        if (ReglasArchivos.AnalizarUrl(url, Contenedor(TipoArchivoDto.Imagen), usuarioId) is not null) _blobs.TryRemove(url, out _);
+        return Task.CompletedTask;
+    }
+
     public bool Existe(string url) => _blobs.ContainsKey(url);
 
     public static byte[] Png(int tamano = 100)

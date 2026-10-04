@@ -42,6 +42,7 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
     private readonly IFavoritoRepository _favoritos;
     private readonly IFacturaRepository _facturas;
     private readonly IPqrRepository _pqrs;
+    private readonly IBloqueoService _bloqueos;
     private readonly ILogger<DatosPersonalesService> _log;
 
     public DatosPersonalesService(IUsuarioRepository usuarios, IPublicacionRepository pubs, ISolicitudRepository solicitudes,
@@ -50,8 +51,9 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         IUnidadDeTrabajo uow, IPublicacionService publicacionService, ISolicitudService solicitudService, IValidadorGoogle google,
         IAlmacenArchivos almacen, ISesionService sesiones, INotificador notificador, TimeProvider reloj,
         ICalificacionRepository calificaciones, IFavoritoRepository favoritos, IFacturaRepository facturas, IPqrRepository pqrs,
-        ILogger<DatosPersonalesService> log)
+        IBloqueoService bloqueos, ILogger<DatosPersonalesService> log)
     {
+        _bloqueos = bloqueos;
         _calificaciones = calificaciones; _favoritos = favoritos; _facturas = facturas; _pqrs = pqrs;
         _usuarios = usuarios; _pubs = pubs; _solicitudes = solicitudes; _comentarios = comentarios; _conversaciones = conversaciones;
         _transacciones = transacciones; _pagos = pagos; _notificaciones = notificaciones; _denuncias = denuncias; _refrescos = refrescos;
@@ -97,7 +99,8 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
             comentarios, mensajes, transacciones, pagos, notificaciones, denuncias, calificaciones, favoritos,
             Mapeos.ADatosFacturacion(u), (await _facturas.ListarPorUsuarioAsync(actorId, 500)).Select(Mapeos.AFacturaDto).ToList(),
             (await _pqrs.ListarPorUsuarioAsync(actorId, 200)).Select(Mapeos.APqrDto).ToList(),
-            (await _denuncias.ListarApelacionesDelUsuarioAsync(actorId, Maximo)).Select(DenunciaService.AApelacionDto).ToList());
+            (await _denuncias.ListarApelacionesDelUsuarioAsync(actorId, Maximo)).Select(DenunciaService.AApelacionDto).ToList(),
+            await _bloqueos.PreferenciasAsync(actorId), await _bloqueos.ListarAsync(actorId));
     }
 
     /// <summary>Volver a demostrar identidad: con un token robado (o un equipo desatendido) no basta para borrar la cuenta.</summary>

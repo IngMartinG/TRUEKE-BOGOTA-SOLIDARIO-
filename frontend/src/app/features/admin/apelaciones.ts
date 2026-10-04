@@ -47,7 +47,7 @@ import { Modal } from '../../shared/ui/modal';
             }
           </div>
 
-          <div class="mt-4 grid gap-4 md:grid-cols-2">
+          <div class="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               <p class="text-xs font-semibold tracking-wide text-tenue uppercase">La denuncia</p>
               <p class="mt-1 text-sm">

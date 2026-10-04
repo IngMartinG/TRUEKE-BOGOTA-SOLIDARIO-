@@ -110,7 +110,46 @@ public sealed class UsuariosController : ControllerBase
 {
     private readonly IAuthService _auth;
     private readonly IDatosPersonalesService _datos;
-    public UsuariosController(IAuthService auth, IDatosPersonalesService datos) { _auth = auth; _datos = datos; }
+    private readonly IFotoPerfilService _foto;
+    private readonly IBloqueoService _bloqueos;
+    public UsuariosController(IAuthService auth, IDatosPersonalesService datos, IFotoPerfilService foto, IBloqueoService bloqueos)
+    {
+        _auth = auth; _datos = datos; _foto = foto; _bloqueos = bloqueos;
+    }
+
+    /// <summary>Bloquear: ninguno de los dos podrá escribirle al otro ni solicitar sus publicaciones. No se le avisa.</summary>
+    [HttpPost("{id:guid}/bloqueo"), EnableRateLimiting(Politicas.LimiteEscritura)]
+    public async Task<IActionResult> Bloquear(Guid id)
+    {
+        await _bloqueos.BloquearAsync(User.IdActual(), id);
+        return NoContent();
+    }
+
+    [HttpDelete("{id:guid}/bloqueo"), EnableRateLimiting(Politicas.LimiteEscritura)]
+    public async Task<IActionResult> Desbloquear(Guid id)
+    {
+        await _bloqueos.DesbloquearAsync(User.IdActual(), id);
+        return NoContent();
+    }
+
+    [HttpGet("yo/bloqueados")]
+    public async Task<ActionResult<IReadOnlyList<BloqueadoDto>>> Bloqueados() => Ok(await _bloqueos.ListarAsync(User.IdActual()));
+
+    /// <summary>Qué avisos opcionales llegan por correo. Los de seguridad, pagos, PQR y moderación siempre se envían.</summary>
+    [HttpGet("yo/preferencias-avisos")]
+    public async Task<ActionResult<PreferenciasAvisosDto>> Preferencias() => Ok(await _bloqueos.PreferenciasAsync(User.IdActual()));
+
+    [HttpPut("yo/preferencias-avisos"), EnableRateLimiting(Politicas.LimiteEscritura)]
+    public async Task<ActionResult<PreferenciasAvisosDto>> ActualizarPreferencias([FromBody] ActualizarPreferenciasAvisosRequest r)
+        => Ok(await _bloqueos.ActualizarPreferenciasAsync(User.IdActual(), r));
+
+    /// <summary>Foto de perfil: la URL es la de POST /archivos/subidas (tipo Imagen) tras subirla con PUT. Se guarda una copia limpia.</summary>
+    [HttpPut("yo/foto"), EnableRateLimiting(Politicas.LimiteEscritura)]
+    public async Task<ActionResult<UsuarioDto>> CambiarFoto([FromBody] CambiarFotoRequest r)
+        => Ok(await _foto.CambiarAsync(User.IdActual(), r.Url));
+
+    [HttpDelete("yo/foto"), EnableRateLimiting(Politicas.LimiteEscritura)]
+    public async Task<ActionResult<UsuarioDto>> QuitarFoto() => Ok(await _foto.QuitarAsync(User.IdActual()));
 
     /// <summary>Ley 1581 — derecho de acceso: todos tus datos en JSON.</summary>
     [HttpGet("yo/datos"), EnableRateLimiting(Politicas.LimiteAuth)]

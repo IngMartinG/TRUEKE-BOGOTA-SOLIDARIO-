@@ -72,6 +72,8 @@ Un controller nunca puede tocar un repositorio ni el DbContext.
 - Chat: responder un mensaje en particular (`respuestaAId`; deslizar en celular, botón con mouse).
 - Denuncias con debido proceso: si es procedente se avisa al denunciado (`DenunciaRecibida`, sin revelar al denunciante) y puede apelar una vez en 15 días; la apelación la resuelve otro moderador o un SuperUsuario y, si se acepta, se revierte la medida. Migración `ChatRespuestasYApelaciones`. 227 pruebas.
 
+- Segunda tanda del 2026-10-04: sesión estable (solo 401/403 al refrescar cierran sesión; candado entre pestañas), chat con entregado/leído/escribiendo/en línea (`IPresencia`), foto de perfil (`PUT /usuarios/yo/foto`), diseño adaptable (barra inferior < 1024 px, `app-volver`), "Pagos y facturas", bloqueo de usuarios, preferencias de avisos por correo (`IAvisosCorreo`) y `/ayuda`. 234 pruebas.
+
 ## Pendientes originales (completados)
 1. `.sln`, `appsettings.json` sin secretos, `appsettings.Development.json` (Pagos:Proveedor=Simulado, BD InMemory), `.gitignore`, `.env.example`.
 2. `dotnet build` en verde (TreatWarningsAsErrors) y corregir Datos/Contexto, Datos/Repositorios/Implementaciones y Presentacion.

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, linkedSignal, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
@@ -6,15 +6,17 @@ import { CuentaApi } from '../../core/api/cuenta.api';
 import { SesionService } from '../../core/sesion.service';
 import { FechaPipe, HacePipe } from '../../shared/pipes';
 import { Avatar } from '../../shared/ui/avatar';
+import { Bloquear } from '../../shared/ui/bloquear';
 import { Denunciar } from '../../shared/ui/denunciar';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Estrellas } from '../../shared/ui/estrellas';
 import { Icono } from '../../shared/ui/icono';
 import { Paginador } from '../../shared/ui/paginador';
 import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-publicacion';
+import { Volver } from '../../shared/ui/volver';
 
 @Component({
-  imports: [RouterLink, Avatar, Estrellas, Icono, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, Denunciar, FechaPipe, HacePipe],
+  imports: [Volver, RouterLink, Avatar, Estrellas, Icono, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, Denunciar, Bloquear, FechaPipe, HacePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (perfil.error()) {
@@ -23,9 +25,10 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
       </app-estado-vacio>
     } @else {
       <section class="bg-gradient-to-b from-bosque-100 to-fondo dark:from-bosque-950/70">
-        <div class="contenedor flex flex-col items-center gap-6 py-10 text-center sm:flex-row sm:text-left">
+        <div class="contenedor pt-4"><app-volver respaldo="/explorar" /></div>
+        <div class="contenedor flex flex-col items-center gap-6 pt-4 pb-10 text-center sm:flex-row sm:text-left">
           @if (perfil.value(); as p) {
-            <app-avatar [nombre]="p.nombre" [tamano]="104" [verificado]="!!p.verificado" />
+            <app-avatar [nombre]="p.nombre" [foto]="p.fotoUrl" [tamano]="104" [verificado]="!!p.verificado" />
             <div class="flex-1">
               <div class="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <h1 class="text-3xl font-extrabold">{{ p.nombreComercial || p.nombre }}</h1>
@@ -39,7 +42,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
                   <span class="insignia-sol"><app-icono nombre="corona" [tamano]="12" />{{ p.tipoCuenta }}</span>
                 }
               </div>
-              <p class="mt-1 flex items-center justify-center gap-3 text-sm text-tenue sm:justify-start">
+              <p class="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-tenue sm:justify-start">
                 <span class="flex items-center gap-1"><app-icono nombre="pin" [tamano]="14" />{{ p.localidad }}@if (p.municipio) {<span>, {{ p.municipio }}</span>}</span>
                 <span>Miembro desde {{ p.miembroDesde | fecha }}</span>
               </p>
@@ -51,9 +54,9 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
                 </p>
               }
             </div>
-            <dl class="grid grid-cols-4 gap-2 text-center">
+            <dl class="grid grid-cols-2 gap-2 text-center sm:grid-cols-4">
               @for (d of datos(); track d.texto) {
-                <div class="min-w-20 rounded-2xl bg-superficie p-3 shadow-suave">
+                <div class="min-w-0 rounded-2xl bg-superficie p-3 shadow-suave sm:min-w-20">
                   <dd class="font-display text-2xl font-extrabold">{{ d.valor }}</dd>
                   <dt class="text-[11px] leading-tight text-tenue">{{ d.texto }}</dt>
                 </div>
@@ -66,7 +69,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
         </div>
       </section>
 
-      <div class="contenedor grid gap-10 py-10 lg:grid-cols-[1fr_22rem]">
+      <div class="contenedor grid grid-cols-1 gap-10 py-10 lg:grid-cols-[1fr_22rem]">
         <section aria-labelledby="titulo-publicaciones">
           <h2 id="titulo-publicaciones" class="text-xl font-bold">Publicaciones activas</h2>
           <div class="mt-5 grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3">
@@ -92,7 +95,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
             @for (c of calificaciones.value()?.items ?? []; track c.id) {
               <li class="tarjeta p-4">
                 <div class="flex items-center gap-3">
-                  <app-avatar [nombre]="c.autor?.nombre" [tamano]="32" />
+                  <app-avatar [nombre]="c.autor?.nombre" [foto]="c.autor?.fotoUrl" [tamano]="32" />
                   <div class="min-w-0 flex-1">
                     <p class="truncate text-sm font-semibold">{{ c.autor?.nombre }}</p>
                     <app-estrellas [valor]="c.estrellas ?? 0" [tamano]="12" />
@@ -113,9 +116,13 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
             <button type="button" class="btn btn-secundario btn-sm mt-4 w-full" (click)="paginaCal.set(paginaCal() + 1)">Ver más</button>
           }
           @if (sesion.autenticado() && sesion.usuario()?.id !== id()) {
-            <button type="button" class="mt-6 flex items-center gap-1 text-xs text-tenue hover:text-tierra-600" (click)="denunciaAbierta.set(true)">
-              <app-icono nombre="bandera" [tamano]="14" />Reportar este perfil
-            </button>
+            <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+              <button type="button" class="flex items-center gap-1 text-xs text-tenue hover:text-tierra-600" (click)="denunciaAbierta.set(true)">
+                <app-icono nombre="bandera" [tamano]="14" />Reportar este perfil
+              </button>
+              <app-bloquear [usuarioId]="id()" [nombre]="perfil.value()?.nombre ?? 'esta persona'" [(bloqueado)]="bloqueado"
+                clase="flex items-center gap-1 text-xs text-tenue hover:text-tierra-600" />
+            </div>
             <app-denunciar [(abierto)]="denunciaAbierta" tipo="Usuario" [objetivoId]="id()" />
           }
         </aside>
@@ -131,6 +138,12 @@ export default class PerfilPublico {
   protected readonly paginaPub = signal(1);
   protected readonly paginaCal = signal(1);
   protected readonly denunciaAbierta = signal(false);
+  /** Si yo bloqueé a esta persona (sale de mi lista de bloqueados; solo con sesión). */
+  private readonly misBloqueados = rxResource({
+    params: () => (this.sesion.autenticado() ? true : undefined),
+    stream: () => this.api.bloqueados(),
+  });
+  protected readonly bloqueado = linkedSignal(() => !!this.misBloqueados.value()?.some((b) => b.perfil?.id === this.id()));
 
   protected readonly perfil = rxResource({ params: () => this.id(), stream: ({ params }) => this.api.perfil(params) });
   protected readonly publicaciones = rxResource({

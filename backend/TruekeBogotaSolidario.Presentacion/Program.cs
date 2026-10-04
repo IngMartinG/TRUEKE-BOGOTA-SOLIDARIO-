@@ -72,7 +72,7 @@ builder.Services.AddAutenticacionJwt();
 var signalR = builder.Services.AddSignalR(o =>
 {
     o.EnableDetailedErrors = false;                    // nunca detalles internos al cliente
-    o.MaximumReceiveMessageSize = 4 * 1024;            // el hub no recibe datos del cliente
+    o.MaximumReceiveMessageSize = 4 * 1024;            // el cliente solo invoca avisos mínimos (escribiendo / recibido)
 }).AddJsonProtocol(o =>
 {
     o.PayloadSerializerOptions.Converters.Add(new JsonStringEnumConverter());
@@ -89,6 +89,8 @@ if (redisHabilitado)
     var opcionesRedis = StackExchange.Redis.ConfigurationOptions.Parse(redis);
     opcionesRedis.AbortOnConnectFail = false;
     builder.Services.AddSingleton<StackExchange.Redis.IConnectionMultiplexer>(_ => StackExchange.Redis.ConnectionMultiplexer.Connect(opcionesRedis));
+    // "En línea" compartido entre instancias
+    builder.Services.Replace(ServiceDescriptor.Singleton<IPresencia, PresenciaRedis>());
 }
 builder.Services.AddSingleton<IUserIdProvider, UsuarioIdPorSub>();
 builder.Services.Replace(ServiceDescriptor.Singleton<IEmisorTiempoReal, EmisorSignalR>());

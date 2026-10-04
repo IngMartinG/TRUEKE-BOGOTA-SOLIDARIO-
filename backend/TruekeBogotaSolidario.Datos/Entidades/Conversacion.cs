@@ -73,11 +73,19 @@ public class Mensaje
     public Guid? RespuestaAId { get; private set; }
     public Mensaje? RespuestaA { get; private set; }
     public DateTime FechaUtc { get; private set; }
+    /// <summary>Llegó al dispositivo del destinatario (✓✓). Leído implica entregado.</summary>
+    public DateTime? EntregadoUtc { get; private set; }
     public DateTime? LeidoUtc { get; private set; }
     public bool EstaOculto { get; private set; }
     public string? MotivoOcultamiento { get; private set; }
 
-    public void MarcarLeido(DateTime ahoraUtc) => LeidoUtc ??= ahoraUtc;
+    public void MarcarEntregado(DateTime ahoraUtc) => EntregadoUtc ??= ahoraUtc;
+
+    public void MarcarLeido(DateTime ahoraUtc)
+    {
+        EntregadoUtc ??= ahoraUtc;
+        LeidoUtc ??= ahoraUtc;
+    }
 
     public void Ocultar(string motivo)
     {

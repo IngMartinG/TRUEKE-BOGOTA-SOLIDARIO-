@@ -8,20 +8,45 @@ import { CuentaApi } from '../../core/api/cuenta.api';
 import { AvisosService } from '../../core/avisos.service';
 import { erroresDeCampos, mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
+import { SubidasService } from '../../core/subidas.service';
+import { comprimirImagen } from '../../shared/imagenes';
 import { FechaPipe, NumeroPipe } from '../../shared/pipes';
+import { Avatar } from '../../shared/ui/avatar';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
 import { Icono } from '../../shared/ui/icono';
 import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, ErrorCampo, Icono, NumeroPipe, FechaPipe, SelectorMunicipio],
+  imports: [ReactiveFormsModule, RouterLink, ErrorCampo, Icono, NumeroPipe, FechaPipe, SelectorMunicipio, Avatar],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="text-2xl font-extrabold">Mi cuenta</h1>
     <p class="mt-1 text-tenue">Tu información básica y el estado de tu cuenta.</p>
 
     @if (sesion.usuario(); as u) {
-      <div class="mt-6 grid gap-3 sm:grid-cols-4">
+      <section class="tarjeta mt-6 flex flex-col items-center gap-4 p-5 text-center sm:flex-row sm:text-left" aria-labelledby="titulo-foto">
+        <div class="relative">
+          <app-avatar [nombre]="u.nombreCompleto" [foto]="u.fotoUrl" [tamano]="96" />
+          @if (subiendoFoto()) {
+            <span class="absolute inset-0 grid place-items-center rounded-full bg-black/45 text-xs font-semibold text-white">Subiendo…</span>
+          }
+        </div>
+        <div class="min-w-0 flex-1">
+          <h2 id="titulo-foto" class="font-bold">Foto de perfil</h2>
+          <p class="text-sm text-tenue">Ayuda a que la comunidad confíe en ti. Le quitamos la ubicación y los datos ocultos de la foto antes de publicarla.</p>
+          <div class="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
+            <label class="btn btn-primario btn-sm cursor-pointer" [class.pointer-events-none]="subiendoFoto()" [class.opacity-60]="subiendoFoto()">
+              <app-icono nombre="camara" [tamano]="16" />{{ u.fotoUrl ? 'Cambiar foto' : 'Subir foto' }}
+              <input type="file" class="sr-only" accept="image/jpeg,image/png,image/webp" (change)="elegirFoto($event)" [disabled]="subiendoFoto()" />
+            </label>
+            @if (u.fotoUrl) {
+              <button type="button" class="btn btn-fantasma btn-sm" (click)="quitarFoto()" [disabled]="subiendoFoto()">Quitar foto</button>
+            }
+          </div>
+        </div>
+      </section>
+
+      <div class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         @for (d of [
           { t: 'Eco-Puntos', v: (u.saldoEcoPuntos | numero), i: 'moneda' },
           { t: 'Reputación', v: (u.reputacion ?? 0).toFixed(1), i: 'hoja' },
@@ -36,7 +61,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
         }
       </div>
 
-      <div class="mt-6 grid gap-6 xl:grid-cols-[1fr_20rem]">
+      <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1fr_20rem]">
         <div class="space-y-6">
           <form [formGroup]="form" (ngSubmit)="guardar()" class="tarjeta space-y-5 p-6" novalidate>
             <h2 class="text-lg font-bold">Datos personales</h2>
@@ -143,6 +168,8 @@ export default class Perfil {
   protected readonly sesion = inject(SesionService);
   protected readonly localidades = LOCALIDADES;
   protected readonly guardando = signal(false);
+  protected readonly subiendoFoto = signal(false);
+  private readonly subidas = inject(SubidasService);
   protected readonly form = this.fb.group({
     nombreCompleto: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120)]],
     municipioCodigo: [CODIGO_BOGOTA, [Validators.required, Validators.pattern(/^\d{5}$/)]],
@@ -197,6 +224,40 @@ export default class Perfil {
       if (!aplicarErroresServidor(this.form.controls, erroresDeCampos(e))) this.avisos.error(mensajeDe(e));
     } finally {
       this.guardando.set(false);
+    }
+  }
+
+  protected async elegirFoto(e: Event): Promise<void> {
+    const entrada = e.target as HTMLInputElement;
+    const archivo = entrada.files?.[0];
+    entrada.value = ''; // permite volver a elegir el mismo archivo
+    if (!archivo) return;
+    if (!/^image\/(jpeg|png|webp)$/.test(archivo.type)) {
+      this.avisos.error('Formato no admitido', 'Usa una foto JPG, PNG o WebP.');
+      return;
+    }
+    this.subiendoFoto.set(true);
+    try {
+      // Una foto de perfil se ve pequeña: 800 px bastan y la subida es rápida incluso con datos móviles.
+      const url = await this.subidas.subirTodo(await comprimirImagen(archivo, 800), 'Imagen');
+      this.sesion.actualizarUsuario(await firstValueFrom(this.api.cambiarFoto(url)));
+      this.avisos.exito('Foto actualizada');
+    } catch (err) {
+      this.avisos.error(mensajeDe(err));
+    } finally {
+      this.subiendoFoto.set(false);
+    }
+  }
+
+  protected async quitarFoto(): Promise<void> {
+    this.subiendoFoto.set(true);
+    try {
+      this.sesion.actualizarUsuario(await firstValueFrom(this.api.quitarFoto()));
+      this.avisos.exito('Foto eliminada');
+    } catch {
+      // El interceptor ya mostró el error.
+    } finally {
+      this.subiendoFoto.set(false);
     }
   }
 
