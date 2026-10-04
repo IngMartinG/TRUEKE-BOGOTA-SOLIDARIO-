@@ -8,6 +8,12 @@
       "port": 5180
     },
     {
+      "name": "azurite",
+      "runtimeExecutable": "cmd",
+      "runtimeArgs": ["/c", "azurite", "--skipApiVersionCheck", "--location", "C:\\Users\\Nataly Toscano\\AppData\\Local\\Azurite"],
+      "port": 10000
+    },
+    {
       "name": "front",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["--prefix", "frontend", "start"],
