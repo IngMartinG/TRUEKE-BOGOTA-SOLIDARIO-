@@ -20,7 +20,7 @@ const TAMANO = 20;
         <h2 class="text-xl font-bold">Pagos</h2>
         <p class="text-sm text-tenue">"Requiere revisión": se cobró pero no se pudo aplicar el beneficio. Reembolsa en el panel de Wompi y regístralo aquí.</p>
       </div>
-      <select class="entrada w-56" [ngModel]="estado()" (ngModelChange)="estado.set($event); pagina.set(1)" aria-label="Filtrar por estado">
+      <select class="entrada w-full sm:w-56" [ngModel]="estado()" (ngModelChange)="estado.set($event); pagina.set(1)" aria-label="Filtrar por estado">
         @for (e of estados; track e.valor) {
           <option [ngValue]="e.valor">{{ e.texto }}</option>
         }

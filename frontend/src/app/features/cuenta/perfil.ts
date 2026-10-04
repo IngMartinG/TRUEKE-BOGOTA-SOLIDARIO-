@@ -61,7 +61,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
         }
       </div>
 
-      <div class="mt-6 grid gap-6 xl:grid-cols-[1fr_20rem]">
+      <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1fr_20rem]">
         <div class="space-y-6">
           <form [formGroup]="form" (ngSubmit)="guardar()" class="tarjeta space-y-5 p-6" novalidate>
             <h2 class="text-lg font-bold">Datos personales</h2>

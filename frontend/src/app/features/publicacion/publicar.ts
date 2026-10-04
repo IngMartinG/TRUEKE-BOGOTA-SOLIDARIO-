@@ -41,6 +41,7 @@ import { ImagenPublicacion } from '../../shared/ui/imagen-publicacion';
 import { InsigniaModo } from '../../shared/ui/insignia-modo';
 import { Mapa } from '../../shared/ui/mapa';
 import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
+import { Volver } from '../../shared/ui/volver';
 
 interface Foto {
   clave: string;
@@ -54,17 +55,16 @@ interface Foto {
 const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, Icono, ErrorCampo, Mapa, InsigniaModo, ImagenPublicacion, CopPipe, SelectorMunicipio],
+  imports: [Volver, ReactiveFormsModule, RouterLink, Icono, ErrorCampo, Mapa, InsigniaModo, ImagenPublicacion, CopPipe, SelectorMunicipio],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="contenedor max-w-3xl py-8 sm:py-10">
-      <div class="flex items-center justify-between gap-4">
-        <div>
-          <h1 class="text-3xl font-extrabold">{{ id() ? 'Editar publicación' : 'Publica algo' }}</h1>
-          <p class="mt-1 text-tenue">{{ id() ? 'Actualiza la información de tu publicación.' : 'En cinco pasos sencillos tu objeto estará visible para personas de todo el país.' }}</p>
-        </div>
-        <a [routerLink]="id() ? ['/publicacion', id()] : '/mis-publicaciones'" class="btn btn-fantasma hidden sm:inline-flex">Cancelar</a>
+    <div class="contenedor max-w-3xl py-6 sm:py-10">
+      <div class="mb-3 flex items-center justify-between gap-4">
+        <app-volver [respaldo]="id() ? '/publicacion/' + id() : '/mis-publicaciones'" />
+        <a [routerLink]="id() ? ['/publicacion', id()] : '/mis-publicaciones'" class="btn btn-fantasma btn-sm">Cancelar</a>
       </div>
+      <h1 class="text-3xl font-extrabold">{{ id() ? 'Editar publicación' : 'Publica algo' }}</h1>
+      <p class="mt-1 text-tenue">{{ id() ? 'Actualiza la información de tu publicación.' : 'En cinco pasos sencillos tu objeto estará visible para personas de todo el país.' }}</p>
 
       <!-- Indicador de pasos -->
       <ol class="mt-8 grid grid-cols-5 gap-2" aria-label="Pasos">
@@ -142,7 +142,7 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
                 <fieldset>
                   <legend class="etiqueta mb-1">¿En qué estado está?</legend>
                   <p class="ayuda mb-2">Sé honesto: un estado claro evita reclamos y genera confianza.</p>
-                  <div class="grid gap-2 sm:grid-cols-2">
+                  <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     @for (c of condiciones; track c.valor) {
                       <label class="flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-3 transition"
                         [class]="condicionActual() === c.valor ? 'border-bosque-500 bg-bosque-50 dark:bg-bosque-900/50' : 'border-borde hover:border-bosque-200'">
@@ -313,7 +313,7 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
             @case (4) {
               <div class="animate-aparecer">
                 <h2 class="text-xl font-bold">Así se verá tu publicación</h2>
-                <div class="mt-5 grid gap-6 sm:grid-cols-[16rem_1fr]">
+                <div class="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-[16rem_1fr]">
                   <div class="tarjeta overflow-hidden">
                     <app-imagen-publicacion class="aspect-[4/3]" [src]="fotosListas()[0]" [modo]="modoActual()" [categoriaId]="categoriaActual()" />
                     <div class="p-4">
@@ -349,7 +349,7 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
           }
 
           <!-- Navegación -->
-          <div class="sticky bottom-16 z-10 mt-10 flex items-center justify-between gap-3 border-t border-borde bg-fondo/90 py-4 backdrop-blur sm:bottom-0">
+          <div class="sticky bottom-16 z-10 mt-10 flex items-center justify-between gap-3 border-t border-borde bg-fondo/90 py-4 backdrop-blur lg:bottom-0">
             @if (paso() > 0) {
               <button type="button" class="btn btn-secundario" (click)="anterior()"><app-icono nombre="izquierda" [tamano]="16" />Atrás</button>
             } @else {

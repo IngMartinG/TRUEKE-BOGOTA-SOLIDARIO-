@@ -37,14 +37,14 @@ const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'o
     </div>
 
     @if (recurso.value(); as i) {
-      <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div class="tarjeta p-5"><p class="text-xs text-tenue">Neto del periodo</p><p class="mt-1 font-display text-2xl font-extrabold">{{ i.netoCop | cop }}</p><p class="text-xs text-tenue">{{ i.pagos | numero }} pagos</p></div>
         <div class="tarjeta p-5"><p class="text-xs text-tenue">Cobrado</p><p class="mt-1 font-display text-2xl font-extrabold">{{ i.aprobadoCop | cop }}</p><p class="text-xs text-tierra-600">−{{ i.reembolsadoCop | cop }} reembolsado</p></div>
         <div class="tarjeta p-5"><p class="text-xs text-tenue">Ingreso recurrente mensual</p><p class="mt-1 font-display text-2xl font-extrabold">{{ i.ingresoRecurrenteMensualCop | cop }}</p><p class="text-xs text-tenue">{{ i.premiumVigentes }} Premium · {{ i.empresaVigentes }} Empresa</p></div>
         <div class="tarjeta p-5"><p class="text-xs text-tenue">Pendientes</p><p class="mt-1 font-display text-2xl font-extrabold">{{ i.facturasPendientes }}</p><p class="text-xs text-tenue">facturas por emitir · {{ i.pqrAbiertas }} PQR abiertas</p></div>
       </div>
 
-      <div class="mt-6 grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+      <div class="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_1fr]">
         <section class="tarjeta p-5">
           <h3 class="font-bold">Por mes</h3>
           @if ((i.porMes ?? []).length) {

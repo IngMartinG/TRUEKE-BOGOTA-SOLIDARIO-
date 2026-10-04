@@ -16,12 +16,16 @@ import { Logo } from '../shared/ui/logo';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="sticky top-0 z-50 border-b border-borde bg-fondo/85 backdrop-blur-xl">
-      <div class="contenedor flex h-16 items-center gap-3 lg:gap-6">
+      <!--
+        Celular y tablet (< lg): logo, búsqueda (desde md), avisos y cuenta; el resto está en la barra inferior.
+        PC (≥ lg): menú principal, Publicar y Mensajes. El texto del logo se oculta donde no cabe.
+      -->
+      <div class="contenedor flex h-16 items-center gap-2 sm:gap-3 xl:gap-6">
         <a routerLink="/" class="shrink-0 rounded-full" aria-label="Trueke Bogotá Solidario, inicio">
-          <app-logo [tamano]="38" />
+          <app-logo [tamano]="38" claseTexto="max-[359px]:hidden lg:max-xl:hidden" />
         </a>
 
-        <nav class="hidden items-center gap-1 whitespace-nowrap xl:flex" aria-label="Principal">
+        <nav class="hidden items-center gap-1 whitespace-nowrap lg:flex" aria-label="Principal">
           @for (e of enlaces; track e.ruta) {
             <a
               [routerLink]="e.ruta"
@@ -32,7 +36,7 @@ import { Logo } from '../shared/ui/logo';
           }
         </nav>
 
-        <form class="relative hidden flex-1 md:block" role="search" (ngSubmit)="buscar()">
+        <form class="relative hidden min-w-0 flex-1 md:block lg:max-xl:hidden" role="search" (ngSubmit)="buscar()">
           <app-icono nombre="buscar" [tamano]="18" class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-tenue" />
           <input
             type="search"
@@ -45,10 +49,7 @@ import { Logo } from '../shared/ui/logo';
           />
         </form>
 
-        <div class="ml-auto flex items-center gap-1 sm:gap-2">
-          <button type="button" class="btn-icono md:hidden" routerLink="/explorar" aria-label="Buscar">
-            <app-icono nombre="buscar" />
-          </button>
+        <div class="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <button
             type="button"
             class="btn-icono hidden sm:inline-flex"
@@ -59,10 +60,10 @@ import { Logo } from '../shared/ui/logo';
           </button>
 
           @if (sesion.autenticado()) {
-            <a routerLink="/publicar" class="btn btn-primario hidden sm:inline-flex">
+            <a routerLink="/publicar" class="btn btn-primario hidden lg:inline-flex">
               <app-icono nombre="mas" [tamano]="18" />Publicar
             </a>
-            <a routerLink="/mensajes" class="btn-icono relative hidden sm:inline-flex" aria-label="Mensajes">
+            <a routerLink="/mensajes" class="btn-icono relative hidden lg:inline-flex" aria-label="Mensajes">
               <app-icono nombre="mensaje" />
               @if (tiempoReal.mensajesNoLeidos() > 0) {
                 <span class="absolute top-1 right-1 grid min-w-4.5 place-items-center rounded-full bg-tierra-600 px-1 text-[10px] font-bold text-white">
@@ -86,13 +87,13 @@ import { Logo } from '../shared/ui/logo';
               aria-label="Menú de tu cuenta"
             >
               <app-avatar [nombre]="sesion.usuario()?.nombreCompleto" [foto]="sesion.usuario()?.fotoUrl" [tamano]="32" [verificado]="!!sesion.usuario()?.verificado" />
-              <span class="hidden items-center gap-1 text-sm font-bold text-sol-600 sm:flex dark:text-sol-300">
+              <span class="hidden items-center gap-1 text-sm font-bold text-sol-600 lg:flex dark:text-sol-300">
                 <app-icono nombre="moneda" [tamano]="16" />{{ sesion.usuario()?.saldoEcoPuntos | numero }}
               </span>
             </button>
           } @else {
             <a routerLink="/ingresar" class="btn btn-fantasma hidden sm:inline-flex">Ingresar</a>
-            <a routerLink="/registro" class="btn btn-primario">Crear cuenta</a>
+            <a routerLink="/registro" class="btn btn-primario whitespace-nowrap max-sm:px-3.5 max-sm:py-1.5 max-sm:text-xs">Crear cuenta</a>
           }
         </div>
       </div>

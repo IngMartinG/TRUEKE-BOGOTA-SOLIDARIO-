@@ -18,7 +18,7 @@ import { Modal } from '../../shared/ui/modal';
     <h2 class="text-xl font-bold">Verificaciones de identidad</h2>
     <p class="mt-1 text-sm text-tenue">El documento se borra automáticamente al aprobar o rechazar.</p>
 
-    <ul class="mt-6 grid gap-3 md:grid-cols-2">
+    <ul class="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
       @for (v of recurso.value() ?? []; track v.usuarioId) {
         <li class="tarjeta p-5">
           <div class="flex items-center gap-3">

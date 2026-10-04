@@ -13,7 +13,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
       <path d="M13.5 13.5a9.5 9.5 0 0 1 6.5-4.4M26.5 26.5a9.5 9.5 0 0 1-6.5 4.4" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" />
     </svg>
     @if (conTexto()) {
-      <span class="leading-none" [class.text-white]="claro()">
+      <span class="leading-none" [class]="claseTexto()" [class.text-white]="claro()">
         <span class="block font-display text-[1.05rem] font-extrabold tracking-tight">Trueke</span>
         <span class="block text-[0.68rem] font-semibold tracking-[0.14em] uppercase opacity-70">Bogotá Solidario</span>
       </span>
@@ -23,5 +23,7 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 export class Logo {
   readonly tamano = input(36);
   readonly conTexto = input(true);
+  /** Clases del texto, p. ej. para ocultarlo en ciertos anchos de pantalla. */
+  readonly claseTexto = input('');
   readonly claro = input(false);
 }

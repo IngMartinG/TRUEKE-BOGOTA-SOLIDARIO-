@@ -4,17 +4,17 @@ import { SesionService } from '../core/sesion.service';
 import { TiempoRealService } from '../core/tiempo-real.service';
 import { Icono } from '../shared/ui/icono';
 
-/** Navegación inferior en móvil, con el botón de publicar destacado al centro. */
+/** Navegación inferior en celular y tablet (< 1024 px), con el botón de publicar destacado al centro. */
 @Component({
   selector: 'app-barra-movil',
   imports: [RouterLink, RouterLinkActive, Icono],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <nav
-      class="fixed inset-x-0 bottom-0 z-50 border-t border-borde bg-superficie/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl sm:hidden"
+      class="fixed inset-x-0 bottom-0 z-50 border-t border-borde bg-superficie/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl lg:hidden"
       aria-label="Navegación inferior"
     >
-      <ul class="grid grid-cols-5 items-end">
+      <ul class="mx-auto grid max-w-xl grid-cols-5 items-end">
         @for (e of izquierda(); track e.ruta) {
           <li>
             <a [routerLink]="e.ruta" routerLinkActive="!text-bosque-700 dark:!text-bosque-300" [routerLinkActiveOptions]="{ exact: e.ruta === '/' }"

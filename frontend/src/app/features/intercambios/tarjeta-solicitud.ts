@@ -24,7 +24,7 @@ export type AccionSolicitud = 'aceptar' | 'rechazar' | 'cancelar' | 'confirmar' 
         <span [class]="estado().clase">{{ estado().texto }}</span>
       </header>
 
-      <div class="grid gap-5 p-5 md:grid-cols-[1fr_auto]">
+      <div class="grid grid-cols-1 gap-5 p-5 md:grid-cols-[1fr_auto]">
         <div class="min-w-0">
           <a [routerLink]="['/usuarios', otra()?.id]" class="inline-flex items-center gap-3">
             <app-avatar [nombre]="otra()?.nombre" [foto]="otra()?.fotoUrl" [tamano]="44" [verificado]="!!otra()?.verificado" />

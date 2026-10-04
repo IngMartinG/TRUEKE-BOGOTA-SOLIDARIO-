@@ -23,7 +23,7 @@ import { Icono } from '../../shared/ui/icono';
         @for (p of pasos; track p.titulo; let i = $index) {
           <li class="relative">
             <span class="absolute top-0 -left-[3.05rem] grid size-11 place-items-center rounded-full bg-bosque-600 font-display text-lg font-extrabold text-white ring-8 ring-fondo sm:-left-[4.05rem]">{{ i + 1 }}</span>
-            <div class="tarjeta grid gap-4 p-6 sm:grid-cols-[auto_1fr] sm:items-start">
+            <div class="tarjeta grid grid-cols-1 gap-4 p-6 sm:grid-cols-[auto_1fr] sm:items-start">
               <span class="grid size-14 place-items-center rounded-2xl bg-bosque-50 text-bosque-700 dark:bg-bosque-900 dark:text-bosque-200">
                 <app-icono [nombre]="p.icono" [tamano]="28" [grosor]="1.7" />
               </span>
@@ -39,7 +39,7 @@ import { Icono } from '../../shared/ui/icono';
 
     <section class="contenedor mt-20 max-w-5xl">
       <h2 class="titulo-seccion text-center">Tres maneras de participar</h2>
-      <div class="mt-8 grid gap-4 md:grid-cols-3">
+      <div class="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
         @for (m of modos; track m) {
           <div class="tarjeta p-6">
             <span [class]="info[m].clase"><app-icono [nombre]="info[m].icono" [tamano]="12" />{{ info[m].etiqueta }}</span>
