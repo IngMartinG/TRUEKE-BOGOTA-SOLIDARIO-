@@ -2,6 +2,7 @@ import { HttpClient, HttpEventType } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { filter, firstValueFrom, map, Observable, switchMap } from 'rxjs';
 import type { TipoArchivoDto } from '../api/tipos';
+import { urlPublica } from '../shared/imagenes';
 import { CuentaApi } from './api/cuenta.api';
 import { ConfigService } from './config.service';
 
@@ -42,7 +43,7 @@ export class SubidasService {
           headers = { ...headers, 'Content-Type': archivo.type };
         }
         return this.http
-          .request(s.metodo ?? 'PUT', s.urlSubida ?? '', {
+          .request(s.metodo ?? 'PUT', urlPublica(s.urlSubida ?? ''), {
             body: archivo,
             headers,
             reportProgress: true,
