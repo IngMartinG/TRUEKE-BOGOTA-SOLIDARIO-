@@ -41,7 +41,7 @@ export default class Cuenta {
   protected readonly enlaces = [
     { ruta: '/cuenta/perfil', texto: 'Perfil', icono: 'usuario' },
     { ruta: '/cuenta/seguridad', texto: 'Seguridad', icono: 'escudo' },
-    { ruta: '/cuenta/facturacion', texto: 'Facturación', icono: 'factura' },
+    { ruta: '/cuenta/facturacion', texto: 'Pagos y facturas', icono: 'factura' },
     { ruta: '/cuenta/soporte', texto: 'Soporte y PQR', icono: 'soporte' },
     { ruta: '/cuenta/reportes', texto: 'Reportes sobre ti', icono: 'balanza' },
     { ruta: '/cuenta/privacidad', texto: 'Privacidad y datos', icono: 'candado' },
