@@ -4919,6 +4919,9 @@
           },
           "escribible": {
             "type": "boolean"
+          },
+          "contraparteEnLinea": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -5647,6 +5650,14 @@
         ],
         "type": "string"
       },
+      "EstadoMensajeDto": {
+        "enum": [
+          "Enviado",
+          "Entregado",
+          "Leido"
+        ],
+        "type": "string"
+      },
       "EstadoPagoDto": {
         "enum": [
           "Pendiente",
@@ -6071,6 +6082,9 @@
           },
           "respuestaA": {
             "$ref": "#/components/schemas/MensajeCitadoDto"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoMensajeDto"
           }
         },
         "additionalProperties": false

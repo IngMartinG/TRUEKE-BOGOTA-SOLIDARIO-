@@ -4176,6 +4176,7 @@ export interface components {
             /** Format: int32 */
             noLeidos?: number;
             escribible?: boolean;
+            contraparteEnLinea?: boolean;
         };
         CotizacionDto: {
             /** Format: int32 */
@@ -4392,6 +4393,8 @@ export interface components {
         /** @enum {string} */
         EstadoFacturaDto: "Pendiente" | "Emitida" | "Anulada";
         /** @enum {string} */
+        EstadoMensajeDto: "Enviado" | "Entregado" | "Leido";
+        /** @enum {string} */
         EstadoPagoDto: "Pendiente" | "Aprobado" | "Rechazado" | "Expirado" | "RequiereRevision" | "Reembolsado";
         /** @enum {string} */
         EstadoPqrDto: "Abierta" | "Respondida";
@@ -4546,6 +4549,7 @@ export interface components {
             leido?: boolean;
             oculto?: boolean;
             respuestaA?: components["schemas"]["MensajeCitadoDto"];
+            estado?: components["schemas"]["EstadoMensajeDto"];
         };
         MensajeCitadoDto: {
             /** Format: uuid */
@@ -5109,6 +5113,7 @@ export type EstadisticasPublicacionDto = components['schemas']['EstadisticasPubl
 export type EstadoApelacionDto = components['schemas']['EstadoApelacionDto'];
 export type EstadoDenunciaDto = components['schemas']['EstadoDenunciaDto'];
 export type EstadoFacturaDto = components['schemas']['EstadoFacturaDto'];
+export type EstadoMensajeDto = components['schemas']['EstadoMensajeDto'];
 export type EstadoPagoDto = components['schemas']['EstadoPagoDto'];
 export type EstadoPqrDto = components['schemas']['EstadoPqrDto'];
 export type FacturaAdminDto = components['schemas']['FacturaAdminDto'];

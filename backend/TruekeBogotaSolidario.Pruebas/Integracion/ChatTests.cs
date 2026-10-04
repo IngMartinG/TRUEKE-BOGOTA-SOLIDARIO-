@@ -131,6 +131,120 @@ public class ChatTests : IClassFixture<FabricaApi>
             new { texto = "Cito un chat ajeno", respuestaAId = original.Id })).StatusCode);
     }
 
+    // ---------------- Estados (✓ / ✓✓ / leído), "escribiendo…" y "en línea" ----------------
+
+    private sealed class Oyente : IAsyncDisposable
+    {
+        public readonly HubConnection Conexion;
+        public readonly ConcurrentQueue<(string Evento, JsonElement Datos)> Eventos = new();
+        public Oyente(HubConnection c)
+        {
+            Conexion = c;
+            foreach (var e in new[] { "estadoMensajes", "escribiendo", "presencia", "mensaje" })
+                c.On<JsonElement>(e, d => Eventos.Enqueue((e, d)));
+        }
+        public async Task<JsonElement> EsperarAsync(string evento, Func<JsonElement, bool>? filtro = null)
+        {
+            var limite = DateTime.UtcNow.AddSeconds(5);
+            while (DateTime.UtcNow < limite)
+            {
+                var hallado = Eventos.Where(x => x.Evento == evento && (filtro is null || filtro(x.Datos))).Select(x => (JsonElement?)x.Datos).FirstOrDefault();
+                if (hallado is { } h) return h;
+                await Task.Delay(50);
+            }
+            throw new TimeoutException($"No llegó el evento {evento}");
+        }
+        public ValueTask DisposeAsync() => Conexion.DisposeAsync();
+    }
+
+    private async Task<Oyente> ConectarAsync(string token)
+    {
+        var c = new HubConnectionBuilder()
+            .WithUrl(new Uri(_fabrica.Server.BaseAddress, "hubs/notificaciones"), o =>
+            {
+                o.HttpMessageHandlerFactory = _ => _fabrica.Server.CreateHandler();
+                o.Transports = HttpTransportType.LongPolling;
+                o.AccessTokenProvider = () => Task.FromResult<string?>(token);
+            }).Build();
+        var oyente = new Oyente(c);
+        await c.StartAsync();
+        return oyente;
+    }
+
+    private async Task<(SesionMinDto Duenio, SesionMinDto Otro, Guid Conv)> PrepararSesionesAsync()
+    {
+        var duenio = await Api.RegistrarSesionAsync(_fabrica, "duenaEstados");
+        var otro = await Api.RegistrarSesionAsync(_fabrica, "otroEstados");
+        var pub = await Api.CrearPublicacionAsync(Api.ConToken(_fabrica, duenio.Token));
+        var s = await (await Api.ConToken(_fabrica, otro.Token).PostAsJsonAsync("/api/v1/solicitudes", new { publicacionId = pub, mensaje = "¿Sigue disponible?" }))
+            .Content.ReadFromJsonAsync<JsonElement>();
+        return (duenio, otro, s.GetProperty("conversacionId").GetGuid());
+    }
+
+    [Fact]
+    public async Task Enviado_entregado_y_leido_llegan_al_autor_en_tiempo_real()
+    {
+        var (duenio, otro, conv) = await PrepararSesionesAsync();
+        var clienteOtro = Api.ConToken(_fabrica, otro.Token);
+        Assert.Equal(EstadoMensajeDto.Enviado, (await clienteOtro.GetFromJsonAsync<List<MensajeChatDto>>($"/api/v1/conversaciones/{conv}/mensajes"))!.Single().Estado);
+
+        await using var oyenteOtro = await ConectarAsync(otro.Token);
+        // La dueña abre la app: lo pendiente le llega al dispositivo (✓✓)
+        await using var oyenteDuenio = await ConectarAsync(duenio.Token);
+        var entregado = await oyenteOtro.EsperarAsync("estadoMensajes", d => d.GetProperty("conversacionId").GetGuid() == conv);
+        Assert.NotEqual(JsonValueKind.Null, entregado.GetProperty("entregadosHastaUtc").ValueKind);
+        Assert.Equal(EstadoMensajeDto.Entregado, (await clienteOtro.GetFromJsonAsync<List<MensajeChatDto>>($"/api/v1/conversaciones/{conv}/mensajes"))!.Single().Estado);
+
+        // …y lo lee
+        (await Api.ConToken(_fabrica, duenio.Token).PostAsync($"/api/v1/conversaciones/{conv}/leer", null)).EnsureSuccessStatusCode();
+        await oyenteOtro.EsperarAsync("estadoMensajes", d => d.GetProperty("leidosHastaUtc").ValueKind != JsonValueKind.Null);
+        var final = (await clienteOtro.GetFromJsonAsync<List<MensajeChatDto>>($"/api/v1/conversaciones/{conv}/mensajes"))!.Single();
+        Assert.Equal(EstadoMensajeDto.Leido, final.Estado);
+        Assert.True(final.Leido);
+    }
+
+    [Fact]
+    public async Task Escribiendo_solo_llega_a_la_contraparte_y_un_intruso_no_puede_simularlo()
+    {
+        var (duenio, otro, conv) = await PrepararSesionesAsync();
+        await using var oyenteOtro = await ConectarAsync(otro.Token);
+        await using var oyenteDuenio = await ConectarAsync(duenio.Token);
+
+        var intruso = await Api.RegistrarSesionAsync(_fabrica, "intrusoEscribe");
+        await using var oyenteIntruso = await ConectarAsync(intruso.Token);
+        await oyenteIntruso.Conexion.InvokeAsync("Escribiendo", conv);
+
+        await oyenteDuenio.Conexion.InvokeAsync("Escribiendo", conv);
+        var e = await oyenteOtro.EsperarAsync("escribiendo");
+        Assert.Equal(conv, e.GetProperty("conversacionId").GetGuid());
+        await Task.Delay(300);
+        Assert.Single(oyenteOtro.Eventos, x => x.Evento == "escribiendo");          // el del intruso no llegó
+        Assert.DoesNotContain(oyenteDuenio.Eventos, x => x.Evento == "escribiendo"); // ni rebota a quien escribe
+    }
+
+    [Fact]
+    public async Task En_linea_se_avisa_solo_a_quienes_comparten_conversacion()
+    {
+        var (duenio, otro, conv) = await PrepararSesionesAsync();
+        var clienteOtro = Api.ConToken(_fabrica, otro.Token);
+        Assert.False((await clienteOtro.GetFromJsonAsync<JsonElement>("/api/v1/conversaciones")).EnumerateArray()
+            .Single(c => c.GetProperty("id").GetGuid() == conv).GetProperty("contraparteEnLinea").GetBoolean());
+
+        await using var oyenteOtro = await ConectarAsync(otro.Token);
+        var ajeno = await Api.RegistrarSesionAsync(_fabrica, "ajenoPresencia");
+        await using var oyenteAjeno = await ConectarAsync(ajeno.Token);
+
+        var oyenteDuenio = await ConectarAsync(duenio.Token);
+        var p = await oyenteOtro.EsperarAsync("presencia", d => d.GetProperty("usuarioId").GetGuid() == duenio.Usuario.Id);
+        Assert.True(p.GetProperty("enLinea").GetBoolean());
+        Assert.True((await clienteOtro.GetFromJsonAsync<JsonElement>("/api/v1/conversaciones")).EnumerateArray()
+            .Single(c => c.GetProperty("id").GetGuid() == conv).GetProperty("contraparteEnLinea").GetBoolean());
+
+        await oyenteDuenio.DisposeAsync();
+        await oyenteOtro.EsperarAsync("presencia", d => d.GetProperty("usuarioId").GetGuid() == duenio.Usuario.Id && !d.GetProperty("enLinea").GetBoolean());
+        Assert.DoesNotContain(oyenteAjeno.Eventos, x => x.Evento == "presencia");
+    }
+
     [Theory]
     [InlineData("")]
     [InlineData(null)]
