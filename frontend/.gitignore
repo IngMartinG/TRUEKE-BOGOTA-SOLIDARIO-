@@ -20,13 +20,8 @@ yarn-error.log
 .settings/
 *.sublime-workspace
 
-# Visual Studio Code
-.vscode/*
-!.vscode/settings.json
-!.vscode/tasks.json
-!.vscode/launch.json
-!.vscode/extensions.json
-!.vscode/mcp.json
+# Visual Studio Code (configuración personal; la regla de la raíz también la ignora)
+.vscode/
 .history/*
 
 # Miscellaneous

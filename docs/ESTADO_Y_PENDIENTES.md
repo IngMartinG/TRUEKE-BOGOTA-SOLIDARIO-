@@ -67,9 +67,15 @@
 - **Bloquear usuarios**, **preferencias de avisos por correo** y **Centro de ayuda**.
 - Migraciones `ChatEstadosYPresencia`, `FotoPerfil`, `BloqueosYPreferenciasAvisos`. 234 pruebas en verde (incluye SQL Server real); front: 15 pruebas y build de producción.
 
+## Hecho el 2026-10-04 (tercera tanda)
+- **Logo oficial** en la app, favicon e íconos.
+- **Repositorio ordenado:** C4 reescrito con la arquitectura real, lo académico archivado en `docs/historico/`, script de migraciones al día, READMEs actualizados.
+
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
-- **Instalar Docker en local:** activar la virtualización en la BIOS, `wsl --install` y Docker Desktop (para correr también las pruebas de SQL Server en tu PC).
-- **Llaves externas:** Wompi, Google Client ID, reCAPTCHA, SMTP y Azure (SQL, Redis, Storage, App Service, Key Vault, Application Insights). Ver la sección 7.1 del README: dónde se obtiene cada una.
+- **Dependabot:** `gh auth login` y cerrar los PR de .NET 10, EF Core 9, TypeScript 7 y Node 26 (los demás, fusionar si el CI pasa).
+- **Ya listo en local:** Docker, Google (inicio de sesión) y correo Gmail.
+- **Llaves externas pendientes:** reCAPTCHA v3, Wompi y, para producción, Azure (SQL, Redis, Storage, App Service, Key Vault, Application Insights), un correo transaccional y el dominio. Ver la sección 7.1 de `backend/README.md`: dónde se obtiene cada una.
+- **Logo en alta resolución** (1024 px o SVG) para el ícono grande del celular.
 - **Contador / abogado:** confirmar el régimen de IVA (`Facturacion:ResponsableIva`), el tratamiento tributario de las recargas de Eco-Puntos, la resolución de facturación de la DIAN y el texto final de términos y política de datos.
 - **Cuando haya contratos:** cobro recurrente con fuentes de pago de Wompi y emisión automática con la API de un proveedor de factura electrónica.

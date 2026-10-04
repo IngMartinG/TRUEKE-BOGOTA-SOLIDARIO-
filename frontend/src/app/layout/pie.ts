@@ -36,7 +36,7 @@ import { Logo } from '../shared/ui/logo';
       <div class="border-t border-white/10">
         <!-- pb-24: espacio para la barra inferior de celular y tablet -->
         <div class="contenedor flex flex-col gap-2 py-6 pb-24 text-xs text-bosque-200/60 sm:flex-row sm:justify-between lg:pb-6">
-          <p>© {{ anio }} Trueke Bogotá Solidario · Proyecto académico CUN</p>
+          <p>© {{ anio }} Trueke Bogotá Solidario · Hecho en Colombia</p>
           <p>Tus datos se tratan conforme a la Ley 1581 de 2012.</p>
         </div>
       </div>

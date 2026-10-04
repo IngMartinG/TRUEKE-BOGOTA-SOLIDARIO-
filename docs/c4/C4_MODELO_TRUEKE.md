@@ -1,201 +1,215 @@
-# Modelado C4 — Trueke Bogotá Solidario
+# Modelo C4 — Trueke Bogotá Solidario
 
-Laboratorio ACA aplicado al proyecto de cátedra "Trueke Bogotá Solidario".
+Fuente de verdad de la arquitectura. Los diagramas están en Mermaid (GitHub los dibuja solos; también se pueden abrir en [mermaid.live](https://mermaid.live)).
+Si cambia la arquitectura, se actualiza este archivo en el mismo Pull Request.
+
+> El modelo de la etapa académica (React/Node) quedó archivado en `docs/historico/c4-etapa-academica/`.
 
 ---
 
 ## Nivel 1 — Contexto
 
-Arquetipos de usuario: **Usuario Ciudadano** y **Administrador/Moderador**.
-Sistemas externos: **Wompi** (pasarela de pagos) y **Google OAuth** (autenticación), más un servicio de **Email** para notificaciones.
-
 ```mermaid
 flowchart TB
-    U1(["👤 Usuario Ciudadano<br/>Publica, busca e<br/>intercambia bienes"]):::persona
-    U2(["🛡️ Administrador / Moderador<br/>Gestiona usuarios y<br/>modera publicaciones"]):::persona
+    U1(["👤 Persona usuaria<br/>Publica, intercambia, compra,<br/>dona y chatea"]):::persona
+    U2(["🛡️ Moderación<br/>Administrador · SuperUsuario<br/>(sesión con 2FA)"]):::persona
 
-    SYS["🔄 Trueke Bogotá Solidario<br/>Plataforma web de intercambio<br/>solidario de bienes y servicios"]:::system
+    SYS["🔄 Trueke Bogotá Solidario<br/>Plataforma de economía circular<br/>(Trueke · Compra · Donación · Eco-Puntos)"]:::system
 
-    EXT1["💳 Wompi<br/>Pasarela de pagos<br/>(planes premium / donaciones)"]:::external
-    EXT2["🔐 Google OAuth<br/>Autenticación de usuarios"]:::external
-    EXT3["✉️ Servicio de Email<br/>Notificaciones de<br/>solicitudes y mensajes"]:::external
+    WOMPI["💳 Wompi<br/>Pagos hacia la plataforma"]:::externo
+    GOOGLE["🔐 Google<br/>Inicio de sesión (OIDC)<br/>y reCAPTCHA v3"]:::externo
+    SMTP["✉️ Correo SMTP<br/>Verificación, avisos, PQR"]:::externo
+    DIAN["🧾 Facturación electrónica<br/>(registro manual del CUFE hoy)"]:::externo
 
-    U1 -->|"Publica productos,<br/>busca, chatea"| SYS
-    U2 -->|"Modera contenido,<br/>gestiona reportes"| SYS
-    SYS -->|"Procesa pagos"| EXT1
-    SYS -->|"Valida identidad"| EXT2
-    SYS -->|"Envía notificaciones"| EXT3
+    U1 -->|"HTTPS"| SYS
+    U2 -->|"HTTPS"| SYS
+    SYS -->|"Crea pagos · recibe webhook firmado"| WOMPI
+    SYS -->|"Valida ID token y captcha"| GOOGLE
+    SYS -->|"Envía correos"| SMTP
+    SYS -.->|"Factura de cada pago aprobado"| DIAN
 
-    classDef persona fill:#1e3a8a,color:#ffffff,stroke:#3b82f6,stroke-width:1px,font-weight:bold;
-    classDef system fill:#d97706,color:#ffffff,stroke:#f59e0b,stroke-width:2px,font-weight:bold;
-    classDef external fill:#0f172a,color:#7dd3fc,stroke:#38bdf8,stroke-width:1px;
+    classDef persona fill:#1e3a8a,color:#fff,stroke:#3b82f6;
+    classDef system fill:#1f7a4d,color:#fff,stroke:#7bcfa3,stroke-width:2px;
+    classDef externo fill:#1e293b,color:#cbd5e1,stroke:#64748b;
 ```
 
 ---
 
 ## Nivel 2 — Contenedores
 
-Componentes ejecutables del sistema: Front-end, Back-end, Base de Datos y almacenamiento Cloud.
-
 ```mermaid
 flowchart TB
-    U1(["👤 Usuario Ciudadano"]):::persona
+    U(["👤 Navegador o celular"]):::persona
 
-    subgraph SYS["Trueke Bogotá Solidario"]
+    subgraph SYS["Trueke Bogotá Solidario (Azure)"]
         direction TB
-        FE["🖥️ Front-end<br/>React (SPA)<br/>Hosting: Vercel"]:::container
-        BE["⚙️ Back-end API<br/>Node.js / Express<br/>Hosting: Railway"]:::container
-        DB[("🗄️ Base de Datos<br/>SQL Server (Azure SQL)<br/>usuarios, productos,<br/>chats, mensajes, solicitudes")]:::database
-        STORAGE["☁️ Almacenamiento Cloud<br/>Azure Blob Storage<br/>(imágenes de publicaciones)"]:::container
+        FE["🖥️ Front-end<br/>Angular 22 (signals, Tailwind)<br/>nginx sin root · CSP"]:::contenedor
+        API["⚙️ API<br/>ASP.NET Core 8 (C#)<br/>REST /api/v1 + SignalR /hubs/notificaciones"]:::contenedor
+        DB[("🗄️ SQL Server / Azure SQL<br/>EF Core 8 · migraciones")]:::datos
+        REDIS[("⚡ Redis<br/>backplane SignalR · presencia<br/>límite de peticiones")]:::datos
+        BLOB["☁️ Azure Blob Storage<br/>imagenes (público) · documentos (privado)<br/>subida directa con SAS"]:::contenedor
     end
 
-    EXT1["💳 Wompi"]:::external
-    EXT2["🔐 Google OAuth"]:::external
-    EXT3["✉️ Servicio de Email"]:::external
+    WOMPI["💳 Wompi"]:::externo
+    GOOGLE["🔐 Google"]:::externo
+    SMTP["✉️ SMTP"]:::externo
 
-    U1 -->|"HTTPS"| FE
-    FE -->|"REST API<br/>(JSON / JWT)"| BE
-    BE -->|"SQL"| DB
-    BE -->|"Sube/lee archivos"| STORAGE
-    BE -->|"API"| EXT1
-    BE -->|"OAuth 2.0"| EXT2
-    BE -->|"SMTP / API"| EXT3
+    U -->|"HTTPS"| FE
+    U -->|"PUT de fotos con URL firmada"| BLOB
+    FE -->|"REST JSON + JWT · WebSocket"| API
+    API --> DB
+    API --> REDIS
+    API -->|"Valida y limpia (sin GPS/EXIF)"| BLOB
+    API --> WOMPI
+    API --> GOOGLE
+    API --> SMTP
 
-    classDef persona fill:#1e3a8a,color:#ffffff,stroke:#3b82f6,stroke-width:1px,font-weight:bold;
-    classDef container fill:#0f172a,color:#7dd3fc,stroke:#38bdf8,stroke-width:1px;
-    classDef database fill:#0f172a,color:#6ee7b7,stroke:#34d399,stroke-width:1px;
-    classDef external fill:#1e293b,color:#cbd5e1,stroke:#64748b,stroke-width:1px;
+    classDef persona fill:#1e3a8a,color:#fff,stroke:#3b82f6;
+    classDef contenedor fill:#0f172a,color:#7dd3fc,stroke:#38bdf8;
+    classDef datos fill:#0f172a,color:#6ee7b7,stroke:#34d399;
+    classDef externo fill:#1e293b,color:#cbd5e1,stroke:#64748b;
 ```
+
+**Seguridad entre contenedores:** el token de acceso (JWT, 15 min) vive en memoria del navegador; la renovación usa una cookie HttpOnly
+(`Path=/api/v1/auth`, anti-CSRF). El usuario que actúa sale siempre del JWT. Los secretos llegan por variables de entorno o Key Vault.
 
 ---
 
-## Nivel 3 — Componentes (dentro del contenedor API Backend)
+## Nivel 3 — Componentes de la API (un proyecto por capa)
 
 ```mermaid
-flowchart TB
-    FE["🖥️ Front-end (React)"]:::container
+flowchart LR
+    FE["🖥️ Angular"]:::contenedor
 
-    subgraph API["⚙️ API Backend (Node.js / Express)"]
+    subgraph P["TruekeBogotaSolidario.Presentacion (Web API)"]
         direction TB
-        subgraph CTRL["Controladores"]
-            C1["AuthController"]:::component
-            C2["ListingController"]:::component
-            C3["ChatController"]:::component
-        end
-        subgraph SVC["Servicios de Dominio"]
-            S1["UserService"]:::component
-            S2["ListingService"]:::component
-            S3["TruequeService"]:::component
-        end
-        subgraph REPO["Repositorios"]
-            R1["UserRepository"]:::component
-            R2["ListingRepository"]:::component
-            R3["MessageRepository"]:::component
-        end
+        C1["Auth · Usuarios · DosFactores"]:::componente
+        C2["Publicaciones · Comentarios · Ubicaciones · Perfiles"]:::componente
+        C3["Solicitudes · Conversaciones"]:::componente
+        C4["EcoPuntos · Pagos · Facturacion · Pqr"]:::componente
+        C5["Denuncias · Administracion · Notificaciones · Archivos · Configuracion"]:::componente
+        HUB["NotificacionesHub (SignalR)"]:::componente
     end
 
-    DB[("🗄️ SQL Server (Azure SQL)")]:::database
+    subgraph N["TruekeBogotaSolidario.Negocio (servicios + DTOs)"]
+        direction TB
+        S1["AuthService · CuentaService · DosFactoresService<br/>SesionService · GeneradorJwt · EmisorSesiones"]:::componente
+        S2["PublicacionService · ComentarioService · UbicacionService<br/>FotoPerfilService · ArchivoService"]:::componente
+        S3["SolicitudService · ChatService · BloqueoService"]:::componente
+        S4["EcoPuntosService · PagoService · FacturacionService · PqrService"]:::componente
+        S5["DenunciaService · AdministracionService · NotificacionService<br/>DatosPersonalesService · ConfiguracionService"]:::componente
+        T["Transversales: INotificador · IAvisosCorreo · IPresencia<br/>IEmisorTiempoReal · IVerificadorCaptcha · IAlmacenArchivos"]:::componente
+        BG["Tareas en segundo plano: Mantenimiento · EnvioCorreos<br/>ReconciliadorPagos · VolcadoVistas"]:::componente
+    end
 
-    FE --> C1
-    FE --> C2
-    FE --> C3
+    subgraph D["TruekeBogotaSolidario.Datos"]
+        direction TB
+        R["Repositorios + IUnidadDeTrabajo"]:::componente
+        CTX["TruekeDbContext (EF Core)"]:::componente
+        E["Entidades con reglas de dominio<br/>PoliticaEcoPuntos · PasswordHasher · Divipola"]:::componente
+    end
+
+    DB[("SQL Server")]:::datos
+
+    FE --> C1 & C2 & C3 & C4 & C5
+    FE <-->|"WebSocket"| HUB
     C1 --> S1
     C2 --> S2
     C3 --> S3
-    S1 --> R1
-    S2 --> R2
-    S3 --> R3
-    R1 --> DB
-    R2 --> DB
-    R3 --> DB
+    C4 --> S4
+    C5 --> S5
+    HUB --> S3
+    S1 & S2 & S3 & S4 & S5 --> T
+    S1 & S2 & S3 & S4 & S5 --> R
+    R --> CTX --> DB
+    R --> E
 
-    classDef container fill:#1e3a8a,color:#ffffff,stroke:#3b82f6,stroke-width:1px,font-weight:bold;
-    classDef component fill:#0f172a,color:#7dd3fc,stroke:#38bdf8,stroke-width:1px;
-    classDef database fill:#0f172a,color:#6ee7b7,stroke:#34d399,stroke-width:1px;
+    classDef contenedor fill:#1e3a8a,color:#fff,stroke:#3b82f6;
+    classDef componente fill:#0f172a,color:#7dd3fc,stroke:#38bdf8;
+    classDef datos fill:#0f172a,color:#6ee7b7,stroke:#34d399;
 ```
+
+**Reglas de dependencia:** Presentacion → Negocio → Datos (Negocio referencia Datos con `PrivateAssets="compile"`).
+Un controlador nunca toca un repositorio ni el DbContext; el hub solo llama a servicios de Negocio.
 
 ---
 
-## Nivel 4 — Código (PlantUML)
+## Nivel 4 — Código (núcleo del dominio)
 
-Entidad de dominio principal: **Publicacion** (equivalente a "OfertaAgricola" del ejemplo de referencia, pero aplicada al dominio de trueke).
-
-Archivo a crear en VS Code: `Nivel4_Codigo.puml`
-
-```plantuml
-@startuml Nivel4_Codigo_TruekeBogota
-skinparam classAttributeIconSize 0
-top to bottom direction
-
-package "TruekeBogota.Domain.Entities" {
-
-    enum EstadoPublicacionEnum {
-        DISPONIBLE
-        EN_NEGOCIACION
-        INTERCAMBIADA
-        CANCELADA
-    }
-
-    class Publicacion {
-        - id: Guid
-        - titulo: string
-        - descripcion: string
-        - estado: EstadoPublicacionEnum
-        - fechaPublicacion: DateTime
-        + Publicacion(titulo: string, descripcion: string, categoria: Categoria)
-        + Publicar(): void
-        + MarcarEnNegociacion(): void
-        + ConfirmarIntercambio(): void
-        + Cancelar(motivo: string): void
-    }
-
-    class Categoria {
-        - id: int
-        - nombreCategoria: string
-        - descripcion: string
-        + ObtenerDetalles(): string
-    }
-
+```mermaid
+classDiagram
+    direction LR
     class Usuario {
-        - id: Guid
-        - nombreCompleto: string
-        - localidad: string
-        - correo: string
-        + PublicarNuevoBien(publicacion: Publicacion): void
-        + SolicitarIntercambio(publicacion: Publicacion): void
+        Guid Id
+        string Correo
+        RolUsuarioEnum Rol
+        int SaldoEcoPuntos
+        decimal Reputacion
+        string? FotoUrl
+        ActualizarPerfil()
+        CambiarFoto(url)
+        Anonimizar()
     }
-
+    class Publicacion {
+        Guid Id
+        ModoTransaccion Modo
+        CondicionProducto Condicion
+        EstadoPublicacionEnum Estado
+        string MunicipioCodigo
+        Ocultar(motivo)
+        Mostrar()
+    }
     class Solicitud {
-        - id: Guid
-        - fechaSolicitud: DateTime
-        - mensaje: string
-        - aceptada: bool
-        + Aceptar(): void
-        + Rechazar(motivo: string): void
+        EstadoSolicitud Estado
+        Aceptar()
+        ConfirmarEntrega(esDuenio)
+        MarcarNoConcretada(motivo)
     }
+    class Conversacion {
+        Guid DuenioId
+        Guid SolicitanteId
+        Contraparte(usuarioId)
+    }
+    class Mensaje {
+        string Texto
+        Guid? RespuestaAId
+        DateTime? EntregadoUtc
+        DateTime? LeidoUtc
+        MarcarEntregado()
+        MarcarLeido()
+    }
+    class Denuncia {
+        TipoObjetoDenuncia Tipo
+        EstadoDenuncia Estado
+        Guid? ResolucionId
+        Resolver(...)
+    }
+    class Apelacion {
+        EstadoApelacion Estado
+        Resolver(moderador, aceptada, nota)
+    }
+    class Pago {
+        ConceptoPago Concepto
+        EstadoPago Estado
+    }
+    class Factura
+    class Transaccion
+    class Calificacion
+    class Bloqueo
 
-    Publicacion "1" *-- "1" EstadoPublicacionEnum : posee
-    Publicacion "*" --> "1" Categoria : pertenece a
-    Usuario "1" --> "*" Publicacion : crea y gestiona
-    Usuario "1" --> "*" Solicitud : envía
-    Solicitud "*" --> "1" Publicacion : referencia
-}
-@enduml
+    Usuario "1" --> "*" Publicacion : publica
+    Usuario "1" --> "*" Solicitud : solicita
+    Solicitud "*" --> "1" Publicacion
+    Solicitud "1" --> "1" Conversacion
+    Conversacion "1" --> "*" Mensaje
+    Mensaje --> Mensaje : responde a
+    Solicitud "1" --> "0..1" Transaccion : al completarse
+    Solicitud "1" --> "*" Calificacion
+    Usuario "1" --> "*" Pago
+    Pago "1" --> "0..1" Factura
+    Denuncia "*" --> "0..1" Apelacion : por resolución
+    Usuario "1" --> "*" Bloqueo : bloquea
 ```
 
-### Pasos en VS Code
-1. Instalar la extensión **PlantUML** (autor: jebbs).
-2. Crear el archivo `Nivel4_Codigo.puml` dentro del repositorio, en una carpeta `docs/c4/`.
-3. Pegar el código de arriba.
-4. Presionar **Alt + D** para previsualizar en tiempo real.
-5. Clic derecho sobre la previsualización → **Export Current Diagram** → `.png` o `.svg`.
-6. Guardar el export dentro de `docs/c4/` junto al `.puml`.
-
----
-
-## Vinculación con Trello / Azure Boards
-
-Crear una tarjeta llamada **"Diseño de Arquitectura C4 - Hito ACA"** con:
-- Enlace a este archivo en GitHub (una vez subido).
-- Capturas de pantalla de los diagramas de Nivel 1, 2 y 3 (renderízalos en [mermaid.live](https://mermaid.live) y exporta como PNG).
-- Captura del diagrama de Nivel 4 exportado desde VS Code.
+Las reglas de negocio viven en las entidades (validaciones en constructores y métodos) y en los servicios de Negocio;
+los Eco-Puntos se calculan en `Datos/Common/PoliticaEcoPuntos.cs` y se exponen en vivo en `GET /api/v1/eco-puntos/politica`.
