@@ -1,3 +1,18 @@
+/** Emulador de Azure Blob (Azurite) en el equipo de desarrollo. */
+const EMULADOR_BLOB = /^https?:\/\/(?:127\.0\.0\.1|localhost):10000\//i;
+
+/**
+ * En desarrollo las fotos viven en Azurite (`http://127.0.0.1:10000/...`), que solo existe en el equipo del desarrollador.
+ * Se reescriben a una ruta del mismo sitio (`/devstoreaccount1/...`) que el servidor de Angular reenvía al emulador
+ * (proxy.conf.json): así se ven también desde otros equipos (túnel de VS Code, celular) y sin contenido mixto http/https.
+ * Las URLs reales de Azure Blob no se tocan.
+ */
+export function urlPublica(url: string): string;
+export function urlPublica(url: string | null | undefined): string | null | undefined;
+export function urlPublica(url: string | null | undefined): string | null | undefined {
+  return url ? url.replace(EMULADOR_BLOB, '/') : url;
+}
+
 /**
  * Reduce fotos grandes (las de celular suelen pesar 4-10 MB) antes de subirlas:
  * lado mayor ≤ 1600 px y recompresión a WebP (o JPEG si el navegador no la soporta).
