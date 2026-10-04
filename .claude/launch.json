@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "api",
+      "runtimeExecutable": "dotnet",
+      "runtimeArgs": ["run", "--project", "backend/TruekeBogotaSolidario.Presentacion", "--launch-profile", "SqlServerLocal"],
+      "port": 5180
+    },
+    {
+      "name": "front",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "frontend", "start"],
+      "port": 4200
+    }
+  ]
+}
