@@ -12,15 +12,17 @@ import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Estrellas } from '../../shared/ui/estrellas';
 import { Modal } from '../../shared/ui/modal';
 import { TarjetaSolicitud, type AccionSolicitud } from './tarjeta-solicitud';
+import { Volver } from '../../shared/ui/volver';
 
 type Pestana = 'recibidas' | 'enviadas';
 const TIPOS_SOLICITUD = /^(Solicitud|Entrega|Intercambio|Calificacion)/;
 
 @Component({
-  imports: [FormsModule, RouterLink, TarjetaSolicitud, EstadoVacio, Modal, Estrellas],
+  imports: [Volver, FormsModule, RouterLink, TarjetaSolicitud, EstadoVacio, Modal, Estrellas],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor max-w-4xl py-8 sm:py-10">
+      <app-volver respaldo="/" class="mb-1" />
       <h1 class="text-3xl font-extrabold">Mis intercambios</h1>
       <p class="mt-1 text-tenue">Responde solicitudes, coordina entregas y califica a tu comunidad.</p>
 

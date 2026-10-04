@@ -27,8 +27,8 @@ const TAMANO = 20;
         <h2 class="text-xl font-bold">Facturas electrónicas</h2>
         <p class="text-sm text-tenue">Emite cada factura pendiente en tu sistema de facturación (DIAN o proveedor) y registra su número y CUFE.</p>
       </div>
-      <div class="flex gap-2">
-        <select class="entrada w-44" [ngModel]="estado()" (ngModelChange)="estado.set($event); pagina.set(1)" aria-label="Filtrar por estado">
+      <div class="flex w-full flex-wrap gap-2 sm:w-auto">
+        <select class="entrada w-full sm:w-44" [ngModel]="estado()" (ngModelChange)="estado.set($event); pagina.set(1)" aria-label="Filtrar por estado">
           <option value="Pendiente">Pendientes</option>
           <option value="Emitida">Emitidas</option>
           <option value="Anulada">Anuladas</option>

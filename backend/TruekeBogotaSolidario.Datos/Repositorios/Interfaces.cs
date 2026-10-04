@@ -225,14 +225,32 @@ public interface IConversacionRepository
     Task<IReadOnlyDictionary<Guid, Mensaje>> UltimosMensajesAsync(IReadOnlyCollection<Guid> conversacionIds);
     /// <summary>Más recientes primero, anteriores a <paramref name="antesDeUtc"/> si se indica.</summary>
     Task<IReadOnlyList<Mensaje>> ListarMensajesAsync(Guid conversacionId, DateTime? antesDeUtc, int tamano);
-    /// <summary>Marca (sin guardar) como leídos los mensajes que recibió <paramref name="lectorId"/>.</summary>
-    Task MarcarLeidosAsync(Guid conversacionId, Guid lectorId, DateTime ahoraUtc);
+    /// <summary>Marca (sin guardar) como leídos los mensajes que recibió <paramref name="lectorId"/>. Devuelve la fecha del más reciente marcado.</summary>
+    Task<DateTime?> MarcarLeidosAsync(Guid conversacionId, Guid lectorId, DateTime ahoraUtc);
+    /// <summary>
+    /// Marca (sin guardar) como entregados los mensajes que recibió <paramref name="receptorId"/> (de una conversación o de todas las suyas).
+    /// Devuelve, por conversación, el autor y la fecha del mensaje más reciente marcado.
+    /// </summary>
+    Task<IReadOnlyList<(Guid ConversacionId, Guid AutorId, DateTime HastaUtc)>> MarcarEntregadosAsync(Guid receptorId, Guid? conversacionId, DateTime ahoraUtc);
     /// <summary>Incluye la Conversacion.</summary>
     Task<Mensaje?> ObtenerMensajeAsync(Guid id);
     Task<int> ContarMensajesDelAutorDesdeAsync(Guid autorId, DateTime desdeUtc);
     Task<IReadOnlyList<Mensaje>> ListarMensajesDelAutorAsync(Guid autorId, int maximo);
     void Agregar(Conversacion conversacion);
     void AgregarMensaje(Mensaje mensaje);
+}
+
+public interface IBloqueoRepository
+{
+    Task<Bloqueo?> ObtenerAsync(Guid bloqueadorId, Guid bloqueadoId);
+    /// <summary>true si cualquiera de los dos bloqueó al otro.</summary>
+    Task<bool> ExisteEntreAsync(Guid a, Guid b);
+    /// <summary>Personas con las que el usuario tiene un bloqueo en cualquier dirección.</summary>
+    Task<IReadOnlySet<Guid>> RelacionadosAsync(Guid usuarioId);
+    /// <summary>A quiénes bloqueó el usuario (incluye al bloqueado), más recientes primero.</summary>
+    Task<IReadOnlyList<Bloqueo>> ListarDeAsync(Guid bloqueadorId);
+    void Agregar(Bloqueo bloqueo);
+    void Quitar(Bloqueo bloqueo);
 }
 
 public interface IDenunciaRepository

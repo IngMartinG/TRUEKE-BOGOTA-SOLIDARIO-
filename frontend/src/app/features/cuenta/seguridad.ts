@@ -33,7 +33,7 @@ type Paso2fa = 'inicio' | 'escanear' | 'codigos';
       @if (tieneClave()) {
         <app-campo-clave [control]="formClave.controls.claveActual" etiqueta="Contraseña actual" idCampo="clave-actual" />
       }
-      <div class="grid gap-5 sm:grid-cols-2">
+      <div class="grid grid-cols-1 gap-5 sm:grid-cols-2">
         <app-campo-clave [control]="formClave.controls.claveNueva" etiqueta="Nueva contraseña" idCampo="clave-nueva" autocompletar="new-password" [mostrarRequisitos]="true" />
         <app-campo-clave [control]="formClave.controls.confirmacion" etiqueta="Repite la nueva" idCampo="clave-confirmacion" autocompletar="new-password" />
       </div>
@@ -68,7 +68,7 @@ type Paso2fa = 'inicio' | 'escanear' | 'codigos';
       </div>
 
       @if (paso2fa() === 'escanear') {
-        <div class="mt-6 grid gap-6 border-t border-borde pt-6 sm:grid-cols-[auto_1fr]">
+        <div class="mt-6 grid grid-cols-1 gap-6 border-t border-borde pt-6 sm:grid-cols-[auto_1fr]">
           <div class="mx-auto rounded-2xl bg-white p-3 shadow-suave">
             @if (qr()) {
               <img [src]="qr()" alt="Código QR para tu app autenticadora" width="200" height="200" />

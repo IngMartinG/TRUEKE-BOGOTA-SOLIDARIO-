@@ -36,7 +36,7 @@ interface Servicio {
       <svg class="absolute -top-20 -right-20 size-96 text-white/20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width=".8" aria-hidden="true">
         <circle cx="8" cy="8" r="6" /><path d="M18.09 10.37A6 6 0 1 1 10.34 18" /><path d="M7 6h1v4" />
       </svg>
-      <div class="contenedor relative grid gap-8 py-12 lg:grid-cols-[1.2fr_1fr] lg:items-center">
+      <div class="contenedor relative grid grid-cols-1 gap-8 py-12 lg:grid-cols-[1.2fr_1fr] lg:items-center">
         <div>
           <p class="insignia bg-bosque-950/10 text-bosque-950"><app-icono nombre="destello" [tamano]="12" />Moneda de la comunidad</p>
           <h1 class="mt-4 text-4xl font-extrabold text-bosque-950 sm:text-5xl">Eco-Puntos</h1>
@@ -98,7 +98,7 @@ interface Servicio {
 
     <!-- Usar puntos: impulsar -->
     <section class="contenedor mt-14" aria-labelledby="titulo-impulsar">
-      <div class="tarjeta grid gap-6 p-6 sm:p-8 md:grid-cols-[auto_1fr] md:items-center">
+      <div class="tarjeta grid grid-cols-1 gap-6 p-6 sm:p-8 md:grid-cols-[auto_1fr] md:items-center">
         <span class="grid size-16 place-items-center rounded-2xl bg-sol-100 text-sol-600 dark:bg-sol-500/15"><app-icono nombre="cohete" [tamano]="32" /></span>
         <div>
           <h2 id="titulo-impulsar" class="titulo-seccion">Impulsa tus publicaciones con puntos</h2>
@@ -118,7 +118,7 @@ interface Servicio {
         Mientras más Eco-Puntos tengas, mayor es tu descuento. Publicar, intercambiar y donar es gratis: el plan Individual permite
         {{ politica()?.maxPublicacionesIndividual ?? 50 }} publicaciones activas.
       </p>
-      <div class="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         @for (s of servicios(); track s.concepto) {
           <article class="tarjeta relative flex flex-col p-6" [class.ring-2]="s.destacado" [class.ring-sol-400]="s.destacado">
             @if (s.destacado) {
@@ -140,8 +140,9 @@ interface Servicio {
         }
       </div>
       <p class="mt-4 text-xs text-tenue">
-        Precios en pesos colombianos{{ politica()?.preciosIncluyenIva ? ', IVA (' + politica()?.ivaPorcentaje + ' %) incluido' : '' }}. Cada pago genera factura electrónica
-        (agrega tus datos en <a routerLink="/cuenta/facturacion" class="enlace">Facturación</a>). Los planes no se renuevan solos: te avisamos
+        Precios en pesos colombianos{{ politica()?.preciosIncluyenIva ? ', IVA (' + politica()?.ivaPorcentaje + ' %) incluido' : '' }}. Cada pago genera factura electrónica a
+        "consumidor final"; si la quieres a tu nombre o al de tu empresa,
+        <a routerLink="/cuenta/facturacion" [queryParams]="{ datos: 1 }" class="enlace">agrega tu cédula o NIT</a>. Los planes no se renuevan solos: te avisamos
         3 días antes de que venzan y, si renuevas antes, los días se suman. Tienes derecho de retracto dentro de los 5 días hábiles siguientes a la compra
         (<a routerLink="/cuenta/soporte" [queryParams]="{ tipo: 'Retracto' }" class="enlace">solicitarlo</a>).
       </p>
@@ -149,7 +150,7 @@ interface Servicio {
 
     <!-- Recargar -->
     <section class="contenedor mt-16" aria-labelledby="titulo-recarga">
-      <div class="tarjeta grid gap-6 p-6 sm:p-8 lg:grid-cols-2 lg:items-center">
+      <div class="tarjeta grid grid-cols-1 gap-6 p-6 sm:p-8 lg:grid-cols-2 lg:items-center">
         <div>
           <h2 id="titulo-recarga" class="titulo-seccion">Recarga Eco-Puntos</h2>
           <p class="mt-2 text-tenue">

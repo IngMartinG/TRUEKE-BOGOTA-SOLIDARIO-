@@ -22,6 +22,7 @@ public class TruekeDbContext : DbContext
     public DbSet<Mensaje> Mensajes => Set<Mensaje>();
     public DbSet<Denuncia> Denuncias => Set<Denuncia>();
     public DbSet<Apelacion> Apelaciones => Set<Apelacion>();
+    public DbSet<Bloqueo> Bloqueos => Set<Bloqueo>();
     public DbSet<Favorito> Favoritos => Set<Favorito>();
     public DbSet<Calificacion> Calificaciones => Set<Calificacion>();
     public DbSet<Factura> Facturas => Set<Factura>();
@@ -46,6 +47,7 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.TipoCuenta).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.EstadoVerificacion).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.DocumentoVerificacionUrl).HasMaxLength(500);
+            e.Property(x => x.FotoUrl).HasMaxLength(500);
             e.Property(x => x.MotivoRechazoVerificacion).HasMaxLength(300);
             e.HasIndex(x => x.Correo).IsUnique();
             e.HasIndex(x => x.EstadoVerificacion);
@@ -216,6 +218,7 @@ public class TruekeDbContext : DbContext
             e.HasOne(x => x.RespuestaA).WithMany().HasForeignKey(x => x.RespuestaAId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.ConversacionId, x.FechaUtc });
             e.HasIndex(x => new { x.ConversacionId, x.AutorId, x.LeidoUtc });
+            e.HasIndex(x => new { x.ConversacionId, x.AutorId, x.EntregadoUtc });
             e.HasIndex(x => new { x.AutorId, x.FechaUtc });
         });
 
@@ -236,6 +239,14 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => new { x.DenunciadoId, x.Estado });
             e.HasIndex(x => x.ResolucionId);
             if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+        });
+
+        mb.Entity<Bloqueo>(e =>
+        {
+            e.HasKey(x => new { x.BloqueadorId, x.BloqueadoId });
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.BloqueadorId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.Bloqueado).WithMany().HasForeignKey(x => x.BloqueadoId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.BloqueadoId);
         });
 
         mb.Entity<Apelacion>(e =>

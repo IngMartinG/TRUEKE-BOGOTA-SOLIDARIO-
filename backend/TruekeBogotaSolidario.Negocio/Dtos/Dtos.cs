@@ -380,7 +380,7 @@ public sealed record UsuarioDto(Guid Id, string NombreCompleto, string Localidad
     DateTime? PlanVigenteHasta, bool Verificado, string EstadoVerificacion, int SaldoEcoPuntos, decimal Reputacion,
     int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas, int DestacadosGratisRestantes,
     bool CorreoVerificado, bool TieneClave, bool VinculadoGoogle, bool DosFactoresActivo, int CodigosRecuperacionRestantes,
-    string MunicipioCodigo, string Municipio, string? NombreComercial, string? Nit, bool TieneDatosFacturacion);
+    string MunicipioCodigo, string Municipio, string? NombreComercial, string? Nit, bool TieneDatosFacturacion, string? FotoUrl = null);
 
 public sealed record SesionDto(string Token, DateTime ExpiraUtc, UsuarioDto Usuario);
 
@@ -414,11 +414,32 @@ public sealed record ResultadoAutenticacion(SesionDto Sesion, string TokenRefres
 /// </summary>
 /// <summary>Municipio = "Medellín, Antioquia". NombreComercial solo para cuentas con plan Empresa vigente.</summary>
 public sealed record PerfilPublicoDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
-    decimal? CalificacionPromedio, int TotalCalificaciones, string Municipio, string? NombreComercial);
+    decimal? CalificacionPromedio, int TotalCalificaciones, string Municipio, string? NombreComercial, string? FotoUrl = null);
 
 public sealed record PerfilUsuarioDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
     DateTime MiembroDesde, int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas,
-    decimal? CalificacionPromedio, int TotalCalificaciones, int PublicacionesActivas, string Municipio, string? NombreComercial);
+    decimal? CalificacionPromedio, int TotalCalificaciones, int PublicacionesActivas, string Municipio, string? NombreComercial,
+    string? FotoUrl = null);
+
+/// <summary>Persona que bloqueaste (solo datos públicos).</summary>
+public sealed record BloqueadoDto(PerfilPublicoDto Perfil, DateTime FechaUtc);
+
+/// <summary>Avisos por correo opcionales. Los de seguridad, pagos, PQR y moderación siempre se envían.</summary>
+public sealed record PreferenciasAvisosDto(bool Intercambios, bool Mensajes, bool Planes, bool Novedades);
+
+public sealed class ActualizarPreferenciasAvisosRequest
+{
+    public bool Intercambios { get; init; }
+    public bool Mensajes { get; init; }
+    public bool Planes { get; init; }
+    public bool Novedades { get; init; }
+}
+
+public sealed class CambiarFotoRequest
+{
+    /// <summary>urlArchivo devuelto por POST /archivos/subidas (tipo Imagen), ya subido con PUT.</summary>
+    [Required, StringLength(500)] public string Url { get; init; } = "";
+}
 
 public sealed record CategoriaDto(int Id, string Nombre, string Descripcion);
 
@@ -455,14 +476,19 @@ public sealed record ComentarioDto(Guid Id, Guid PublicacionId, PerfilPublicoDto
 
 /// <summary>Mensaje de chat. EsMio es relativo a quien lo recibe. Si fue ocultado por moderación, Texto trae un aviso.</summary>
 public sealed record MensajeChatDto(Guid Id, Guid ConversacionId, bool EsMio, string Texto, DateTime FechaUtc, bool Leido, bool Oculto,
-    MensajeCitadoDto? RespuestaA = null);
+    MensajeCitadoDto? RespuestaA = null, EstadoMensajeDto Estado = EstadoMensajeDto.Enviado);
+
+/// <summary>✓ enviado · ✓✓ entregado (llegó al dispositivo) · ✓✓ de color leído.</summary>
+[System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<EstadoMensajeDto>))]
+public enum EstadoMensajeDto { Enviado = 1, Entregado = 2, Leido = 3 }
 
 /// <summary>Vista previa del mensaje al que se responde (texto recortado; si está oculto, trae el aviso).</summary>
 public sealed record MensajeCitadoDto(Guid Id, bool EsMio, string Texto, bool Oculto);
 
 /// <summary>Resumen de una conversación para la bandeja de chats.</summary>
 public sealed record ConversacionDto(Guid Id, Guid SolicitudId, Guid PublicacionId, string PublicacionTitulo, string EstadoSolicitud,
-    bool SoyDuenio, PerfilPublicoDto Contraparte, string? UltimoMensaje, DateTime UltimoMensajeUtc, int NoLeidos, bool Escribible);
+    bool SoyDuenio, PerfilPublicoDto Contraparte, string? UltimoMensaje, DateTime UltimoMensajeUtc, int NoLeidos, bool Escribible,
+    bool ContraparteEnLinea = false, bool YoBloquee = false);
 
 /// <summary>
 /// Autorización de subida directa a Azure Blob: el navegador hace PUT del archivo a <see cref="UrlSubida"/> con
@@ -513,7 +539,7 @@ public sealed record DatosPersonalesDto(DateTime GeneradoUtc, UsuarioDto Perfil,
     IReadOnlyList<NotificacionDto> Notificaciones, IReadOnlyList<DenunciaExportDto> DenunciasRealizadas,
     IReadOnlyList<CalificacionExportDto> CalificacionesRealizadas, IReadOnlyList<Guid> Favoritos,
     DatosFacturacionDto DatosFacturacion, IReadOnlyList<FacturaDto> Facturas, IReadOnlyList<PqrDto> Pqrs,
-    IReadOnlyList<ApelacionDto> Apelaciones);
+    IReadOnlyList<ApelacionDto> Apelaciones, PreferenciasAvisosDto? PreferenciasAvisos = null, IReadOnlyList<BloqueadoDto>? Bloqueados = null);
 
 public sealed record CalificacionExportDto(Guid Id, Guid SolicitudId, int Estrellas, string? Comentario, DateTime FechaUtc);
 

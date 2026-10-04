@@ -12,7 +12,9 @@ describe('authInterceptor', () => {
   let control: HttpTestingController;
   let sesion: SesionService;
   const api = apiBase();
-  const sesionValida = (token: string) => ({ token, expiraUtc: new Date(Date.now() + 900_000).toISOString(), usuario: { id: 'u1' } });
+  /** El refresco es asíncrono (candado entre pestañas): deja correr las promesas pendientes. */
+  const tick = () => new Promise((r) => setTimeout(r, 5));
+  const sesionValida =(token: string) => ({ token, expiraUtc: new Date(Date.now() + 900_000).toISOString(), usuario: { id: 'u1' } });
 
   beforeEach(() => {
     TestBed.configureTestingModule({
@@ -55,7 +57,9 @@ describe('authInterceptor', () => {
     control.expectOne(`${api}/solicitudes/recibidas`).flush(null, { status: 401, statusText: 'No autorizado' });
 
     // Las dos peticiones fallidas comparten un único refresco (el backend detecta reuso de la cookie).
+    await tick();
     control.expectOne(`${api}/auth/refrescar`).flush(sesionValida('nuevo'));
+    await tick();
 
     const reintentoA = control.expectOne(`${api}/solicitudes/enviadas`);
     const reintentoB = control.expectOne(`${api}/solicitudes/recibidas`);
@@ -78,10 +82,40 @@ describe('authInterceptor', () => {
     control.expectNone(`${api}/auth/refrescar`);
   });
 
-  it('si el refresco falla, cierra la sesión local', async () => {
+  it('un corte de red o un 409 al refrescar NO cierra la sesión: reintenta', async () => {
+    sesion.esperaReintentoMs = 0;
     sesion.establecer(sesionValida('viejo'));
     const p = firstValueFrom(http.get(`${api}/usuarios/yo`));
     control.expectOne(`${api}/usuarios/yo`).flush(null, { status: 401, statusText: 'No autorizado' });
+    await tick();
+    control.expectOne(`${api}/auth/refrescar`).error(new ProgressEvent('error'));                       // sin red
+    await tick();
+    control.expectOne(`${api}/auth/refrescar`).flush(null, { status: 409, statusText: 'Conflicto' });  // otra pestaña renovó
+    await tick();
+    control.expectOne(`${api}/auth/refrescar`).flush(sesionValida('nuevo'));
+    await tick();
+    control.expectOne(`${api}/usuarios/yo`).flush({ id: 'u1' });
+    await expect(p).resolves.toEqual({ id: 'u1' });
+    expect(sesion.token()).toBe('nuevo');
+  });
+
+  it('con el token vencido renueva ANTES de enviar (pestaña dormida)', async () => {
+    sesion.establecer({ token: 'vencido', expiraUtc: new Date(Date.now() - 1000).toISOString(), usuario: { id: 'u1' } });
+    const p = firstValueFrom(http.get(`${api}/notificaciones`));
+    await tick();
+    control.expectOne(`${api}/auth/refrescar`).flush(sesionValida('fresco'));
+    await tick();
+    const req = control.expectOne(`${api}/notificaciones`);
+    expect(req.request.headers.get('Authorization')).toBe('Bearer fresco');
+    req.flush([]);
+    await expect(p).resolves.toEqual([]);
+  });
+
+  it('si el servidor rechaza el refresco (401), cierra la sesión local', async () => {
+    sesion.establecer(sesionValida('viejo'));
+    const p = firstValueFrom(http.get(`${api}/usuarios/yo`));
+    control.expectOne(`${api}/usuarios/yo`).flush(null, { status: 401, statusText: 'No autorizado' });
+    await tick();
     control.expectOne(`${api}/auth/refrescar`).flush(null, { status: 401, statusText: 'No autorizado' });
     await expect(p).rejects.toBeTruthy();
     expect(sesion.autenticado()).toBe(false);

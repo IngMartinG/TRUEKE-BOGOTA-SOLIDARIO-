@@ -58,6 +58,15 @@
 - **Denuncias escuchando a ambas partes:** si el moderador la considera procedente, la persona denunciada recibe el aviso (sin saber quién la denunció) y tiene 15 días para contar su versión una vez. Otro moderador (o un SuperUsuario) revisa la apelación; si la acepta, el contenido vuelve a mostrarse y también se avisa a quienes denunciaron. Pantallas: Cuenta → "Reportes sobre ti" y Moderación → "Apelaciones".
 - Migración `ChatRespuestasYApelaciones` (solo columnas que admiten nulos y una tabla nueva). 227 pruebas en verde (incluye SQL Server real).
 
+## Hecho el 2026-10-04 (segunda tanda)
+- **Sesión estable:** ya no se cierra por un corte de red, un servidor reiniciándose o varias pestañas renovando a la vez; se renueva al volver a la pestaña o despertar el equipo.
+- **Chat estilo WhatsApp:** ✓ enviado, ✓✓ entregado, ✓✓ celeste leído, "escribiendo…" y "en línea" (presencia en memoria o en Redis).
+- **Foto de perfil** (sin GPS ni metadatos).
+- **Diseño adaptable** a celular, tablet y PC (sin desbordes de 360 a 1440 px) y botón **Volver** en las pantallas secundarias.
+- **Pagos y facturas:** explica para qué sirve; los datos fiscales son opcionales.
+- **Bloquear usuarios**, **preferencias de avisos por correo** y **Centro de ayuda**.
+- Migraciones `ChatEstadosYPresencia`, `FotoPerfil`, `BloqueosYPreferenciasAvisos`. 234 pruebas en verde (incluye SQL Server real); front: 15 pruebas y build de producción.
+
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
 - **Instalar Docker en local:** activar la virtualización en la BIOS, `wsl --install` y Docker Desktop (para correr también las pruebas de SQL Server en tu PC).

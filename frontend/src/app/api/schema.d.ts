@@ -3819,6 +3819,225 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/usuarios/{id}/bloqueo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/usuarios/yo/bloqueados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BloqueadoDto"][];
+                        "application/json": components["schemas"]["BloqueadoDto"][];
+                        "text/json": components["schemas"]["BloqueadoDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/usuarios/yo/preferencias-avisos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PreferenciasAvisosDto"];
+                        "application/json": components["schemas"]["PreferenciasAvisosDto"];
+                        "text/json": components["schemas"]["PreferenciasAvisosDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ActualizarPreferenciasAvisosRequest"];
+                    "text/json": components["schemas"]["ActualizarPreferenciasAvisosRequest"];
+                    "application/*+json": components["schemas"]["ActualizarPreferenciasAvisosRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PreferenciasAvisosDto"];
+                        "application/json": components["schemas"]["PreferenciasAvisosDto"];
+                        "text/json": components["schemas"]["PreferenciasAvisosDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/usuarios/yo/foto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CambiarFotoRequest"];
+                    "text/json": components["schemas"]["CambiarFotoRequest"];
+                    "application/*+json": components["schemas"]["CambiarFotoRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UsuarioDto"];
+                        "application/json": components["schemas"]["UsuarioDto"];
+                        "text/json": components["schemas"]["UsuarioDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UsuarioDto"];
+                        "application/json": components["schemas"]["UsuarioDto"];
+                        "text/json": components["schemas"]["UsuarioDto"];
+                    };
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/usuarios/yo/datos": {
         parameters: {
             query?: never;
@@ -4017,6 +4236,12 @@ export interface components {
             localidad: string;
             municipioCodigo?: string | null;
         };
+        ActualizarPreferenciasAvisosRequest: {
+            intercambios?: boolean;
+            mensajes?: boolean;
+            planes?: boolean;
+            novedades?: boolean;
+        };
         ApelacionAdminDto: {
             /** Format: uuid */
             id?: string;
@@ -4047,6 +4272,11 @@ export interface components {
             respuesta?: string | null;
             /** Format: date-time */
             fechaRespuestaUtc?: string | null;
+        };
+        BloqueadoDto: {
+            perfil?: components["schemas"]["PerfilPublicoDto"];
+            /** Format: date-time */
+            fechaUtc?: string;
         };
         CalificacionDto: {
             /** Format: uuid */
@@ -4086,6 +4316,9 @@ export interface components {
         CambiarClaveRequest: {
             claveActual?: string | null;
             claveNueva: string;
+        };
+        CambiarFotoRequest: {
+            url: string;
         };
         CambiarRolRequest: {
             rol?: components["schemas"]["RolDto"];
@@ -4176,6 +4409,8 @@ export interface components {
             /** Format: int32 */
             noLeidos?: number;
             escribible?: boolean;
+            contraparteEnLinea?: boolean;
+            yoBloquee?: boolean;
         };
         CotizacionDto: {
             /** Format: int32 */
@@ -4271,6 +4506,8 @@ export interface components {
             facturas?: components["schemas"]["FacturaDto"][];
             pqrs?: components["schemas"]["PqrDto"][];
             apelaciones?: components["schemas"]["ApelacionDto"][];
+            preferenciasAvisos?: components["schemas"]["PreferenciasAvisosDto"];
+            bloqueados?: components["schemas"]["BloqueadoDto"][] | null;
         };
         DenunciaAgrupadaDto: {
             /** Format: uuid */
@@ -4391,6 +4628,8 @@ export interface components {
         EstadoDenunciaDto: "Pendiente" | "Resuelta" | "Descartada";
         /** @enum {string} */
         EstadoFacturaDto: "Pendiente" | "Emitida" | "Anulada";
+        /** @enum {string} */
+        EstadoMensajeDto: "Enviado" | "Entregado" | "Leido";
         /** @enum {string} */
         EstadoPagoDto: "Pendiente" | "Aprobado" | "Rechazado" | "Expirado" | "RequiereRevision" | "Reembolsado";
         /** @enum {string} */
@@ -4546,6 +4785,7 @@ export interface components {
             leido?: boolean;
             oculto?: boolean;
             respuestaA?: components["schemas"]["MensajeCitadoDto"];
+            estado?: components["schemas"]["EstadoMensajeDto"];
         };
         MensajeCitadoDto: {
             /** Format: uuid */
@@ -4681,6 +4921,7 @@ export interface components {
             totalCalificaciones?: number;
             municipio?: string;
             nombreComercial?: string | null;
+            fotoUrl?: string | null;
         };
         PerfilUsuarioDto: {
             /** Format: uuid */
@@ -4707,6 +4948,7 @@ export interface components {
             publicacionesActivas?: number;
             municipio?: string;
             nombreComercial?: string | null;
+            fotoUrl?: string | null;
         };
         PoliticaEcoPuntosDto: {
             /** Format: int32 */
@@ -4809,6 +5051,12 @@ export interface components {
             respuesta?: string | null;
             /** Format: date-time */
             fechaRespuestaUtc?: string | null;
+        };
+        PreferenciasAvisosDto: {
+            intercambios?: boolean;
+            mensajes?: boolean;
+            planes?: boolean;
+            novedades?: boolean;
         };
         PublicacionCercanaDto: {
             publicacion?: components["schemas"]["PublicacionDto"];
@@ -5045,6 +5293,7 @@ export interface components {
             nombreComercial?: string | null;
             nit?: string | null;
             tieneDatosFacturacion?: boolean;
+            fotoUrl?: string | null;
         };
         VerificacionPendienteDto: {
             /** Format: uuid */
@@ -5065,13 +5314,16 @@ export interface components {
 export type AccionDenunciaDto = components['schemas']['AccionDenunciaDto'];
 export type ActivacionDosFactoresDto = components['schemas']['ActivacionDosFactoresDto'];
 export type ActualizarPerfilRequest = components['schemas']['ActualizarPerfilRequest'];
+export type ActualizarPreferenciasAvisosRequest = components['schemas']['ActualizarPreferenciasAvisosRequest'];
 export type ApelacionAdminDto = components['schemas']['ApelacionAdminDto'];
 export type ApelacionDto = components['schemas']['ApelacionDto'];
+export type BloqueadoDto = components['schemas']['BloqueadoDto'];
 export type CalificacionDto = components['schemas']['CalificacionDto'];
 export type CalificacionDtoPaginaDto = components['schemas']['CalificacionDtoPaginaDto'];
 export type CalificacionExportDto = components['schemas']['CalificacionExportDto'];
 export type CalificarRequest = components['schemas']['CalificarRequest'];
 export type CambiarClaveRequest = components['schemas']['CambiarClaveRequest'];
+export type CambiarFotoRequest = components['schemas']['CambiarFotoRequest'];
 export type CambiarRolRequest = components['schemas']['CambiarRolRequest'];
 export type CancelarPublicacionRequest = components['schemas']['CancelarPublicacionRequest'];
 export type CategoriaDto = components['schemas']['CategoriaDto'];
@@ -5109,6 +5361,7 @@ export type EstadisticasPublicacionDto = components['schemas']['EstadisticasPubl
 export type EstadoApelacionDto = components['schemas']['EstadoApelacionDto'];
 export type EstadoDenunciaDto = components['schemas']['EstadoDenunciaDto'];
 export type EstadoFacturaDto = components['schemas']['EstadoFacturaDto'];
+export type EstadoMensajeDto = components['schemas']['EstadoMensajeDto'];
 export type EstadoPagoDto = components['schemas']['EstadoPagoDto'];
 export type EstadoPqrDto = components['schemas']['EstadoPqrDto'];
 export type FacturaAdminDto = components['schemas']['FacturaAdminDto'];
@@ -5144,6 +5397,7 @@ export type PoliticaEcoPuntosDto = components['schemas']['PoliticaEcoPuntosDto']
 export type PqrAdminDto = components['schemas']['PqrAdminDto'];
 export type PqrAdminDtoPaginaDto = components['schemas']['PqrAdminDtoPaginaDto'];
 export type PqrDto = components['schemas']['PqrDto'];
+export type PreferenciasAvisosDto = components['schemas']['PreferenciasAvisosDto'];
 export type PublicacionCercanaDto = components['schemas']['PublicacionCercanaDto'];
 export type PublicacionDto = components['schemas']['PublicacionDto'];
 export type PublicacionDtoPaginaDto = components['schemas']['PublicacionDtoPaginaDto'];

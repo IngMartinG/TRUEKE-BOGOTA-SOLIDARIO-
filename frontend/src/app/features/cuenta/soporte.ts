@@ -23,7 +23,7 @@ import { Icono } from '../../shared/ui/icono';
     <form [formGroup]="form" (ngSubmit)="enviar()" class="tarjeta mt-6 space-y-5 p-6" novalidate>
       <fieldset>
         <legend class="etiqueta mb-2">¿Qué necesitas?</legend>
-        <div class="grid gap-2 sm:grid-cols-2">
+        <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
           @for (t of tipos; track t.valor) {
             <label class="flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-3 transition"
               [class]="tipo() === t.valor ? 'border-bosque-500 bg-bosque-50 dark:bg-bosque-900/50' : 'border-borde hover:border-bosque-200'">

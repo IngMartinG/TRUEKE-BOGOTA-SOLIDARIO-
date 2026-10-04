@@ -14,16 +14,18 @@ import { Icono } from '../../shared/ui/icono';
 import { ImagenPublicacion } from '../../shared/ui/imagen-publicacion';
 import { InsigniaModo } from '../../shared/ui/insignia-modo';
 import { Modal } from '../../shared/ui/modal';
+import { Volver } from '../../shared/ui/volver';
 
 type Filtro = 'activas' | 'negociacion' | 'cerradas';
 
 @Component({
-  imports: [RouterLink, Icono, ImagenPublicacion, InsigniaModo, EstadoVacio, Modal, CopPipe, HacePipe, FechaPipe, NumeroPipe],
+  imports: [Volver, RouterLink, Icono, ImagenPublicacion, InsigniaModo, EstadoVacio, Modal, CopPipe, HacePipe, FechaPipe, NumeroPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor py-8 sm:py-10">
       <div class="flex flex-wrap items-end justify-between gap-4">
         <div>
+          <app-volver respaldo="/" class="mb-1" />
           <h1 class="text-3xl font-extrabold">Mis publicaciones</h1>
           <p class="mt-1 text-tenue">Administra lo que ofreces y mira cuántas personas lo ven.</p>
         </div>

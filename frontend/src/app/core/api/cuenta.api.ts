@@ -2,6 +2,9 @@ import { inject, Injectable } from '@angular/core';
 import { shareReplay } from 'rxjs';
 import type {
   ActualizarPerfilRequest,
+  ActualizarPreferenciasAvisosRequest,
+  BloqueadoDto,
+  PreferenciasAvisosDto,
   CalificacionDtoPaginaDto,
   ConceptoPagoDto,
   ConfiguracionPublicaDto,
@@ -40,7 +43,15 @@ export class CuentaApi {
 
   yo = () => this.api.get<UsuarioDto>('/usuarios/yo');
   actualizarPerfil = (r: ActualizarPerfilRequest) => this.api.put<UsuarioDto>('/usuarios/yo', r, { silencioso: true });
-  actualizarEmpresa = (r: PerfilEmpresaRequest) => this.api.put<UsuarioDto>('/usuarios/yo/empresa', r, { silencioso: true });
+  bloquear = (id: string) => this.api.post<void>(`/usuarios/${seg(id)}/bloqueo`, {});
+  desbloquear = (id: string) => this.api.delete<void>(`/usuarios/${seg(id)}/bloqueo`);
+  bloqueados = () => this.api.get<BloqueadoDto[]>('/usuarios/yo/bloqueados');
+  preferenciasAvisos = () => this.api.get<PreferenciasAvisosDto>('/usuarios/yo/preferencias-avisos');
+  guardarPreferenciasAvisos = (p: ActualizarPreferenciasAvisosRequest) =>
+    this.api.put<PreferenciasAvisosDto>('/usuarios/yo/preferencias-avisos', p);
+  cambiarFoto =(url: string) => this.api.put<UsuarioDto>('/usuarios/yo/foto', { url }, { silencioso: true });
+  quitarFoto = () => this.api.delete<UsuarioDto>('/usuarios/yo/foto');
+  actualizarEmpresa =(r: PerfilEmpresaRequest) => this.api.put<UsuarioDto>('/usuarios/yo/empresa', r, { silencioso: true });
 
   datosFacturacion = () => this.api.get<DatosFacturacionDto>('/cuenta/facturacion');
   guardarFacturacion = (r: DatosFacturacionRequest) =>

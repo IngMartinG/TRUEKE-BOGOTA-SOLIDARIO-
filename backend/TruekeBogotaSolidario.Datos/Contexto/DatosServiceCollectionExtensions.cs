@@ -25,6 +25,7 @@ public static class DatosServiceCollectionExtensions
 
         services.AddScoped<IUnidadDeTrabajo, UnidadDeTrabajo>();
         services.AddScoped<IUsuarioRepository, UsuarioRepository>();
+        services.AddScoped<IBloqueoRepository, BloqueoRepository>();
         services.AddScoped<ICategoriaRepository, CategoriaRepository>();
         services.AddScoped<IPublicacionRepository, PublicacionRepository>();
         services.AddScoped<ISolicitudRepository, SolicitudRepository>();
