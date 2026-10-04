@@ -36,13 +36,17 @@ public sealed class ChatService : IChatService
     private readonly IUnidadDeTrabajo _uow;
     private readonly IEmisorTiempoReal _emisor;
     private readonly IPresencia _presencia;
+    private readonly IBloqueoRepository _bloqueos;
+    private readonly IAvisosCorreo _avisosCorreo;
     private readonly TimeProvider _reloj;
     private readonly ILogger<ChatService> _log;
 
     public ChatService(IConversacionRepository conversaciones, IUsuarioRepository usuarios, IUnidadDeTrabajo uow,
-        IEmisorTiempoReal emisor, IPresencia presencia, TimeProvider reloj, ILogger<ChatService> log)
+        IEmisorTiempoReal emisor, IPresencia presencia, IBloqueoRepository bloqueos, IAvisosCorreo avisosCorreo, TimeProvider reloj,
+        ILogger<ChatService> log)
     {
-        _conversaciones = conversaciones; _usuarios = usuarios; _uow = uow; _emisor = emisor; _presencia = presencia; _reloj = reloj; _log = log;
+        _conversaciones = conversaciones; _usuarios = usuarios; _uow = uow; _emisor = emisor; _presencia = presencia; _bloqueos = bloqueos;
+        _avisosCorreo = avisosCorreo; _reloj = reloj; _log = log;
     }
 
     /// <summary>El tiempo real es un extra: si falla, la operación ya quedó guardada y se verá al recargar.</summary>
@@ -83,6 +87,9 @@ public sealed class ChatService : IChatService
         var noLeidos = await _conversaciones.ContarNoLeidosAsync(actorId, ids);
         var ultimos = await _conversaciones.UltimosMensajesAsync(ids);
         var enLinea = await _presencia.EnLineaAsync(lista.Select(c => c.Contraparte(actorId)).Distinct().ToList());
+        // Con un bloqueo (en cualquier dirección) la conversación queda de solo lectura y no se ve "en línea".
+        var bloqueados = await _bloqueos.RelacionadosAsync(actorId);
+        var yoBloquee = bloqueados.Count == 0 ? new HashSet<Guid>() : (await _bloqueos.ListarDeAsync(actorId)).Select(b => b.BloqueadoId).ToHashSet();
 
         return lista.Select(c =>
         {
@@ -93,7 +100,8 @@ public sealed class ChatService : IChatService
                 vistaPrevia = u.EstaOculto ? TextoOculto : u.Texto.Length > 100 ? u.Texto[..100] + "…" : u.Texto;
             return new ConversacionDto(c.Id, c.SolicitudId, c.PublicacionId, c.Solicitud!.Publicacion!.Titulo, c.Solicitud.Estado.ToString(),
                 soyDuenio, Mapeos.APerfilPublico(otra, ahora), vistaPrevia, c.UltimoMensajeUtc,
-                noLeidos.TryGetValue(c.Id, out var n) ? n : 0, EsEscribible(c), enLinea.Contains(otra.Id) && !otra.EstaEliminado);
+                noLeidos.TryGetValue(c.Id, out var n) ? n : 0, EsEscribible(c) && !bloqueados.Contains(otra.Id),
+                enLinea.Contains(otra.Id) && !otra.EstaEliminado && !bloqueados.Contains(otra.Id), yoBloquee.Contains(otra.Id));
         }).ToList();
     }
 
@@ -110,6 +118,8 @@ public sealed class ChatService : IChatService
         var actor = actorId == c.DuenioId ? c.Duenio! : c.Solicitante!;
         Guardas.ExigirCorreoVerificado(actor);
         if (!EsEscribible(c)) throw new ReglaDeNegocioException("Esta conversación está cerrada: la solicitud fue rechazada, cancelada o no se concretó.");
+        if (await _bloqueos.ExisteEntreAsync(actorId, c.Contraparte(actorId)))
+            throw new ReglaDeNegocioException("No puedes enviar mensajes en esta conversación.");
 
         var ahora = Ahora;
         if (await _conversaciones.ContarMensajesDelAutorDesdeAsync(actorId, ahora.AddHours(-1)) >= MaxMensajesPorHora)
@@ -137,6 +147,8 @@ public sealed class ChatService : IChatService
             // El mensaje ya quedó guardado: la contraparte lo verá al abrir la conversación.
             _log.LogWarning(ex, "No se pudo empujar en tiempo real el mensaje {MensajeId}", m.Id);
         }
+        // Si la otra persona no tiene la app abierta, un correo (sin el texto) como mucho cada 2 horas por conversación
+        await _avisosCorreo.MensajeChatAsync(c.Contraparte(actorId), c.Id, Mapeos.NombrePublico(actor.NombreCompleto));
         return ADto(m, actorId);
     }
 
@@ -162,9 +174,15 @@ public sealed class ChatService : IChatService
     public async Task<Guid?> ContraparteParaEscribirAsync(Guid actorId, Guid conversacionId)
     {
         var c = await _conversaciones.ObtenerAsync(conversacionId);
-        return c is not null && c.EsParticipante(actorId) && EsEscribible(c) ? c.Contraparte(actorId) : null;
+        if (c is null || !c.EsParticipante(actorId) || !EsEscribible(c)) return null;
+        var otra = c.Contraparte(actorId);
+        return await _bloqueos.ExisteEntreAsync(actorId, otra) ? null : otra;
     }
 
     public async Task<IReadOnlyList<Guid>> ContrapartesAsync(Guid actorId)
-        => (await _conversaciones.ListarDeUsuarioAsync(actorId, 100)).Select(c => c.Contraparte(actorId)).Distinct().ToList();
+    {
+        var bloqueados = await _bloqueos.RelacionadosAsync(actorId);
+        return (await _conversaciones.ListarDeUsuarioAsync(actorId, 100)).Select(c => c.Contraparte(actorId))
+            .Where(id => !bloqueados.Contains(id)).Distinct().ToList();
+    }
 }

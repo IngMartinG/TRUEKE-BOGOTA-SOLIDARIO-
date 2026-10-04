@@ -5,6 +5,7 @@ export const routes: Routes = [
   { path: '', title: '', loadComponent: () => import('./features/inicio/inicio') },
   { path: 'explorar', title: 'Explorar', loadComponent: () => import('./features/catalogo/catalogo') },
   { path: 'como-funciona', title: 'Cómo funciona', loadComponent: () => import('./features/info/como-funciona') },
+  { path: 'ayuda', title: 'Centro de ayuda', loadComponent: () => import('./features/info/ayuda') },
   { path: 'publicacion/:id', title: 'Publicación', loadComponent: () => import('./features/publicacion/detalle') },
   {
     path: 'publicar',
@@ -73,6 +74,7 @@ export const routes: Routes = [
       { path: 'facturacion', title: 'Pagos y facturas', loadComponent: () => import('./features/cuenta/facturacion') },
       { path: 'soporte', title: 'Soporte y PQR', loadComponent: () => import('./features/cuenta/soporte') },
       { path: 'reportes', title: 'Reportes sobre ti', loadComponent: () => import('./features/cuenta/reportes') },
+      { path: 'avisos', title: 'Avisos por correo', loadComponent: () => import('./features/cuenta/avisos') },
       { path: 'privacidad', title: 'Privacidad y datos', loadComponent: () => import('./features/cuenta/privacidad') },
     ],
   },

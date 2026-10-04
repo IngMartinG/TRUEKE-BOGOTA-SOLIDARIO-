@@ -38,14 +38,15 @@ public sealed class SolicitudService : ISolicitudService
     private readonly TimeProvider _reloj;
     private readonly INotificador _notificador;
     private readonly IConversacionRepository _conversaciones;
+    private readonly IBloqueoRepository _bloqueos;
     private readonly ILogger<SolicitudService> _log;
 
     public SolicitudService(ISolicitudRepository solicitudes, IPublicacionRepository pubs, IUsuarioRepository usuarios,
         ITransaccionRepository transacciones, ICalificacionRepository calificaciones, IUnidadDeTrabajo uow, TimeProvider reloj,
-        INotificador notificador, IConversacionRepository conversaciones, ILogger<SolicitudService> log)
+        INotificador notificador, IConversacionRepository conversaciones, IBloqueoRepository bloqueos, ILogger<SolicitudService> log)
     {
         _solicitudes = solicitudes; _pubs = pubs; _usuarios = usuarios; _transacciones = transacciones; _calificaciones = calificaciones;
-        _uow = uow; _reloj = reloj; _notificador = notificador; _conversaciones = conversaciones; _log = log;
+        _uow = uow; _reloj = reloj; _notificador = notificador; _conversaciones = conversaciones; _bloqueos = bloqueos; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
@@ -63,6 +64,8 @@ public sealed class SolicitudService : ISolicitudService
         if (pub is null || pub.EstaOculta || pub.Propietario!.EstaEliminado || pub.Propietario.SuspensionVigente(ahora))
             throw new NoEncontradoException("Publicación no encontrada.");
         if (pub.PropietarioId == actorId) throw new ReglaDeNegocioException("No puedes solicitar tu propia publicación.");
+        if (await _bloqueos.ExisteEntreAsync(actorId, pub.PropietarioId))
+            throw new ReglaDeNegocioException("No puedes solicitar esta publicación.");
         if (pub.Estado == EstadoPublicacionEnum.EnNegociacion) throw new ReglaDeNegocioException("La publicación ya está en negociación con otro usuario.");
         if (pub.Estado != EstadoPublicacionEnum.Disponible) throw new ReglaDeNegocioException("La publicación ya no está disponible.");
         if (await _solicitudes.ContarPendientesPorSolicitanteAsync(actorId) >= Limites.MaxSolicitudesPendientesPorUsuario)

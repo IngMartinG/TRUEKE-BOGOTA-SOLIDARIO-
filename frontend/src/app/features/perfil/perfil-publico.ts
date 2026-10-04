@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, linkedSignal, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
@@ -6,6 +6,7 @@ import { CuentaApi } from '../../core/api/cuenta.api';
 import { SesionService } from '../../core/sesion.service';
 import { FechaPipe, HacePipe } from '../../shared/pipes';
 import { Avatar } from '../../shared/ui/avatar';
+import { Bloquear } from '../../shared/ui/bloquear';
 import { Denunciar } from '../../shared/ui/denunciar';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Estrellas } from '../../shared/ui/estrellas';
@@ -15,7 +16,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
 import { Volver } from '../../shared/ui/volver';
 
 @Component({
-  imports: [Volver, RouterLink, Avatar, Estrellas, Icono, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, Denunciar, FechaPipe, HacePipe],
+  imports: [Volver, RouterLink, Avatar, Estrellas, Icono, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, Denunciar, Bloquear, FechaPipe, HacePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (perfil.error()) {
@@ -115,9 +116,13 @@ import { Volver } from '../../shared/ui/volver';
             <button type="button" class="btn btn-secundario btn-sm mt-4 w-full" (click)="paginaCal.set(paginaCal() + 1)">Ver más</button>
           }
           @if (sesion.autenticado() && sesion.usuario()?.id !== id()) {
-            <button type="button" class="mt-6 flex items-center gap-1 text-xs text-tenue hover:text-tierra-600" (click)="denunciaAbierta.set(true)">
-              <app-icono nombre="bandera" [tamano]="14" />Reportar este perfil
-            </button>
+            <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
+              <button type="button" class="flex items-center gap-1 text-xs text-tenue hover:text-tierra-600" (click)="denunciaAbierta.set(true)">
+                <app-icono nombre="bandera" [tamano]="14" />Reportar este perfil
+              </button>
+              <app-bloquear [usuarioId]="id()" [nombre]="perfil.value()?.nombre ?? 'esta persona'" [(bloqueado)]="bloqueado"
+                clase="flex items-center gap-1 text-xs text-tenue hover:text-tierra-600" />
+            </div>
             <app-denunciar [(abierto)]="denunciaAbierta" tipo="Usuario" [objetivoId]="id()" />
           }
         </aside>
@@ -133,6 +138,12 @@ export default class PerfilPublico {
   protected readonly paginaPub = signal(1);
   protected readonly paginaCal = signal(1);
   protected readonly denunciaAbierta = signal(false);
+  /** Si yo bloqueé a esta persona (sale de mi lista de bloqueados; solo con sesión). */
+  private readonly misBloqueados = rxResource({
+    params: () => (this.sesion.autenticado() ? true : undefined),
+    stream: () => this.api.bloqueados(),
+  });
+  protected readonly bloqueado = linkedSignal(() => !!this.misBloqueados.value()?.some((b) => b.perfil?.id === this.id()));
 
   protected readonly perfil = rxResource({ params: () => this.id(), stream: ({ params }) => this.api.perfil(params) });
   protected readonly publicaciones = rxResource({

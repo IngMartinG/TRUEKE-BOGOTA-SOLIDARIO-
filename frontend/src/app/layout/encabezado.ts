@@ -155,6 +155,7 @@ export class Encabezado {
     { ruta: '/mensajes', texto: 'Mensajes', icono: 'mensaje' },
     { ruta: '/favoritos', texto: 'Favoritos', icono: 'heart' },
     { ruta: '/eco-puntos', texto: 'Eco-Puntos y planes', icono: 'moneda' },
+    { ruta: '/ayuda', texto: 'Centro de ayuda', icono: 'soporte' },
   ];
 
   protected buscar(): void {

@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -8,12 +9,13 @@ import { ConfigService } from '../../core/config.service';
 import { mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
 import { BotonGoogle } from '../auth/boton-google';
+import { Avatar } from '../../shared/ui/avatar';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
 import { descargar } from '../../shared/descargar';
 
 @Component({
-  imports: [FormsModule, RouterLink, Icono, Modal, BotonGoogle],
+  imports: [FormsModule, RouterLink, Icono, Modal, BotonGoogle, Avatar],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="text-2xl font-extrabold">Privacidad y datos</h1>
@@ -28,6 +30,22 @@ import { descargar } from '../../shared/descargar';
         </div>
       </div>
       <button type="button" class="btn btn-secundario" (click)="exportar()" [disabled]="exportando()">{{ exportando() ? 'Preparando…' : 'Descargar' }}</button>
+    </section>
+
+    <section class="tarjeta mt-6 p-6">
+      <h2 class="text-lg font-bold">Personas bloqueadas</h2>
+      <p class="mt-1 text-sm text-tenue">No pueden escribirte ni solicitar tus publicaciones, y tú tampoco a ellas. No se les avisa.</p>
+      <ul class="mt-4 divide-y divide-borde">
+        @for (b of bloqueados.value() ?? []; track b.perfil?.id) {
+          <li class="flex items-center gap-3 py-3">
+            <app-avatar [nombre]="b.perfil?.nombre" [foto]="b.perfil?.fotoUrl" [tamano]="36" />
+            <a [routerLink]="['/usuarios', b.perfil?.id]" class="min-w-0 flex-1 truncate font-medium hover:underline">{{ b.perfil?.nombre }}</a>
+            <button type="button" class="btn btn-secundario btn-sm" (click)="desbloquear(b.perfil?.id)">Desbloquear</button>
+          </li>
+        } @empty {
+          <li class="py-3 text-sm text-tenue">{{ bloqueados.isLoading() ? 'Cargando…' : 'No has bloqueado a nadie.' }}</li>
+        }
+      </ul>
     </section>
 
     <section class="tarjeta mt-6 p-6">
@@ -101,6 +119,19 @@ export default class Privacidad {
   protected readonly puedeEliminar = computed(
     () => this.confirmacion().trim().toUpperCase() === 'ELIMINAR' && (this.tieneClave() ? !!this.clave() : !!this.googleToken()),
   );
+
+  protected readonly bloqueados = rxResource({ stream: () => this.api.bloqueados() });
+
+  protected async desbloquear(id: string | undefined): Promise<void> {
+    if (!id) return;
+    try {
+      await firstValueFrom(this.api.desbloquear(id));
+      this.avisos.exito('Persona desbloqueada');
+      this.bloqueados.reload();
+    } catch {
+      // El interceptor ya mostró el error.
+    }
+  }
 
   protected async exportar(): Promise<void> {
     this.exportando.set(true);
