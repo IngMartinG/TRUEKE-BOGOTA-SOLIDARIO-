@@ -37,6 +37,10 @@ export class TiempoRealService {
   readonly notificacionesNoLeidas = signal(0);
   readonly mensajesNoLeidos = signal(0);
   readonly conectado = signal(false);
+  /** Solo true tras varios segundos sin conexión: los cortes breves (renovar el token) no se muestran. */
+  readonly sinConexion = signal(false);
+  private temporizadorSinConexion: ReturnType<typeof setTimeout> | undefined;
+  private reintento: ReturnType<typeof setTimeout> | undefined;
   /** Conversación visible en pantalla: sus mensajes no suman al contador ni generan aviso. */
   readonly conversacionAbierta = signal<string | null>(null);
 
@@ -50,6 +54,22 @@ export class TiempoRealService {
       const autenticado = this.sesion.autenticado();
       untracked(() => (autenticado ? void this.conectar() : void this.desconectar()));
     });
+    effect(() => {
+      const conectado = this.conectado();
+      untracked(() => {
+        clearTimeout(this.temporizadorSinConexion);
+        if (conectado || !this.sesion.autenticado()) this.sinConexion.set(false);
+        else this.temporizadorSinConexion = setTimeout(() => this.sinConexion.set(!this.conectado() && this.sesion.autenticado()), 5000);
+      });
+    });
+    // Al volver a la pestaña (o recuperar internet) se reconecta enseguida, sin esperar el próximo reintento.
+    const alVolver = () => {
+      if (document.visibilityState !== 'visible' || !this.sesion.autenticado() || this.conexion) return;
+      clearTimeout(this.reintento);
+      void this.conectar();
+    };
+    document.addEventListener('visibilitychange', alVolver);
+    window.addEventListener('online', alVolver);
   }
 
   async sincronizarContadores(): Promise<void> {
@@ -76,7 +96,11 @@ export class TiempoRealService {
     if (this.conexion || !this.sesion.autenticado()) return;
     const conexion = new HubConnectionBuilder()
       .withUrl(hubUrl(), {
-        accessTokenFactory: async () => this.sesion.token() ?? (await firstValueFrom(this.sesion.refrescar())) ?? '',
+        // El servidor cierra el hub cuando vence el JWT: al (re)conectar se usa uno que dure.
+        accessTokenFactory: async () =>
+          (this.sesion.token() === null || this.sesion.venceEn() < 60_000 ? await firstValueFrom(this.sesion.refrescar()) : null) ??
+          this.sesion.token() ??
+          '',
         transport: HttpTransportType.WebSockets | HttpTransportType.LongPolling,
       })
       .withAutomaticReconnect([0, 2000, 5000, 10000, 20000, 30000])
@@ -96,7 +120,8 @@ export class TiempoRealService {
       // El servidor cierra la conexión cuando vence el JWT con que se abrió: se reabre con el nuevo.
       if (this.conexion === conexion && this.sesion.autenticado()) {
         this.conexion = null;
-        setTimeout(() => void this.conectar(), 1500);
+        clearTimeout(this.reintento);
+        this.reintento = setTimeout(() => void this.conectar(), 1500);
       }
     });
 
@@ -108,7 +133,10 @@ export class TiempoRealService {
     } catch {
       if (this.conexion === conexion) {
         this.conexion = null;
-        if (this.sesion.autenticado()) setTimeout(() => void this.conectar(), 10_000);
+        if (this.sesion.autenticado()) {
+          clearTimeout(this.reintento);
+          this.reintento = setTimeout(() => void this.conectar(), 10_000);
+        }
       }
     }
   }
