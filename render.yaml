@@ -9,7 +9,7 @@ services:
     name: trueke-api
     runtime: docker
     plan: free # Gratis: se duerme a los 15 min sin tráfico y tarda ~30-60 s en despertar. Pasar a pago: plan "starter".
-    region: virginia # la más cercana a Colombia; poner Azure SQL en "East US" para que la base quede al lado
+    region: ohio # cerca de Azure SQL en Central US (las cuentas de prueba de Azure no permiten East US). No se puede cambiar después de crear el servicio.
     branch: main
     dockerContext: ./backend
     dockerfilePath: ./backend/Dockerfile
