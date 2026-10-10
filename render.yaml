@@ -38,6 +38,9 @@ services:
         value: https://ingmarting.github.io
       - key: Urls__Frontend
         value: https://ingmarting.github.io/TRUEKE-BOGOTA-SOLIDARIO-/
+      # URL pública de esta API: la vista previa al compartir (WhatsApp) necesita la imagen con URL absoluta.
+      - key: Urls__Api
+        value: https://trueke-api-yqbj.onrender.com
       - key: Pagos__Proveedor
         value: Wompi
       - key: Pagos__Wompi__BaseUrl # sandbox mientras Wompi no apruebe el comercio; luego https://production.wompi.co/v1

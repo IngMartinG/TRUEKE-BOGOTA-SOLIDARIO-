@@ -38,6 +38,13 @@ export async function cargarEntorno(): Promise<void> {
 }
 
 export const apiBase = (): string => `${entorno.apiUrl}/api/v1`;
+
+/**
+ * Enlace para compartir una publicación: la página de la API con la vista previa (título, foto) que leen WhatsApp
+ * y Facebook, que redirige a la publicación. Sin API en otro dominio (desarrollo con proxy) no hay vista previa: null.
+ */
+export const urlCompartirPublicacion = (id: string): string | null =>
+  entorno.apiUrl ? `${entorno.apiUrl}/compartir/publicaciones/${encodeURIComponent(id)}` : null;
 export const hubUrl = (): string => `${entorno.apiUrl}/hubs/notificaciones`;
 export const mapaTeselas = (): { url: string; atribucion: string } => ({
   url: entorno.mapaTeselas,

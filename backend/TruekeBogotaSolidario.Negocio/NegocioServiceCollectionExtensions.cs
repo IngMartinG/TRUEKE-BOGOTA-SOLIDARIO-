@@ -87,6 +87,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<IDenunciaService, DenunciaService>();
         services.AddScoped<IDatosPersonalesService, DatosPersonalesService>();
         services.AddScoped<IConfiguracionService, ConfiguracionService>();
+        services.AddScoped<IVistaPreviaService, VistaPreviaService>();
         services.AddSingleton<ICifradorSecretos, CifradorAesGcm>();
         services.AddScoped<VerificadorDosFactores>();
         services.AddScoped<IDosFactoresService, DosFactoresService>();

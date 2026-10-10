@@ -65,6 +65,11 @@ public interface IAlmacenArchivos
     /// miniatura falló). Devuelve cuántas creó. Es idempotente: varias instancias a la vez no se estorban.
     /// </summary>
     Task<int> GenerarMiniaturasFaltantesAsync(CancellationToken ct = default);
+    /// <summary>
+    /// Bytes de una foto pública YA publicada en el contenedor de imágenes (p. ej. para la vista previa al compartir).
+    /// null si la URL no es una foto de la plataforma, no existe o supera el tamaño máximo. Nunca sigue otras URLs.
+    /// </summary>
+    Task<byte[]?> LeerFotoPublicadaAsync(string url, CancellationToken ct = default);
 }
 
 public sealed class AlmacenDeshabilitado : IAlmacenArchivos
@@ -80,6 +85,7 @@ public sealed class AlmacenDeshabilitado : IAlmacenArchivos
     public Task<string> GuardarImagenAsync(Guid usuarioId, byte[] contenido, CancellationToken ct = default)
         => throw new ReglaDeNegocioException("La subida de archivos no está configurada en este entorno.");
     public Task<int> GenerarMiniaturasFaltantesAsync(CancellationToken ct = default) => Task.FromResult(0);
+    public Task<byte[]?> LeerFotoPublicadaAsync(string url, CancellationToken ct = default) => Task.FromResult<byte[]?>(null);
 }
 
 /// <summary>
@@ -333,6 +339,23 @@ public sealed class AlmacenBlobAzure : IAlmacenArchivos
         }
         if (creadas > 0) _log.LogInformation("Miniaturas creadas para fotos existentes: {Total}", creadas);
         return creadas;
+    }
+
+    public async Task<byte[]?> LeerFotoPublicadaAsync(string url, CancellationToken ct = default)
+    {
+        var contenedor = Contenedor(TipoArchivoDto.Imagen);
+        if (ReglasArchivos.NombreFotoPublicada(url, contenedor.Uri) is not { } nombre) return null;
+        try
+        {
+            var blob = contenedor.GetBlobClient(nombre);
+            var props = (await blob.GetPropertiesAsync(cancellationToken: ct)).Value;
+            if (props.ContentLength is <= 0 or > ReglasArchivos.TamanoMaximoBytes) return null;
+            return (await blob.DownloadContentAsync(ct)).Value.Content.ToArray();
+        }
+        catch (RequestFailedException ex) when (ex.Status == 404)
+        {
+            return null;
+        }
     }
 
     /// <summary>El blob de documentos al que apunta la URL, o null si la URL no es de ese contenedor.</summary>

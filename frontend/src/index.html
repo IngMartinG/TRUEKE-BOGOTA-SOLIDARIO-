@@ -12,13 +12,21 @@
     <meta name="theme-color" content="#123d27" />
     <meta name="color-scheme" content="light dark" />
     <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <!-- Vista previa al compartir. WhatsApp y Facebook exigen URLs ABSOLUTAS: el despliegue reemplaza "og-imagen.png"
+         y "og:url" por la URL pública (ver .github/workflows/frontend-pages.yml). Cada publicación tiene la suya en la API
+         (/compartir/publicaciones/{id}) porque esta SPA no puede cambiar estas etiquetas para los robots. -->
+    <meta property="og:site_name" content="Trueke Bogotá Solidario" />
     <meta property="og:title" content="Trueke Bogotá Solidario" />
     <meta property="og:description" content="Intercambia, compra y dona en tu ciudad. Economía circular hecha comunidad." />
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="es_CO" />
+    <meta property="og:url" content="./" />
     <meta property="og:image" content="og-imagen.png" />
+    <meta property="og:image:type" content="image/png" />
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Logo de Trueke Bogotá Solidario" />
+    <meta name="twitter:card" content="summary_large_image" />
     <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png" />
     <link rel="alternate icon" href="favicon.ico" />
     <link rel="apple-touch-icon" href="icono-180.png" />
