@@ -315,7 +315,7 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
                 <h2 class="text-xl font-bold">Así se verá tu publicación</h2>
                 <div class="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-[16rem_1fr]">
                   <div class="tarjeta overflow-hidden">
-                    <app-imagen-publicacion class="aspect-[4/3]" [src]="fotosListas()[0]" [modo]="modoActual()" [categoriaId]="categoriaActual()" />
+                    <app-imagen-publicacion class="aspect-[4/3]" [src]="fotosListas()[0]" [miniatura]="true" [modo]="modoActual()" [categoriaId]="categoriaActual()" />
                     <div class="p-4">
                       <app-insignia-modo [modo]="modoActual()" />
                       <p class="mt-2 font-display font-bold">{{ form.controls.titulo.value }}</p>

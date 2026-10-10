@@ -95,6 +95,12 @@
 - **Perfil público con señales de confianza:** correo e identidad verificados, 2FA, Google, en línea, intercambios completados, % concretados y tiempo típico de respuesta (último año), y distribución de estrellas. Sin datos privados.
 - 259 pruebas del backend y 25 del front.
 
+## Hecho el 2026-10-10 — miniaturas de fotos y CDN opcional
+- Cada foto limpia se publica con una **miniatura WEBP de 640 px** (`.min.webp`, decodificada una sola vez con SkiaSharp). Tarjetas del catálogo, mis publicaciones, tiras de fotos y avatares usan la miniatura; el detalle y el visor, la foto grande. Si una miniatura no carga, el front usa la original.
+- `MiniaturasHostedService`: al arrancar crea las miniaturas faltantes (fotos anteriores). Al borrar la foto de perfil se borra también su miniatura.
+- **CDN opcional** (`Almacenamiento:CdnUrl`, apagada): `GET /configuracion` publica `imagenesOrigenUrl`/`imagenesCdnUrl` y el front reescribe solo para mostrar. Opciones y costos en `docs/DESPLIEGUE.md` §3.1.
+- 267 pruebas del backend y 28 del front.
+
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
 - **Dependabot:** `gh auth login` y cerrar los PR de .NET 10, EF Core 9, TypeScript 7 y Node 26 (los demás, fusionar si el CI pasa).

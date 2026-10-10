@@ -14,7 +14,7 @@ import { AvisosService } from '../../core/avisos.service';
 import { FavoritosService } from '../../core/favoritos.service';
 import { mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
-import { urlPublica } from '../../shared/imagenes';
+import { miniatura, urlPublica, usarOriginal } from '../../shared/imagenes';
 import { CopPipe, FechaPipe, HacePipe } from '../../shared/pipes';
 import { Avatar } from '../../shared/ui/avatar';
 import { Denunciar } from '../../shared/ui/denunciar';
@@ -110,7 +110,7 @@ import { Volver } from '../../shared/ui/volver';
                   <button type="button" class="size-20 shrink-0 overflow-hidden rounded-xl border-2 transition"
                     [class]="i === indice() ? 'border-bosque-500' : 'border-transparent opacity-70 hover:opacity-100'"
                     (click)="indice.set(i)" [attr.aria-label]="'Ver foto ' + (i + 1)">
-                    <img [src]="urlPublica(img)" alt="" class="size-full object-cover" loading="lazy" referrerpolicy="no-referrer" />
+                    <img [src]="urlPublica(miniatura(img))" alt="" class="size-full object-cover" loading="lazy" referrerpolicy="no-referrer" (error)="usarOriginal($event, img)" />
                   </button>
                 }
               </div>
@@ -321,7 +321,7 @@ import { Volver } from '../../shared/ui/volver';
       <app-modal [(abierto)]="solicitudAbierta" [titulo]="infoModo().verbo" [subtitulo]="'A ' + (p.propietario?.nombre ?? '') + ' le llegará tu mensaje'">
         <form id="form-solicitud" (ngSubmit)="enviarSolicitud()" class="space-y-4">
           <div class="flex items-center gap-3 rounded-2xl bg-superficie-2 p-3">
-            <app-imagen-publicacion class="size-16 shrink-0 rounded-xl" [src]="imagenes()[0]" [modo]="p.modo" [categoriaId]="p.categoria?.id" />
+            <app-imagen-publicacion class="size-16 shrink-0 rounded-xl" [src]="imagenes()[0]" [miniatura]="true" [modo]="p.modo" [categoriaId]="p.categoria?.id" />
             <div class="min-w-0">
               <p class="truncate font-semibold">{{ p.titulo }}</p>
               <app-insignia-modo [modo]="p.modo" />
@@ -402,6 +402,8 @@ export default class Detalle {
   protected readonly p = computed(() => this.recurso.value());
   protected readonly imagenes = computed(() => this.p()?.imagenes ?? []);
   protected readonly urlPublica = urlPublica;
+  protected readonly miniatura = miniatura;
+  protected readonly usarOriginal = usarOriginal;
   protected readonly indice = signal(0);
   protected readonly visorAbierto = signal(false);
   protected readonly infoModo = computed(() => INFO_MODO[(this.p()?.modo as ModoDto) ?? 'Trueke'] ?? INFO_MODO.Trueke);

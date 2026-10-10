@@ -20,6 +20,7 @@ import { InsigniaModo } from './insignia-modo';
         <app-imagen-publicacion
           class="size-full"
           [src]="p.imagenes?.[0]"
+          [miniatura]="true"
           [alt]="p.titulo ?? ''"
           [modo]="p.modo"
           [categoriaId]="p.categoria?.id"

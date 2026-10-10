@@ -55,6 +55,20 @@ public static partial class ReglasArchivos
     /// <summary>Nombre que el servidor asigna: {usuario}/{aleatorio}.{ext}. El cliente nunca elige la ruta.</summary>
     public static string NuevoNombre(Guid usuarioId, string extension) => $"{usuarioId:N}/{Guid.NewGuid():N}.{extension}";
 
+    /// <summary>Sufijo de las miniaturas. El front aplica la misma regla (shared/imagenes.ts → miniatura()).</summary>
+    public const string SufijoMiniatura = ".min.webp";
+
+    /// <summary>
+    /// "{usuario}/{aleatorio}.jpg" → "{usuario}/{aleatorio}.min.webp", o null si el nombre no es una foto publicada.
+    /// Como no encaja en el patrón de <see cref="NombreBlob"/>, nadie puede usar una miniatura como foto de una publicación.
+    /// </summary>
+    public static string? NombreMiniatura(string nombreBlob)
+    {
+        var m = NombreBlob().Match(nombreBlob);
+        if (!m.Success || m.Groups["ext"].Value == "pdf") return null;
+        return nombreBlob[..^(m.Groups["ext"].Length + 1)] + SufijoMiniatura;
+    }
+
     /// <summary>
     /// Si <paramref name="url"/> es un archivo de <paramref name="contenedor"/> subido por <paramref name="usuarioId"/>,
     /// devuelve (nombre del blob, extensión); si no (otro host, otro contenedor, otro usuario, query, rutas raras), null.

@@ -49,7 +49,7 @@ type Filtro = 'activas' | 'negociacion' | 'cerradas';
           @for (p of visibles(); track p.id) {
             <li class="tarjeta flex animate-aparecer flex-col gap-4 p-4 sm:flex-row sm:items-center">
               <a [routerLink]="['/publicacion', p.id]" class="flex min-w-0 flex-1 items-center gap-4">
-                <app-imagen-publicacion class="size-20 shrink-0 rounded-2xl sm:size-24" [src]="p.imagenes?.[0]" [modo]="p.modo" [categoriaId]="p.categoria?.id" />
+                <app-imagen-publicacion class="size-20 shrink-0 rounded-2xl sm:size-24" [src]="p.imagenes?.[0]" [miniatura]="true" [modo]="p.modo" [categoriaId]="p.categoria?.id" />
                 <div class="min-w-0">
                   <div class="flex flex-wrap items-center gap-1.5">
                     <app-insignia-modo [modo]="p.modo" />
