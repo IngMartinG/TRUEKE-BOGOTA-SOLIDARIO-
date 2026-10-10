@@ -95,7 +95,7 @@ export default class Ayuda {
       titulo: 'Intercambios y entregas',
       icono: 'apreton',
       preguntas: [
-        { p: '¿Cómo funciona una solicitud?', r: 'Cuando te interesa una publicación envías una solicitud. Se abre un chat con la otra persona; si acepta, coordinan la entrega por ahí.' },
+        { p: '¿Cómo funciona una solicitud?', r: 'Cuando te interesa una publicación envías una solicitud y se abre un chat con quien la publicó. Varias personas pueden estar interesadas a la vez: la publicación sigue en el catálogo hasta que el dueño elige a una. Ahí queda reservada y las demás pasan a lista de espera; si el intercambio no se concreta, vuelve al catálogo y el dueño puede elegir a otra persona.' },
         { p: '¿Cuándo se completa un intercambio?', r: 'Cuando las dos partes confirman la entrega en la app. En ese momento se suman los Eco-Puntos y la reputación, y pueden calificarse.' },
         { p: '¿Qué pasa si la otra persona no aparece?', r: 'Desde "Mis intercambios" puedes marcar el intercambio como no concretado, explicando el motivo. La publicación vuelve a estar disponible.' },
       ],

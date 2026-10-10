@@ -71,6 +71,11 @@ type Filtro = 'activas' | 'negociacion' | 'cerradas';
                   </p>
                   <p class="mt-1 flex items-center gap-1 text-xs font-semibold text-bosque-700 dark:text-bosque-300">
                     <app-icono nombre="ojo" [tamano]="12" />{{ p.vistas ?? 0 | numero }} vistas
+                    @if ((p.interesados ?? 0) > 0) {
+                      <span class="ml-2 flex items-center gap-1 text-tierra-600 dark:text-tierra-500">
+                        <app-icono nombre="usuarios" [tamano]="12" />{{ p.interesados }} {{ p.interesados === 1 ? 'interesada' : 'interesadas' }}
+                      </span>
+                    }
                   </p>
                 </div>
               </a>
@@ -81,7 +86,9 @@ type Filtro = 'activas' | 'negociacion' | 'cerradas';
                     [title]="puedeImpulsar(p) ? 'Sube al primer lugar de «Más recientes»' : 'Disponible ' + (p.proximoImpulsoUtc | hace)">
                     <app-icono nombre="cohete" [tamano]="14" />Impulsar
                   </button>
-                  <a [routerLink]="['/publicacion', p.id, 'editar']" class="btn btn-secundario btn-sm"><app-icono nombre="editar" [tamano]="14" />Editar</a>
+                  @if (!p.interesados) {
+                    <a [routerLink]="['/publicacion', p.id, 'editar']" class="btn btn-secundario btn-sm"><app-icono nombre="editar" [tamano]="14" />Editar</a>
+                  }
                 }
                 <a routerLink="/intercambios" [queryParams]="{ tab: 'recibidas' }" class="btn btn-secundario btn-sm"><app-icono nombre="apreton" [tamano]="14" />Solicitudes</a>
               </div>
@@ -145,7 +152,7 @@ export default class MisPublicaciones {
   protected readonly filtro = signal<Filtro>('activas');
   protected readonly filtros: { valor: Filtro; texto: string }[] = [
     { valor: 'activas', texto: 'Disponibles' },
-    { valor: 'negociacion', texto: 'En negociación' },
+    { valor: 'negociacion', texto: 'Reservadas' },
     { valor: 'cerradas', texto: 'Cerradas' },
   ];
   protected readonly recurso = rxResource({ stream: () => this.api.mias() });

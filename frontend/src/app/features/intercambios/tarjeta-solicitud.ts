@@ -58,6 +58,23 @@ export type AccionSolicitud = 'aceptar' | 'rechazar' | 'cancelar' | 'confirmar' 
         </ol>
       </div>
 
+      @if (s.enEspera) {
+        <div class="mx-5 mb-4 flex gap-2 rounded-2xl bg-sol-50 p-4 text-sm dark:bg-sol-500/10">
+          <app-icono nombre="reloj" [tamano]="18" class="mt-0.5 shrink-0 text-sol-600" />
+          <p>
+            @if (s.soyDuenio) {
+              Estás concretando esta publicación con otra persona. Si no se concreta, volverá al catálogo y podrás elegir a {{ otra()?.nombre }}.
+            } @else {
+              <strong>Estás en lista de espera.</strong> El dueño está concretando con otra persona; si no se da, podrá elegirte. Puedes seguir conversando o retirar tu solicitud.
+            }
+          </p>
+        </div>
+      } @else if (s.estado === 'Pendiente' && s.soyDuenio) {
+        <p class="mx-5 mb-4 text-xs text-tenue">
+          Al aceptar, la publicación se reserva para esta persona y sale del catálogo. Si hay más interesados, quedan en lista de espera por si no se concreta.
+        </p>
+      }
+
       @if (s.estado === 'Aceptada') {
         <div class="mx-5 mb-4 rounded-2xl bg-agua-50 p-4 text-sm dark:bg-agua-700/20">
           <p class="font-semibold text-agua-700 dark:text-agua-100">Coordinen la entrega por el chat y confirmen cuando el objeto cambie de manos.</p>
@@ -92,8 +109,10 @@ export class TarjetaSolicitud {
   readonly accion = output<AccionSolicitud>();
 
   protected readonly otra = computed(() => (this.solicitud().soyDuenio ? this.solicitud().solicitante : this.solicitud().propietario));
-  protected readonly estado = computed(
-    () => ETIQUETA_ESTADO_SOLICITUD[this.solicitud().estado ?? ''] ?? { texto: this.solicitud().estado ?? '', clase: 'insignia-neutra' },
+  protected readonly estado = computed(() =>
+    this.solicitud().enEspera
+      ? { texto: 'En lista de espera', clase: 'insignia-sol' }
+      : (ETIQUETA_ESTADO_SOLICITUD[this.solicitud().estado ?? ''] ?? { texto: this.solicitud().estado ?? '', clase: 'insignia-neutra' }),
   );
   protected readonly miConfirmacion = computed(() =>
     this.solicitud().soyDuenio ? !!this.solicitud().confirmadaPorDuenio : !!this.solicitud().confirmadaPorSolicitante,
@@ -119,7 +138,8 @@ export class TarjetaSolicitud {
     if (s.estado === 'Pendiente') {
       if (s.soyDuenio) {
         lista.push({ accion: 'rechazar', texto: 'Rechazar', icono: 'x', clase: 'btn-fantasma' });
-        lista.push({ accion: 'aceptar', texto: 'Aceptar', icono: 'check', clase: 'btn-primario' });
+        // Mientras se concreta con otra persona no se puede elegir a una segunda.
+        if (!s.enEspera) lista.push({ accion: 'aceptar', texto: 'Aceptar y reservar', icono: 'check', clase: 'btn-primario' });
       } else {
         lista.push({ accion: 'cancelar', texto: 'Retirar solicitud', icono: 'x', clase: 'btn-fantasma' });
       }

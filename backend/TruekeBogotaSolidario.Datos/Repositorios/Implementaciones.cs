@@ -207,8 +207,22 @@ public sealed class SolicitudRepository : ISolicitudRepository
         => await _db.Solicitudes.AsNoTracking().Include(s => s.Publicacion).ThenInclude(p => p!.Propietario).Include(s => s.Solicitante)
             .Where(s => s.Publicacion!.PropietarioId == propietarioId).OrderByDescending(s => s.FechaSolicitud).Take(200).ToListAsync();
 
-    public Task<Solicitud?> ObtenerPendientePorPublicacionAsync(Guid publicacionId)
-        => _db.Solicitudes.FirstOrDefaultAsync(s => s.PublicacionId == publicacionId && s.Estado == EstadoSolicitud.Pendiente);
+    public async Task<IReadOnlyList<Solicitud>> ListarEnCursoPorPublicacionAsync(Guid publicacionId, bool incluirAceptada)
+        => await _db.Solicitudes.Where(s => s.PublicacionId == publicacionId
+            && (s.Estado == EstadoSolicitud.Pendiente || (incluirAceptada && s.Estado == EstadoSolicitud.Aceptada))).ToListAsync();
+
+    public async Task<IReadOnlyDictionary<Guid, int>> ContarPendientesPorPublicacionAsync(IReadOnlyCollection<Guid> publicacionIds)
+    {
+        if (publicacionIds.Count == 0) return new Dictionary<Guid, int>();
+        return await _db.Solicitudes.AsNoTracking()
+            .Where(s => publicacionIds.Contains(s.PublicacionId) && s.Estado == EstadoSolicitud.Pendiente)
+            .GroupBy(s => s.PublicacionId).Select(g => new { g.Key, Total = g.Count() })
+            .ToDictionaryAsync(x => x.Key, x => x.Total);
+    }
+
+    public Task<bool> ExisteEnCursoAsync(Guid publicacionId, Guid solicitanteId)
+        => _db.Solicitudes.AnyAsync(s => s.PublicacionId == publicacionId && s.SolicitanteId == solicitanteId
+            && (s.Estado == EstadoSolicitud.Pendiente || s.Estado == EstadoSolicitud.Aceptada));
 
     public Task<int> ContarPendientesPorSolicitanteAsync(Guid solicitanteId)
         => _db.Solicitudes.CountAsync(s => s.SolicitanteId == solicitanteId && s.Estado == EstadoSolicitud.Pendiente);
@@ -216,10 +230,6 @@ public sealed class SolicitudRepository : ISolicitudRepository
     public Task<bool> ExisteAceptadaAsync(Guid publicacionId, Guid solicitanteId)
         => _db.Solicitudes.AnyAsync(s => s.PublicacionId == publicacionId && s.SolicitanteId == solicitanteId
             && (s.Estado == EstadoSolicitud.Aceptada || s.Estado == EstadoSolicitud.Completada));
-
-    public Task<Solicitud?> ObtenerEnCursoPorPublicacionAsync(Guid publicacionId)
-        => _db.Solicitudes.FirstOrDefaultAsync(s => s.PublicacionId == publicacionId
-            && (s.Estado == EstadoSolicitud.Pendiente || s.Estado == EstadoSolicitud.Aceptada));
 
     public async Task<IReadOnlyList<Guid>> ListarParaCierreAutomaticoAsync(DateTime limiteConConfirmacion, DateTime limiteSinConfirmacion, int maximo)
         => await _db.Solicitudes.AsNoTracking()
