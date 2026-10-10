@@ -7,7 +7,7 @@ FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
 WORKDIR /src
 
 # Primero solo los .csproj: la restauración queda en caché mientras no cambien las dependencias
-COPY nuget.config global.json ./
+COPY nuget.config global.json Directory.Build.props ./
 COPY TruekeBogotaSolidario.Datos/TruekeBogotaSolidario.Datos.csproj TruekeBogotaSolidario.Datos/
 COPY TruekeBogotaSolidario.Negocio/TruekeBogotaSolidario.Negocio.csproj TruekeBogotaSolidario.Negocio/
 COPY TruekeBogotaSolidario.Presentacion/TruekeBogotaSolidario.Presentacion.csproj TruekeBogotaSolidario.Presentacion/
