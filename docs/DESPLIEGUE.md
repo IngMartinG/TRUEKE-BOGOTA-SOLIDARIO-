@@ -106,13 +106,30 @@ En un plan pago de Render se puede volver a Gmail u otro SMTP: `Correo__Proveedo
 - **iPhone/Safari:** el front (`github.io`) y la API (`onrender.com`) son sitios distintos, y Safari bloquea esa cookie de sesión "de terceros". En Safari la sesión se cierra cuando vence el token (15 min). En Chrome, Edge y Firefox funciona bien. **Se resuelve con dominio propio** (§8).
 - **Cuota de la base gratis:** cada mes trae 32 GB y 100.000 vCore-segundos de cómputo, que son unas **28-55 horas de base activa** (la base se duerme sola cuando nadie la usa; como la API de Render también se duerme, solo gasta mientras alguien usa la app). Alcanza para la clase y las pruebas, no para usuarios todo el día. Si se agota, la base se pausa hasta el mes siguiente; para tráfico real, pasarla a un plan de pago (§8). El consumo se ve en la base → *Información general* → "Cantidad mensual gratuita de vCore". Fuente: [oferta gratuita de Azure SQL](https://learn.microsoft.com/azure/azure-sql/database/free-offer).
 - Sin Redis: el límite de intentos es por instancia (correcto mientras haya una sola).
+- **Sin chequeo de disponibilidad (a propósito):** un monitor cada 5 min mantendría despierta la API. Las tareas de fondo (mantenimiento cada hora, reconciliación de pagos) despertarían también la base, y la cuota gratis de Azure SQL se agotaría en 1-2 días: **la base quedaría pausada hasta el mes siguiente**. Activarlo solo con plan pago (§7.2).
+
+### 7.1 Monitoreo con Application Insights (gratis hasta 5 GB/mes)
+La API envía errores, peticiones lentas, consultas a SQL (sin el texto ni los parámetros) y logs solo si existe la variable `APPLICATIONINSIGHTS_CONNECTION_STRING`. Nunca envía cuerpos de peticiones, contraseñas ni la query string (allí viaja el token del chat en tiempo real). Los `/health` no se registran.
+1. Portal → **Application Insights** → *Crear*: grupo `trueke`, nombre `trueke-monitoreo`, región **Central US**. Se crea también un *área de trabajo de Log Analytics*, que es donde se cobra por datos.
+2. **Tope para no pagar nunca:** área de trabajo de Log Analytics → *Uso y costos estimados* → **Límite diario** = `0.15` GB/día (≈4,5 GB/mes, por debajo de los 5 GB gratis). Si se llega al tope, ese día deja de llegar telemetría, pero la app sigue funcionando.
+3. Application Insights → *Información general* → copiar la **Cadena de conexión** → en Render → *Environment* → `APPLICATIONINSIGHTS_CONNECTION_STRING` → *Save* (Render redespliega). Al arrancar ya no sale el aviso "no habrá monitoreo" en los logs.
+4. **Alertas:**
+   - *Detección inteligente → Anomalías de errores* viene activa y es gratis: avisa por correo a los dueños de la suscripción cuando sube el porcentaje de peticiones fallidas.
+   - Opcional (≈US$0,10/mes): *Alertas → Crear regla de alerta* → señal **Excepciones** → mayor que 5 en 15 min → *Grupo de acciones* con tu correo.
+5. Dónde mirar: **Errores** (excepciones con su traza), **Rendimiento** (endpoints lentos y consultas a SQL), **Mapa de aplicación** (`trueke-api` → SQL, Blob, Wompi) y **Métricas en vivo**.
+6. **Costo:** con el tráfico actual, muy por debajo de los 5 GB. Si un mes se acerca al tope, bajar el muestreo con la variable `Monitoreo__Muestreo=0.25` (envía 1 de cada 4 peticiones; los errores siguen visibles en proporción).
+
+### 7.2 Chequeo de disponibilidad (cuando haya plan pago)
+- **Gratis:** [UptimeRobot](https://uptimerobot.com) (cuenta propia) → monitor HTTP(s) a `https://<API>/health/live` cada 5 min, con aviso por correo. `/health/live` no toca la base; `/health/ready` sí (úsalo solo con la base en plan pago).
+- **En Azure:** Application Insights → *Disponibilidad* → *Prueba estándar* a la misma URL, con alerta. Cobra por ejecución: revisar la calculadora de precios de Azure antes de activarla.
+- Se activa junto con: API en plan pago (no se duerme) y Azure SQL en plan pago (la base gratis no aguanta estar siempre activa).
 
 ## 8. Pasar a pago (producción real)
 1. **Dominio propio** (p. ej. `trueke.co`, ~US$15-30/año en un registrador o en Cloudflare): `trueke.co` → front y `api.trueke.co` → API. Al quedar en el mismo sitio, cambiar `Auth__CookieSameSite` a `Strict`, y `Cors__Origenes__0` / `Urls__Frontend` al dominio nuevo. Agregar el dominio en reCAPTCHA, en el CORS del Storage y en Google.
 2. **API sin arranque en frío:** en `render.yaml` cambiar `plan: free` → `plan: starter`, o mover la misma imagen a **Azure App Service B1** (Linux, contenedor) con Managed Identity (`Almacenamiento__ServicioUrl` en lugar de la cadena de conexión) y Key Vault. Ver `backend/README.md` §9.
 3. **Base de datos:** pasar Azure SQL a Basic/S0 (sin pausa) y revisar la retención de backups.
 4. **Pagos reales:** cuando Wompi apruebe el comercio, usar las llaves `pub_prod_…` y cambiar `Pagos__Wompi__BaseUrl` a `https://production.wompi.co/v1` **en `render.yaml`** (si se cambia solo en el panel, la sincronización del Blueprint lo devuelve a sandbox). Con eso desaparece sola la franja "Sitio de demostración". **Antes**, borrar los datos de prueba (la app promete a los testers que los beneficios de prueba se borran): lo más limpio es una base nueva vacía (`Database__Inicializacion=Migrate` crea las tablas).
-5. **Monitoreo:** Application Insights (`APPLICATIONINSIGHTS_CONNECTION_STRING`).
+5. **Monitoreo:** Application Insights ya funciona en la fase gratis (§7.1); con plan pago, activar el chequeo de disponibilidad (§7.2).
 6. **Más de una instancia:** Azure Cache for Redis (`Redis__Habilitado=true`, `Redis__Conexion`).
 
 ## 9. Kubernetes, ¿hace falta?
