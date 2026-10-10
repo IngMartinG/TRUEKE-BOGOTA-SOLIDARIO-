@@ -27,7 +27,7 @@ Guía para publicar la plataforma completa. Hay dos fases: **gratis** (para la c
 ## 2. Base de datos: Azure SQL (gratis)
 1. Portal de Azure → buscar **Azure SQL** → *Crear* → **Base de datos SQL**. Arriba aparece el aviso de la **oferta gratuita** → *Aplicar oferta*.
 2. Grupo de recursos: `trueke`. Nombre de la base: `TruekeDb`.
-3. Servidor → *Crear nuevo*: nombre único (p. ej. `trueke-sql-<algo>`), región **East US** (queda al lado de Render Virginia), autenticación **SQL** con un usuario administrador y una clave larga. Guardar ambos en un gestor de contraseñas.
+3. Servidor → *Crear nuevo*: nombre único (p. ej. `trueke-sql-<algo>`), región **Central US** (las cuentas de prueba no permiten East US; Render queda en Ohio, al lado). Si una región sale en rojo, probar otra de EE. UU. y poner la misma en Storage y la más cercana en `render.yaml`, autenticación **SQL** con un usuario administrador y una clave larga. Guardar ambos en un gestor de contraseñas.
 4. En *Comportamiento al alcanzar el límite gratis* elegir **Pausar la base hasta el próximo mes**. Así nunca hay cobros.
 5. *Redes*: acceso **público**, y por ahora **no** marcar "Agregar la IP actual". Las reglas se agregan en el paso 4.3.
 6. Crear. Al terminar: base → *Cadenas de conexión* → **ADO.NET**. Copiarla, reemplazar `{your_password}` y agregar al final `Connection Timeout=60;` (la base gratis puede tardar en despertar):
@@ -37,7 +37,7 @@ Guía para publicar la plataforma completa. Hay dos fases: **gratis** (para la c
    Este valor va en `ConnectionStrings__TruekeDb`. Las tablas las crea la API sola al arrancar (migraciones).
 
 ## 3. Fotos: Azure Blob Storage
-1. Portal → **Cuentas de almacenamiento** → *Crear*: grupo `trueke`, nombre único en minúsculas (p. ej. `truekefotos<algo>`), región East US, rendimiento **Estándar**, redundancia **LRS** (la más barata).
+1. Portal → **Cuentas de almacenamiento** → *Crear*: grupo `trueke`, nombre único en minúsculas (p. ej. `truekefotos<algo>`), región **la misma de la base** (Central US), rendimiento **Estándar**, redundancia **LRS** (la más barata).
 2. *Configuración* → **Permitir el acceso anónimo de blobs: Habilitado**. Solo el contenedor `imagenes` es público (de solo lectura); `documentos` queda privado. La API crea ambos contenedores sola.
 3. *Uso compartido de recursos (CORS)* → pestaña **Blob service** → agregar una regla:
    - Orígenes permitidos: `https://ingmarting.github.io`
