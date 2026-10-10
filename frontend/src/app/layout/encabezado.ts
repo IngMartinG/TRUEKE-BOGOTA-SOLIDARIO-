@@ -59,7 +59,12 @@ import { Logo } from '../shared/ui/logo';
             <app-icono [nombre]="tema.oscuroActivo() ? 'sol' : 'luna'" />
           </button>
 
-          @if (sesion.autenticado()) {
+          @if (sesion.autenticado() && !sesion.correoVerificado()) {
+            <a routerLink="/verifica-tu-correo" class="btn btn-sol hidden whitespace-nowrap sm:inline-flex">
+              <app-icono nombre="correo" [tamano]="18" />Confirma tu correo
+            </a>
+          }
+          @if (sesion.autenticado() && sesion.correoVerificado()) {
             <a routerLink="/publicar" class="btn btn-primario hidden lg:inline-flex">
               <app-icono nombre="mas" [tamano]="18" />Publicar
             </a>
@@ -79,7 +84,8 @@ import { Logo } from '../shared/ui/logo';
                 </span>
               }
             </a>
-
+          }
+          @if (sesion.autenticado()) {
             <button
               type="button"
               class="flex items-center gap-2 rounded-full border border-borde bg-superficie py-1 pr-3 pl-1 transition hover:border-bosque-300"
@@ -113,12 +119,18 @@ import { Logo } from '../shared/ui/logo';
             </span>
           </div>
         </div>
-        @for (item of menu; track item.ruta) {
-          <a cdkMenuItem [routerLink]="item.ruta" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium outline-none hover:bg-superficie-2 focus:bg-superficie-2">
-            <app-icono [nombre]="item.icono" [tamano]="18" class="text-tenue" />{{ item.texto }}
+        @if (sesion.correoVerificado()) {
+          @for (item of menu; track item.ruta) {
+            <a cdkMenuItem [routerLink]="item.ruta" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium outline-none hover:bg-superficie-2 focus:bg-superficie-2">
+              <app-icono [nombre]="item.icono" [tamano]="18" class="text-tenue" />{{ item.texto }}
+            </a>
+          }
+        } @else {
+          <a cdkMenuItem routerLink="/verifica-tu-correo" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium outline-none hover:bg-superficie-2 focus:bg-superficie-2">
+            <app-icono nombre="correo" [tamano]="18" class="text-sol-600" />Confirma tu correo para usar tu cuenta
           </a>
         }
-        @if (sesion.esModerador()) {
+        @if (sesion.esModerador() && sesion.correoVerificado()) {
           <a cdkMenuItem routerLink="/admin" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-agua-700 outline-none hover:bg-superficie-2 focus:bg-superficie-2 dark:text-agua-100">
             <app-icono nombre="escudo" [tamano]="18" />Moderación
           </a>
