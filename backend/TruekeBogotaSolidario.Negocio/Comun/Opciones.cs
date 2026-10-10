@@ -82,6 +82,11 @@ public sealed class UrlsOpciones
     public const string Seccion = "Urls";
     /// <summary>URL base del front Angular: los enlaces de los correos apuntan aquí (https obligatorio en Producción).</summary>
     public string Frontend { get; set; } = "http://localhost:4200";
+    /// <summary>
+    /// URL pública de esta API (p. ej. https://trueke-api.onrender.com). Opcional: la usan los enlaces para compartir
+    /// (og:image debe ser absoluta). Vacía = se toma del request (con X-Forwarded-Proto de un proxy confiable).
+    /// </summary>
+    public string Api { get; set; } = "";
     /// <summary>Hosts https permitidos para imágenes de publicaciones (p. ej. tucuenta.blob.core.windows.net). Vacío = cualquier https.</summary>
     public List<string> HostsPermitidosImagenes { get; set; } = new();
     /// <summary>Hosts https permitidos para documentos de verificación de identidad.</summary>

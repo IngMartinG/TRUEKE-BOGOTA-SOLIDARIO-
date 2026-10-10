@@ -71,6 +71,10 @@ public sealed class AlmacenFalso : IAlmacenArchivos
 
     public Task<int> GenerarMiniaturasFaltantesAsync(CancellationToken ct = default) => Task.FromResult(0);
 
+    public Task<byte[]?> LeerFotoPublicadaAsync(string url, CancellationToken ct = default)
+        => Task.FromResult(ReglasArchivos.NombreFotoPublicada(url, Contenedor(TipoArchivoDto.Imagen)) is not null && _blobs.TryGetValue(url, out var b)
+            ? b.Datos : null);
+
     public bool Existe(string url) => _blobs.ContainsKey(url);
 
     public static byte[] Png(int tamano = 100)

@@ -11,6 +11,7 @@ import { CatalogoApi } from '../../core/api/catalogo.api';
 import { CuentaApi } from '../../core/api/cuenta.api';
 import { IntercambiosApi } from '../../core/api/intercambios.api';
 import { AvisosService } from '../../core/avisos.service';
+import { urlCompartirPublicacion } from '../../core/entorno';
 import { FavoritosService } from '../../core/favoritos.service';
 import { mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
@@ -537,7 +538,8 @@ export default class Detalle {
   }
 
   protected async compartir(): Promise<void> {
-    const url = window.location.href;
+    const id = this.p()?.id;
+    const url = (id && urlCompartirPublicacion(id)) || window.location.href;
     const titulo = this.p()?.titulo ?? 'Trueke Bogotá Solidario';
     try {
       if (navigator.share) {
