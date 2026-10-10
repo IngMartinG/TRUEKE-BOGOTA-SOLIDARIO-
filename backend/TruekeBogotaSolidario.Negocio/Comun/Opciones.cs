@@ -68,6 +68,13 @@ public sealed class PagosOpciones
     [Range(10, 3600)] public int SegundosEntreReconciliaciones { get; set; } = 120;
     public WompiOpciones Wompi { get; set; } = new();
     public bool EsSimulado => string.Equals(Proveedor, "Simulado", StringComparison.OrdinalIgnoreCase);
+    /// <summary>
+    /// Los pagos no mueven dinero real: pasarela simulada, ambiente sandbox de Wompi o llaves de prueba. El front lo avisa
+    /// para que nadie confunda una demostración con un cobro (ni un beneficio obtenido con tarjeta de prueba con un error).
+    /// </summary>
+    public bool EsDePrueba => EsSimulado
+        || Wompi.BaseUrl.Contains("sandbox", StringComparison.OrdinalIgnoreCase)
+        || Wompi.LlavePublica.StartsWith("pub_test_", StringComparison.Ordinal);
 }
 
 public sealed class UrlsOpciones
