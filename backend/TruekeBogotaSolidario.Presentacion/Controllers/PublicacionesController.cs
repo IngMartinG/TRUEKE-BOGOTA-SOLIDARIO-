@@ -24,6 +24,14 @@ public sealed class PublicacionesController : ControllerBase
     public async Task<ActionResult<PaginaDto<PublicacionDto>>> Listar([FromQuery] FiltroPublicacionesRequest filtro)
         => Ok(await _pubs.ListarAsync(User.IdActualOpcional(), filtro));
 
+    /// <summary>
+    /// Autocompletar: hasta 10 títulos de publicaciones visibles que contienen las palabras escritas (sin importar tildes,
+    /// mayúsculas ni plurales simples). Con menos de 2 letras devuelve una lista vacía.
+    /// </summary>
+    [HttpGet("publicaciones/sugerencias"), AllowAnonymous]
+    public async Task<ActionResult<IReadOnlyList<string>>> Sugerencias([FromQuery] SugerenciasRequest r)
+        => Ok(await _pubs.SugerirAsync(r));
+
     /// <summary>Publicaciones visibles dentro de un radio (km), ordenadas por distancia (Haversine).</summary>
     [HttpGet("publicaciones/cercanas"), AllowAnonymous]
     public async Task<ActionResult<IReadOnlyList<PublicacionCercanaDto>>> Cercanas([FromQuery] CercanasRequest r)

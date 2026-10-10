@@ -14,6 +14,8 @@ public interface IPublicacionService
     /// <summary>Solo el dueño y solo si está Disponible. Reemplaza todos los campos (incluida la lista de fotos).</summary>
     Task<PublicacionDto> EditarAsync(Guid actorId, Guid id, CrearPublicacionRequest r);
     Task<PaginaDto<PublicacionDto>> ListarAsync(Guid? actorId, FiltroPublicacionesRequest f);
+    /// <summary>Autocompletar del buscador: títulos de publicaciones visibles que contienen lo escrito.</summary>
+    Task<IReadOnlyList<string>> SugerirAsync(SugerenciasRequest r);
     /// <param name="visitante">Identificador anónimo de quien mira (usuario o hash de IP) para contar vistas; null = no contar.</param>
     Task<PublicacionDto> ObtenerAsync(Guid? actorId, Guid id, string? visitante = null);
     Task<IReadOnlyList<PublicacionCercanaDto>> ListarCercanasAsync(Guid? actorId, CercanasRequest r);
@@ -192,6 +194,11 @@ public sealed class PublicacionService : IPublicacionService
             veModeracion: false, ahora, favoritas.Contains(p.Id), interesados: interesados.GetValueOrDefault(p.Id))).ToList();
         return new PaginaDto<PublicacionDto>(dtos, total, Math.Max(f.Pagina, 1), Math.Clamp(f.Tamano, 1, 50));
     }
+
+    public async Task<IReadOnlyList<string>> SugerirAsync(SugerenciasRequest r)
+        => string.IsNullOrWhiteSpace(r.Texto) || r.Texto.Trim().Length < 2
+            ? Array.Empty<string>()
+            : await _pubs.SugerirTitulosAsync(r.Texto, r.Max, Ahora);
 
     public async Task<IReadOnlyList<PublicacionDto>> ListarDestacadasAsync(Guid? actorId, DestacadasRequest r)
     {

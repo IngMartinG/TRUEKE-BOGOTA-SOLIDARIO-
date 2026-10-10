@@ -73,7 +73,19 @@ public class Publicacion
     public bool EstaOculta { get; private set; }
     public string? MotivoOcultamiento { get; private set; }
 
+    /// <summary>Título normalizado (ver <see cref="Common.TextoBusqueda"/>): pesa más en el orden de los resultados.</summary>
+    public string TituloBusqueda { get; private set; } = "";
+    /// <summary>Título, descripción, estado y categoría normalizados: es donde se buscan los términos.</summary>
+    public string TextoBusqueda { get; private set; } = "";
+
     public byte[]? RowVersion { get; private set; }
+
+    /// <summary>Recalcula el texto de búsqueda (requiere la categoría cargada). Lo usan Aplicar y el relleno inicial.</summary>
+    public void ActualizarTextoBusqueda()
+    {
+        TituloBusqueda = Common.TextoBusqueda.Normalizar(Titulo);
+        TextoBusqueda = Common.TextoBusqueda.Normalizar(Titulo, Descripcion, DetalleCondicion, Categoria?.NombreCategoria);
+    }
 
     /// <summary>Validación y asignación compartidas por la creación y la edición.</summary>
     private void Aplicar(DatosPublicacion d)
@@ -120,6 +132,7 @@ public class Publicacion
         Longitud = d.Longitud;
         _imagenes.Clear();
         _imagenes.AddRange(fotos.Select((url, i) => new ImagenPublicacion(url, i)));
+        ActualizarTextoBusqueda();
     }
 
     /// <summary>Solo el dueño y solo mientras está Disponible: lo que ya está en negociación no cambia bajo los pies del interesado.</summary>

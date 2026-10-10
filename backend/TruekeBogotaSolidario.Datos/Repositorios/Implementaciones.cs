@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using Microsoft.EntityFrameworkCore;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Contexto;
@@ -130,7 +131,8 @@ public sealed class PublicacionRepository : IPublicacionRepository
         if (!string.IsNullOrWhiteSpace(f.DepartamentoCodigo)) { var dep = f.DepartamentoCodigo.Trim(); q = q.Where(p => p.DepartamentoCodigo == dep); }
         if (!string.IsNullOrWhiteSpace(f.MunicipioCodigo)) { var mpio = f.MunicipioCodigo.Trim(); q = q.Where(p => p.MunicipioCodigo == mpio); }
         if (!string.IsNullOrWhiteSpace(f.Localidad)) { var loc = f.Localidad.Trim(); q = q.Where(p => p.Localidad == loc); }
-        if (!string.IsNullOrWhiteSpace(f.Texto)) { var t = f.Texto.Trim(); q = q.Where(p => p.Titulo.Contains(t) || p.Descripcion.Contains(t)); }
+        var terminos = TextoBusqueda.Terminos(f.Texto);
+        q = ConTerminos(q, terminos, p => p.TextoBusqueda);
         if (f.PrecioMin.HasValue) q = q.Where(p => p.PrecioReferenciaCop >= f.PrecioMin.Value);
         if (f.PrecioMax.HasValue) q = q.Where(p => p.PrecioReferenciaCop <= f.PrecioMax.Value);
         if (f.SoloVerificados) q = q.Where(p => p.Propietario!.EstadoVerificacion == EstadoVerificacion.Aprobada);
@@ -141,11 +143,56 @@ public sealed class PublicacionRepository : IPublicacionRepository
             // sin precio (Trueke/Donación) al final en ambos sentidos
             OrdenPublicaciones.PrecioAsc => q.OrderBy(p => p.PrecioReferenciaCop == null).ThenBy(p => p.PrecioReferenciaCop).ThenByDescending(p => p.FechaPublicacion),
             OrdenPublicaciones.PrecioDesc => q.OrderBy(p => p.PrecioReferenciaCop == null).ThenByDescending(p => p.PrecioReferenciaCop).ThenByDescending(p => p.FechaPublicacion),
-            _ => q.OrderByDescending(p => p.DestacadaHasta != null && p.DestacadaHasta > ahoraUtc) // destacadas VIGENTES primero
-                  .ThenByDescending(p => p.FechaRelevancia)                                     // luego las recién publicadas o impulsadas
+            // con texto: primero las que tienen más términos en el TÍTULO; dentro de cada grupo, el orden de siempre
+            _ => (terminos.Count > 0
+                    ? q.OrderByDescending(CoincidenciasEnTitulo(terminos)).ThenByDescending(p => p.DestacadaHasta != null && p.DestacadaHasta > ahoraUtc)
+                    : q.OrderByDescending(p => p.DestacadaHasta != null && p.DestacadaHasta > ahoraUtc)) // destacadas VIGENTES primero
+                  .ThenByDescending(p => p.FechaRelevancia)                                              // luego las recién publicadas o impulsadas
         };
         var items = await ordenada.ThenBy(p => p.Id).Skip((pagina - 1) * tamano).Take(tamano).ToListAsync();
         return (items, total);
+    }
+
+    public async Task<IReadOnlyList<string>> SugerirTitulosAsync(string texto, int maximo, DateTime ahoraUtc)
+    {
+        var terminos = TextoBusqueda.Terminos(texto);
+        if (terminos.Count == 0) return Array.Empty<string>();
+        var titulos = await ConTerminos(Visibles(ahoraUtc), terminos, p => p.TituloBusqueda)
+            .OrderByDescending(p => p.FechaRelevancia)
+            .Select(p => p.Titulo)
+            .Take(maximo * 3) // se piden más para que, al quitar repetidos, alcancen
+            .ToListAsync();
+        return titulos.DistinctBy(t => TextoBusqueda.Normalizar(t)).Take(maximo).ToList();
+    }
+
+    /// <summary>
+    /// Cada término debe estar al INICIO de alguna palabra (el texto normalizado empieza y termina con espacio).
+    /// El LIKE de SQL Server trata '_', '%' y '[' como comodines; los términos normalizados solo tienen letras y números.
+    /// </summary>
+    private static IQueryable<Publicacion> ConTerminos(IQueryable<Publicacion> q, IReadOnlyList<string> terminos,
+        Expression<Func<Publicacion, string>> campo)
+    {
+        foreach (var t in terminos)
+        {
+            var conEspacio = " " + t;
+            var contiene = Expression.Call(campo.Body, typeof(string).GetMethod(nameof(string.Contains), [typeof(string)])!,
+                Expression.Constant(conEspacio));
+            q = q.Where(Expression.Lambda<Func<Publicacion, bool>>(contiene, campo.Parameters));
+        }
+        return q;
+    }
+
+    /// <summary>p => (Titulo contiene t1 ? 1 : 0) + (… t2 ? 1 : 0) + …</summary>
+    private static Expression<Func<Publicacion, int>> CoincidenciasEnTitulo(IReadOnlyList<string> terminos)
+    {
+        var p = Expression.Parameter(typeof(Publicacion), "p");
+        var titulo = Expression.Property(p, nameof(Publicacion.TituloBusqueda));
+        var contains = typeof(string).GetMethod(nameof(string.Contains), [typeof(string)])!;
+        Expression suma = Expression.Constant(0);
+        foreach (var t in terminos)
+            suma = Expression.Add(suma, Expression.Condition(Expression.Call(titulo, contains, Expression.Constant(" " + t)),
+                Expression.Constant(1), Expression.Constant(0)));
+        return Expression.Lambda<Func<Publicacion, int>>(suma, p);
     }
 
     public async Task<(IReadOnlyList<Publicacion> Items, int Total)> ListarVisiblesDePropietarioAsync(Guid propietarioId, int pagina, int tamano, DateTime ahoraUtc)

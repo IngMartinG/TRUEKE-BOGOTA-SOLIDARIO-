@@ -1711,3 +1711,37 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010204951_BusquedaNormalizada'
+)
+BEGIN
+    ALTER TABLE [Publicaciones] ADD [TextoBusqueda] nvarchar(2600) NOT NULL DEFAULT N'';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010204951_BusquedaNormalizada'
+)
+BEGIN
+    ALTER TABLE [Publicaciones] ADD [TituloBusqueda] nvarchar(200) NOT NULL DEFAULT N'';
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010204951_BusquedaNormalizada'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261010204951_BusquedaNormalizada', N'8.0.31');
+END;
+GO
+
+COMMIT;
+GO
+

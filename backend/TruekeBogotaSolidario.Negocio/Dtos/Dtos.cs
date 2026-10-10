@@ -192,6 +192,13 @@ public sealed class FiltroPublicacionesRequest
     [Range(1, 50)] public int Tamano { get; init; } = 20;
 }
 
+/// <summary>Autocompletar del buscador del catálogo.</summary>
+public sealed class SugerenciasRequest
+{
+    [MaxLength(100)] public string? Texto { get; init; }
+    [Range(1, 10)] public int Max { get; init; } = 8;
+}
+
 public sealed class CercanasRequest
 {
     [Required, Range(-90, 90)] public double? Lat { get; init; }
