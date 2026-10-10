@@ -1,5 +1,5 @@
 /**
- * Configuración de despliegue leída en tiempo de ejecución desde `/config.json`.
+ * Configuración de despliegue leída en tiempo de ejecución desde `config.json` (relativo al `<base href>`).
  * Así la misma imagen del front sirve para cualquier entorno: en Docker, nginx genera
  * el archivo a partir de variables de entorno (ver docker/config.json.template).
  * Nunca contiene secretos: todo lo que llega al navegador es público.
@@ -23,7 +23,7 @@ let entorno: Entorno = { ...POR_DEFECTO };
 
 export async function cargarEntorno(): Promise<void> {
   try {
-    const r = await fetch('/config.json', { cache: 'no-store' });
+    const r = await fetch('config.json', { cache: 'no-store' });
     if (r.ok) {
       const datos = (await r.json()) as Partial<Entorno>;
       entorno = {
