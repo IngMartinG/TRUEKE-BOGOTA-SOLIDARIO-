@@ -21,8 +21,8 @@ import { Icono } from '../../shared/ui/icono';
       </div>
       <h1 class="mt-8 text-3xl font-extrabold">Confirma tu correo</h1>
       <p class="mt-3 text-tenue">
-        Enviamos un enlace a <strong class="text-tinta">{{ sesion.usuario()?.correo }}</strong>. Ábrelo para activar publicar,
-        solicitar intercambios y chatear.
+        Enviamos un enlace a <strong class="text-tinta">{{ sesion.usuario()?.correo }}</strong>. Ábrelo para activar tu cuenta.
+        Hasta entonces solo puedes explorar el catálogo, como cualquier visitante.
       </p>
       <ul class="mt-6 space-y-2 text-left text-sm text-tenue">
         <li class="flex gap-2"><app-icono nombre="check" [tamano]="16" class="mt-0.5 text-bosque-600" />Revisa la carpeta de spam o promociones.</li>
@@ -37,6 +37,10 @@ import { Icono } from '../../shared/ui/icono';
         </button>
       </div>
       <a routerLink="/explorar" class="enlace mt-6 text-sm">Seguir explorando mientras tanto</a>
+      <p class="mt-4 text-sm text-tenue">
+        ¿Escribiste mal el correo?
+        <button type="button" class="enlace" (click)="sesion.salir('/registro')">Cierra sesión y regístrate de nuevo</button>
+      </p>
     </div>
   `,
 })
