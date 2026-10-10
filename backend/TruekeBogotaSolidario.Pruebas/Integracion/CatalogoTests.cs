@@ -120,4 +120,49 @@ public class CatalogoTests : IClassFixture<FabricaApi>
         Assert.Equal(new[] { "Medio" }, await Titulos("precioMin=20000&precioMax=100000"));
         Assert.Equal(HttpStatusCode.BadRequest, (await _fabrica.CreateClient().GetAsync("/api/v1/publicaciones?precioMin=10&precioMax=5")).StatusCode);
     }
+
+    [Fact]
+    public async Task La_busqueda_ignora_tildes_mayusculas_orden_y_plurales_y_prioriza_el_titulo()
+    {
+        var c = await Api.RegistrarAsync(_fabrica, "buscable");
+        var marca = "zq" + Guid.NewGuid().ToString("N")[..6]; // palabra única para aislar esta prueba
+        var enTitulo = await CrearAsync(c, new { titulo = $"Cámara fotográfica {marca}", descripcion = "Funciona bien", categoriaId = 5,
+            modo = "Trueke", condicion = "Usado", localidad = "Suba" });
+        var enDescripcion = await CrearAsync(c, new { titulo = $"Trípode {marca}", descripcion = "Ideal para una cámara", categoriaId = 5,
+            modo = "Trueke", condicion = "Usado", localidad = "Suba" });
+        await CrearAsync(c, new { titulo = $"Zapatos de cuero {marca}", descripcion = "Talla 40", categoriaId = 1,
+            modo = "Trueke", condicion = "Usado", localidad = "Suba" });
+
+        async Task<Guid[]> Buscar(string texto)
+            => (await _fabrica.CreateClient().GetFromJsonAsync<JsonElement>($"/api/v1/publicaciones?texto={Uri.EscapeDataString(texto)}"))
+                .GetProperty("items").EnumerateArray().Select(p => p.GetProperty("id").GetGuid()).ToArray();
+
+        // sin tildes ni mayúsculas; la que lo tiene en el título va primero aunque sea más antigua
+        Assert.Equal(new[] { enTitulo, enDescripcion }, await Buscar($"CAMARA {marca}"));
+        Assert.Equal(new[] { enTitulo }, await Buscar($"{marca} fotografica"));      // palabras en otro orden
+        Assert.Single(await Buscar($"zapato {marca}"));                               // singular encuentra el plural
+        Assert.Single(await Buscar($"los zapatos {marca}"));                          // y el plural, sin "los"
+        Assert.Single(await Buscar($"ropa {marca}"));                                 // por el nombre de la categoría
+        Assert.Empty(await Buscar($"mara {marca}"));                                  // solo al inicio de palabra
+        Assert.Empty(await Buscar($"camara {marca} nevera"));                         // todas las palabras deben estar
+    }
+
+    [Fact]
+    public async Task Sugerencias_publicas_sin_repetir_y_solo_de_publicaciones_visibles()
+    {
+        var c = await Api.RegistrarAsync(_fabrica, "sugiere");
+        var marca = "zk" + Guid.NewGuid().ToString("N")[..6];
+        await CrearAsync(c, Cuerpo($"Lámpara {marca}"));
+        await CrearAsync(c, Cuerpo($"lampara {marca}"));
+        await CrearAsync(c, Cuerpo($"Lámpara de pie {marca}"));
+        var cancelada = await CrearAsync(c, Cuerpo($"Lámpara rota {marca}"));
+        (await c.PostAsJsonAsync($"/api/v1/publicaciones/{cancelada}/cancelar", new { motivo = "Ya no" })).EnsureSuccessStatusCode();
+
+        var anonimo = _fabrica.CreateClient();
+        var r = await anonimo.GetFromJsonAsync<string[]>($"/api/v1/publicaciones/sugerencias?texto=lampa%20{marca}");
+        Assert.Equal(2, r!.Length); // "Lámpara X" y "lampara X" son la misma sugerencia; la cancelada no aparece
+        Assert.Contains($"Lámpara de pie {marca}", r);
+        Assert.Empty((await anonimo.GetFromJsonAsync<string[]>("/api/v1/publicaciones/sugerencias?texto=l"))!);
+        Assert.Equal(HttpStatusCode.BadRequest, (await anonimo.GetAsync("/api/v1/publicaciones/sugerencias?texto=x&max=50")).StatusCode);
+    }
 }
