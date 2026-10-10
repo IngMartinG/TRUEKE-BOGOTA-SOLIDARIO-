@@ -17,7 +17,10 @@ Guía para publicar la plataforma completa. Hay dos fases: **gratis** (para la c
 ---
 
 ## 1. Antes de empezar
-- Cuenta de **Azure**: [azure.microsoft.com/free/students](https://azure.microsoft.com/free/students) con el correo de la universidad (sin tarjeta, US$100 de crédito, se renueva cada año). Si ya no deja entrar, crear una cuenta normal: la oferta gratuita de SQL no cobra.
+- Cuenta de **Azure**, una de estas dos:
+  - **Azure for Students** ([azure.microsoft.com/free/students](https://azure.microsoft.com/free/students)) con el correo de la universidad: sin tarjeta, US$100 de crédito. Si dice *"No se puede renovar Azure for Students"*, no hay forma de reactivarla desde la web; usar la otra opción.
+  - **Cuenta gratuita** ([azure.microsoft.com/free](https://azure.microsoft.com/free)): pide una tarjeta solo para verificar identidad (puede aparecer un cobro de verificación que se devuelve) y da US$200 por 30 días. Al terminar, se pasa a *pago por uso* para que los recursos sigan encendidos: la base con la oferta gratuita sigue sin costo y las fotos cuestan centavos.
+- **Alerta de presupuesto (hacerla primero):** portal → **Administración de costos** → **Presupuestos** → *Agregar*: monto mensual **US$1**, alerta al 100 % al correo del equipo. Así nada se cobra sin que se enteren.
 - Cuenta de **Render**: [render.com](https://render.com) → *Get started* → **con GitHub** (así ve el repositorio).
 - Para generar claves aleatorias sirve cualquier terminal con Git Bash: `openssl rand -base64 32`.
 
@@ -73,7 +76,7 @@ Más detalle de cada llave: [`backend/README.md` §7.1](../backend/README.md).
 ## 7. Limitaciones de la fase gratis
 - **Arranque en frío:** tras 15 min sin uso, la primera petición tarda 30-60 s.
 - **iPhone/Safari:** el front (`github.io`) y la API (`onrender.com`) son sitios distintos, y Safari bloquea esa cookie de sesión "de terceros". En Safari la sesión se cierra cuando vence el token (15 min). En Chrome, Edge y Firefox funciona bien. **Se resuelve con dominio propio** (§8).
-- **Base pausada:** si se agota la cuota mensual gratis de Azure SQL, la base se pausa hasta el mes siguiente.
+- **Cuota de la base gratis:** cada mes trae 32 GB y 100.000 vCore-segundos de cómputo, que son unas **28-55 horas de base activa** (la base se duerme sola cuando nadie la usa; como la API de Render también se duerme, solo gasta mientras alguien usa la app). Alcanza para la clase y las pruebas, no para usuarios todo el día. Si se agota, la base se pausa hasta el mes siguiente; para tráfico real, pasarla a un plan de pago (§8). El consumo se ve en la base → *Información general* → "Cantidad mensual gratuita de vCore". Fuente: [oferta gratuita de Azure SQL](https://learn.microsoft.com/azure/azure-sql/database/free-offer).
 - Sin Redis: el límite de intentos es por instancia (correcto mientras haya una sola).
 
 ## 8. Pasar a pago (producción real)
