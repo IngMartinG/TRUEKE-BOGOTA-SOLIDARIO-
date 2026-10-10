@@ -352,7 +352,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
   - purga de datos vencidos;
   - el monitoreo redacta la query string.
 - **Archivos:** SAS de 5 minutos (crear/escribir) sobre un blob con nombre elegido por el servidor; luego se valida dueño, tamaño ≤ 5 MB y *magic bytes*.
-- **Fotos sin ubicación oculta:** al publicar, cada foto se **re-codifica** (ImageSharp): se aplica la orientación, se reduce a 1.600 px y se eliminan **todos los metadatos** (EXIF con GPS, modelo del celular, IPTC, XMP). La copia limpia se guarda con un **nombre nuevo** y se borra el original, para que la SAS aún vigente no pueda reemplazarla. Protege contra "bombas de descompresión" (máx. 12.000 px por lado).
+- **Fotos sin ubicación oculta:** al publicar, cada foto se **re-codifica** (SkiaSharp; solo se aceptan JPEG, PNG y WEBP aunque Skia lea otros formatos): se aplica la orientación, se reduce a 1.600 px y se eliminan **todos los metadatos** (EXIF con GPS, modelo del celular, IPTC, XMP). La copia limpia se guarda con un **nombre nuevo** y se borra el original, para que la SAS aún vigente no pueda reemplazarla. Protege contra "bombas de descompresión" (máx. 12.000 px por lado).
 - **Límite de peticiones distribuido:** con Redis, los contadores se comparten entre instancias (el límite de login no se multiplica al escalar). Solo se acepta `X-Forwarded-For` de proxies configurados.
 - **CSV seguros:** las exportaciones neutralizan fórmulas (`=`, `+`, `-`, `@`) para evitar inyección en Excel.
 - **Endurecimiento HTTP:**
@@ -384,4 +384,4 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 - **Facturación manual:** la emisión ante la DIAN la registra el equipo; la integración con la API de un proveedor tecnológico queda para cuando haya contrato.
 - **Plazos de PQR:** los días hábiles no descuentan festivos colombianos (el plazo calculado es igual o menor al legal, nunca mayor).
 - **Vistas:** se acumulan en memoria y se guardan cada minuto; un reinicio abrupto puede perder el último minuto.
-- **ImageSharp:** licencia Six Labors Split (Apache 2.0 gratis para empresas con ingresos < 1 M USD/año); por encima, requiere licencia comercial. Se usa la rama 3.1 (la 4 exige llave al compilar).
+- **SkiaSharp:** licencia MIT (Skia: BSD-3), sin llave ni costo. Se cambió desde ImageSharp el 2026-10-09: la rama 3.1 quedó con avisos de seguridad sin parche y la 4 exige licencia.

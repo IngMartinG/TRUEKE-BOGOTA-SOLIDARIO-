@@ -76,7 +76,12 @@
 - El front ya no asume la raíz del dominio (`config.json`, manifiesto e imagen para redes son relativos).
 - **Falta:** publicar el backend (Azure) y poner su URL en `frontend/public/config.json` (`apiUrl`), además de agregar el dominio de Pages a los CORS del backend. Mientras tanto la página carga pero los datos no.
 
-- **ImageSharp 3.1.12 con 5 avisos nuevos (2026-10-07)**, corregidos solo en la v4 (exige licencia). Mitigado: el procesador solo decodifica JPEG/PNG/WEBP y descarta el perfil ICC; los avisos quedan aceptados con su justificación en `backend/Directory.Build.props`, y el CI falla ante cualquier aviso que no esté en esa lista. **Pendiente decidir:** cambiar a SkiaSharp o licenciar ImageSharp 4, y retirar la supresión.
+- **ImageSharp 3.1.12 tuvo 5 avisos nuevos (2026-10-07)**, corregidos solo en la v4 (exige licencia). Primero se mitigó y se suprimieron con justificación; ese mismo día se resolvió del todo (ver la sección siguiente).
+
+## Hecho el 2026-10-09 — fotos con SkiaSharp
+- `ProcesadorImagenes` pasa de ImageSharp a **SkiaSharp 4.153** (MIT, sin llave) con binarios nativos de Linux sin dependencias del sistema. Mismo comportamiento: orientación del EXIF, máximo 1.600 px, sin metadatos, protección contra bombas de descompresión. Ahora además decodifica las fotos grandes ya reducidas (menos memoria) y rechaza explícitamente GIF/BMP/ICO aunque vengan con extensión de foto.
+- Sin avisos suprimidos: `backend/Directory.Build.props` queda vacío (el mecanismo sigue disponible) y la auditoría de paquetes está limpia.
+- 238 pruebas en verde (incluye SQL Server real); las del procesador también se corrieron en Linux (contenedor del SDK).
 
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
