@@ -88,6 +88,13 @@
 - Con interesados no se puede editar la publicación (nadie recibe algo distinto de lo que pidió). Cancelarla avisa a todas las personas interesadas.
 - Migración de datos `LiberarPublicacionesSinAceptada`: las publicaciones que el sistema viejo dejó "en negociación" sin nadie aceptado vuelven a estar disponibles. 252 pruebas en verde, 6 nuevas en `ListaDeEsperaTests`.
 
+## Hecho el 2026-10-10 — confianza: fotos y perfil
+- **Foto de perfil obligatoria** (con el correo verificado) para publicar, editar, impulsar, solicitar, aceptar, chatear y pagar; la API responde 403 con `codigo: "foto_requerida"` y el front lleva a subirla. Comentar y denunciar no la exigen.
+- **Foto de Google automática:** al entrar con Google sin foto propia se copia la de Google a 512 px (solo `*.googleusercontent.com`, sin redirecciones, con límite de tamaño y tiempo; si falla, el login sigue).
+- **Visor de fotos** a pantalla completa (flechas, teclado, deslizar, zoom) en las publicaciones y en la foto de perfil.
+- **Perfil público con señales de confianza:** correo e identidad verificados, 2FA, Google, en línea, intercambios completados, % concretados y tiempo típico de respuesta (último año), y distribución de estrellas. Sin datos privados.
+- 259 pruebas del backend y 25 del front.
+
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
 - **Dependabot:** `gh auth login` y cerrar los PR de .NET 10, EF Core 9, TypeScript 7 y Node 26 (los demás, fusionar si el CI pasa).

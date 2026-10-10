@@ -99,6 +99,11 @@ public interface ISolicitudRepository
     Task<IReadOnlyDictionary<Guid, int>> ContarPendientesPorPublicacionAsync(IReadOnlyCollection<Guid> publicacionIds);
     /// <summary>El usuario ya tiene una solicitud Pendiente o Aceptada para la publicación.</summary>
     Task<bool> ExisteEnCursoAsync(Guid publicacionId, Guid solicitanteId);
+    /// <summary>
+    /// Señales de confianza del perfil desde <paramref name="desdeUtc"/>: intercambios completados y no concretados en los que
+    /// participó (como dueño o solicitante) y, de las solicitudes que recibió y aceptó, cuántas horas tardó en aceptarlas.
+    /// </summary>
+    Task<(int Completados, int NoConcretados, IReadOnlyList<double> HorasRespuesta)> ConfianzaAsync(Guid usuarioId, DateTime desdeUtc);
     Task<int> ContarPendientesPorSolicitanteAsync(Guid solicitanteId);
     /// <summary>Aceptada o Completada: el solicitante puede ver las coordenadas exactas.</summary>
     Task<bool> ExisteAceptadaAsync(Guid publicacionId, Guid solicitanteId);
@@ -307,6 +312,8 @@ public interface ICalificacionRepository
     /// <summary>Recibidas por el usuario, más recientes primero; incluye Autor.</summary>
     Task<(IReadOnlyList<Calificacion> Items, int Total)> ListarRecibidasAsync(Guid calificadoId, int pagina, int tamano);
     Task<IReadOnlyList<Calificacion>> ListarDelAutorAsync(Guid autorId, int maximo);
+    /// <summary>Cuántas calificaciones (que cuentan en el promedio) tiene de 1, 2, 3, 4 y 5 estrellas (índices 0 a 4).</summary>
+    Task<IReadOnlyList<int>> DistribucionAsync(Guid calificadoId);
     /// <summary>¿El autor ya dejó a esa persona, desde la fecha, una calificación que cuenta en el promedio?</summary>
     Task<bool> ExisteContadaEntreDesdeAsync(Guid autorId, Guid calificadoId, DateTime desdeUtc);
     void Agregar(Calificacion calificacion);

@@ -32,6 +32,14 @@ import { Icono } from './shared/ui/icono';
           <a routerLink="/verifica-tu-correo" class="enlace">Ver cómo</a>
         </div>
       </div>
+    } @else if (sesion.autenticado() && !sesion.tieneFoto()) {
+      <div class="border-b border-sol-300/50 bg-sol-50 dark:bg-sol-500/10">
+        <div class="contenedor flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2.5 text-center text-sm">
+          <app-icono nombre="camara" [tamano]="16" class="text-sol-600" />
+          <span>Agrega una foto de perfil donde se vea tu cara para publicar, solicitar y chatear.</span>
+          <a routerLink="/cuenta/perfil" fragment="foto" class="enlace">Agregar foto</a>
+        </div>
+      </div>
     }
     @if (config.pagosDePrueba()) {
       <div class="border-b border-cielo-100 bg-cielo-50 dark:border-cielo-700/40 dark:bg-cielo-700/20" role="note">

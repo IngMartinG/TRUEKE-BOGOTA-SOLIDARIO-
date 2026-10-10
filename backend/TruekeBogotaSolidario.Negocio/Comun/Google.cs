@@ -11,7 +11,7 @@ public sealed class GoogleOpciones
     public string ClientId { get; set; } = "";
 }
 
-public sealed record IdentidadGoogle(string Sub, string Correo, bool CorreoVerificado, string? Nombre);
+public sealed record IdentidadGoogle(string Sub, string Correo, bool CorreoVerificado, string? Nombre, string? Foto = null);
 
 /// <summary>Valida el ID token que Angular obtiene con Google Identity Services. El backend NUNCA confía en datos de Google enviados sueltos.</summary>
 public interface IValidadorGoogle
@@ -48,7 +48,7 @@ public sealed class ValidadorGoogle : IValidadorGoogle
             });
             return string.IsNullOrEmpty(p.Subject) || string.IsNullOrEmpty(p.Email)
                 ? null
-                : new IdentidadGoogle(p.Subject, p.Email, p.EmailVerified, p.Name);
+                : new IdentidadGoogle(p.Subject, p.Email, p.EmailVerified, p.Name, p.Picture);
         }
         catch (InvalidJwtException ex)
         {

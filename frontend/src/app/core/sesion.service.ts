@@ -50,6 +50,8 @@ export class SesionService {
   });
   readonly esSuperUsuario = computed(() => this._usuario()?.rol === 'SuperUsuario');
   readonly correoVerificado = computed(() => this._usuario()?.correoVerificado === true);
+  /** Foto de perfil: obligatoria (con el correo verificado) para publicar, solicitar, chatear y pagar. */
+  readonly tieneFoto = computed(() => !!this._usuario()?.fotoUrl);
   readonly primerNombre = computed(() => this._usuario()?.nombreCompleto?.split(' ')[0] ?? '');
 
   constructor() {

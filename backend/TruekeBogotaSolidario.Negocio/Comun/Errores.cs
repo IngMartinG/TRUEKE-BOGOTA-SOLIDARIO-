@@ -27,6 +27,14 @@ public sealed class DosFactoresRequeridoException : Exception
     public DosFactoresRequeridoException() : base("Ingresa el código de 6 dígitos de tu app autenticadora (o un código de recuperación).") { }
 }
 
+/// <summary>Falta la foto de perfil (HTTP 403, codigo "foto_requerida"): el front lleva a subirla.</summary>
+public sealed class FotoPerfilRequeridaException : Exception
+{
+    public const string Codigo = "foto_requerida";
+    public FotoPerfilRequeridaException()
+        : base("Agrega una foto de perfil donde se vea tu cara: así la comunidad sabe con quién intercambia. Hazlo en Mi cuenta → Perfil.") { }
+}
+
 /// <param name="Codigo">Identificador estable para que el front reaccione sin depender del texto.</param>
 public sealed record ErrorTraducido(int Estado, string Titulo, bool EsInesperado, string? Codigo = null);
 
@@ -42,6 +50,7 @@ public static class TraductorErrores
         NoEncontradoException e => new(404, e.Message, false),
         AccesoDenegadoException e => new(403, e.Message, false),
         DosFactoresRequeridoException e => new(401, e.Message, false, DosFactoresRequeridoException.Codigo),
+        FotoPerfilRequeridaException e => new(403, e.Message, false, FotoPerfilRequeridaException.Codigo),
         AutenticacionException e => new(401, e.Message, false),
         ConflictoDeConcurrenciaException e => new(409, e.Message, false),
         _ => new(500, "Error interno del servidor.", true)
