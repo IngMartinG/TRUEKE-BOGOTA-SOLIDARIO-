@@ -31,7 +31,7 @@ jobs:
             *) echo "::error::La URL debe empezar por https://"; exit 1 ;;
           esac
       - name: Escaneo baseline de ZAP
-        uses: zaproxy/action-baseline@v0.12.0 # Dependabot propone las versiones nuevas
+        uses: zaproxy/action-baseline@v0.15.0 # Dependabot propone las versiones nuevas
         with:
           target: ${{ inputs.url }}
           allow_issue_writing: true
