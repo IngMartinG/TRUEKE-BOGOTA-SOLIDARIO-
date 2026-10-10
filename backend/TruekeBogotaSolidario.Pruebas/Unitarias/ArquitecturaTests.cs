@@ -52,7 +52,7 @@ public class ArquitecturaTests
         Assert.DoesNotContain("<InvariantGlobalization>true</InvariantGlobalization>", csproj);
     }
 
-    /// <summary>Lista blanca de CLAUDE.md: login, registro, GET de catálogo y categorías, política de Eco-Puntos y webhook de Wompi.</summary>
+    /// <summary>Lista blanca de CLAUDE.md: login, registro, GET de catálogo (incluye compartir) y categorías, política de Eco-Puntos y webhook de Wompi.</summary>
     [Fact]
     public void Solo_los_endpoints_permitidos_son_anonimos()
     {
@@ -83,6 +83,9 @@ public class ArquitecturaTests
             "GET api/v1/usuarios/{id:guid}/publicaciones",
             "GET api/v1/usuarios/{id:guid}/calificaciones",
             "POST api/v1/pagos/wompi/eventos",
+            // vista previa al compartir (WhatsApp, Facebook, X): solo datos ya públicos del catálogo
+            "GET compartir/publicaciones/{id:guid}",
+            "GET compartir/publicaciones/{id:guid}/imagen.jpg",
         };
 
         var anonimos = new List<string>();

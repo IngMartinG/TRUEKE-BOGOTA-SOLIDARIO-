@@ -54,7 +54,7 @@ Cliente ⊂ Administrador ⊂ SuperUsuario. **Invitado** = visitante anónimo, n
 
 ## Reglas de seguridad (no negociables)
 - El usuario que actúa SIEMPRE sale del JWT, nunca del body ni del query.
-- `[Authorize]` en cada controller; `[AllowAnonymous]` solo en: login, registro, GET del catálogo (incluye destacadas), de categorías y de ubicaciones, GET `/eco-puntos/politica`, health y webhook de Wompi (este con firma verificada).
+- `[Authorize]` en cada controller; `[AllowAnonymous]` solo en: login, registro, GET del catálogo (incluye destacadas, sugerencias y la vista previa `/compartir/publicaciones/{id}`), de categorías y de ubicaciones, GET `/eco-puntos/politica`, health y webhook de Wompi (este con firma verificada).
 - Un error 500 nunca expone `ex.Message` ni el stack trace; los 400, 404 y 409 de dominio sí pueden mostrar su mensaje.
 - Las respuestas JSON solo llevan lo necesario: nunca ClaveHash, RowVersion internos, correos de terceros, coordenadas exactas ni datos de otro usuario.
 - Swagger solo en Development. HSTS + HTTPS + cabeceras de seguridad. No enviar la cabecera `Server`.

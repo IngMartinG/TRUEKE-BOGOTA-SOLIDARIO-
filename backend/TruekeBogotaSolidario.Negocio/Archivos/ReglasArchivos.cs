@@ -55,6 +55,21 @@ public static partial class ReglasArchivos
     /// <summary>Nombre que el servidor asigna: {usuario}/{aleatorio}.{ext}. El cliente nunca elige la ruta.</summary>
     public static string NuevoNombre(Guid usuarioId, string extension) => $"{usuarioId:N}/{Guid.NewGuid():N}.{extension}";
 
+    /// <summary>
+    /// Nombre del blob si <paramref name="url"/> es una foto publicada en <paramref name="contenedor"/> (de cualquier usuario),
+    /// o null. Sirve para leer fotos públicas en el servidor sin seguir URLs arbitrarias (SSRF).
+    /// </summary>
+    public static string? NombreFotoPublicada(string url, Uri contenedor)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var u) || !string.IsNullOrEmpty(u.Query) || !string.IsNullOrEmpty(u.Fragment)
+            || !string.IsNullOrEmpty(u.UserInfo)) return null;
+        var baseContenedor = contenedor.AbsoluteUri.TrimEnd('/') + "/";
+        if (!u.AbsoluteUri.StartsWith(baseContenedor, StringComparison.Ordinal)) return null;
+        var nombre = u.AbsoluteUri[baseContenedor.Length..];
+        var m = NombreBlob().Match(nombre);
+        return m.Success && m.Groups["ext"].Value != "pdf" ? nombre : null;
+    }
+
     /// <summary>Sufijo de las miniaturas. El front aplica la misma regla (shared/imagenes.ts → miniatura()).</summary>
     public const string SufijoMiniatura = ".min.webp";
 

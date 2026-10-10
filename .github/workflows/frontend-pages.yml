@@ -59,6 +59,23 @@ jobs:
           printf '{\n  "apiUrl": "%s"\n}\n' "${API_URL%/}" > dist/trueke-web/browser/config.json
           cat dist/trueke-web/browser/config.json
 
+      # WhatsApp y Facebook no resuelven URLs relativas en og:image/og:url. URL pública: variable FRONT_URL del
+      # repositorio (con dominio propio) o, por defecto, la de GitHub Pages (https://usuario.github.io/repositorio/).
+      - name: URLs absolutas para la vista previa al compartir
+        env:
+          FRONT_URL: ${{ vars.FRONT_URL }}
+          DUENO: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+        run: |
+          url="${FRONT_URL:-https://${DUENO,,}.github.io/${REPO}/}"
+          url="${url%/}/"
+          case "$url" in https://*) ;; *) echo "::error::FRONT_URL debe empezar por https://"; exit 1 ;; esac
+          index=dist/trueke-web/browser/index.html
+          sed -i -e "s#<meta property=\"og:image\" content=\"og-imagen.png\"#<meta property=\"og:image\" content=\"${url}og-imagen.png\"#" \
+                 -e "s#<meta property=\"og:url\" content=\"./\"#<meta property=\"og:url\" content=\"${url}\"#" "$index"
+          grep -q "og:image\" content=\"${url}og-imagen.png\"" "$index" || { echo "::error::No se pudo fijar og:image"; exit 1; }
+          grep -o '<meta property="og:\(url\|image\)" content="[^"]*"' "$index"
+
       - name: Fallback de la SPA y sin procesamiento Jekyll
         run: |
           cd dist/trueke-web/browser
