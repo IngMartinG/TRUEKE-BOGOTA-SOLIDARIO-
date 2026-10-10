@@ -4391,6 +4391,7 @@ export interface components {
             diasCierreConUnaConfirmacion?: number;
             /** Format: int32 */
             diasCierreSinConfirmacion?: number;
+            pagosDePrueba?: boolean;
         };
         ConversacionDto: {
             /** Format: uuid */

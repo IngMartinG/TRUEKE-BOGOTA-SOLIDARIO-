@@ -118,6 +118,21 @@ interface Servicio {
         Mientras más Eco-Puntos tengas, mayor es tu descuento. Publicar, intercambiar y donar es gratis: el plan Individual permite
         {{ politica()?.maxPublicacionesIndividual ?? 50 }} publicaciones activas.
       </p>
+      @if (config.pagosDePrueba()) {
+        <div id="pagos-de-prueba" class="mt-5 scroll-mt-24 rounded-2xl border border-cielo-100 bg-cielo-50 p-4 text-sm dark:border-cielo-700/40 dark:bg-cielo-700/20" role="note">
+          <p class="flex items-center gap-2 font-semibold text-cielo-700 dark:text-cielo-100">
+            <app-icono nombre="info" [tamano]="18" />Pagos en modo de prueba: no se cobra dinero real
+          </p>
+          <p class="mt-1 text-tenue">
+            Esta es una versión de demostración. Puedes comprar planes, verificaciones y recargas para conocer el flujo completo; los
+            beneficios que obtengas son de prueba y se borrarán antes del lanzamiento. En el pago de Wompi usa estos datos:
+          </p>
+          <ul class="mt-2 space-y-1">
+            <li>Tarjeta <strong>aprobada</strong>: <code>4242 4242 4242 4242</code>, cualquier fecha futura y cualquier CVC.</li>
+            <li>Tarjeta <strong>rechazada</strong>: <code>4111 1111 1111 1111</code>, para ver qué pasa si un pago falla.</li>
+          </ul>
+        </div>
+      }
       <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         @for (s of servicios(); track s.concepto) {
           <article class="tarjeta relative flex flex-col p-6" [class.ring-2]="s.destacado" [class.ring-sol-400]="s.destacado">

@@ -11,7 +11,7 @@ namespace TruekeBogotaSolidario.Negocio.Servicios;
 /// </summary>
 public sealed record ConfiguracionPublicaDto(string? CaptchaClaveSitio, string? GoogleClientId, string VersionPoliticaDatos,
     bool SubidaArchivosHabilitada, int MaxImagenesPorPublicacion, long TamanoMaximoArchivoBytes,
-    int DiasCierreConUnaConfirmacion, int DiasCierreSinConfirmacion);
+    int DiasCierreConUnaConfirmacion, int DiasCierreSinConfirmacion, bool PagosDePrueba);
 
 public interface IConfiguracionService
 {
@@ -23,11 +23,13 @@ public sealed class ConfiguracionService : IConfiguracionService
     private readonly CaptchaOpciones _captcha;
     private readonly GoogleOpciones _google;
     private readonly LegalOpciones _legal;
+    private readonly PagosOpciones _pagos;
     private readonly IAlmacenArchivos _almacen;
 
-    public ConfiguracionService(IOptions<CaptchaOpciones> captcha, IOptions<GoogleOpciones> google, IOptions<LegalOpciones> legal, IAlmacenArchivos almacen)
+    public ConfiguracionService(IOptions<CaptchaOpciones> captcha, IOptions<GoogleOpciones> google, IOptions<LegalOpciones> legal,
+        IOptions<PagosOpciones> pagos, IAlmacenArchivos almacen)
     {
-        _captcha = captcha.Value; _google = google.Value; _legal = legal.Value; _almacen = almacen;
+        _captcha = captcha.Value; _google = google.Value; _legal = legal.Value; _pagos = pagos.Value; _almacen = almacen;
     }
 
     public ConfiguracionPublicaDto ObtenerPublica() => new(
@@ -38,5 +40,6 @@ public sealed class ConfiguracionService : IConfiguracionService
         Publicacion.MaxImagenes,
         ReglasArchivos.TamanoMaximoBytes,
         Limites.DiasCierreConUnaConfirmacion,
-        Limites.DiasCierreSinConfirmacion);
+        Limites.DiasCierreSinConfirmacion,
+        _pagos.EsDePrueba);
 }
