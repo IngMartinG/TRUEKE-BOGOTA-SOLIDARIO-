@@ -1,5 +1,7 @@
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Channels;
+using Azure;
+using Azure.Communication.Email;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.DependencyInjection;
@@ -23,15 +25,26 @@ public sealed class SmtpOpciones
     public string Seguridad { get; set; } = "StartTls";
 }
 
+/// <summary>Azure Communication Services Email: API HTTPS (sirve donde el SMTP está bloqueado, como Render gratis).</summary>
+public sealed class AzureComunicacionOpciones
+{
+    /// <summary>Recurso de Communication Services → Claves → Cadena de conexión (endpoint=...;accesskey=...).</summary>
+    public string CadenaConexion { get; set; } = "";
+}
+
 public sealed class CorreoOpciones
 {
     public const string Seccion = "Correo";
-    /// <summary>"Smtp" (real) o "Simulado" (solo desarrollo/pruebas; el arranque lo rechaza en Producción).</summary>
+    public const string ProveedorAzure = "AzureCommunication";
+    /// <summary>"Smtp", "AzureCommunication" (reales) o "Simulado" (solo desarrollo/pruebas; el arranque lo rechaza en Producción).</summary>
     public string Proveedor { get; set; } = "Smtp";
+    /// <summary>Con AzureCommunication debe ser una dirección "MailFrom" del dominio conectado (p. ej. DoNotReply@xxxx.azurecomm.net).</summary>
     [EmailAddress] public string Remitente { get; set; } = "no-responder@trueke.co";
     [StringLength(80)] public string NombreRemitente { get; set; } = "Trueke Bogotá Solidario";
     public SmtpOpciones Smtp { get; set; } = new();
+    public AzureComunicacionOpciones Azure { get; set; } = new();
     public bool EsSimulado => string.Equals(Proveedor, "Simulado", StringComparison.OrdinalIgnoreCase);
+    public bool EsAzure => string.Equals(Proveedor, ProveedorAzure, StringComparison.OrdinalIgnoreCase);
 }
 
 /// <summary>
@@ -108,6 +121,30 @@ public sealed class TransporteCorreoSimulado : ITransporteCorreo
     {
         _log.LogInformation("[CORREO SIMULADO] Para: {Para} | Asunto: {Asunto}\n{Texto}", m.Para, m.Asunto, m.Texto);
         return Task.CompletedTask;
+    }
+}
+
+/// <summary>
+/// Azure Communication Services Email por su API HTTPS. Se usa donde el proveedor bloquea los puertos SMTP (Render gratis).
+/// El nombre visible del remitente se configura en Azure (dirección MailFrom del dominio), no aquí.
+/// </summary>
+public sealed class TransporteCorreoAzure : ITransporteCorreo
+{
+    private readonly EmailClient _cliente;
+    private readonly CorreoOpciones _o;
+
+    public TransporteCorreoAzure(EmailClient cliente, IOptions<CorreoOpciones> o)
+    {
+        _cliente = cliente; _o = o.Value;
+    }
+
+    public async Task EnviarAsync(MensajeCorreo m, CancellationToken ct)
+    {
+        var contenido = new EmailContent(m.Asunto) { PlainText = m.Texto, Html = m.Html };
+        var mensaje = new EmailMessage(_o.Remitente, new EmailRecipients(new List<EmailAddress> { new(m.Para) }), contenido);
+        // WaitUntil.Started: Azure aceptó el correo y lo entrega en segundo plano (no se bloquea el worker esperando).
+        // Si falla (credencial, remitente no conectado, límite por hora), lanza y el worker reintenta.
+        await _cliente.SendAsync(WaitUntil.Started, mensaje, ct);
     }
 }
 
