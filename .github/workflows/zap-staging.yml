@@ -21,7 +21,7 @@ jobs:
       contents: read
       issues: write # ZAP abre un issue con el resumen de alertas
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
       - name: Validar la URL
         env:
           URL_OBJETIVO: ${{ inputs.url }}
