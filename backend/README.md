@@ -298,6 +298,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
   3. enviar `imagenes: [urlArchivo, …]` (máximo 5; la primera es la principal) al crear o editar (`PUT /publicaciones/{id}`, que reemplaza la lista).
 - **Perfil público:** `publicacion.propietario.id` → `/usuarios/{id}/perfil`, `/publicaciones` y `/calificaciones`.
 - **Intercambio:**
+  - varias personas pueden solicitar la misma publicación (`publicacion.interesados` = pendientes; `yaSolicite` en el detalle). Sigue en el catálogo hasta que el dueño **acepta** a una: queda `EnNegociacion` (reservada, fuera del catálogo) y las demás pendientes traen `enEspera: true` (lista de espera; no se pueden aceptar). Si no se concreta, vuelve a `Disponible` y el dueño puede aceptar a otra; si se completa, la lista de espera se rechaza con aviso. Con interesados no se puede editar la publicación;
   - el dueño acepta y ambos escriben por `/conversaciones/{id}/mensajes`; para responder un mensaje en particular se envía `respuestaAId` (de la misma conversación) y cada mensaje trae `respuestaA { id, esMio, texto, oculto }`;
   - cada uno pulsa `POST /solicitudes/{id}/confirmar-entrega`; mostrar `cierreAutomaticoUtc` mientras siga `Aceptada`;
   - si no se dio, `POST /solicitudes/{id}/no-concretada { motivo }`;

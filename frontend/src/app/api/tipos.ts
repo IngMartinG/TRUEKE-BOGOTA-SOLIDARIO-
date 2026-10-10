@@ -101,7 +101,7 @@ export const INFO_MODO: Record<
 
 export const ETIQUETA_ESTADO_PUBLICACION: Record<string, string> = {
   Disponible: 'Disponible',
-  EnNegociacion: 'En negociación',
+  EnNegociacion: 'Reservada',
   Intercambiada: 'Intercambiada',
   Cancelada: 'Cancelada',
 };

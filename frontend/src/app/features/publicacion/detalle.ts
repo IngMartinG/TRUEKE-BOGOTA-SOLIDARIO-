@@ -157,6 +157,12 @@ import { Volver } from '../../shared/ui/volver';
                     <p class="text-sm text-tenue">Valor de referencia: {{ p.precioReferenciaCop | cop }}</p>
                   }
                 }
+                @if (p.estado === 'Disponible' && (p.interesados ?? 0) > 0) {
+                  <p class="mt-2 flex items-center gap-1.5 text-sm font-semibold text-tierra-600 dark:text-tierra-500">
+                    <app-icono nombre="usuarios" [tamano]="16" />
+                    {{ p.interesados === 1 ? '1 persona interesada' : p.interesados + ' personas interesadas' }}
+                  </p>
+                }
               </div>
 
               <dl class="mt-5 grid grid-cols-2 gap-3 text-sm">
@@ -183,10 +189,15 @@ import { Volver } from '../../shared/ui/volver';
                     <app-icono nombre="apreton" [tamano]="20" /> Ver solicitudes recibidas
                   </a>
                   @if (p.estado === 'Disponible') {
-                    <div class="grid grid-cols-2 gap-2">
-                      <a [routerLink]="['/publicacion', p.id, 'editar']" class="btn btn-secundario"><app-icono nombre="editar" [tamano]="16" />Editar</a>
+                    <div class="grid gap-2" [class.grid-cols-2]="!p.interesados">
+                      @if (!p.interesados) {
+                        <a [routerLink]="['/publicacion', p.id, 'editar']" class="btn btn-secundario"><app-icono nombre="editar" [tamano]="16" />Editar</a>
+                      }
                       <button type="button" class="btn btn-secundario" (click)="cancelarAbierto.set(true)"><app-icono nombre="basura" [tamano]="16" />Retirar</button>
                     </div>
+                    @if (p.interesados) {
+                      <p class="text-center text-xs text-tenue">Ya hay personas interesadas: no se puede editar para que nadie reciba algo distinto de lo que pidió.</p>
+                    }
                     @if (!p.destacada) {
                       @if ((sesion.usuario()?.destacadosGratisRestantes ?? 0) > 0) {
                         <button type="button" class="btn btn-sol w-full" (click)="destacarGratis()" [disabled]="trabajando()">
@@ -208,6 +219,12 @@ import { Volver } from '../../shared/ui/volver';
                       </a>
                     </div>
                   }
+                } @else if (p.estado === 'Disponible' && p.yaSolicite) {
+                  <div class="rounded-xl bg-bosque-50 p-4 text-center text-sm dark:bg-bosque-900/40">
+                    <p class="font-semibold">Ya enviaste tu solicitud</p>
+                    <p class="mt-1 text-tenue">El dueño elegirá a quién entregarlo. Mientras tanto pueden conversar por el chat.</p>
+                    <a routerLink="/intercambios" [queryParams]="{ tab: 'enviadas' }" class="btn btn-secundario btn-sm mt-3">Ver mi solicitud</a>
+                  </div>
                 } @else if (p.estado === 'Disponible') {
                   <button type="button" class="btn btn-primario btn-lg w-full" (click)="abrirSolicitud()">
                     <app-icono [nombre]="infoModo().icono" [tamano]="20" /> {{ infoModo().verbo }}
@@ -219,7 +236,7 @@ import { Volver } from '../../shared/ui/volver';
                 } @else {
                   <p class="rounded-xl bg-superficie-2 p-4 text-center text-sm">
                     @switch (p.estado) {
-                      @case ('EnNegociacion') { Alguien ya está negociando este objeto. Guárdalo en favoritos por si vuelve a estar disponible. }
+                      @case ('EnNegociacion') { El dueño está concretando con otra persona. Guárdalo en favoritos: si no se concreta, vuelve a estar disponible. }
                       @case ('Intercambiada') { ¡Este objeto ya encontró un nuevo hogar! }
                       @default { Esta publicación ya no está disponible. }
                     }
