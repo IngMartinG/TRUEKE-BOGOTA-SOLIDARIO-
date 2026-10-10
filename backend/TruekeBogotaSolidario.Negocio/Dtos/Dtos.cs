@@ -449,14 +449,15 @@ public sealed record MunicipioDto(string Codigo, string Nombre, string Departame
 
 /// <summary>
 /// Imagenes[0] es la foto principal. EsFavorita solo es true para el usuario autenticado que la guardó.
-/// Vistas y ProximoImpulsoUtc solo llegan al dueño.
+/// Vistas y ProximoImpulsoUtc solo llegan al dueño. Interesados = solicitudes pendientes (solo mientras está disponible; nunca quiénes son).
+/// YaSolicite = quien consulta ya tiene una solicitud en curso para esta publicación (solo en el detalle).
 /// </summary>
 public sealed record PublicacionDto(Guid Id, string Titulo, string Descripcion, CategoriaDto Categoria, string Modo,
     decimal? PrecioReferenciaCop, string Localidad, double? Latitud, double? Longitud, bool CoordenadasAproximadas,
     IReadOnlyList<string> Imagenes, string Estado, DateTime FechaPublicacion, DateTime? FechaEdicion, bool Destacada, DateTime? DestacadaHasta,
     PerfilPublicoDto Propietario, bool EsMia, bool EsFavorita, bool Oculta, string? MotivoOcultamiento,
     string Condicion, string? DetalleCondicion, string MunicipioCodigo, string Municipio, string DepartamentoCodigo,
-    int? Vistas, DateTime? ProximoImpulsoUtc);
+    int? Vistas, DateTime? ProximoImpulsoUtc, int Interesados, bool YaSolicite);
 
 public sealed record PuntoSerieDto(DateTime Fecha, int Vistas);
 
@@ -553,7 +554,7 @@ public sealed record PaginaDto<T>(IReadOnlyList<T> Items, int Total, int Pagina,
 public sealed record SolicitudDto(Guid Id, Guid PublicacionId, string PublicacionTitulo, string Modo, PerfilPublicoDto Propietario,
     PerfilPublicoDto Solicitante, bool SoyDuenio, DateTime FechaSolicitud, string Mensaje, string Estado, string? MotivoRechazo,
     Guid? ConversacionId, DateTime? FechaAceptacionUtc, bool ConfirmadaPorDuenio, bool ConfirmadaPorSolicitante,
-    DateTime? FechaCierreUtc, DateTime? CierreAutomaticoUtc, bool PuedoCalificar);
+    DateTime? FechaCierreUtc, DateTime? CierreAutomaticoUtc, bool PuedoCalificar, bool EnEspera);
 
 public sealed class NoConcretadaRequest
 {

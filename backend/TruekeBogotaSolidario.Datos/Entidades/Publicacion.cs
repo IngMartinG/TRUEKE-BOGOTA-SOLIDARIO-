@@ -159,13 +159,14 @@ public class Publicacion
         FechaRelevancia = ahoraUtc;
     }
 
+    /// <summary>El dueño eligió a una de las personas interesadas: queda reservada y sale del catálogo.</summary>
     public void MarcarEnNegociacion()
     {
         if (Estado != EstadoPublicacionEnum.Disponible) throw new ReglaDeNegocioException("La publicación no está disponible.");
         Estado = EstadoPublicacionEnum.EnNegociacion;
     }
 
-    /// <summary>Se usa cuando una solicitud se rechaza, cancela o no se concreta (NO reinicia FechaPublicacion).</summary>
+    /// <summary>Se usa cuando el intercambio aceptado no se concreta: vuelve al catálogo (NO reinicia FechaPublicacion).</summary>
     public void VolverADisponible()
     {
         if (Estado != EstadoPublicacionEnum.EnNegociacion) throw new ReglaDeNegocioException("La publicación no está en negociación.");

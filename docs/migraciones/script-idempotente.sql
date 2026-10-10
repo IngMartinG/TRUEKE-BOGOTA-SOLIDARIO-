@@ -1514,3 +1514,31 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010141552_LiberarPublicacionesSinAceptada'
+)
+BEGIN
+    UPDATE p SET p.Estado = 'Disponible'
+    FROM Publicaciones p
+    WHERE p.Estado = 'EnNegociacion'
+      AND NOT EXISTS (SELECT 1 FROM Solicitudes s WHERE s.PublicacionId = p.Id AND s.Estado = 'Aceptada');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010141552_LiberarPublicacionesSinAceptada'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261010141552_LiberarPublicacionesSinAceptada', N'8.0.31');
+END;
+GO
+
+COMMIT;
+GO
+

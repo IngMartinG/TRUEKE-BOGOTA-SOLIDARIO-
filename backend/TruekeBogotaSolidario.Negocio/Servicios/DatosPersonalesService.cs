@@ -144,15 +144,13 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
             }
             else if (s.SolicitanteId == actorId)
             {
-                s.Cancelar();
-                s.Publicacion!.VolverADisponible();
-                avisos.Add((s.Publicacion.PropietarioId, TiposNotificacion.SolicitudCancelada, $"Se canceló una solicitud para \"{s.Publicacion.Titulo}\".", s.Id));
+                s.Cancelar(); // pendiente: la publicación no cambia
+                avisos.Add((s.Publicacion!.PropietarioId, TiposNotificacion.SolicitudCancelada, $"Se canceló una solicitud para \"{s.Publicacion.Titulo}\".", s.Id));
             }
             else
             {
-                s.Rechazar("La cuenta del propietario fue eliminada.");
-                s.Publicacion!.VolverADisponible();
-                avisos.Add((s.SolicitanteId, TiposNotificacion.SolicitudRechazada, $"La publicación \"{s.Publicacion.Titulo}\" ya no está disponible.", s.Id));
+                s.Rechazar("La cuenta del propietario fue eliminada."); // sus publicaciones se retiran en el paso 2
+                avisos.Add((s.SolicitanteId, TiposNotificacion.SolicitudRechazada, $"La publicación \"{s.Publicacion!.Titulo}\" ya no está disponible.", s.Id));
             }
         }
         // 2) Publicaciones activas: se retiran del catálogo
