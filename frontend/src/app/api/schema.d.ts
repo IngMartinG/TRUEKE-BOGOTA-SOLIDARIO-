@@ -4950,6 +4950,7 @@ export interface components {
             municipio?: string;
             nombreComercial?: string | null;
             fotoUrl?: string | null;
+            confianza?: components["schemas"]["SenalesConfianzaDto"];
         };
         PoliticaEcoPuntosDto: {
             /** Format: int32 */
@@ -5154,6 +5155,20 @@ export interface components {
         };
         /** @enum {string} */
         RolDto: "Cliente" | "Administrador" | "SuperUsuario";
+        SenalesConfianzaDto: {
+            correoVerificado?: boolean;
+            identidadVerificada?: boolean;
+            conGoogle?: boolean;
+            dosFactores?: boolean;
+            enLinea?: boolean;
+            /** Format: int32 */
+            intercambiosCompletados?: number;
+            /** Format: int32 */
+            tasaConcrecion?: number | null;
+            /** Format: double */
+            respuestaHoras?: number | null;
+            estrellas?: number[];
+        };
         SesionDto: {
             token?: string;
             /** Format: date-time */
@@ -5415,6 +5430,7 @@ export type ResolverDenunciaRequest = components['schemas']['ResolverDenunciaReq
 export type ResponderPqrRequest = components['schemas']['ResponderPqrRequest'];
 export type RestablecerClaveRequest = components['schemas']['RestablecerClaveRequest'];
 export type RolDto = components['schemas']['RolDto'];
+export type SenalesConfianzaDto = components['schemas']['SenalesConfianzaDto'];
 export type SesionDto = components['schemas']['SesionDto'];
 export type SolicitarSubidaRequest = components['schemas']['SolicitarSubidaRequest'];
 export type SolicitudDto = components['schemas']['SolicitudDto'];

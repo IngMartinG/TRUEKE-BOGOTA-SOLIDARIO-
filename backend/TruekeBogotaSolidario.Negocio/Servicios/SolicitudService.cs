@@ -58,7 +58,7 @@ public sealed class SolicitudService : ISolicitudService
     public async Task<SolicitudDto> CrearAsync(Guid actorId, CrearSolicitudRequest r)
     {
         var solicitante = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
-        Guardas.ExigirCorreoVerificado(solicitante);
+        Guardas.ExigirCuentaCompleta(solicitante);
         var ahora = Ahora;
         var pub = await _pubs.ObtenerPorIdAsync(r.PublicacionId);
         if (pub is null || pub.EstaOculta || pub.Propietario!.EstaEliminado || pub.Propietario.SuspensionVigente(ahora))
@@ -127,6 +127,7 @@ public sealed class SolicitudService : ISolicitudService
     {
         var s = await CargarComoDuenioAsync(actorId, solicitudId);
         var pub = s.Publicacion!;
+        Guardas.ExigirCuentaCompleta(pub.Propietario!); // quien entrega también debe mostrar su cara (publicaciones anteriores a la regla)
         if (pub.Estado == EstadoPublicacionEnum.EnNegociacion)
             throw new ReglaDeNegocioException("Ya elegiste a otra persona para esta publicación. Si no se concreta, podrás elegir a alguien de la lista de espera.");
         // Elegir a alguien reserva la publicación y la saca del catálogo. RowVersion: dos aceptaciones simultáneas → una recibe 409.

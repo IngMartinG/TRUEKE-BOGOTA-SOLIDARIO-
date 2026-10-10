@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Pruebas.Infraestructura;
 
@@ -22,16 +23,34 @@ public class GoogleTests : IClassFixture<FabricaApi>
             => Task.FromResult(Tokens.TryGetValue(idToken, out var id) ? id : null);
     }
 
+    /// <summary>Simula el servidor de fotos de Google: responde una imagen válida y registra qué se pidió.</summary>
+    private sealed class FotosGoogleFalso : HttpMessageHandler
+    {
+        public List<Uri> Pedidas { get; } = new();
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
+        {
+            lock (Pedidas) Pedidas.Add(request.RequestUri!);
+            return Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK) { Content = new ByteArrayContent(AlmacenFalso.Png()) });
+        }
+    }
+
+    private const string FotoGoogle = "https://lh3.googleusercontent.com/a/ACg8ocFoto=s96-c";
     private readonly WebApplicationFactory<Program> _f;
     private readonly GoogleFalso _google = new();
+    private readonly FotosGoogleFalso _fotos = new();
 
     public GoogleTests(FabricaApi fabrica)
-        => _f = fabrica.WithWebHostBuilder(b => b.ConfigureTestServices(s => s.Replace(ServiceDescriptor.Singleton<IValidadorGoogle>(_google))));
+        => _f = fabrica.WithWebHostBuilder(b => b.ConfigureTestServices(s =>
+        {
+            s.Replace(ServiceDescriptor.Singleton<IValidadorGoogle>(_google));
+            s.Replace(ServiceDescriptor.Singleton<IAlmacenArchivos>(new AlmacenFalso()));
+            s.AddHttpClient(ImportadorFotoGoogle.ClienteHttp).ConfigurePrimaryHttpMessageHandler(() => _fotos);
+        }));
 
-    private string Emitir(string correo, bool verificado = true, string? sub = null, string nombre = "Laura Gómez")
+    private string Emitir(string correo, bool verificado = true, string? sub = null, string nombre = "Laura Gómez", string? foto = FotoGoogle)
     {
         var token = "google-" + Guid.NewGuid().ToString("N");
-        _google.Tokens[token] = new IdentidadGoogle(sub ?? Guid.NewGuid().ToString("N"), correo, verificado, nombre);
+        _google.Tokens[token] = new IdentidadGoogle(sub ?? Guid.NewGuid().ToString("N"), correo, verificado, nombre, foto);
         return token;
     }
 
@@ -54,10 +73,32 @@ public class GoogleTests : IClassFixture<FabricaApi>
         Assert.False(u.GetProperty("tieneClave").GetBoolean());
         Assert.True(u.GetProperty("vinculadoGoogle").GetBoolean());
 
-        // puede operar de inmediato
+        // trae su foto de Google (copiada a nuestro almacenamiento, pedida a 512 px) y puede operar de inmediato
+        Assert.StartsWith(AlmacenFalso.Base.ToString(), u.GetProperty("fotoUrl").GetString());
+        Assert.Contains(_fotos.Pedidas, p => p.AbsoluteUri.EndsWith("=s512-c", StringComparison.Ordinal));
         var token = cuerpo.GetProperty("token").GetString()!;
         await Api.CrearPublicacionAsync(Api.ConToken(_f, token));
     }
+
+    [Fact]
+    public async Task Sin_foto_en_Google_la_cuenta_debe_subir_una_antes_de_publicar()
+    {
+        var r = await GoogleAsync(Emitir(Correo(), foto: null));
+        var token = (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("token").GetString()!;
+        var publicar = await Api.ConToken(_f, token).PostAsJsonAsync("/api/v1/publicaciones",
+            new { titulo = "Silla", descripcion = "Silla de madera", categoriaId = 1, modo = "Donacion", condicion = "Usado", localidad = "Suba" });
+        Assert.Equal(HttpStatusCode.Forbidden, publicar.StatusCode);
+        Assert.Equal("foto_requerida", (await publicar.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("codigo").GetString());
+    }
+
+    [Theory]
+    [InlineData("https://lh3.googleusercontent.com/a/x=s96-c", true)]
+    [InlineData("http://lh3.googleusercontent.com/a/x", false)]          // sin https
+    [InlineData("https://googleusercontent.com.atacante.co/x", false)]  // dominio parecido
+    [InlineData("https://169.254.169.254/latest/meta-data", false)]     // red interna (SSRF)
+    [InlineData(null, false)]
+    public void Solo_se_importan_fotos_de_los_servidores_de_Google(string? url, bool valida)
+        => Assert.Equal(valida, ImportadorFotoGoogle.EsFotoDeGoogle(url, out _));
 
     [Fact]
     public async Task Segundo_inicio_con_la_misma_cuenta_de_Google_es_200_y_mismo_usuario()

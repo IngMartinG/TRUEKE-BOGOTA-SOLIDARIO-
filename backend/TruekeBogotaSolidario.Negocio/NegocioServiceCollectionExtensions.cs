@@ -96,6 +96,10 @@ public static class NegocioServiceCollectionExtensions
         var almacen = config.GetSection(AlmacenamientoOpciones.Seccion).Get<AlmacenamientoOpciones>() ?? new AlmacenamientoOpciones();
         if (almacen.Configurado) services.TryAddSingleton<IAlmacenArchivos, AlmacenBlobAzure>();
         else services.TryAddSingleton<IAlmacenArchivos, AlmacenDeshabilitado>();
+        // Foto de Google: sin seguir redirecciones (una redirección podría llevar a un host interno: SSRF).
+        services.AddHttpClient(ImportadorFotoGoogle.ClienteHttp, c => c.Timeout = TimeSpan.FromSeconds(8))
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+        services.AddScoped<IImportadorFotoPerfil, ImportadorFotoGoogle>();
         services.AddMemoryCache();
 
         services.AddSingleton<IGeneradorToken, GeneradorJwt>();

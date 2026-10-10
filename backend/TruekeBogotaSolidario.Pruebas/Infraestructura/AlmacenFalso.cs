@@ -26,6 +26,14 @@ public sealed class AlmacenFalso : IAlmacenArchivos
 
     public void Subir(string url, string contentType, byte[] datos) => _blobs[url] = (contentType, datos);
 
+    public Task<string> GuardarImagenAsync(Guid usuarioId, byte[] contenido, CancellationToken ct = default)
+    {
+        ReglasArchivos.ValidarTamano(contenido.Length);
+        var url = $"{Contenedor(TipoArchivoDto.Imagen)}/{ReglasArchivos.NuevoNombre(usuarioId, "jpg")}";
+        _blobs[url] = ("image/jpeg", contenido);
+        return Task.FromResult(url);
+    }
+
     /// <summary>Mismas validaciones que Azure; no re-codifica (eso se prueba con imágenes reales en ProcesadorImagenesTests).</summary>
     public Task<string> ValidarArchivoPropioAsync(string url, Guid usuarioId, TipoArchivoDto tipo, CancellationToken ct = default)
     {
