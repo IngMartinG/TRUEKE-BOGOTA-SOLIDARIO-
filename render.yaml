@@ -44,8 +44,10 @@ services:
         value: https://sandbox.wompi.co/v1
       - key: Facturacion__Modo
         value: Manual
+      # Render gratis bloquea los puertos SMTP (25, 465 y 587): el correo sale por la API HTTPS de Azure Communication
+      # Services. En un plan pago se puede volver a "Smtp" (Gmail u otro) con las variables Correo__Smtp__*.
       - key: Correo__Proveedor
-        value: Smtp
+        value: AzureCommunication
 
       # ---------- Generados por Render (256 bits aleatorios en base64) ----------
       - key: Jwt__Key
@@ -66,9 +68,11 @@ services:
         sync: false
       - key: Captcha__ClaveSecreta
         sync: false
-      - key: Correo__Remitente
+      - key: Correo__Azure__CadenaConexion # Communication Services → Claves → Cadena de conexión (docs/DESPLIEGUE.md §5)
         sync: false
-      - key: Correo__Smtp__Host
+      - key: Correo__Remitente # con Azure: la dirección MailFrom del dominio conectado, p. ej. DoNotReply@xxxx.azurecomm.net
+        sync: false
+      - key: Correo__Smtp__Host # solo con Correo__Proveedor=Smtp (plan pago)
         sync: false
       - key: Correo__Smtp__Usuario
         sync: false
