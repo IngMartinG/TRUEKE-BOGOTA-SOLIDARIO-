@@ -1,24 +1,40 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+
+/** Proporción ancho/alto del nombre recortado del diseño original (626 × 133 px). */
+const PROPORCION_NOMBRE = 626 / 133;
+const NOMBRE = 'logo-nombre-160.png 160w, logo-nombre-320.png 320w, logo-nombre-480.png 480w';
+const NOMBRE_CLARO = 'logo-nombre-claro-160.png 160w, logo-nombre-claro-320.png 320w, logo-nombre-claro-480.png 480w';
 
 /**
- * Logotipo oficial: el emblema circular (manos con corazón sobre la ciudad) y el nombre "Trueke Bogotá Solidario".
- * El emblema es un PNG con fondo transparente (public/logo-emblema.png); el nombre es texto para que se lea nítido
- * en cualquier tamaño y se adapte al modo oscuro.
+ * Logotipo oficial: el emblema circular y el nombre "Trueke Bogotá Solidario" (con la hoja de la O), ambos recortados del
+ * diseño original (docs/diseno/logo-original-1024.png) sin modificar el dibujo. Se sirven ya reducidos en alta calidad
+ * (srcset) para que se vean nítidos en cualquier pantalla. En fondos oscuros el gris del nombre pasa a blanco.
  */
 @Component({
   selector: 'app-logo',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'inline-flex items-center gap-2.5' },
   template: `
-    <img src="logo-emblema.png" alt="" [width]="tamano()" [height]="tamano()" class="shrink-0 select-none" draggable="false" decoding="async" />
+    <img
+      src="logo-emblema-96.png"
+      srcset="logo-emblema-48.png 48w, logo-emblema-96.png 96w, logo-emblema-144.png 144w, logo-emblema.png 386w"
+      [attr.sizes]="tamano() + 'px'"
+      alt=""
+      [width]="tamano()"
+      [height]="tamano()"
+      class="shrink-0 select-none"
+      draggable="false"
+      decoding="async"
+    />
     @if (conTexto()) {
       <span class="leading-none" [class]="claseTexto()">
-        <span class="block font-display text-[0.95rem] font-extrabold tracking-wide uppercase" [class]="claro() ? 'text-white' : 'text-[#303840] dark:text-white'">
-          Trueke Bogotá
-        </span>
-        <span class="mt-0.5 block bg-gradient-to-r from-[#1aa7b0] to-[#8cc63f] bg-clip-text text-[0.72rem] font-extrabold tracking-[0.22em] text-transparent uppercase">
-          Solidario
-        </span>
+        @if (!claro()) {
+          <img src="logo-nombre-320.png" [attr.srcset]="nombre" [attr.sizes]="anchoNombre() + 'px'" alt="Trueke Bogotá Solidario"
+            [width]="anchoNombre()" [height]="altoNombre()" class="block select-none dark:hidden" draggable="false" decoding="async" />
+        }
+        <img src="logo-nombre-claro-320.png" [attr.srcset]="nombreClaro" [attr.sizes]="anchoNombre() + 'px'" alt="Trueke Bogotá Solidario"
+          [width]="anchoNombre()" [height]="altoNombre()" class="select-none" [class]="claro() ? 'block' : 'hidden dark:block'"
+          draggable="false" decoding="async" />
       </span>
     }
   `,
@@ -30,4 +46,9 @@ export class Logo {
   readonly claro = input(false);
   /** Clases del texto, p. ej. para ocultarlo en ciertos anchos de pantalla. */
   readonly claseTexto = input('');
+
+  protected readonly nombre = NOMBRE;
+  protected readonly nombreClaro = NOMBRE_CLARO;
+  protected readonly altoNombre = computed(() => Math.round(this.tamano() * 0.8));
+  protected readonly anchoNombre = computed(() => Math.round(this.altoNombre() * PROPORCION_NOMBRE));
 }
