@@ -1,22 +1,14 @@
 <Project>
 
   <!--
-    Avisos de seguridad aceptados temporalmente (NuGet audit los trata como error por TreatWarningsAsErrors).
+    Avisos de seguridad de NuGet aceptados temporalmente (NuGet audit los trata como error por TreatWarningsAsErrors).
     El CI del backend (paso "Auditar paquetes vulnerables") lee esta lista: cualquier aviso que no esté aquí lo hace fallar.
-    Cada entrada debe explicar por qué no es explotable en esta app y cuándo se retira.
+    Cada entrada debe explicar por qué no es explotable en esta app y cuándo se retira. Formato:
+      <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-xxxx-xxxx-xxxx" />
 
-    SixLabors.ImageSharp 3.1.12: los avisos del 2026-10-07 solo se corrigen en 4.1.2+, que exige llave de licencia.
-    Mitigado en Negocio/Archivos/ProcesadorImagenes.cs hasta cambiar de librería (SkiaSharp) o licenciar la v4:
+    Hoy no hay ninguno (los de ImageSharp 3.1 se resolvieron cambiando a SkiaSharp el 2026-10-09).
   -->
   <ItemGroup>
-    <!-- TIFF (BigTIFF IFD, encoders CCITT T4/T6): el procesador solo registra JPEG, PNG y WEBP; nunca decodifica ni codifica TIFF. -->
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-wmxv-xphr-5c9g" />
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-j9gm-c75j-xc9q" />
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-jjfr-hcj7-qf5w" />
-    <!-- HistogramEqualization: la app no usa ese procesador. -->
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-j3p4-wp97-rph4" />
-    <!-- Tablas CLUT de perfiles ICC: el perfil se descarta sin acceder a sus entradas (solo se valida la cabecera). -->
-    <NuGetAuditSuppress Include="https://github.com/advisories/GHSA-gwg2-r3hj-4w44" />
   </ItemGroup>
 
 </Project>
