@@ -45,8 +45,28 @@ npm start
 | `npm run test:ci` | Pruebas unitarias (Vitest) una sola vez |
 | `npm run api` | Regenera `src/app/api/schema.d.ts` desde `docs/openapi.json` |
 | `npm run verificar` | Lint + pruebas + build (lo mismo que el CI) |
+| `npm run e2e` | Pruebas de punta a punta con Playwright (requiere Docker) |
 
 Si la API cambia: en `backend/` ejecuta `ACTUALIZAR_OPENAPI=1 dotnet test --filter OpenApiTests` y luego `npm run api`. El CI falla si los tipos no coinciden con el contrato.
+
+### Pruebas de punta a punta (Playwright)
+Un Chromium real recorre la app en **PC y celular** contra las **mismas imágenes Docker de producción**: API, front con nginx (cabeceras y CSP incluidas), SQL Server con las migraciones y Redis. Solo se reemplazan los servicios externos, y la app no tiene ningún modo especial para pruebas (`e2e/docker-compose.e2e.yml`):
+- **Correo:** Mailpit, por SMTP con STARTTLS real. Lo firma una CA creada en cada corrida que publica su lista de revocación, porque la API valida cadena y revocación.
+- **Fotos:** Azurite (el emulador de Azure Blob), con subidas directas por SAS como en producción.
+- **Pagos:** simulados.
+
+Flujos cubiertos (`e2e/*.spec.ts`):
+1. **Visitante:** portada, búsqueda sin tildes con sugerencias, detalle, "ingresa para proponer" y la vista previa para compartir.
+2. **Cuenta nueva:** registro, enlace de verificación que llega por correo, foto de perfil obligatoria, publicar con foto en 5 pasos y verla en el catálogo con su miniatura.
+3. **Trueke completo entre dos personas:** proponer, aceptar, chat en tiempo real (SignalR) en ambos sentidos, confirmar la entrega y ganar los Eco-Puntos.
+
+```
+npm run e2e                                   # construye, levanta el ambiente, prueba y lo baja (~5 min la primera vez)
+E2E_CONSERVAR=1 npm run e2e                   # deja el ambiente arriba: app en http://localhost:8081, correos en http://localhost:8025
+E2E_URL=http://localhost:8081 npm run e2e     # reutiliza un ambiente ya levantado (segundos)
+npx playwright show-report e2e/.reporte       # reporte con capturas, video y traza de lo que falló
+```
+En GitHub Actions corre en cada PR que toque `frontend/` o `backend/` (`.github/workflows/e2e.yml`). Si falla, guarda capturas, videos, trazas y los registros de la API.
 
 ## Estructura
 

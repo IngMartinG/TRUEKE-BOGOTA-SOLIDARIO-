@@ -149,6 +149,10 @@ export class TiempoRealService {
     try {
       await conexion.start();
       this.conectado.set(true);
+      // Las pantallas cargaron sus datos por HTTP antes de que existiera esta conexión: lo que llegó en ese lapso
+      // (un mensaje, una solicitud) no se recibió en vivo. Se resincroniza igual que tras una reconexión.
+      void this.sincronizarContadores();
+      this.resincronizar$.next();
     } catch {
       if (this.conexion === conexion) {
         this.conexion = null;

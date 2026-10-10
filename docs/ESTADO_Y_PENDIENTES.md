@@ -121,6 +121,14 @@
 - Decisión: **sin chequeo de disponibilidad en la fase gratis** (mantendría despierta la API y agotaría la cuota de Azure SQL en 1-2 días). Listo para el plan pago en §7.2.
 - 288 pruebas del backend.
 
+## Hecho el 2026-10-10 — pruebas de punta a punta (Playwright)
+- `frontend/e2e/`: 6 pruebas en PC y celular (12 corridas) contra las imágenes Docker de producción (API, front con nginx, SQL Server con migraciones, Redis). Correo por SMTP con STARTTLS real a Mailpit (CA de un solo uso con CRL), fotos en Azurite y pagos simulados. **La app no tiene ningún modo especial para pruebas.**
+- Flujos: visitante (búsqueda con sugerencias, detalle, compartir), cuenta nueva (registro, verificación por correo, foto obligatoria, publicar con foto) y trueke completo entre dos personas (chat en tiempo real, confirmación y Eco-Puntos).
+- Workflow `e2e.yml` en cada PR que toque `frontend/` o `backend/`; el CI del front revisa los tipos de las pruebas.
+- **Errores reales que encontraron (corregidos):**
+  - nginx reenviaba `Host` sin el puerto. La protección CSRF rechazaba el refresco de sesión y cerraba la sesión al recargar si el front corría en un puerto no estándar (p. ej. el `docker-compose` local en :8081).
+  - El front no resincronizaba después de la PRIMERA conexión de tiempo real. Lo que llegaba entre la carga de la pantalla y la conexión (un mensaje del chat, una solicitud) no aparecía hasta recargar.
+
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
 - **Dependabot:** `gh auth login` y cerrar los PR de .NET 10, EF Core 9, TypeScript 7 y Node 26 (los demás, fusionar si el CI pasa).
