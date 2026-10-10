@@ -25,6 +25,13 @@ export const exigirCorreoVerificado: CanActivateFn = (_ruta, estado) => {
   return sesion.correoVerificado() ? true : router.createUrlTree(['/verifica-tu-correo']);
 };
 
+/** Publicar y editar exigen además foto de perfil (regla del backend): sin ella se lleva a subirla. */
+export const exigirCuentaCompleta: CanActivateFn = (ruta, estado) => {
+  const verificado = exigirCorreoVerificado(ruta, estado);
+  if (verificado !== true) return verificado;
+  return inject(SesionService).tieneFoto() ? true : inject(Router).createUrlTree(['/cuenta/perfil'], { fragment: 'foto' });
+};
+
 /** Panel de moderación. La API además exige sesión con 2FA (responde 403 "2fa_requerido_admin"). */
 export const exigirModerador: CanActivateFn = (_ruta, estado) => {
   const sesion = inject(SesionService);

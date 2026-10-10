@@ -18,6 +18,16 @@ public static class Guardas
         if (!u.CorreoVerificado)
             throw new AccesoDenegadoException("Verifica tu correo para realizar esta acción. Revisa tu bandeja de entrada o solicita un nuevo enlace.");
     }
+
+    /// <summary>
+    /// Publicar, solicitar, chatear y pagar exigen correo verificado Y foto de perfil: la comunidad debe poder ver con quién
+    /// intercambia antes de encontrarse. Quien entra con Google recibe su foto de Google automáticamente.
+    /// </summary>
+    public static void ExigirCuentaCompleta(Usuario u)
+    {
+        ExigirCorreoVerificado(u);
+        if (string.IsNullOrWhiteSpace(u.FotoUrl)) throw new FotoPerfilRequeridaException();
+    }
 }
 
 /// <summary>Prepara los correos con enlaces de un solo uso (agrega el token; quien llama guarda y LUEGO encola).</summary>

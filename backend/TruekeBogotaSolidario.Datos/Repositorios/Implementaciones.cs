@@ -224,6 +224,19 @@ public sealed class SolicitudRepository : ISolicitudRepository
         => _db.Solicitudes.AnyAsync(s => s.PublicacionId == publicacionId && s.SolicitanteId == solicitanteId
             && (s.Estado == EstadoSolicitud.Pendiente || s.Estado == EstadoSolicitud.Aceptada));
 
+    public async Task<(int Completados, int NoConcretados, IReadOnlyList<double> HorasRespuesta)> ConfianzaAsync(Guid usuarioId, DateTime desdeUtc)
+    {
+        var participadas = _db.Solicitudes.AsNoTracking()
+            .Where(s => (s.SolicitanteId == usuarioId || s.Publicacion!.PropietarioId == usuarioId) && s.FechaSolicitud >= desdeUtc);
+        var completados = await participadas.CountAsync(s => s.Estado == EstadoSolicitud.Completada);
+        var noConcretados = await participadas.CountAsync(s => s.Estado == EstadoSolicitud.NoConcretada);
+        var tiempos = await _db.Solicitudes.AsNoTracking()
+            .Where(s => s.Publicacion!.PropietarioId == usuarioId && s.FechaSolicitud >= desdeUtc && s.FechaAceptacionUtc != null)
+            .OrderByDescending(s => s.FechaSolicitud).Take(100)
+            .Select(s => new { s.FechaSolicitud, Aceptada = s.FechaAceptacionUtc!.Value }).ToListAsync();
+        return (completados, noConcretados, tiempos.Select(t => Math.Max(0, (t.Aceptada - t.FechaSolicitud).TotalHours)).ToList());
+    }
+
     public Task<int> ContarPendientesPorSolicitanteAsync(Guid solicitanteId)
         => _db.Solicitudes.CountAsync(s => s.SolicitanteId == solicitanteId && s.Estado == EstadoSolicitud.Pendiente);
 
@@ -738,6 +751,14 @@ public sealed class CalificacionRepository : ICalificacionRepository
 
     public async Task<IReadOnlyList<Calificacion>> ListarDelAutorAsync(Guid autorId, int maximo)
         => await _db.Calificaciones.AsNoTracking().Where(c => c.AutorId == autorId).OrderByDescending(c => c.FechaUtc).Take(maximo).ToListAsync();
+
+    public async Task<IReadOnlyList<int>> DistribucionAsync(Guid calificadoId)
+    {
+        var conteo = await _db.Calificaciones.AsNoTracking()
+            .Where(c => c.CalificadoId == calificadoId && c.CuentaEnPromedio)
+            .GroupBy(c => c.Estrellas).Select(g => new { Estrellas = g.Key, Total = g.Count() }).ToListAsync();
+        return Enumerable.Range(1, 5).Select(e => conteo.FirstOrDefault(x => x.Estrellas == e)?.Total ?? 0).ToList();
+    }
 
     public Task<bool> ExisteContadaEntreDesdeAsync(Guid autorId, Guid calificadoId, DateTime desdeUtc)
         => _db.Calificaciones.AnyAsync(c => c.AutorId == autorId && c.CalificadoId == calificadoId && c.CuentaEnPromedio && c.FechaUtc >= desdeUtc);

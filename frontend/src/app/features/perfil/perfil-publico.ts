@@ -13,10 +13,11 @@ import { Estrellas } from '../../shared/ui/estrellas';
 import { Icono } from '../../shared/ui/icono';
 import { Paginador } from '../../shared/ui/paginador';
 import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-publicacion';
+import { VisorImagenes } from '../../shared/ui/visor-imagenes';
 import { Volver } from '../../shared/ui/volver';
 
 @Component({
-  imports: [Volver, RouterLink, Avatar, Estrellas, Icono, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, Denunciar, Bloquear, FechaPipe, HacePipe],
+  imports: [Volver, RouterLink, Avatar, Estrellas, Icono, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, Denunciar, Bloquear, VisorImagenes, FechaPipe, HacePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (perfil.error()) {
@@ -28,7 +29,15 @@ import { Volver } from '../../shared/ui/volver';
         <div class="contenedor pt-4"><app-volver respaldo="/explorar" /></div>
         <div class="contenedor flex flex-col items-center gap-6 pt-4 pb-10 text-center sm:flex-row sm:text-left">
           @if (perfil.value(); as p) {
-            <app-avatar [nombre]="p.nombre" [foto]="p.fotoUrl" [tamano]="104" [verificado]="!!p.verificado" />
+            @if (p.fotoUrl) {
+              <button type="button" class="shrink-0 cursor-zoom-in rounded-full focus-visible:outline-offset-4" (click)="fotoAbierta.set(true)"
+                [attr.aria-label]="'Ver la foto de ' + p.nombre + ' en grande'">
+                <app-avatar [nombre]="p.nombre" [foto]="p.fotoUrl" [tamano]="104" [verificado]="!!p.verificado" />
+              </button>
+              <app-visor-imagenes [imagenes]="[p.fotoUrl]" [titulo]="p.nombre ?? ''" [(abierto)]="fotoAbierta" />
+            } @else {
+              <app-avatar [nombre]="p.nombre" [foto]="p.fotoUrl" [tamano]="104" [verificado]="!!p.verificado" />
+            }
             <div class="flex-1">
               <div class="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
                 <h1 class="text-3xl font-extrabold">{{ p.nombreComercial || p.nombre }}</h1>
@@ -90,6 +99,46 @@ import { Volver } from '../../shared/ui/volver';
         </section>
 
         <aside aria-labelledby="titulo-calificaciones">
+          @if (perfil.value()?.confianza; as c) {
+            <section class="tarjeta mb-8 p-5" aria-labelledby="titulo-confianza">
+              <h2 id="titulo-confianza" class="flex items-center gap-2 text-lg font-bold"><app-icono nombre="escudo" [tamano]="20" class="text-bosque-600" />Señales de confianza</h2>
+              <ul class="mt-4 space-y-2.5 text-sm">
+                @for (s of senales(); track s.texto) {
+                  <li class="flex items-start gap-2.5">
+                    <span class="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full"
+                      [class]="s.ok ? 'bg-bosque-100 text-bosque-700 dark:bg-bosque-900 dark:text-bosque-200' : 'bg-superficie-2 text-tenue'">
+                      <app-icono [nombre]="s.ok ? 'check' : 'x'" [tamano]="12" [grosor]="3" />
+                    </span>
+                    <span [class.text-tenue]="!s.ok">{{ s.texto }}</span>
+                  </li>
+                }
+              </ul>
+              <dl class="mt-4 grid grid-cols-2 gap-2 text-center">
+                <div class="rounded-xl bg-superficie-2 p-3">
+                  <dd class="font-display text-xl font-extrabold">{{ c.tasaConcrecion !== null && c.tasaConcrecion !== undefined ? c.tasaConcrecion + ' %' : '—' }}</dd>
+                  <dt class="text-[11px] leading-tight text-tenue">Intercambios que concretó (último año)</dt>
+                </div>
+                <div class="rounded-xl bg-superficie-2 p-3">
+                  <dd class="font-display text-xl font-extrabold">{{ respuesta(c.respuestaHoras) }}</dd>
+                  <dt class="text-[11px] leading-tight text-tenue">Tiempo típico en responder</dt>
+                </div>
+              </dl>
+              @if ((perfil.value()?.totalCalificaciones ?? 0) > 0) {
+                <div class="mt-4 space-y-1" aria-label="Distribución de calificaciones">
+                  @for (e of distribucion(); track e.estrellas) {
+                    <div class="flex items-center gap-2 text-xs">
+                      <span class="w-7 shrink-0 text-right tabular-nums">{{ e.estrellas }} ★</span>
+                      <span class="h-2 flex-1 overflow-hidden rounded-full bg-superficie-2">
+                        <span class="block h-full rounded-full bg-sol-400" [style.width.%]="e.porcentaje"></span>
+                      </span>
+                      <span class="w-6 shrink-0 tabular-nums text-tenue">{{ e.total }}</span>
+                    </div>
+                  }
+                </div>
+              }
+              <p class="mt-4 text-xs text-tenue">Consejo: conversen por el chat de Trueke y encuéntrense en un lugar público y concurrido.</p>
+            </section>
+          }
           <h2 id="titulo-calificaciones" class="text-xl font-bold">Lo que dice la comunidad</h2>
           <ul class="mt-5 space-y-3">
             @for (c of calificaciones.value()?.items ?? []; track c.id) {
@@ -164,6 +213,39 @@ export default class PerfilPublico {
       { texto: 'Reputación', valor: (p?.reputacion ?? 0).toFixed(1) },
     ];
   });
+
+  protected readonly fotoAbierta = signal(false);
+
+  /** Hechos verificables (sin datos privados) que ayudan a decidir si intercambiar con esta persona. */
+  protected readonly senales = computed(() => {
+    const p = this.perfil.value();
+    const c = p?.confianza;
+    if (!p || !c) return [];
+    const total = c.intercambiosCompletados ?? 0;
+    return [
+      { ok: !!p.fotoUrl, texto: p.fotoUrl ? 'Tiene foto de perfil' : 'Aún no tiene foto de perfil' },
+      { ok: !!c.correoVerificado, texto: 'Correo verificado' },
+      { ok: !!c.identidadVerificada, texto: c.identidadVerificada ? 'Identidad verificada con documento' : 'Identidad aún no verificada con documento' },
+      { ok: !!c.dosFactores, texto: c.dosFactores ? 'Protege su cuenta con verificación en dos pasos' : 'Sin verificación en dos pasos' },
+      ...(c.conGoogle ? [{ ok: true, texto: 'Ingresa con su cuenta de Google' }] : []),
+      { ok: total > 0, texto: total > 0 ? `${total} ${total === 1 ? 'intercambio completado' : 'intercambios completados'}` : 'Aún no completa intercambios' },
+      ...(c.enLinea ? [{ ok: true, texto: 'En línea ahora' }] : []),
+    ];
+  });
+
+  protected readonly distribucion = computed(() => {
+    const e = this.perfil.value()?.confianza?.estrellas ?? [];
+    const total = e.reduce((a, b) => a + b, 0) || 1;
+    return [5, 4, 3, 2, 1].map((n) => ({ estrellas: n, total: e[n - 1] ?? 0, porcentaje: Math.round((100 * (e[n - 1] ?? 0)) / total) }));
+  });
+
+  protected respuesta(horas: number | null | undefined): string {
+    if (horas === null || horas === undefined) return '—';
+    if (horas < 1) return 'Menos de 1 h';
+    if (horas < 24) return `${Math.round(horas)} h`;
+    const dias = Math.round(horas / 24);
+    return `${dias} ${dias === 1 ? 'día' : 'días'}`;
+  }
 
   constructor() {
     effect(() => {

@@ -5,6 +5,7 @@ using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Datos.Repositorios;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Correo;
+using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Dtos;
 
 namespace TruekeBogotaSolidario.Negocio.Servicios;
@@ -49,12 +50,14 @@ public sealed class AuthService : IAuthService
     public AuthService(IUsuarioRepository usuarios, ISesionRefreshRepository refrescos, IUnidadDeTrabajo uow, EmisorSesiones emisor,
         ISesionService sesiones, IOptions<SeguridadOpciones> seg, IOptions<LegalOpciones> legal, CorreosCuenta correos,
         ICorreoSaliente salida, IValidadorGoogle google, IVerificadorCaptcha captcha, VerificadorDosFactores dosFactores,
-        TimeProvider reloj, ILogger<AuthService> log)
+        TimeProvider reloj, ILogger<AuthService> log, IImportadorFotoPerfil importadorFoto)
     {
         _usuarios = usuarios; _refrescos = refrescos; _uow = uow; _emisor = emisor; _sesiones = sesiones; _seg = seg.Value;
         _legal = legal.Value; _correos = correos; _salida = salida; _google = google; _captcha = captcha; _dosFactores = dosFactores;
-        _reloj = reloj; _log = log;
+        _reloj = reloj; _log = log; _importadorFoto = importadorFoto;
     }
+
+    private readonly IImportadorFotoPerfil _importadorFoto;
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
@@ -177,6 +180,9 @@ public sealed class AuthService : IAuthService
         if (usuario.EstaEliminado) throw new AutenticacionException("No se pudo validar tu cuenta de Google.");
         ExigirNoSuspendido(usuario, ahora);
         var conDosFactores = await ExigirSegundoFactorAsync(usuario, r.CodigoDosFactores, ahora);
+        // Sin foto propia, se trae la de Google (copiada y limpia). Si falla, la persona la sube a mano: el login sigue.
+        if (string.IsNullOrWhiteSpace(usuario.FotoUrl) && await _importadorFoto.ImportarAsync(usuario.Id, id.Foto) is { } foto)
+            usuario.CambiarFoto(foto);
 
         usuario.RegistrarLoginExitoso();
         var sesion = _emisor.Emitir(usuario, conDosFactores: conDosFactores);

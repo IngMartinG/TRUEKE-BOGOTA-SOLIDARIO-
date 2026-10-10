@@ -41,6 +41,11 @@ public interface IAlmacenArchivos
     Task EliminarDocumentoAsync(string url, CancellationToken ct = default);
     /// <summary>Borra una imagen del usuario (p. ej. la foto de perfil anterior). Ignora URLs que no sean suyas.</summary>
     Task EliminarImagenPropiaAsync(string url, Guid usuarioId, CancellationToken ct = default);
+    /// <summary>
+    /// Guarda una imagen que obtuvo el servidor (p. ej. la foto de Google): la limpia (JPEG sin metadatos) y devuelve su URL
+    /// pública. Lanza <see cref="ReglaDeNegocioException"/> si no es una imagen válida o supera el tamaño permitido.
+    /// </summary>
+    Task<string> GuardarImagenAsync(Guid usuarioId, byte[] contenido, CancellationToken ct = default);
 }
 
 public sealed class AlmacenDeshabilitado : IAlmacenArchivos
@@ -53,6 +58,8 @@ public sealed class AlmacenDeshabilitado : IAlmacenArchivos
     public Task EliminarDelUsuarioAsync(Guid usuarioId, CancellationToken ct = default) => Task.CompletedTask;
     public Task EliminarDocumentoAsync(string url, CancellationToken ct = default) => Task.CompletedTask;
     public Task EliminarImagenPropiaAsync(string url, Guid usuarioId, CancellationToken ct = default) => Task.CompletedTask;
+    public Task<string> GuardarImagenAsync(Guid usuarioId, byte[] contenido, CancellationToken ct = default)
+        => throw new ReglaDeNegocioException("La subida de archivos no está configurada en este entorno.");
 }
 
 /// <summary>
@@ -220,6 +227,15 @@ public sealed class AlmacenBlobAzure : IAlmacenArchivos
             throw;
         }
 
+        var url = await PublicarLimpiaAsync(contenedor, usuarioId, limpia, extension, ct);
+        await original.DeleteIfExistsAsync(cancellationToken: ct);
+        _log.LogInformation("Imagen limpiada y publicada ({Antes} → {Despues} bytes)", contenido.ToMemory().Length, limpia.Length);
+        return url;
+    }
+
+    /// <summary>Sube una imagen YA limpia con un nombre nuevo del usuario (nunca sobrescribe) y devuelve su URL pública.</summary>
+    private static async Task<string> PublicarLimpiaAsync(BlobContainerClient contenedor, Guid usuarioId, byte[] limpia, string extension, CancellationToken ct)
+    {
         var destino = contenedor.GetBlobClient(ReglasArchivos.NuevoNombre(usuarioId, extension));
         await destino.UploadAsync(new BinaryData(limpia), new BlobUploadOptions
         {
@@ -231,9 +247,16 @@ public sealed class AlmacenBlobAzure : IAlmacenArchivos
             Metadata = new Dictionary<string, string> { [MetadatoLimpia] = "1" },
             Conditions = new BlobRequestConditions { IfNoneMatch = ETag.All } // nunca sobrescribir
         }, ct);
-        await original.DeleteIfExistsAsync(cancellationToken: ct);
-        _log.LogInformation("Imagen limpiada y publicada como {Blob} ({Antes} → {Despues} bytes)", destino.Name, contenido.ToMemory().Length, limpia.Length);
         return destino.Uri.ToString();
+    }
+
+    public async Task<string> GuardarImagenAsync(Guid usuarioId, byte[] contenido, CancellationToken ct = default)
+    {
+        ReglasArchivos.ValidarTamano(contenido.Length);
+        await AsegurarContenedoresAsync(ct);
+        using var flujo = new MemoryStream(contenido);
+        var limpia = await ProcesadorImagenes.LimpiarAsync(flujo, "jpg", ct); // siempre JPEG, sin metadatos
+        return await PublicarLimpiaAsync(Contenedor(TipoArchivoDto.Imagen), usuarioId, limpia, "jpg", ct);
     }
 
     /// <summary>El blob de documentos al que apunta la URL, o null si la URL no es de ese contenedor.</summary>

@@ -32,12 +32,12 @@ internal static class Mapeos
     /// <summary>Cuentas eliminadas o suspendidas no muestran foto.</summary>
     private static string? FotoVisible(Usuario u) => u.EstaEliminado || u.EstaSuspendido ? null : u.FotoUrl;
 
-    public static PerfilUsuarioDto APerfilUsuario(Usuario u, int publicacionesActivas, DateTime ahora)
+    public static PerfilUsuarioDto APerfilUsuario(Usuario u, int publicacionesActivas, SenalesConfianzaDto confianza, DateTime ahora)
         => new(u.Id, NombrePublico(u.NombreCompleto), u.Localidad, u.Reputacion, u.EsVerificado, TipoCuentaEfectivo(u, ahora),
             new DateTime(u.FechaRegistro.Year, u.FechaRegistro.Month, 1, 0, 0, 0, DateTimeKind.Utc), // solo mes y año
             u.TotalTruekesCompletados, u.TotalComprasRealizadas, u.TotalDonacionesRealizadas,
             u.CalificacionPromedio, u.CalificacionesTotal, publicacionesActivas, Divipola.NombreCompleto(u.MunicipioCodigo),
-            NombreComercialVisible(u, ahora), FotoVisible(u));
+            NombreComercialVisible(u, ahora), FotoVisible(u), confianza);
 
     public static UsuarioDto AUsuarioDto(Usuario u, DateTime ahora)
     {

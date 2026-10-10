@@ -6840,6 +6840,9 @@
           "fotoUrl": {
             "type": "string",
             "nullable": true
+          },
+          "confianza": {
+            "$ref": "#/components/schemas/SenalesConfianzaDto"
           }
         },
         "additionalProperties": false
@@ -7427,6 +7430,48 @@
           "SuperUsuario"
         ],
         "type": "string"
+      },
+      "SenalesConfianzaDto": {
+        "type": "object",
+        "properties": {
+          "correoVerificado": {
+            "type": "boolean"
+          },
+          "identidadVerificada": {
+            "type": "boolean"
+          },
+          "conGoogle": {
+            "type": "boolean"
+          },
+          "dosFactores": {
+            "type": "boolean"
+          },
+          "enLinea": {
+            "type": "boolean"
+          },
+          "intercambiosCompletados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tasaConcrecion": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "respuestaHoras": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "estrellas": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        },
+        "additionalProperties": false
       },
       "SesionDto": {
         "type": "object",

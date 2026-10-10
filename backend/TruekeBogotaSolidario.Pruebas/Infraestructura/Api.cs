@@ -3,6 +3,7 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
+using TruekeBogotaSolidario.Datos.Contexto;
 using TruekeBogotaSolidario.Negocio.Correo;
 
 namespace TruekeBogotaSolidario.Pruebas.Infraestructura;
@@ -16,7 +17,16 @@ public static class Api
 {
     public const string ClaveValida = "Clave12345";
 
+    /// <summary>Cuenta lista para operar: correo verificado y foto de perfil (requisitos para publicar, solicitar, chatear y pagar).</summary>
     public static async Task<SesionMinDto> RegistrarSesionAsync(WebApplicationFactory<Program> f, string nombre)
+    {
+        var sesion = await RegistrarSesionSinFotoAsync(f, nombre);
+        await PonerFotoAsync(f, sesion.Usuario.Id);
+        return sesion;
+    }
+
+    /// <summary>Correo verificado pero SIN foto de perfil (para probar que la foto es obligatoria).</summary>
+    public static async Task<SesionMinDto> RegistrarSesionSinFotoAsync(WebApplicationFactory<Program> f, string nombre)
     {
         var correo = $"{nombre}-{Guid.NewGuid():N}@trueke.test";
         var resp = await f.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar",
@@ -25,6 +35,15 @@ public static class Api
             throw new InvalidOperationException($"Registro falló: {(int)resp.StatusCode} {await resp.Content.ReadAsStringAsync()}");
         await VerificarCorreoAsync(f, correo);
         return (await resp.Content.ReadFromJsonAsync<SesionMinDto>())!;
+    }
+
+    /// <summary>Atajo: asigna una foto de perfil directamente en la base (el flujo real de subida se prueba en ImagenesTests).</summary>
+    public static async Task PonerFotoAsync(WebApplicationFactory<Program> f, Guid usuarioId)
+    {
+        using var scope = f.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<TruekeDbContext>();
+        (await db.Usuarios.FindAsync(usuarioId))!.CambiarFoto($"{AlmacenFalso.Base}imagenes/{usuarioId:N}/perfil.jpg");
+        await db.SaveChangesAsync();
     }
 
     public static CorreoCapturado Correos(WebApplicationFactory<Program> f)
