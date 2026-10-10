@@ -122,7 +122,7 @@ public class ImagenesTests : IClassFixture<FabricaApi>
         Assert.Contains("/documentos/", s.UrlArchivo);
         _almacen.Subir(s.UrlArchivo, "application/pdf", "%PDF-1.7 cedula"u8.ToArray());
 
-        var pago = await c.PostAsJsonAsync("/api/v1/pagos/iniciar", new { concepto = "Verificar", documentoUrl = s.UrlArchivo });
+        var pago = await c.PostAsJsonAsync("/api/v1/pagos/iniciar", new { concepto = "Verificar", documentoUrl = s.UrlArchivo, facturaANombre = false, aceptoConsumidorFinal = true });
         Assert.True(pago.StatusCode == HttpStatusCode.Created, await pago.Content.ReadAsStringAsync());
         var referencia = (await pago.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("referencia").GetString();
         (await c.PostAsync($"/api/v1/pagos/{referencia}/simular?aprobado=true", null)).EnsureSuccessStatusCode();

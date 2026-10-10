@@ -26,6 +26,18 @@ public sealed class UnidadDeTrabajo : IUnidadDeTrabajo
             throw new ConflictoDeConcurrenciaException("No se pudo guardar por un conflicto con otro registro.", ex);
         }
     }
+
+    public async Task EnTransaccionAsync(Func<Task> trabajo)
+    {
+        if (!_db.Database.IsRelational()) { await trabajo(); return; } // InMemory (desarrollo) no tiene transacciones
+        // Con reintentos de SQL Server activos, la transacción debe ir dentro de la estrategia de ejecución.
+        await _db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
+        {
+            await using var tx = await _db.Database.BeginTransactionAsync();
+            await trabajo();
+            await tx.CommitAsync();
+        });
+    }
 }
 
 public sealed class UsuarioRepository : IUsuarioRepository
@@ -345,7 +357,9 @@ public sealed class FacturaRepository : IFacturaRepository
     public FacturaRepository(TruekeDbContext db) => _db = db;
 
     public Task<Factura?> ObtenerAsync(Guid id) => _db.Facturas.FirstOrDefaultAsync(f => f.Id == id);
-    public Task<Factura?> ObtenerPorPagoAsync(Guid pagoId) => _db.Facturas.FirstOrDefaultAsync(f => f.PagoId == pagoId);
+    /// <summary>La factura VIGENTE (pendiente o emitida) del pago; las anuladas o reemplazadas son historial.</summary>
+    public Task<Factura?> ObtenerPorPagoAsync(Guid pagoId)
+        => _db.Facturas.FirstOrDefaultAsync(f => f.PagoId == pagoId && (f.Estado == EstadoFactura.Pendiente || f.Estado == EstadoFactura.Emitida));
 
     public async Task<IReadOnlyList<Factura>> ListarPorUsuarioAsync(Guid usuarioId, int maximo)
         => await _db.Facturas.AsNoTracking().Where(f => f.UsuarioId == usuarioId).OrderByDescending(f => f.FechaUtc).Take(Math.Clamp(maximo, 1, 500)).ToListAsync();

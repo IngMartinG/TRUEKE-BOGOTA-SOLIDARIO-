@@ -76,7 +76,7 @@ public class NotificacionesTests : IClassFixture<FabricaApi>
         var (con, recibidas) = await ConectarAsync(ses.Token);
         await using var _ = con;
 
-        var ini = await cliente.PostAsJsonAsync("/api/v1/pagos/iniciar", new { concepto = "Recarga", montoRecargaCop = 10000 });
+        var ini = await cliente.PostAsJsonAsync("/api/v1/pagos/iniciar", new { concepto = "Recarga", montoRecargaCop = 10000, facturaANombre = false, aceptoConsumidorFinal = true });
         Assert.True(ini.StatusCode == HttpStatusCode.Created, await ini.Content.ReadAsStringAsync());
         var referencia = (await ini.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>()).GetProperty("referencia").GetString();
         (await cliente.PostAsync($"/api/v1/pagos/{referencia}/simular?aprobado=true", null)).EnsureSuccessStatusCode();

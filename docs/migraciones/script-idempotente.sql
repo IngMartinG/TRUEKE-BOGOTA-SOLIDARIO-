@@ -1542,3 +1542,172 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    DROP INDEX [IX_Facturas_PagoId] ON [Facturas];
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    ALTER TABLE [Pagos] ADD [CompradorCorreo] nvarchar(160) NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    ALTER TABLE [Pagos] ADD [CompradorDireccion] nvarchar(150) NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    ALTER TABLE [Pagos] ADD [CompradorDocumento] nvarchar(20) NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    ALTER TABLE [Pagos] ADD [CompradorMunicipioCodigo] varchar(5) NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    ALTER TABLE [Pagos] ADD [CompradorNombre] nvarchar(150) NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    ALTER TABLE [Pagos] ADD [CompradorTipoDocumento] nvarchar(20) NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    ALTER TABLE [Pagos] ADD [FacturaANombre] bit NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    ALTER TABLE [Pagos] ADD [FechaEleccionFacturaUtc] datetime2 NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    ALTER TABLE [Facturas] ADD [CorregidaPorId] uniqueidentifier NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    ALTER TABLE [Facturas] ADD [ElegidaANombre] bit NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    ALTER TABLE [Facturas] ADD [FechaCorreccionUtc] datetime2 NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    ALTER TABLE [Facturas] ADD [FechaEleccionUtc] datetime2 NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    ALTER TABLE [Facturas] ADD [MotivoCorreccion] nvarchar(300) NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    ALTER TABLE [Facturas] ADD [ReemplazaAId] uniqueidentifier NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    ALTER TABLE [Facturas] ADD [ReemplazadaPorId] uniqueidentifier NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [IX_Facturas_PagoId] ON [Facturas] ([PagoId]) WHERE [Estado] IN (N''Pendiente'', N''Emitida'')');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010153518_FacturaEleccionYCorreccion'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261010153518_FacturaEleccionYCorreccion', N'8.0.31');
+END;
+GO
+
+COMMIT;
+GO
+

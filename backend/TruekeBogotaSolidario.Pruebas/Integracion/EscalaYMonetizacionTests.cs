@@ -88,8 +88,12 @@ public class EscalaYMonetizacionTests : IClassFixture<FabricaApi>
         var nitMalo = await c.PutAsJsonAsync("/api/v1/cuenta/facturacion",
             new { tipoDocumento = "NIT", documento = "900123456-1", nombre = "Empresa SAS", correo = "f@empresa.co" });
         Assert.Equal(HttpStatusCode.BadRequest, nitMalo.StatusCode);
-        var ok = await c.PutAsJsonAsync("/api/v1/cuenta/facturacion",
+        // la DIAN exige todos los datos: sin dirección no se guardan
+        var sinDireccion = await c.PutAsJsonAsync("/api/v1/cuenta/facturacion",
             new { tipoDocumento = "NIT", documento = "900123456", nombre = "Empresa SAS", correo = "f@empresa.co", municipioCodigo = "76001" });
+        Assert.Equal(HttpStatusCode.BadRequest, sinDireccion.StatusCode);
+        var ok = await c.PutAsJsonAsync("/api/v1/cuenta/facturacion",
+            new { tipoDocumento = "NIT", documento = "900123456", nombre = "Empresa SAS", correo = "f@empresa.co", direccion = "Avenida 6N # 25-10", municipioCodigo = "76001" });
         Assert.Equal(HttpStatusCode.OK, ok.StatusCode);
         var datos = await ok.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal("900123456-8", datos.GetProperty("documento").GetString());

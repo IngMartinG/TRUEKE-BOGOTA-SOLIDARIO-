@@ -514,6 +514,65 @@
         }
       }
     },
+    "/api/v1/admin/facturas/{id}/comprador": {
+      "put": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorregirCompradorFacturaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CorregirCompradorFacturaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CorregirCompradorFacturaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaAdminDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaAdminDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FacturaAdminDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/facturas.csv": {
       "get": {
         "tags": [
@@ -5209,6 +5268,24 @@
         },
         "additionalProperties": false
       },
+      "CorregirCompradorFacturaRequest": {
+        "required": [
+          "comprador",
+          "motivo"
+        ],
+        "type": "object",
+        "properties": {
+          "comprador": {
+            "$ref": "#/components/schemas/DatosFacturacionRequest"
+          },
+          "motivo": {
+            "maxLength": 300,
+            "minLength": 10,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "CotizacionDto": {
         "type": "object",
         "properties": {
@@ -5448,7 +5525,9 @@
       "DatosFacturacionRequest": {
         "required": [
           "correo",
+          "direccion",
           "documento",
+          "municipioCodigo",
           "nombre"
         ],
         "type": "object",
@@ -5474,13 +5553,13 @@
           },
           "direccion": {
             "maxLength": 150,
-            "type": "string",
-            "nullable": true
+            "minLength": 5,
+            "type": "string"
           },
           "municipioCodigo": {
+            "minLength": 1,
             "pattern": "^[0-9]{5}$",
-            "type": "string",
-            "nullable": true
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -5939,7 +6018,8 @@
         "enum": [
           "Pendiente",
           "Emitida",
-          "Anulada"
+          "Anulada",
+          "Reemplazada"
         ],
         "type": "string"
       },
@@ -6052,6 +6132,39 @@
           "notaInterna": {
             "type": "string",
             "nullable": true
+          },
+          "elegidaANombre": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "fechaEleccionUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "reemplazaAId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "reemplazadaPorId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "corregidaPorId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "fechaCorreccionUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "motivoCorreccion": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6137,6 +6250,15 @@
           },
           "compradorDocumento": {
             "type": "string"
+          },
+          "elegidaANombre": {
+            "type": "boolean",
+            "nullable": true
+          },
+          "fechaEleccionUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6290,6 +6412,9 @@
         "additionalProperties": false
       },
       "IniciarPagoRequest": {
+        "required": [
+          "facturaANombre"
+        ],
         "type": "object",
         "properties": {
           "concepto": {
@@ -6311,6 +6436,12 @@
             "type": "integer",
             "format": "int32",
             "nullable": true
+          },
+          "facturaANombre": {
+            "type": "boolean"
+          },
+          "aceptoConsumidorFinal": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

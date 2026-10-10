@@ -87,13 +87,14 @@ internal static class Mapeos
 
     public static FacturaDto AFacturaDto(Factura f)
         => new(f.Id, f.Referencia, f.Concepto.ToString(), f.Descripcion, f.FechaUtc, f.TotalCop, f.BaseCop, f.IvaCop, f.IvaPorcentaje,
-            f.Estado.ToString(), f.NumeroDian, f.Cufe, f.FechaEmisionUtc, f.CompradorNombre, f.CompradorDocumento);
+            f.Estado.ToString(), f.NumeroDian, f.Cufe, f.FechaEmisionUtc, f.CompradorNombre, f.CompradorDocumento, f.ElegidaANombre, f.FechaEleccionUtc);
 
     public static FacturaAdminDto AFacturaAdminDto(Factura f)
         => new(f.Id, f.Referencia, f.UsuarioId, f.Concepto.ToString(), f.Descripcion, f.FechaUtc, f.TotalCop, f.BaseCop, f.IvaCop,
             f.IvaPorcentaje, f.Estado.ToString(), f.NumeroDian, f.Cufe, f.FechaEmisionUtc, f.CompradorTipoDocumento?.ToString(),
             f.CompradorDocumento, f.CompradorNombre, f.CompradorCorreo, f.CompradorDireccion,
-            f.CompradorMunicipioCodigo is null ? null : Divipola.NombreCompleto(f.CompradorMunicipioCodigo), f.RequiereNotaCredito, f.NotaInterna);
+            f.CompradorMunicipioCodigo is null ? null : Divipola.NombreCompleto(f.CompradorMunicipioCodigo), f.RequiereNotaCredito, f.NotaInterna,
+            f.ElegidaANombre, f.FechaEleccionUtc, f.ReemplazaAId, f.ReemplazadaPorId, f.CorregidaPorId, f.FechaCorreccionUtc, f.MotivoCorreccion);
 
     public static PqrDto APqrDto(Pqr p)
         => new(p.Id, p.Radicado, p.Tipo.ToString(), p.Asunto, p.Descripcion, p.PagoReferencia, p.Estado.ToString(), p.FechaUtc,

@@ -446,6 +446,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/facturas/{id}/comprador": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CorregirCompradorFacturaRequest"];
+                    "text/json": components["schemas"]["CorregirCompradorFacturaRequest"];
+                    "application/*+json": components["schemas"]["CorregirCompradorFacturaRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FacturaAdminDto"];
+                        "application/json": components["schemas"]["FacturaAdminDto"];
+                        "text/json": components["schemas"]["FacturaAdminDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/facturas.csv": {
         parameters: {
             query?: never;
@@ -4413,6 +4458,10 @@ export interface components {
             contraparteEnLinea?: boolean;
             yoBloquee?: boolean;
         };
+        CorregirCompradorFacturaRequest: {
+            comprador: components["schemas"]["DatosFacturacionRequest"];
+            motivo: string;
+        };
         CotizacionDto: {
             /** Format: int32 */
             precioBaseCop?: number;
@@ -4483,8 +4532,8 @@ export interface components {
             nombre: string;
             /** Format: email */
             correo: string;
-            direccion?: string | null;
-            municipioCodigo?: string | null;
+            direccion: string;
+            municipioCodigo: string;
         };
         DatosPersonalesDto: {
             /** Format: date-time */
@@ -4628,7 +4677,7 @@ export interface components {
         /** @enum {string} */
         EstadoDenunciaDto: "Pendiente" | "Resuelta" | "Descartada";
         /** @enum {string} */
-        EstadoFacturaDto: "Pendiente" | "Emitida" | "Anulada";
+        EstadoFacturaDto: "Pendiente" | "Emitida" | "Anulada" | "Reemplazada";
         /** @enum {string} */
         EstadoMensajeDto: "Enviado" | "Entregado" | "Leido";
         /** @enum {string} */
@@ -4666,6 +4715,18 @@ export interface components {
             compradorMunicipio?: string | null;
             requiereNotaCredito?: boolean;
             notaInterna?: string | null;
+            elegidaANombre?: boolean | null;
+            /** Format: date-time */
+            fechaEleccionUtc?: string | null;
+            /** Format: uuid */
+            reemplazaAId?: string | null;
+            /** Format: uuid */
+            reemplazadaPorId?: string | null;
+            /** Format: uuid */
+            corregidaPorId?: string | null;
+            /** Format: date-time */
+            fechaCorreccionUtc?: string | null;
+            motivoCorreccion?: string | null;
         };
         FacturaAdminDtoPaginaDto: {
             items?: components["schemas"]["FacturaAdminDto"][];
@@ -4699,6 +4760,9 @@ export interface components {
             fechaEmisionUtc?: string | null;
             compradorNombre?: string;
             compradorDocumento?: string;
+            elegidaANombre?: boolean | null;
+            /** Format: date-time */
+            fechaEleccionUtc?: string | null;
         };
         GananciaDto: {
             modo?: string;
@@ -4766,6 +4830,8 @@ export interface components {
             documentoUrl?: string | null;
             /** Format: int32 */
             montoRecargaCop?: number | null;
+            facturaANombre: boolean;
+            aceptoConsumidorFinal?: boolean;
         };
         LoginRequest: {
             /** Format: email */
@@ -5357,6 +5423,7 @@ export type CondicionDto = components['schemas']['CondicionDto'];
 export type ConfiguracionDosFactoresDto = components['schemas']['ConfiguracionDosFactoresDto'];
 export type ConfiguracionPublicaDto = components['schemas']['ConfiguracionPublicaDto'];
 export type ConversacionDto = components['schemas']['ConversacionDto'];
+export type CorregirCompradorFacturaRequest = components['schemas']['CorregirCompradorFacturaRequest'];
 export type CotizacionDto = components['schemas']['CotizacionDto'];
 export type CrearApelacionRequest = components['schemas']['CrearApelacionRequest'];
 export type CrearComentarioRequest = components['schemas']['CrearComentarioRequest'];
