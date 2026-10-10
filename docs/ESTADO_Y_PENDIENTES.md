@@ -115,6 +115,12 @@
 - El botón *Compartir* del detalle usa ese enlace. `Urls__Api` en `render.yaml`. Costo $0.
 - 286 pruebas del backend y 30 del front.
 
+## Hecho el 2026-10-10 — monitoreo
+- `Presentacion/Monitoreo/Telemetria.cs`: Application Insights (OpenTelemetry, `Azure.Monitor.OpenTelemetry.AspNetCore` 1.6.0) con rol `trueke-api`, sin `/health`, logs del framework desde Warning, muestreo configurable (`Monitoreo:Muestreo`) y un procesador que quita la query string de todas las URLs (token del hub, llaves de terceros).
+- `APPLICATIONINSIGHTS_CONNECTION_STRING` como secreto en `render.yaml`. Guía del portal con tope diario de 0,15 GB (nunca pasa los 5 GB gratis) y alertas en `docs/DESPLIEGUE.md` §7.1.
+- Decisión: **sin chequeo de disponibilidad en la fase gratis** (mantendría despierta la API y agotaría la cuota de Azure SQL en 1-2 días). Listo para el plan pago en §7.2.
+- 288 pruebas del backend.
+
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
 - **Dependabot:** `gh auth login` y cerrar los PR de .NET 10, EF Core 9, TypeScript 7 y Node 26 (los demás, fusionar si el CI pasa).
