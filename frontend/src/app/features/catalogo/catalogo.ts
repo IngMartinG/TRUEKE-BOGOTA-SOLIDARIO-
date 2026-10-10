@@ -21,6 +21,7 @@ import { AvisosService } from '../../core/avisos.service';
 import { SesionService } from '../../core/sesion.service';
 import { NumeroPipe } from '../../shared/pipes';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
+import { Buscador } from '../../shared/ui/buscador';
 import { Icono } from '../../shared/ui/icono';
 import { Mapa, type PuntoMapa } from '../../shared/ui/mapa';
 import { Modal } from '../../shared/ui/modal';
@@ -36,6 +37,7 @@ const TAMANO = 12;
     FormsModule,
     RouterLink,
     Icono,
+    Buscador,
     TarjetaPublicacion,
     TarjetaEsqueleto,
     EstadoVacio,
@@ -53,18 +55,13 @@ const TAMANO = 12;
         <p class="mt-2 text-tenue">Objetos de personas de todo Colombia esperando una segunda oportunidad. Filtra por tu ciudad para encontrar lo que está cerca.</p>
 
         <div class="mt-6 flex flex-col gap-3 lg:flex-row lg:items-center">
-          <form class="relative flex-1" role="search" (ngSubmit)="aplicar({ texto: textoBusqueda() || null })">
-            <app-icono nombre="buscar" [tamano]="20" class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-tenue" />
-            <input
-              type="search"
-              name="texto"
-              [(ngModel)]="textoBusqueda"
-              maxlength="100"
-              class="entrada rounded-full py-3 pl-12 text-base shadow-suave"
-              placeholder="¿Qué estás buscando?"
-              aria-label="Buscar publicaciones"
-            />
-          </form>
+          <app-buscador
+            class="block flex-1"
+            [(texto)]="textoBusqueda"
+            [grande]="true"
+            claseEntrada="entrada rounded-full py-3 pl-12 text-base shadow-suave"
+            (buscar)="aplicar({ texto: $event || null })"
+          />
           <div class="flex gap-2 overflow-x-auto pb-1 lg:pb-0" role="group" aria-label="Filtrar por modo">
             <button type="button" class="btn shrink-0" [class]="!filtros().modo ? 'btn-primario' : 'btn-secundario'" (click)="aplicar({ modo: null })">
               Todos
@@ -97,9 +94,9 @@ const TAMANO = 12;
         <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
           <p class="text-sm text-tenue">
             @if (cercaDeMi()) {
-              <strong class="text-tinta">{{ cercanas.value()?.length ?? 0 }}</strong> publicaciones a menos de {{ radioKm() }} km
+              <strong class="text-tinta">{{ cercanas.value()?.length ?? 0 }}</strong> {{ (cercanas.value()?.length ?? 0) === 1 ? 'publicación' : 'publicaciones' }} a menos de {{ radioKm() }} km
             } @else {
-              <strong class="text-tinta">{{ resultados.value()?.total ?? 0 | numero }}</strong> publicaciones
+              <strong class="text-tinta">{{ resultados.value()?.total ?? 0 | numero }}</strong> {{ resultados.value()?.total === 1 ? 'publicación' : 'publicaciones' }}
             }
             @if (filtrosActivos() > 0) {
               <button type="button" class="enlace ml-2 text-xs" (click)="limpiar()">Limpiar filtros</button>

@@ -68,6 +68,8 @@ public interface IPublicacionRepository
     Task<Publicacion?> ObtenerPorIdAsync(Guid id);
     /// <summary>Visibles = Disponibles, no ocultas y de dueños no suspendidos. Destacadas vigentes primero (orden Recientes).</summary>
     Task<(IReadOnlyList<Publicacion> Items, int Total)> ListarVisiblesAsync(FiltroPublicaciones filtro, DateTime ahoraUtc);
+    /// <summary>Títulos de publicaciones visibles cuyo título contiene todos los términos (para autocompletar), sin repetir.</summary>
+    Task<IReadOnlyList<string>> SugerirTitulosAsync(string texto, int maximo, DateTime ahoraUtc);
     /// <summary>Visibles con coordenadas dentro del rectángulo indicado. Máximo <paramref name="maximo"/>.</summary>
     Task<IReadOnlyList<Publicacion>> ListarVisiblesEnAreaAsync(double minLat, double maxLat, double minLon, double maxLon,
         int? categoriaId, ModoTransaccion? modo, int maximo, DateTime ahoraUtc);

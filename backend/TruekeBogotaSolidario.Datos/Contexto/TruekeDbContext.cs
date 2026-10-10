@@ -102,6 +102,8 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.Titulo).HasMaxLength(120).IsRequired();
             e.Property(x => x.Descripcion).HasMaxLength(2000).IsRequired();
             e.Property(x => x.Localidad).HasMaxLength(60).IsRequired();
+            e.Property(x => x.TituloBusqueda).HasMaxLength(200).IsRequired();
+            e.Property(x => x.TextoBusqueda).HasMaxLength(Common.TextoBusqueda.LongitudMaxima).IsRequired();
             e.OwnsMany(x => x.Imagenes, i =>
             {
                 i.ToTable("PublicacionImagenes");
