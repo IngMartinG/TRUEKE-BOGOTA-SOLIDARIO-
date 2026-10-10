@@ -56,9 +56,14 @@ jobs:
       - name: Auditar paquetes vulnerables (incluye transitivos)
         run: |
           set -o pipefail
-          dotnet list TruekeBogotaSolidario.sln package --vulnerable --include-transitive 2>&1 | tee vulnerables.txt
-          if grep -qiE "has the following vulnerable packages|tiene los paquetes vulnerables" vulnerables.txt; then
-            echo "::error::Hay paquetes NuGet con vulnerabilidades conocidas."
+          dotnet list TruekeBogotaSolidario.sln package --vulnerable --include-transitive --format json > vulnerables.json
+          # Avisos aceptados con justificación en Directory.Build.props (NuGetAuditSuppress); cualquier otro hace fallar.
+          grep -oE 'GHSA-[0-9a-z]{4}-[0-9a-z]{4}-[0-9a-z]{4}' Directory.Build.props | sort -u > suprimidos.txt || true
+          jq -r '[.. | objects | select(has("advisoryurl")) | .advisoryurl] | unique | .[]' vulnerables.json > encontrados.txt
+          echo "Avisos encontrados:"; cat encontrados.txt
+          nuevos=$(grep -vFf suprimidos.txt encontrados.txt || true)
+          if [ -n "$nuevos" ]; then
+            echo "::error::Hay paquetes NuGet con vulnerabilidades conocidas no aceptadas: $nuevos"
             exit 1
           fi
 

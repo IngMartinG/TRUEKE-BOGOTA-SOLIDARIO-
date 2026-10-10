@@ -71,6 +71,13 @@
 - **Logo oficial** en la app, favicon e íconos.
 - **Repositorio ordenado:** C4 reescrito con la arquitectura real, lo académico archivado en `docs/historico/`, script de migraciones al día, READMEs actualizados.
 
+## Hecho el 2026-10-09 — front en GitHub Pages
+- Workflow `.github/workflows/frontend-pages.yml`: compila el front con la subcarpeta del repo y lo publica en https://ingmarting.github.io/TRUEKE-BOGOTA-SOLIDARIO-/ (con `404.html` para que las rutas profundas carguen).
+- El front ya no asume la raíz del dominio (`config.json`, manifiesto e imagen para redes son relativos).
+- **Falta:** publicar el backend (Azure) y poner su URL en `frontend/public/config.json` (`apiUrl`), además de agregar el dominio de Pages a los CORS del backend. Mientras tanto la página carga pero los datos no.
+
+- **ImageSharp 3.1.12 con 5 avisos nuevos (2026-10-07)**, corregidos solo en la v4 (exige licencia). Mitigado: el procesador solo decodifica JPEG/PNG/WEBP y descarta el perfil ICC; los avisos quedan aceptados con su justificación en `backend/Directory.Build.props`, y el CI falla ante cualquier aviso que no esté en esa lista. **Pendiente decidir:** cambiar a SkiaSharp o licenciar ImageSharp 4, y retirar la supresión.
+
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
 - **Dependabot:** `gh auth login` y cerrar los PR de .NET 10, EF Core 9, TypeScript 7 y Node 26 (los demás, fusionar si el CI pasa).

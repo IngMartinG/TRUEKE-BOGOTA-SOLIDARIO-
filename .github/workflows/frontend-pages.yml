@@ -1,0 +1,72 @@
+name: Front en GitHub Pages
+
+# Publica el front (Angular) en https://ingmarting.github.io/TRUEKE-BOGOTA-SOLIDARIO-/
+# Requisito único: Settings → Pages → Source = "GitHub Actions".
+# Pages no permite cabeceras propias (CSP, HSTS); el despliegue de producción con cabeceras
+# sigue siendo la imagen Docker/nginx del front. Esta publicación es la demo pública.
+on:
+  push:
+    branches: [main]
+    paths: ["frontend/**", ".github/workflows/frontend-pages.yml"]
+  workflow_dispatch:
+
+# Mínimo privilegio: leer el repo y publicar en Pages (id-token lo exige deploy-pages).
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Un solo despliegue a la vez; no se cancela uno en curso para no dejar Pages a medias.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  compilar:
+    name: Build de producción para Pages
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias (exactas del lock)
+        run: npm ci --no-audit --no-fund
+
+      - name: Build con la subcarpeta del repositorio
+        run: npx ng build --base-href "/${{ github.event.repository.name }}/"
+
+      - name: Fallback de la SPA y sin procesamiento Jekyll
+        run: |
+          cd dist/trueke-web/browser
+          # Pages responde 404.html a cualquier ruta desconocida: así /explorar carga la app.
+          cp index.html 404.html
+          touch .nojekyll
+          if find . -name '*.map' | grep -q .; then
+            echo "::error::El build de producción contiene source maps."
+            exit 1
+          fi
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: frontend/dist/trueke-web/browser
+
+  publicar:
+    name: Publicar en GitHub Pages
+    needs: compilar
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: github-pages
+      url: ${{ steps.despliegue.outputs.page_url }}
+    steps:
+      - id: despliegue
+        uses: actions/deploy-pages@v4
