@@ -31,8 +31,8 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
           colombiana nos obliga a emitir una factura electrónica ante la DIAN, con el IVA incluido.
         </p>
         <p class="text-tenue">
-          No necesitas llenar nada: sin datos, la factura sale a nombre de "consumidor final" y es igual de válida.
-          Agrega tu cédula o NIT solo si quieres la factura a tu nombre o al de tu empresa (por ejemplo, para descontarla como gasto).
+          En cada pago eliges si quieres la factura <strong>a tu nombre</strong> o a <strong>consumidor final</strong>, y tu elección queda registrada.
+          Para recibirla a tu nombre o al de tu empresa (por ejemplo, para descontarla como gasto) guarda aquí tus datos: la DIAN exige todos los campos.
         </p>
       </div>
     </div>
@@ -88,7 +88,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
             @if (datos.value()?.completos) {
               Tus facturas salen a nombre de <strong>{{ datos.value()?.nombre }}</strong>.
             } @else {
-              Opcional. Hoy tus facturas salen a "consumidor final".
+              Guarda tus datos para poder elegir "a mi nombre" al pagar.
             }
           </span>
         </span>
@@ -131,15 +131,16 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
           <app-error-campo [control]="form.controls.correo" etiqueta="El correo" />
         </div>
         <div class="campo">
-          <label for="direccion-fact" class="etiqueta">Dirección (opcional)</label>
-          <input id="direccion-fact" class="entrada" formControlName="direccion" maxlength="150" autocomplete="street-address" />
+          <label for="direccion-fact" class="etiqueta">Dirección</label>
+          <input id="direccion-fact" class="entrada" formControlName="direccion" maxlength="150" autocomplete="street-address" required />
+          <app-error-campo [control]="form.controls.direccion" etiqueta="La dirección" />
         </div>
       </div>
       <app-selector-municipio id="fact-ubicacion" formControlName="municipioCodigo" />
 
       <div class="flex flex-wrap justify-end gap-2">
         @if (datos.value()?.completos) {
-          <button type="button" class="btn btn-fantasma" (click)="borrar()" [disabled]="guardando()">Facturar como consumidor final</button>
+          <button type="button" class="btn btn-fantasma" (click)="borrar()" [disabled]="guardando()">Borrar mis datos de facturación</button>
         }
         <button type="submit" class="btn btn-primario" [disabled]="form.pristine || guardando()">{{ guardando() ? 'Guardando…' : 'Guardar datos' }}</button>
       </div>
@@ -169,8 +170,8 @@ export default class Facturacion {
     documento: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
     nombre: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(150)]],
     correo: ['', [Validators.required, Validators.email, Validators.maxLength(160)]],
-    direccion: ['', [Validators.maxLength(150)]],
-    municipioCodigo: [''],
+    direccion: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(150)]],
+    municipioCodigo: ['', [Validators.required]],
   });
 
   constructor() {
@@ -203,8 +204,8 @@ export default class Facturacion {
           documento: v.documento.trim(),
           nombre: v.nombre.trim(),
           correo: v.correo.trim(),
-          direccion: v.direccion.trim() || null,
-          municipioCodigo: v.municipioCodigo || null,
+          direccion: v.direccion.trim(),
+          municipioCodigo: v.municipioCodigo,
         }),
       );
       this.form.markAsPristine();
@@ -223,7 +224,7 @@ export default class Facturacion {
       await firstValueFrom(this.api.borrarFacturacion());
       this.form.markAsPristine();
       this.datos.reload();
-      this.avisos.exito('Tus próximas facturas saldrán a consumidor final');
+      this.avisos.exito('Datos de facturación borrados', 'Para facturar a tu nombre tendrás que guardarlos de nuevo.');
     } finally {
       this.guardando.set(false);
     }

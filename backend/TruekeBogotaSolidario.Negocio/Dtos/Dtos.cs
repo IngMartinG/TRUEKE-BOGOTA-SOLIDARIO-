@@ -10,7 +10,7 @@ public enum ConceptoPagoDto { Destacar = 1, Verificar = 2, Premium = 3, Empresa 
 /// <summary>Estado físico del objeto: Nuevo, ComoNuevo (usado pero impecable), Usado, UsadoConDetalles, Reparado, ParaRepuestos.</summary>
 public enum CondicionDto { Nuevo = 1, ComoNuevo = 2, Usado = 3, UsadoConDetalles = 4, Reparado = 5, ParaRepuestos = 6 }
 public enum TipoDocumentoFiscalDto { CC = 1, CE = 2, NIT = 3, Pasaporte = 4 }
-public enum EstadoFacturaDto { Pendiente = 1, Emitida = 2, Anulada = 3 }
+public enum EstadoFacturaDto { Pendiente = 1, Emitida = 2, Anulada = 3, Reemplazada = 4 }
 public enum TipoPqrDto { Peticion = 1, Queja = 2, Reclamo = 3, Sugerencia = 4, Retracto = 5, ReversionPago = 6 }
 public enum EstadoPqrDto { Abierta = 1, Respondida = 2 }
 
@@ -106,8 +106,8 @@ public sealed class DatosFacturacionRequest
     /// <summary>Nombre completo o razón social, como aparecerá en la factura.</summary>
     [Required, StringLength(150, MinimumLength = 3)] public string Nombre { get; init; } = "";
     [Required, EmailAddress, MaxLength(160)] public string Correo { get; init; } = "";
-    [MaxLength(150)] public string? Direccion { get; init; }
-    [RegularExpression(FormatosUbicacion.Municipio, ErrorMessage = "El municipio no es válido.")] public string? MunicipioCodigo { get; init; }
+    [Required(ErrorMessage = "La dirección es obligatoria para la factura."), StringLength(150, MinimumLength = 5)] public string? Direccion { get; init; }
+    [Required(ErrorMessage = "El municipio es obligatorio para la factura."), RegularExpression(FormatosUbicacion.Municipio, ErrorMessage = "El municipio no es válido.")] public string? MunicipioCodigo { get; init; }
 }
 
 public sealed class CrearPublicacionRequest
@@ -163,6 +163,12 @@ public sealed class IniciarPagoRequest
     public Guid? PublicacionId { get; init; }
     [MaxLength(500)] public string? DocumentoUrl { get; init; }
     [Range(1, 10_000_000)] public int? MontoRecargaCop { get; init; }
+    /// <summary>
+    /// Obligatorio en cada pago: true = factura a mi nombre (exige los datos de facturación completos); false = consumidor
+    /// final, que además exige <see cref="AceptoConsumidorFinal"/>. Queda registrado como evidencia de la elección.
+    /// </summary>
+    [Required(ErrorMessage = "Indica si quieres la factura a tu nombre o a consumidor final.")] public bool? FacturaANombre { get; init; }
+    public bool AceptoConsumidorFinal { get; init; }
 }
 
 public enum OrdenPublicacionesDto { Recientes = 1, PrecioAsc = 2, PrecioDesc = 3 }
@@ -591,13 +597,22 @@ public sealed record DatosFacturacionDto(bool Completos, string? TipoDocumento, 
 
 public sealed record FacturaDto(Guid Id, string Referencia, string Concepto, string Descripcion, DateTime FechaUtc, int TotalCop,
     decimal BaseCop, decimal IvaCop, decimal IvaPorcentaje, string Estado, string? NumeroDian, string? Cufe, DateTime? FechaEmisionUtc,
-    string CompradorNombre, string CompradorDocumento);
+    string CompradorNombre, string CompradorDocumento, bool? ElegidaANombre, DateTime? FechaEleccionUtc);
 
 /// <summary>Vista de administración: incluye los datos completos del comprador para emitir la factura.</summary>
 public sealed record FacturaAdminDto(Guid Id, string Referencia, Guid UsuarioId, string Concepto, string Descripcion, DateTime FechaUtc,
     int TotalCop, decimal BaseCop, decimal IvaCop, decimal IvaPorcentaje, string Estado, string? NumeroDian, string? Cufe,
     DateTime? FechaEmisionUtc, string? CompradorTipoDocumento, string CompradorDocumento, string CompradorNombre, string CompradorCorreo,
-    string? CompradorDireccion, string? CompradorMunicipio, bool RequiereNotaCredito, string? NotaInterna);
+    string? CompradorDireccion, string? CompradorMunicipio, bool RequiereNotaCredito, string? NotaInterna,
+    bool? ElegidaANombre, DateTime? FechaEleccionUtc, Guid? ReemplazaAId, Guid? ReemplazadaPorId,
+    Guid? CorregidaPorId, DateTime? FechaCorreccionUtc, string? MotivoCorreccion);
+
+/// <summary>SuperUsuario: corrige el comprador (pendiente) o reemplaza la factura (emitida). El motivo queda en la auditoría.</summary>
+public sealed class CorregirCompradorFacturaRequest
+{
+    [Required] public DatosFacturacionRequest Comprador { get; init; } = new();
+    [Required, StringLength(300, MinimumLength = 10)] public string Motivo { get; init; } = "";
+}
 
 public sealed record PqrDto(Guid Id, string Radicado, string Tipo, string Asunto, string Descripcion, string? PagoReferencia, string Estado,
     DateTime FechaUtc, DateTime FechaLimiteUtc, string? Respuesta, DateTime? FechaRespuestaUtc);

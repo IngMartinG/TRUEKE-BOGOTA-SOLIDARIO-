@@ -220,7 +220,15 @@ interface Servicio {
           </div>
         }
 
-        @if (esPlan()) {
+        @if (conceptoCompra() === 'Recarga') {
+          <dl class="space-y-2 rounded-2xl bg-superficie-2 p-4 text-sm">
+            <div class="flex justify-between"><dt>Eco-Puntos que recibes</dt><dd>{{ puntosRecarga() | numero }}</dd></div>
+            @if (politica()?.preciosIncluyenIva) {
+              <div class="flex justify-between text-tenue"><dt>IVA incluido</dt><dd>{{ ivaDe(montoRecarga() ?? 0) | cop }}</dd></div>
+            }
+            <div class="flex justify-between border-t border-borde pt-2 text-base font-bold"><dt>Total</dt><dd>{{ montoRecarga() | cop }}</dd></div>
+          </dl>
+        } @else if (esPlan()) {
           <dl class="space-y-2 rounded-2xl bg-superficie-2 p-4 text-sm">
             <div class="flex justify-between"><dt>{{ tituloCompra() }} · {{ politica()?.duracionSuscripcionDias ?? 30 }} días</dt><dd>{{ precioPlan() | cop }}</dd></div>
             @if (politica()?.preciosIncluyenIva) {
@@ -251,7 +259,41 @@ interface Servicio {
         } @else if (cotizacion.isLoading()) {
           <div class="esqueleto h-28"></div>
         }
-        <p class="text-xs text-tenue">Al pagar aceptas los <a routerLink="/terminos" class="enlace" target="_blank">términos</a>. Recibirás factura electrónica.</p>
+        <!-- Factura: se elige en cada pago y queda registrado (evidencia ante reclamos) -->
+        <fieldset class="space-y-2">
+          <legend class="etiqueta">¿A nombre de quién emitimos la factura electrónica?</legend>
+          <label class="flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-3 transition"
+            [class]="facturaANombre() === true ? 'border-bosque-500 bg-bosque-50/60 dark:bg-bosque-900/30' : 'border-borde hover:border-bosque-300'">
+            <input type="radio" name="factura" class="mt-1" [checked]="facturaANombre() === true" (change)="facturaANombre.set(true)" />
+            <span class="min-w-0 text-sm">
+              <strong class="block">A mi nombre</strong>
+              @if (datosFactura.value()?.completos) {
+                <span class="block break-words text-tenue">{{ datosFactura.value()?.nombre }} · {{ datosFactura.value()?.tipoDocumento }} {{ datosFactura.value()?.documento }}</span>
+                <a routerLink="/cuenta/facturacion" [queryParams]="{ datos: 1 }" class="enlace text-xs">Revisar mis datos</a>
+              } @else {
+                <span class="block text-tenue">Necesitas tus datos completos: documento, nombre, correo, dirección y municipio (los exige la DIAN).</span>
+              }
+            </span>
+          </label>
+          @if (facturaANombre() === true && !datosFactura.value()?.completos && !datosFactura.isLoading()) {
+            <p class="rounded-xl bg-sol-50 p-3 text-sm dark:bg-sol-500/10">
+              Aún no tienes tus datos de facturación completos.
+              <a routerLink="/cuenta/facturacion" [queryParams]="{ datos: 1 }" class="enlace">Completarlos ahora</a> y vuelve a esta compra.
+            </p>
+          }
+          <label class="flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-3 transition"
+            [class]="facturaANombre() === false ? 'border-bosque-500 bg-bosque-50/60 dark:bg-bosque-900/30' : 'border-borde hover:border-bosque-300'">
+            <input type="radio" name="factura" class="mt-1" [checked]="facturaANombre() === false" (change)="facturaANombre.set(false)" />
+            <span class="text-sm"><strong class="block">Consumidor final</strong><span class="text-tenue">La factura sale sin tu nombre ni tu documento.</span></span>
+          </label>
+          @if (facturaANombre() === false) {
+            <label class="flex items-start gap-2 px-1 text-sm">
+              <input type="checkbox" class="mt-1" [checked]="aceptoConsumidorFinal()" (change)="aceptoConsumidorFinal.set($any($event.target).checked)" />
+              <span>Entiendo y acepto que la factura se emita a <strong>consumidor final</strong>. Esta elección queda registrada con la fecha y la hora.</span>
+            </label>
+          }
+        </fieldset>
+        <p class="text-xs text-tenue">Al pagar aceptas los <a routerLink="/terminos" class="enlace" target="_blank">términos</a>.</p>
         @if (errorCompra()) {
           <p class="error-campo" role="alert">{{ errorCompra() }}</p>
         }
@@ -372,13 +414,25 @@ export default class EcoPuntos {
 
   // Compra
   protected readonly compraAbierta = signal(false);
-  protected readonly conceptoCompra = signal<Exclude<ConceptoPagoDto, 'Recarga'> | null>(null);
+  protected readonly conceptoCompra = signal<ConceptoPagoDto | null>(null);
+  /** Elección de factura de ESTE pago (null = aún no elige; obligatoria antes de pagar). */
+  protected readonly facturaANombre = signal<boolean | null>(null);
+  protected readonly aceptoConsumidorFinal = signal(false);
+  protected readonly datosFactura = rxResource({
+    params: () => (this.compraAbierta() && this.sesion.autenticado() ? true : undefined),
+    stream: () => this.api.datosFacturacion(),
+  });
+  protected readonly facturaLista = computed(() =>
+    this.facturaANombre() === true ? !!this.datosFactura.value()?.completos : this.facturaANombre() === false && this.aceptoConsumidorFinal(),
+  );
   protected readonly publicacionId = signal('');
   protected readonly documentoUrl = signal<string | null>(null);
   protected readonly subiendoDocumento = signal(false);
   protected readonly pagando = signal(false);
   protected readonly errorCompra = signal<string | null>(null);
-  protected readonly tituloCompra = computed(() => this.servicios().find((s) => s.concepto === this.conceptoCompra())?.titulo ?? '');
+  protected readonly tituloCompra = computed(() =>
+    this.conceptoCompra() === 'Recarga' ? 'Recarga de Eco-Puntos' : (this.servicios().find((s) => s.concepto === this.conceptoCompra())?.titulo ?? ''),
+  );
   /** Solo Destacar y Verificar tienen descuento por Eco-Puntos (los planes tienen precio fijo). */
   protected readonly cotizacion = rxResource({
     params: () => {
@@ -388,11 +442,14 @@ export default class EcoPuntos {
     stream: ({ params }) => this.api.cotizacion(params),
   });
   protected readonly compraLista = computed(() => {
+    if (!this.facturaLista()) return false;
     switch (this.conceptoCompra()) {
       case 'Destacar':
         return !!this.publicacionId();
       case 'Verificar':
         return !!this.documentoUrl();
+      case 'Recarga':
+        return this.montoValido();
       default:
         return !!this.conceptoCompra();
     }
@@ -423,7 +480,14 @@ export default class EcoPuntos {
     this.conceptoCompra.set(concepto);
     this.errorCompra.set(null);
     if (concepto !== 'Destacar') this.publicacionId.set(this.destacar() ?? '');
+    this.prepararFactura();
     this.compraAbierta.set(true);
+  }
+
+  /** Cada pago pide la elección de nuevo (nada queda marcado por defecto: es una decisión expresa). */
+  private prepararFactura(): void {
+    this.facturaANombre.set(null);
+    this.aceptoConsumidorFinal.set(false);
   }
 
   protected async subirDocumento(e: Event): Promise<void> {
@@ -449,17 +513,23 @@ export default class EcoPuntos {
 
   protected async pagar(): Promise<void> {
     const concepto = this.conceptoCompra();
-    if (!concepto) return;
+    if (!concepto || !this.facturaLista()) return;
     await this.iniciar({
       concepto,
       publicacionId: concepto === 'Destacar' ? this.publicacionId() : null,
       documentoUrl: concepto === 'Verificar' ? this.documentoUrl() : null,
+      montoRecargaCop: concepto === 'Recarga' ? this.montoRecarga() : null,
+      facturaANombre: this.facturaANombre() === true,
+      aceptoConsumidorFinal: this.facturaANombre() === false && this.aceptoConsumidorFinal(),
     });
   }
 
-  protected async recargar(): Promise<void> {
+  protected recargar(): void {
     if (!this.exigirSesion() || !this.montoValido()) return;
-    await this.iniciar({ concepto: 'Recarga', montoRecargaCop: this.montoRecarga() });
+    this.conceptoCompra.set('Recarga');
+    this.errorCompra.set(null);
+    this.prepararFactura();
+    this.compraAbierta.set(true);
   }
 
   private async iniciar(r: IniciarPagoRequest): Promise<void> {
