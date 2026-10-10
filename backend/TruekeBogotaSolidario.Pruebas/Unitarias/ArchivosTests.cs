@@ -60,6 +60,28 @@ public class ArchivosTests
         Assert.Null(ReglasArchivos.AnalizarUrl($"{Contenedor}/{Yo:N}/foto.exe", Contenedor, Yo));
     }
 
+    [Fact]
+    public void La_miniatura_se_deriva_del_nombre_y_no_sirve_como_foto_de_publicacion()
+    {
+        var nombre = ReglasArchivos.NuevoNombre(Yo, "png");
+        var miniatura = ReglasArchivos.NombreMiniatura(nombre);
+        Assert.Equal(nombre[..^4] + ".min.webp", miniatura);
+
+        Assert.Null(ReglasArchivos.NombreMiniatura(miniatura!));                          // no hay miniatura de la miniatura
+        Assert.Null(ReglasArchivos.NombreMiniatura(ReglasArchivos.NuevoNombre(Yo, "pdf"))); // los documentos no tienen
+        Assert.Null(ReglasArchivos.AnalizarUrl($"{Contenedor}/{miniatura}", Contenedor, Yo)); // nadie la publica como foto
+    }
+
+    [Fact]
+    public void La_CDN_es_opcional_pero_si_se_configura_debe_ser_https_y_tener_cuenta()
+    {
+        Assert.True(new AlmacenamientoOpciones().CdnValida);
+        Assert.True(new AlmacenamientoOpciones { ServicioUrl = "https://cuenta.blob.core.windows.net", CdnUrl = "https://fotos.trueke.co" }.CdnValida);
+        Assert.False(new AlmacenamientoOpciones { ServicioUrl = "https://cuenta.blob.core.windows.net", CdnUrl = "http://fotos.trueke.co" }.CdnValida);
+        Assert.False(new AlmacenamientoOpciones { ServicioUrl = "https://cuenta.blob.core.windows.net", CdnUrl = "https://fotos.trueke.co/?x=1" }.CdnValida);
+        Assert.False(new AlmacenamientoOpciones { CadenaConexion = "UseDevelopmentStorage=true", CdnUrl = "https://fotos.trueke.co" }.CdnValida);
+    }
+
     /// <summary>Firma real del SDK de Azure con la llave pública del emulador (no hace llamadas de red).</summary>
     [Fact]
     public async Task La_SAS_es_de_un_solo_blob_solo_crear_y_escribir_y_dura_5_minutos()

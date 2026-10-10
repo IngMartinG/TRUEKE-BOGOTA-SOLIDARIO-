@@ -171,6 +171,38 @@ public class ProcesadorImagenesTests
     }
 
     [Fact]
+    public async Task La_miniatura_es_un_WEBP_pequeno_orientado_y_sin_metadatos()
+    {
+        var girada = JpegConGps(3000, 2000, orientacion: 6);
+        var r = await ProcesadorImagenes.LimpiarConMiniaturaAsync(new MemoryStream(girada), "jpg");
+
+        using (var foto = Leer(r.Foto))
+            Assert.Equal(ProcesadorImagenes.LadoMaximo, foto.Info.Height);
+        using var mini = Leer(r.Miniatura);
+        Assert.Equal(SKEncodedImageFormat.Webp, mini.EncodedFormat);
+        Assert.Equal(ProcesadorImagenes.LadoMiniatura, mini.Info.Height); // vertical, como la foto
+        Assert.True(mini.Info.Width < mini.Info.Height);
+        Assert.True(r.Miniatura.Length < r.Foto.Length);
+        var texto = Encoding.ASCII.GetString(r.Miniatura);
+        Assert.DoesNotContain("Exif", texto);
+        Assert.DoesNotContain(ModeloCelular, texto);
+    }
+
+    [Fact]
+    public async Task Crea_la_miniatura_de_una_foto_ya_publicada_sin_agrandar_las_pequenas()
+    {
+        using (var mini = Leer(await ProcesadorImagenes.MiniaturaAsync(new MemoryStream(Codificar(1600, 1200, SKEncodedImageFormat.Png)))))
+        {
+            Assert.Equal(SKEncodedImageFormat.Webp, mini.EncodedFormat);
+            Assert.Equal((640, 480), (mini.Info.Width, mini.Info.Height));
+        }
+        using (var pequena = Leer(await ProcesadorImagenes.MiniaturaAsync(new MemoryStream(Codificar(300, 200, SKEncodedImageFormat.Jpeg)))))
+            Assert.Equal((300, 200), (pequena.Info.Width, pequena.Info.Height));
+
+        await Assert.ThrowsAsync<ReglaDeNegocioException>(() => ProcesadorImagenes.MiniaturaAsync(new MemoryStream(new byte[50])));
+    }
+
+    [Fact]
     public async Task Rechaza_extensiones_no_permitidas()
     {
         var png = Codificar(10, 10, SKEncodedImageFormat.Png);

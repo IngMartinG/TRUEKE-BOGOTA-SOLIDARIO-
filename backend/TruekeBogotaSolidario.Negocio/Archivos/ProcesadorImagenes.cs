@@ -10,21 +10,38 @@ namespace TruekeBogotaSolidario.Negocio.Archivos;
 /// Aquí se re-codifica la imagen con SkiaSharp: se aplica la orientación, se reduce a un tamaño razonable y se escribe un
 /// archivo nuevo a partir de los píxeles, sin ningún metadato del original (EXIF con GPS, IPTC, XMP). También neutraliza
 /// contenido "políglota" escondido en el archivo.
+/// Junto con la foto limpia se genera una miniatura WEBP liviana para el catálogo y las listas (ver
+/// <see cref="ReglasArchivos.NombreMiniatura"/>): una tarjeta no necesita descargar la foto de 1600 px.
 /// </summary>
 public static class ProcesadorImagenes
 {
     /// <summary>Lado mayor máximo de la foto publicada (suficiente para verla en pantalla completa).</summary>
     public const int LadoMaximo = 1600;
+    /// <summary>Lado mayor de la miniatura: nítida en una tarjeta del catálogo incluso en pantallas de alta densidad.</summary>
+    public const int LadoMiniatura = 640;
     /// <summary>Protección contra "bombas de descompresión": imágenes pequeñas en bytes pero gigantes en píxeles.</summary>
     public const int DimensionMaximaEntrada = 12_000;
     public const long PixelesMaximosEntrada = 60_000_000;
 
     private const string MensajeInvalida = "La imagen está dañada o no es un formato válido (JPG, PNG o WEBP).";
 
-    public static Task<byte[]> LimpiarAsync(Stream entrada, string extension, CancellationToken ct = default)
+    /// <summary>Foto publicada (en el formato pedido) y su miniatura WEBP, ambas sin metadatos.</summary>
+    public sealed record ImagenLimpia(byte[] Foto, byte[] Miniatura);
+
+    public static async Task<byte[]> LimpiarAsync(Stream entrada, string extension, CancellationToken ct = default)
+        => (await ProcesarAsync(entrada, Formato(extension), miniatura: false, ct)).Foto;
+
+    /// <summary>Como <see cref="LimpiarAsync"/>, pero decodifica una sola vez para producir también la miniatura.</summary>
+    public static Task<ImagenLimpia> LimpiarConMiniaturaAsync(Stream entrada, string extension, CancellationToken ct = default)
+        => ProcesarAsync(entrada, Formato(extension), miniatura: true, ct);
+
+    /// <summary>Solo la miniatura (para las fotos publicadas antes de que existieran las miniaturas).</summary>
+    public static async Task<byte[]> MiniaturaAsync(Stream entrada, CancellationToken ct = default)
+        => (await ProcesarAsync(entrada, null, miniatura: true, ct)).Miniatura;
+
+    private static Task<ImagenLimpia> ProcesarAsync(Stream entrada, SKEncodedImageFormat? formato, bool miniatura, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(entrada);
-        var formato = Formato(extension);
         try
         {
             ct.ThrowIfCancellationRequested();
@@ -42,13 +59,30 @@ public static class ProcesadorImagenes
                 throw new ReglaDeNegocioException("La imagen es demasiado grande. Usa una foto de máximo 12.000 píxeles por lado.");
 
             ct.ThrowIfCancellationRequested();
-            using var decodificada = Decodificar(codec, ancho, alto);
+            // Si solo se pide la miniatura, basta decodificar a ese tamaño (mucha menos memoria).
+            var ladoObjetivo = formato is null ? LadoMiniatura : LadoMaximo;
+            using var decodificada = Decodificar(codec, ancho, alto, ladoObjetivo);
             ct.ThrowIfCancellationRequested();
-            using var final = OrientarYReducir(decodificada, codec.EncodedOrigin);
+            using var final = OrientarYReducir(decodificada, codec.EncodedOrigin, ladoObjetivo);
 
-            using var pixeles = final.PeekPixels();
-            using var salida = Codificar(pixeles, formato) ?? throw new ReglaDeNegocioException(MensajeInvalida);
-            return Task.FromResult(salida.ToArray());
+            var foto = Array.Empty<byte>();
+            if (formato is { } f)
+            {
+                using var pixeles = final.PeekPixels();
+                using var salida = Codificar(pixeles, f) ?? throw new ReglaDeNegocioException(MensajeInvalida);
+                foto = salida.ToArray();
+            }
+
+            var mini = Array.Empty<byte>();
+            if (miniatura)
+            {
+                ct.ThrowIfCancellationRequested();
+                using var reducida = OrientarYReducir(final, SKEncodedOrigin.TopLeft, LadoMiniatura);
+                using var pixeles = reducida.PeekPixels();
+                using var salida = Codificar(pixeles, SKEncodedImageFormat.Webp, calidadWebp: 72) ?? throw new ReglaDeNegocioException(MensajeInvalida);
+                mini = salida.ToArray();
+            }
+            return Task.FromResult(new ImagenLimpia(foto, mini));
         }
         catch (Exception ex) when (ex is not ReglaDeNegocioException and not OperationCanceledException and not OutOfMemoryException)
         {
@@ -61,15 +95,15 @@ public static class ProcesadorImagenes
     /// Decodifica solo el primer cuadro (un WEBP animado queda como foto fija), en sRGB. Si la foto es más grande de lo
     /// que se va a publicar, el decodificador JPEG puede entregarla ya reducida (1/2, 1/4, 1/8): usa mucha menos memoria.
     /// </summary>
-    private static SKBitmap Decodificar(SKCodec codec, int ancho, int alto)
+    private static SKBitmap Decodificar(SKCodec codec, int ancho, int alto, int ladoObjetivo)
     {
         var tamano = new SKSizeI(ancho, alto);
-        var escala = (float)LadoMaximo / Math.Max(ancho, alto);
+        var escala = (float)ladoObjetivo / Math.Max(ancho, alto);
         if (escala < 1f)
         {
             var reducido = codec.GetScaledDimensions(escala);
             // Solo si no queda por debajo del tamaño final (si no, la foto publicada perdería nitidez).
-            if (Math.Max(reducido.Width, reducido.Height) >= LadoMaximo)
+            if (Math.Max(reducido.Width, reducido.Height) >= ladoObjetivo)
                 tamano = reducido;
         }
 
@@ -90,16 +124,16 @@ public static class ProcesadorImagenes
 
     /// <summary>
     /// Aplica la orientación del EXIF (si no, las fotos verticales del celular quedarían de lado) y reduce el lado mayor
-    /// a <see cref="LadoMaximo"/>, todo en un solo dibujo con remuestreo de buena calidad.
+    /// a <paramref name="ladoMaximo"/>, todo en un solo dibujo con remuestreo de buena calidad.
     /// </summary>
-    private static SKBitmap OrientarYReducir(SKBitmap origen, SKEncodedOrigin orientacion)
+    private static SKBitmap OrientarYReducir(SKBitmap origen, SKEncodedOrigin orientacion, int ladoMaximo)
     {
         var (w, h) = (origen.Width, origen.Height);
         var gira = orientacion is SKEncodedOrigin.LeftTop or SKEncodedOrigin.RightTop
             or SKEncodedOrigin.RightBottom or SKEncodedOrigin.LeftBottom;
         var (anchoOrientado, altoOrientado) = gira ? (h, w) : (w, h);
 
-        var escala = Math.Min(1.0, (double)LadoMaximo / Math.Max(anchoOrientado, altoOrientado));
+        var escala = Math.Min(1.0, (double)ladoMaximo / Math.Max(anchoOrientado, altoOrientado));
         var anchoFinal = Math.Max(1, (int)Math.Round(anchoOrientado * escala));
         var altoFinal = Math.Max(1, (int)Math.Round(altoOrientado * escala));
 
@@ -136,10 +170,10 @@ public static class ProcesadorImagenes
         _ => throw new ReglaDeNegocioException("La imagen debe ser JPG, PNG o WEBP.")
     };
 
-    private static SKData? Codificar(SKPixmap pixeles, SKEncodedImageFormat formato) => formato switch
+    private static SKData? Codificar(SKPixmap pixeles, SKEncodedImageFormat formato, int calidadWebp = 80) => formato switch
     {
         SKEncodedImageFormat.Jpeg => pixeles.Encode(new SKJpegEncoderOptions(82, SKJpegEncoderDownsample.Downsample420, SKJpegEncoderAlphaOption.Ignore)),
         SKEncodedImageFormat.Png => pixeles.Encode(new SKPngEncoderOptions(SKPngEncoderFilterFlags.AllFilters, zLibLevel: 9)),
-        _ => pixeles.Encode(new SKWebpEncoderOptions(SKWebpEncoderCompression.Lossy, 80))
+        _ => pixeles.Encode(new SKWebpEncoderOptions(SKWebpEncoderCompression.Lossy, calidadWebp))
     };
 }
