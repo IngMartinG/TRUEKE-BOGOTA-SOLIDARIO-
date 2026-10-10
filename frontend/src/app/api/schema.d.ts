@@ -4437,6 +4437,8 @@ export interface components {
             /** Format: int32 */
             diasCierreSinConfirmacion?: number;
             pagosDePrueba?: boolean;
+            imagenesOrigenUrl?: string | null;
+            imagenesCdnUrl?: string | null;
         };
         ConversacionDto: {
             /** Format: uuid */

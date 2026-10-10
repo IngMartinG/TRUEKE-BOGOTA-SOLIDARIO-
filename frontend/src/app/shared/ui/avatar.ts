@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
-import { urlPublica } from '../imagenes';
+import { miniatura, urlPublica } from '../imagenes';
 import { iniciales } from '../pipes';
 import { Icono } from './icono';
 
@@ -28,7 +28,7 @@ const FONDOS = [
         loading="lazy"
         decoding="async"
         referrerpolicy="no-referrer"
-        (error)="fallo.set(true)"
+        (error)="intento.set(intento() + 1)"
       />
     } @else {
       <span
@@ -52,9 +52,16 @@ export class Avatar {
   readonly foto = input<string | null | undefined>(null);
   readonly tamano = input(40);
   readonly verificado = input(false);
+  /** Primero la miniatura (un avatar nunca necesita la foto grande); si no carga, la original; luego las iniciales. */
+  private readonly candidatas = computed(() => {
+    const foto = this.foto();
+    if (!foto) return [];
+    const mini = miniatura(foto);
+    return (mini === foto ? [foto] : [mini, foto]).map((u) => urlPublica(u));
+  });
   /** Se reinicia cada vez que cambia la foto. */
-  protected readonly fallo = linkedSignal({ source: this.foto, computation: () => false });
-  protected readonly fotoVisible = computed(() => (this.fallo() ? null : urlPublica(this.foto()) || null));
+  protected readonly intento = linkedSignal({ source: this.candidatas, computation: () => 0 });
+  protected readonly fotoVisible = computed(() => this.candidatas()[this.intento()] ?? null);
   protected readonly letras = computed(() => iniciales(this.nombre()));
   protected readonly fondo = computed(() => {
     const n = this.nombre() ?? '';

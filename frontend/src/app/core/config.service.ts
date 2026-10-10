@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { firstValueFrom } from 'rxjs';
 import type { ConfiguracionPublicaDto } from '../api/tipos';
+import { configurarCdn } from '../shared/imagenes';
 import { CuentaApi } from './api/cuenta.api';
 
 /** Configuración pública que publica la API (`GET /configuracion`). Un valor null = función deshabilitada. */
@@ -23,7 +24,9 @@ export class ConfigService {
 
   async cargar(): Promise<void> {
     try {
-      this._config.set(await firstValueFrom(this.api.configuracion()));
+      const config = await firstValueFrom(this.api.configuracion());
+      this._config.set(config);
+      configurarCdn(config.imagenesOrigenUrl, config.imagenesCdnUrl);
       this._disponible.set(true);
     } catch {
       this._disponible.set(false);

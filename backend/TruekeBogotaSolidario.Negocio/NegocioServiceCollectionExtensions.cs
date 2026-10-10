@@ -92,10 +92,13 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<IDosFactoresService, DosFactoresService>();
 
         // Archivos: Azure Blob si está configurado; si no, deshabilitado (las URLs se validan solo por host permitido)
-        services.AddOptions<AlmacenamientoOpciones>().Bind(config.GetSection(AlmacenamientoOpciones.Seccion));
+        services.AddOptions<AlmacenamientoOpciones>().Bind(config.GetSection(AlmacenamientoOpciones.Seccion))
+            .Validate(o => o.CdnValida, "Almacenamiento:CdnUrl debe ser https, sin query, y requiere Almacenamiento:ServicioUrl.")
+            .ValidateOnStart();
         var almacen = config.GetSection(AlmacenamientoOpciones.Seccion).Get<AlmacenamientoOpciones>() ?? new AlmacenamientoOpciones();
         if (almacen.Configurado) services.TryAddSingleton<IAlmacenArchivos, AlmacenBlobAzure>();
         else services.TryAddSingleton<IAlmacenArchivos, AlmacenDeshabilitado>();
+        services.AddHostedService<MiniaturasHostedService>();
         // Foto de Google: sin seguir redirecciones (una redirección podría llevar a un host interno: SSRF).
         services.AddHttpClient(ImportadorFotoGoogle.ClienteHttp, c => c.Timeout = TimeSpan.FromSeconds(8))
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
