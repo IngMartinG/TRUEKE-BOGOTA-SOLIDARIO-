@@ -60,6 +60,8 @@ public class SqlServerTests : IClassFixture<SqlServerFixture>
         // catálogo: filtros, orden por precio, texto, cercanía (consultas traducidas a SQL)
         var pub = await Api.CrearPublicacionAsync(duenio, 4.6097, -74.0817, modo: "Compra");
         Assert.Equal(HttpStatusCode.OK, (await anonimo.GetAsync("/api/v1/publicaciones?orden=PrecioAsc&precioMin=1&texto=Bici&soloVerificados=false")).StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await anonimo.GetAsync("/api/v1/publicaciones?texto=bicicletas%20rojas")).StatusCode); // orden por relevancia
+        Assert.Equal(HttpStatusCode.OK, (await anonimo.GetAsync("/api/v1/publicaciones/sugerencias?texto=bici")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await anonimo.GetAsync("/api/v1/publicaciones?orden=Recientes&categoriaId=1&modo=Compra")).StatusCode);
         var cercanas = await anonimo.GetFromJsonAsync<JsonElement>("/api/v1/publicaciones/cercanas?lat=4.6097&lon=-74.0817&radioKm=5");
         Assert.Single(cercanas.EnumerateArray());

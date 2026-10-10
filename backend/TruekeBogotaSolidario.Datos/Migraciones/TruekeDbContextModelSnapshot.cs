@@ -925,10 +925,20 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("rowversion");
 
+                    b.Property<string>("TextoBusqueda")
+                        .IsRequired()
+                        .HasMaxLength(2600)
+                        .HasColumnType("nvarchar(2600)");
+
                     b.Property<string>("Titulo")
                         .IsRequired()
                         .HasMaxLength(120)
                         .HasColumnType("nvarchar(120)");
+
+                    b.Property<string>("TituloBusqueda")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.HasKey("Id");
 

@@ -101,6 +101,14 @@
 - **CDN opcional** (`Almacenamiento:CdnUrl`, apagada): `GET /configuracion` publica `imagenesOrigenUrl`/`imagenesCdnUrl` y el front reescribe solo para mostrar. Opciones y costos en `docs/DESPLIEGUE.md` §3.1.
 - 267 pruebas del backend y 28 del front.
 
+## Hecho el 2026-10-10 — búsqueda mejorada
+- Cada publicación guarda su texto normalizado (`TituloBusqueda`, `TextoBusqueda`: minúsculas, sin tildes, con título, descripción, estado y categoría). Migración `BusquedaNormalizada`; las publicaciones existentes se rellenan al arrancar.
+- La consulta se parte en palabras (sin "de", "la", "para"…, plurales simples al singular, máximo 6) y TODAS deben estar como inicio de palabra: "camara" encuentra "Cámara", "bicicletas rojas" encuentra "Bicicleta roja de montaña" y "sol" no encuentra "consola".
+- Con texto, primero salen las publicaciones con más palabras en el título; después, destacadas y recientes.
+- `GET /publicaciones/sugerencias` (anónimo): autocompletar con títulos de publicaciones visibles, sin repetidos. Buscador accesible (flechas, Enter, Escape) en el catálogo y el encabezado.
+- Costo $0 (misma Azure SQL). Si el catálogo llega a decenas de miles de publicaciones, evaluar Full-Text Search de Azure SQL (incluido) o Azure AI Search (~US$75/mes en el plan básico).
+- 280 pruebas del backend y 30 del front.
+
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
 - **Dependabot:** `gh auth login` y cerrar los PR de .NET 10, EF Core 9, TypeScript 7 y Node 26 (los demás, fusionar si el CI pasa).

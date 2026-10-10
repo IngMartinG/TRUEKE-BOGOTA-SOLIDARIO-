@@ -7,12 +7,13 @@ import { TemaService } from '../core/tema.service';
 import { TiempoRealService } from '../core/tiempo-real.service';
 import { NumeroPipe } from '../shared/pipes';
 import { Avatar } from '../shared/ui/avatar';
+import { Buscador } from '../shared/ui/buscador';
 import { Icono } from '../shared/ui/icono';
 import { Logo } from '../shared/ui/logo';
 
 @Component({
   selector: 'app-encabezado',
-  imports: [RouterLink, RouterLinkActive, FormsModule, CdkMenuTrigger, CdkMenu, CdkMenuItem, Logo, Icono, Avatar, NumeroPipe],
+  imports: [RouterLink, RouterLinkActive, FormsModule, CdkMenuTrigger, CdkMenu, CdkMenuItem, Logo, Icono, Avatar, Buscador, NumeroPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="sticky top-0 z-50 border-b border-borde bg-fondo/85 backdrop-blur-xl">
@@ -36,18 +37,14 @@ import { Logo } from '../shared/ui/logo';
           }
         </nav>
 
-        <form class="relative hidden min-w-0 flex-1 md:block lg:max-xl:hidden" role="search" (ngSubmit)="buscar()">
-          <app-icono nombre="buscar" [tamano]="18" class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-tenue" />
-          <input
-            type="search"
-            name="q"
-            [(ngModel)]="texto"
-            class="entrada rounded-full bg-superficie pl-11"
-            placeholder="Busca chaquetas, libros, bicicletas..."
-            aria-label="Buscar en el catálogo"
-            maxlength="100"
-          />
-        </form>
+        <app-buscador
+          class="hidden min-w-0 flex-1 md:block lg:max-xl:hidden"
+          [(texto)]="texto"
+          claseEntrada="entrada rounded-full bg-superficie pl-11"
+          placeholder="Busca chaquetas, libros, bicicletas..."
+          etiqueta="Buscar en el catálogo"
+          (buscar)="buscar()"
+        />
 
         <div class="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <button

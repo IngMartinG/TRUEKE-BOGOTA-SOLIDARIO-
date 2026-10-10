@@ -72,6 +72,9 @@ public static class DatosInicializador
                 throw new InvalidOperationException($"Database:Inicializacion inválido: '{modo}'. Usa Migrate, EnsureCreated o None.");
         }
 
+        if (!string.Equals(modo?.Trim(), "none", StringComparison.OrdinalIgnoreCase))
+            await RellenarTextoBusquedaAsync(db);
+
         if (string.IsNullOrWhiteSpace(superCorreo) || string.IsNullOrWhiteSpace(superClave)) return;
         var correo = Usuario.NormalizarCorreo(superCorreo);
         // También por correo canónico (índice único): si ya hay una cuenta equivalente, no se crea otra ni se cae el arranque.
@@ -83,5 +86,23 @@ public static class DatosInicializador
         su.MarcarCorreoVerificado(DateTime.UtcNow); // lo define el operador por configuración
         db.Usuarios.Add(su);
         await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Publicaciones anteriores a la búsqueda normalizada (migración BusquedaNormalizada): se calcula su texto por lotes.
+    /// Idempotente: después del primer arranque no encuentra nada. Usa la normalización de C# (igual a la de las nuevas).
+    /// </summary>
+    private static async Task RellenarTextoBusquedaAsync(TruekeDbContext db)
+    {
+        const int lote = 200;
+        while (true)
+        {
+            var pendientes = await db.Publicaciones.Include(p => p.Categoria).Where(p => p.TextoBusqueda == "").OrderBy(p => p.Id).Take(lote).ToListAsync();
+            if (pendientes.Count == 0) return;
+            foreach (var p in pendientes) p.ActualizarTextoBusqueda();
+            await db.SaveChangesAsync();
+            db.ChangeTracker.Clear();
+            if (pendientes.Count < lote) return;
+        }
     }
 }

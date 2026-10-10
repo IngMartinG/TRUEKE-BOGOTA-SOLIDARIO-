@@ -46,6 +46,8 @@ export class CatalogoApi {
     this.api.get<PublicacionCercanaDto[]>('/publicaciones/cercanas', {
       params: { lat, lon, radioKm, modo, categoriaId, condicion, max: 50 },
     });
+  sugerencias = (texto: string, max = 8) =>
+    this.api.get<string[]>('/publicaciones/sugerencias', { params: { texto, max }, silencioso: true });
   obtener = (id: string) => this.api.get<PublicacionDto>(`/publicaciones/${seg(id)}`, { silencioso: true });
   crear = (r: CrearPublicacionRequest) => this.api.post<PublicacionDto>('/publicaciones', r, { silencioso: true });
   editar = (id: string, r: CrearPublicacionRequest) =>

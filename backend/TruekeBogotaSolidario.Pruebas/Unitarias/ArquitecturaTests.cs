@@ -70,6 +70,7 @@ public class ArquitecturaTests
             "GET api/v1/publicaciones",
             "GET api/v1/publicaciones/cercanas",
             "GET api/v1/publicaciones/destacadas",
+            "GET api/v1/publicaciones/sugerencias",
             "GET api/v1/ubicaciones/departamentos",
             "GET api/v1/ubicaciones/departamentos/{codigo:regex(^\\d{{2}}$)}/municipios",
             "GET api/v1/ubicaciones/municipios",
