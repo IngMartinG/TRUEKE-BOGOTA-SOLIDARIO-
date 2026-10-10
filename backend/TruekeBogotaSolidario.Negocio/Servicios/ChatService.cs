@@ -116,7 +116,7 @@ public sealed class ChatService : IChatService
     {
         var c = await CargarAsync(actorId, conversacionId);
         var actor = actorId == c.DuenioId ? c.Duenio! : c.Solicitante!;
-        Guardas.ExigirCorreoVerificado(actor);
+        Guardas.ExigirCuentaCompleta(actor);
         if (!EsEscribible(c)) throw new ReglaDeNegocioException("Esta conversación está cerrada: la solicitud fue rechazada, cancelada o no se concretó.");
         if (await _bloqueos.ExisteEntreAsync(actorId, c.Contraparte(actorId)))
             throw new ReglaDeNegocioException("No puedes enviar mensajes en esta conversación.");

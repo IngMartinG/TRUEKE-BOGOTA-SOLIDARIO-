@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { exigirCorreoVerificado, exigirModerador, exigirSesion, soloInvitado } from './core/guardas';
+import { exigirCorreoVerificado, exigirCuentaCompleta, exigirModerador, exigirSesion, soloInvitado } from './core/guardas';
 
 export const routes: Routes = [
   { path: '', title: '', loadComponent: () => import('./features/inicio/inicio') },
@@ -10,13 +10,13 @@ export const routes: Routes = [
   {
     path: 'publicar',
     title: 'Publicar',
-    canActivate: [exigirCorreoVerificado],
+    canActivate: [exigirCuentaCompleta],
     loadComponent: () => import('./features/publicacion/publicar'),
   },
   {
     path: 'publicacion/:id/editar',
     title: 'Editar publicación',
-    canActivate: [exigirCorreoVerificado],
+    canActivate: [exigirCuentaCompleta],
     loadComponent: () => import('./features/publicacion/publicar'),
   },
   {

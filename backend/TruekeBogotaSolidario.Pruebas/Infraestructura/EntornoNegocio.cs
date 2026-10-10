@@ -60,7 +60,7 @@ public sealed class EntornoNegocio : IDisposable
         await accion(scope.ServiceProvider.GetRequiredService<TServicio>());
     }
 
-    /// <summary>Registra un usuario (con el correo ya verificado, para que pueda operar) y devuelve su sesión.</summary>
+    /// <summary>Registra un usuario listo para operar (correo verificado y foto de perfil) y devuelve su sesión.</summary>
     public async Task<SesionDto> RegistrarAsync(string nombre)
     {
         var r = await EnScopeAsync<IAuthService, ResultadoAutenticacion>(a => a.RegistrarAsync(new RegistroRequest
@@ -69,6 +69,7 @@ public sealed class EntornoNegocio : IDisposable
             Clave = "Clave12345", AceptoPoliticaDatos = true
         }));
         await MarcarCorreoVerificadoAsync(r.Sesion.Usuario.Id);
+        await ModificarUsuarioAsync(r.Sesion.Usuario.Id, u => u.CambiarFoto($"https://almacen.test/imagenes/{u.Id:N}/perfil.jpg"));
         return r.Sesion;
     }
 

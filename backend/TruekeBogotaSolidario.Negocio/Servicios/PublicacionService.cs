@@ -55,12 +55,16 @@ public sealed class PublicacionService : IPublicacionService
 
     public PublicacionService(IPublicacionRepository pubs, IUsuarioRepository usuarios, ICategoriaRepository categorias,
         ISolicitudRepository solicitudes, IFavoritoRepository favoritos, IEstadisticaRepository estadisticas, IUnidadDeTrabajo uow,
-        IOptions<UrlsOpciones> urls, TimeProvider reloj, INotificador notificador, IAlmacenArchivos almacen, IRegistroVistas vistas)
+        IOptions<UrlsOpciones> urls, TimeProvider reloj, INotificador notificador, IAlmacenArchivos almacen, IRegistroVistas vistas,
+        ICalificacionRepository calificaciones, IPresencia presencia)
     {
         _pubs = pubs; _usuarios = usuarios; _categorias = categorias; _solicitudes = solicitudes; _favoritos = favoritos;
         _estadisticas = estadisticas; _uow = uow; _urls = urls.Value; _reloj = reloj; _notificador = notificador; _almacen = almacen;
-        _vistas = vistas;
+        _vistas = vistas; _calificaciones = calificaciones; _presencia = presencia;
     }
+
+    private readonly ICalificacionRepository _calificaciones;
+    private readonly IPresencia _presencia;
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
@@ -117,7 +121,7 @@ public sealed class PublicacionService : IPublicacionService
     public async Task<PublicacionDto> CrearAsync(Guid actorId, CrearPublicacionRequest r)
     {
         var actor = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
-        Guardas.ExigirCorreoVerificado(actor);
+        Guardas.ExigirCuentaCompleta(actor);
         var ahora = Ahora;
         var plan = actor.PlanEfectivo(ahora);
         var maximo = PoliticaEcoPuntos.MaxPublicacionesActivas(plan);
@@ -143,7 +147,7 @@ public sealed class PublicacionService : IPublicacionService
         var p = await _pubs.ObtenerPorIdAsync(id);
         if (p is null || p.PropietarioId != actorId) throw new NoEncontradoException("Publicación no encontrada.");
         var actor = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
-        Guardas.ExigirCorreoVerificado(actor);
+        Guardas.ExigirCuentaCompleta(actor);
         var ahora = Ahora;
         // Con personas interesadas no se cambia lo que pidieron (precio, modo, fotos...): nadie debe recibir algo distinto.
         if ((await InteresadosAsync(new[] { p })).GetValueOrDefault(p.Id) > 0)
@@ -311,7 +315,7 @@ public sealed class PublicacionService : IPublicacionService
         var p = await _pubs.ObtenerPorIdAsync(id);
         if (p is null || p.PropietarioId != actorId) throw new NoEncontradoException("Publicación no encontrada.");
         var actor = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
-        Guardas.ExigirCorreoVerificado(actor);
+        Guardas.ExigirCuentaCompleta(actor);
         var ahora = Ahora;
         p.ValidarPuedeImpulsarse(ahora); // validar ANTES de cobrar los puntos
         if (actor.SaldoEcoPuntos < PoliticaEcoPuntos.PuntosImpulsar)
@@ -358,8 +362,28 @@ public sealed class PublicacionService : IPublicacionService
     public async Task<PerfilUsuarioDto> ObtenerPerfilAsync(Guid usuarioId)
     {
         var u = await PerfilVisibleAsync(usuarioId);
-        var (_, total) = await _pubs.ListarVisiblesDePropietarioAsync(usuarioId, 1, 1, Ahora);
-        return Mapeos.APerfilUsuario(u, total, Ahora);
+        var ahora = Ahora;
+        var (_, total) = await _pubs.ListarVisiblesDePropietarioAsync(usuarioId, 1, 1, ahora);
+        return Mapeos.APerfilUsuario(u, total, await SenalesConfianzaAsync(u, ahora), ahora);
+    }
+
+    /// <summary>Hechos verificables y agregados del último año que ayudan a decidir si intercambiar con alguien.</summary>
+    private async Task<SenalesConfianzaDto> SenalesConfianzaAsync(Usuario u, DateTime ahora)
+    {
+        var (completados, noConcretados, horas) = await _solicitudes.ConfianzaAsync(u.Id, ahora.AddYears(-1));
+        int? tasa = completados + noConcretados > 0
+            ? (int)Math.Round(100.0 * completados / (completados + noConcretados), MidpointRounding.AwayFromZero) : null;
+        double? respuesta = null;
+        if (horas.Count > 0)
+        {
+            var orden = horas.Order().ToList();
+            var mediana = orden.Count % 2 == 1 ? orden[orden.Count / 2] : (orden[orden.Count / 2 - 1] + orden[orden.Count / 2]) / 2;
+            respuesta = Math.Round(mediana, 1, MidpointRounding.AwayFromZero);
+        }
+        var enLinea = (await _presencia.EnLineaAsync(new[] { u.Id })).Contains(u.Id);
+        return new SenalesConfianzaDto(u.CorreoVerificado, u.EsVerificado, u.GoogleSub is not null, u.DosFactoresActivo, enLinea,
+            u.TotalTruekesCompletados + u.TotalComprasRealizadas + u.TotalDonacionesRealizadas, tasa, respuesta,
+            await _calificaciones.DistribucionAsync(u.Id));
     }
 
     public async Task<PaginaDto<PublicacionDto>> ListarDePerfilAsync(Guid? actorId, Guid usuarioId, int pagina, int tamano)

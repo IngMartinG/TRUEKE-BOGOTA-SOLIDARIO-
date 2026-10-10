@@ -21,6 +21,7 @@ import { Denunciar } from '../../shared/ui/denunciar';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Estrellas } from '../../shared/ui/estrellas';
 import { Icono } from '../../shared/ui/icono';
+import { VisorImagenes } from '../../shared/ui/visor-imagenes';
 import { ImagenPublicacion } from '../../shared/ui/imagen-publicacion';
 import { InsigniaModo } from '../../shared/ui/insignia-modo';
 import { Mapa } from '../../shared/ui/mapa';
@@ -33,6 +34,7 @@ import { Volver } from '../../shared/ui/volver';
     RouterLink,
     FormsModule,
     Icono,
+    VisorImagenes,
     ImagenPublicacion,
     InsigniaModo,
     Avatar,
@@ -83,7 +85,15 @@ import { Volver } from '../../shared/ui/volver';
           <!-- Galería -->
           <div>
             <div class="relative overflow-hidden rounded-tarjeta bg-superficie-2 shadow-suave">
-              <app-imagen-publicacion class="aspect-[4/3] w-full" [src]="imagenes()[indice()]" [alt]="p.titulo ?? ''" [modo]="p.modo" [categoriaId]="p.categoria?.id" />
+              @if (imagenes().length) {
+                <button type="button" class="block w-full cursor-zoom-in" (click)="visorAbierto.set(true)" aria-label="Ver las fotos en grande">
+                  <app-imagen-publicacion class="aspect-[4/3] w-full" [src]="imagenes()[indice()]" [alt]="p.titulo ?? ''" [modo]="p.modo" [categoriaId]="p.categoria?.id" />
+                </button>
+                <button type="button" class="absolute top-3 right-3 grid size-10 place-items-center rounded-full bg-black/55 text-white shadow-lg hover:bg-black/70"
+                  (click)="visorAbierto.set(true)" aria-label="Ampliar foto"><app-icono nombre="mira" /></button>
+              } @else {
+                <app-imagen-publicacion class="aspect-[4/3] w-full" [src]="imagenes()[indice()]" [alt]="p.titulo ?? ''" [modo]="p.modo" [categoriaId]="p.categoria?.id" />
+              }
               @if (imagenes().length > 1) {
                 <button type="button" class="absolute top-1/2 left-3 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-bosque-900 shadow-lg hover:bg-white" (click)="mover(-1)" aria-label="Foto anterior">
                   <app-icono nombre="izquierda" />
@@ -360,6 +370,10 @@ import { Volver } from '../../shared/ui/volver';
 
       <app-denunciar [(abierto)]="denunciaAbierta" tipo="Publicacion" [objetivoId]="p.id!" />
     }
+
+    @if (p(); as pv) {
+      <app-visor-imagenes [imagenes]="imagenes()" [titulo]="pv.titulo ?? ''" [(abierto)]="visorAbierto" [(indice)]="indice" />
+    }
   `,
 })
 export default class Detalle {
@@ -389,6 +403,7 @@ export default class Detalle {
   protected readonly imagenes = computed(() => this.p()?.imagenes ?? []);
   protected readonly urlPublica = urlPublica;
   protected readonly indice = signal(0);
+  protected readonly visorAbierto = signal(false);
   protected readonly infoModo = computed(() => INFO_MODO[(this.p()?.modo as ModoDto) ?? 'Trueke'] ?? INFO_MODO.Trueke);
   protected readonly favorita = computed(() => this.favoritos.esFavorita(this.p()?.id, this.p()?.esFavorita));
   protected readonly condicion = computed(() => infoCondicion(this.p()?.condicion));

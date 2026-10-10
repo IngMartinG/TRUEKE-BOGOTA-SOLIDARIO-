@@ -419,7 +419,15 @@ public sealed record PerfilPublicoDto(Guid Id, string Nombre, string Localidad, 
 public sealed record PerfilUsuarioDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
     DateTime MiembroDesde, int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas,
     decimal? CalificacionPromedio, int TotalCalificaciones, int PublicacionesActivas, string Municipio, string? NombreComercial,
-    string? FotoUrl = null);
+    string? FotoUrl, SenalesConfianzaDto Confianza);
+
+/// <summary>
+/// Lo que ayuda a confiar en alguien antes de intercambiar. Nunca expone datos privados: solo hechos verificables y agregados.
+/// TasaConcrecion = % de intercambios aceptados que terminaron completados (último año; null si aún no tiene).
+/// RespuestaHoras = mediana de horas en aceptar solicitudes recibidas (null si aún no tiene). Estrellas = conteo de 1 a 5.
+/// </summary>
+public sealed record SenalesConfianzaDto(bool CorreoVerificado, bool IdentidadVerificada, bool ConGoogle, bool DosFactores, bool EnLinea,
+    int IntercambiosCompletados, int? TasaConcrecion, double? RespuestaHoras, IReadOnlyList<int> Estrellas);
 
 /// <summary>Persona que bloqueaste (solo datos públicos).</summary>
 public sealed record BloqueadoDto(PerfilPublicoDto Perfil, DateTime FechaUtc);

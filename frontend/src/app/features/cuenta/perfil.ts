@@ -24,7 +24,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
     <p class="mt-1 text-tenue">Tu información básica y el estado de tu cuenta.</p>
 
     @if (sesion.usuario(); as u) {
-      <section class="tarjeta mt-6 flex flex-col items-center gap-4 p-5 text-center sm:flex-row sm:text-left" aria-labelledby="titulo-foto">
+      <section id="foto" class="tarjeta mt-6 flex scroll-mt-24 flex-col items-center gap-4 p-5 text-center sm:flex-row sm:text-left" aria-labelledby="titulo-foto">
         <div class="relative">
           <app-avatar [nombre]="u.nombreCompleto" [foto]="u.fotoUrl" [tamano]="96" />
           @if (subiendoFoto()) {
@@ -33,7 +33,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
         </div>
         <div class="min-w-0 flex-1">
           <h2 id="titulo-foto" class="font-bold">Foto de perfil</h2>
-          <p class="text-sm text-tenue">Ayuda a que la comunidad confíe en ti. Le quitamos la ubicación y los datos ocultos de la foto antes de publicarla.</p>
+          <p class="text-sm text-tenue">Es obligatoria para publicar, solicitar, chatear y pagar: usa una foto donde se vea tu cara, así la comunidad sabe con quién intercambia. Le quitamos la ubicación y los datos ocultos antes de publicarla.</p>
           <div class="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
             <label class="btn btn-primario btn-sm cursor-pointer" [class.pointer-events-none]="subiendoFoto()" [class.opacity-60]="subiendoFoto()">
               <app-icono nombre="camara" [tamano]="16" />{{ u.fotoUrl ? 'Cambiar foto' : 'Subir foto' }}
