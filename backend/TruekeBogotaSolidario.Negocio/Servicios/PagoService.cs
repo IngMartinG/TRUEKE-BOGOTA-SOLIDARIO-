@@ -170,11 +170,22 @@ public sealed class PagoService : IPagoService
                 throw new ReglaDeNegocioException("Concepto de pago no válido.");
         }
 
+        // Factura: la persona elige SIEMPRE antes de pagar (validado antes de reservar puntos o cobrar).
+        DatosComprador? aNombre = null;
+        if (r.FacturaANombre == true)
+            aNombre = u.DatosFacturacion ?? throw new ReglaDeNegocioException(
+                "Para recibir la factura a tu nombre completa todos tus datos de facturación (los exige la DIAN), o elige consumidor final.");
+        else if (r.FacturaANombre == false && !r.AceptoConsumidorFinal)
+            throw new ReglaDeNegocioException("Confirma que aceptas la factura a nombre de consumidor final.");
+        else if (r.FacturaANombre is null)
+            throw new ReglaDeNegocioException("Indica si quieres la factura a tu nombre o a consumidor final.");
+
         var puntos = cotizacion?.PuntosACanjear ?? 0;
         if (puntos > 0) u.DebitarEcoPuntos(puntos); // se reservan ya; si el pago falla o expira se devuelven
 
         var referencia = "TRK-" + Guid.NewGuid().ToString("N");
         var pago = new Pago(actorId, concepto, monto, referencia, puntos, publicacionId, documento, ahora);
+        pago.RegistrarEleccionFactura(aNombre, ahora); // evidencia: qué eligió, cuándo y con qué datos
         _pagos.Agregar(pago);
         await _uow.GuardarCambiosAsync();
 

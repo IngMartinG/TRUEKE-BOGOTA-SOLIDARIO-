@@ -29,7 +29,8 @@ public enum CondicionProducto { Nuevo = 1, ComoNuevo = 2, Usado = 3, UsadoConDet
 public enum TipoDocumentoFiscal { CC = 1, CE = 2, NIT = 3, Pasaporte = 4 }
 
 /// <summary>Pendiente = falta emitirla ante la DIAN. Emitida = tiene número y CUFE. Anulada = no se emitirá (pago revertido antes de emitir).</summary>
-public enum EstadoFactura { Pendiente = 1, Emitida = 2, Anulada = 3 }
+/// <summary>Reemplazada = se emitió con datos del comprador equivocados; queda para nota crédito y otra factura la reemplaza.</summary>
+public enum EstadoFactura { Pendiente = 1, Emitida = 2, Anulada = 3, Reemplazada = 4 }
 
 /// <summary>PQR (Ley 1480 de 2011 y Ley 1755 de 2015). Retracto y ReversionPago se asocian a un pago propio.</summary>
 public enum TipoPqr { Peticion = 1, Queja = 2, Reclamo = 3, Sugerencia = 4, Retracto = 5, ReversionPago = 6 }

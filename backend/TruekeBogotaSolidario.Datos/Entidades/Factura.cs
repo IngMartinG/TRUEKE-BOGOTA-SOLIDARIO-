@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using TruekeBogotaSolidario.Datos.Common;
 
 namespace TruekeBogotaSolidario.Datos.Entidades;
@@ -31,22 +32,110 @@ public class Factura
         BaseCop = Math.Round(pago.MontoCop / (1 + ivaPorcentaje / 100m), 2, MidpointRounding.AwayFromZero);
         IvaCop = pago.MontoCop - BaseCop;
 
-        if (comprador.TieneDatosFacturacion)
+        // Lo que la persona eligió al pagar manda (con la copia de sus datos de ese momento). Los pagos anteriores a la
+        // elección usan los datos completos del perfil, si los hay.
+        ElegidaANombre = pago.FacturaANombre;
+        FechaEleccionUtc = pago.FechaEleccionFacturaUtc;
+        var datos = pago.FacturaANombre switch
         {
-            CompradorTipoDocumento = comprador.FacturacionTipoDocumento;
-            CompradorDocumento = comprador.FacturacionDocumento!;
-            CompradorNombre = comprador.FacturacionNombre!;
-            CompradorCorreo = comprador.FacturacionCorreo!;
-            CompradorDireccion = comprador.FacturacionDireccion;
-            CompradorMunicipioCodigo = comprador.FacturacionMunicipioCodigo;
+            true => pago.DatosCompradorElegidos,
+            false => null,
+            null => comprador.DatosFacturacion
+        };
+        AsignarComprador(datos, comprador.Correo);
+        Estado = EstadoFactura.Pendiente;
+    }
+
+    /// <summary>Copia de una factura emitida con el comprador corregido (la original queda para nota crédito).</summary>
+    private Factura(Factura original, DatosComprador comprador, DateTime ahoraUtc)
+    {
+        Id = Guid.NewGuid();
+        PagoId = original.PagoId;
+        Referencia = original.Referencia;
+        UsuarioId = original.UsuarioId;
+        Concepto = original.Concepto;
+        Descripcion = original.Descripcion;
+        FechaUtc = ahoraUtc;
+        TotalCop = original.TotalCop;
+        IvaPorcentaje = original.IvaPorcentaje;
+        BaseCop = original.BaseCop;
+        IvaCop = original.IvaCop;
+        ElegidaANombre = original.ElegidaANombre;
+        FechaEleccionUtc = original.FechaEleccionUtc;
+        ReemplazaAId = original.Id;
+        AsignarComprador(comprador, original.CompradorCorreo);
+        Estado = EstadoFactura.Pendiente;
+    }
+
+    [MemberNotNull(nameof(CompradorDocumento), nameof(CompradorNombre), nameof(CompradorCorreo))]
+    private void AsignarComprador(DatosComprador? d, string correoPorDefecto)
+    {
+        if (d is not null)
+        {
+            CompradorTipoDocumento = d.TipoDocumento;
+            CompradorDocumento = d.Documento;
+            CompradorNombre = d.Nombre;
+            CompradorCorreo = d.Correo;
+            CompradorDireccion = d.Direccion;
+            CompradorMunicipioCodigo = d.MunicipioCodigo;
         }
         else
         {
+            CompradorTipoDocumento = null;
             CompradorDocumento = DocumentoConsumidorFinal;
             CompradorNombre = "Consumidor final";
-            CompradorCorreo = comprador.Correo;
+            CompradorCorreo = correoPorDefecto;
+            CompradorDireccion = null;
+            CompradorMunicipioCodigo = null;
         }
-        Estado = EstadoFactura.Pendiente;
+    }
+
+    /// <summary>Lo que eligió la persona al pagar: true = a su nombre; false = consumidor final; null = pago anterior a la regla.</summary>
+    public bool? ElegidaANombre { get; private set; }
+    public DateTime? FechaEleccionUtc { get; private set; }
+    /// <summary>Esta factura reemplaza a otra ya emitida cuyo comprador se corrigió.</summary>
+    public Guid? ReemplazaAId { get; private set; }
+    public Guid? ReemplazadaPorId { get; private set; }
+    /// <summary>Auditoría de la última corrección del comprador (solo SuperUsuario).</summary>
+    public Guid? CorregidaPorId { get; private set; }
+    public DateTime? FechaCorreccionUtc { get; private set; }
+    public string? MotivoCorreccion { get; private set; }
+
+    /// <summary>
+    /// SuperUsuario: la persona necesita la factura a su nombre (se equivocó al elegir o hubo un error). Si aún no se emitió,
+    /// se corrige aquí. Para una ya emitida usa <see cref="Reemplazar"/>.
+    /// </summary>
+    public void CorregirComprador(DatosComprador comprador, Guid superUsuarioId, string motivo, DateTime ahoraUtc)
+    {
+        if (Estado != EstadoFactura.Pendiente) throw new ReglaDeNegocioException("Solo se corrige directamente una factura pendiente; si ya se emitió, reemplázala.");
+        RegistrarCorreccion(superUsuarioId, motivo, ahoraUtc);
+        AsignarComprador(comprador, CompradorCorreo);
+    }
+
+    /// <summary>
+    /// SuperUsuario, factura YA emitida: esta queda "Reemplazada" y marcada para nota crédito ante la DIAN, y se devuelve una
+    /// nueva factura pendiente con el comprador corregido (mismo pago y mismos valores).
+    /// </summary>
+    public Factura Reemplazar(DatosComprador comprador, Guid superUsuarioId, string motivo, DateTime ahoraUtc)
+    {
+        if (Estado != EstadoFactura.Emitida) throw new ReglaDeNegocioException("Solo se reemplaza una factura emitida; si está pendiente, corrígela.");
+        RegistrarCorreccion(superUsuarioId, motivo, ahoraUtc);
+        var nueva = new Factura(this, comprador, ahoraUtc);
+        nueva.RegistrarCorreccion(superUsuarioId, motivo, ahoraUtc);
+        Estado = EstadoFactura.Reemplazada;
+        RequiereNotaCredito = true;
+        ReemplazadaPorId = nueva.Id;
+        return nueva;
+    }
+
+    private void RegistrarCorreccion(Guid superUsuarioId, string motivo, DateTime ahoraUtc)
+    {
+        var m = (motivo ?? "").Trim();
+        if (m.Length is < 10 or > 300 || m.Any(char.IsControl))
+            throw new ReglaDeNegocioException("Explica el motivo de la corrección (entre 10 y 300 caracteres): queda en la auditoría.");
+        CorregidaPorId = superUsuarioId;
+        FechaCorreccionUtc = ahoraUtc;
+        MotivoCorreccion = m;
     }
 
     public Guid Id { get; private set; }

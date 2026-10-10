@@ -97,7 +97,7 @@ public class MonetizacionTests
         // con 10 puntos de bienvenida no alcanza (cuesta 20)
         await Assert.ThrowsAsync<ReglaDeNegocioException>(() => e.EnScopeAsync<IPublicacionService, PublicacionDto>(s => s.ImpulsarAsync(ana, vieja.Id)));
 
-        await e.PagarAsync(ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 2_000 }); // +20 puntos
+        await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 2_000 }); // +20 puntos
         var impulsada = await e.EnScopeAsync<IPublicacionService, PublicacionDto>(s => s.ImpulsarAsync(ana, vieja.Id));
         Assert.NotNull(impulsada.ProximoImpulsoUtc);
         var resumen = await e.EnScopeAsync<IEcoPuntosService, EcoPuntosResumenDto>(s => s.ResumenAsync(ana));
@@ -106,7 +106,7 @@ public class MonetizacionTests
         var primera = await e.EnScopeAsync<IPublicacionService, PaginaDto<PublicacionDto>>(s => s.ListarAsync(null, new FiltroPublicacionesRequest()));
         Assert.Equal("Vieja", primera.Items[0].Titulo);
 
-        await e.PagarAsync(ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 5_000 });
+        await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 5_000 });
         var otraVez = await Assert.ThrowsAsync<ReglaDeNegocioException>(() => e.EnScopeAsync<IPublicacionService, PublicacionDto>(s => s.ImpulsarAsync(ana, vieja.Id)));
         Assert.Contains("24 horas", otraVez.Message);
     }
@@ -117,7 +117,7 @@ public class MonetizacionTests
     {
         using var e = new EntornoNegocio();
         var tienda = (await e.RegistrarAsync("tienda")).Usuario.Id;
-        await e.PagarAsync(tienda, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Empresa });
+        await e.PagarAsync(tienda, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Empresa });
 
         var resumen = await e.EnScopeAsync<IEcoPuntosService, EcoPuntosResumenDto>(s => s.ResumenAsync(tienda));
         Assert.Equal("Empresa", resumen.TipoCuenta);
@@ -173,10 +173,11 @@ public class MonetizacionTests
         var ana = (await e.RegistrarAsync("ana")).Usuario.Id;
         await e.EnScopeAsync<IFacturacionService, DatosFacturacionDto>(s => s.ActualizarDatosAsync(ana, new DatosFacturacionRequest
         {
-            TipoDocumento = TipoDocumentoFiscalDto.CC, Documento = "1.020.304.050", Nombre = "Ana Prueba", Correo = "facturas@ana.co", MunicipioCodigo = "05001"
+            TipoDocumento = TipoDocumentoFiscalDto.CC, Documento = "1.020.304.050", Nombre = "Ana Prueba", Correo = "facturas@ana.co",
+            Direccion = "Calle 10 # 20-30", MunicipioCodigo = "05001"
         }));
-        await e.PagarAsync(ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Premium });
-        await e.PagarAsync(ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 3_000 }, aprobado: false); // rechazado: sin factura
+        await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = true, Concepto = ConceptoPagoDto.Premium });
+        await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 3_000 }, aprobado: false); // rechazado: sin factura
 
         var factura = Assert.Single(await e.EnScopeAsync<IFacturacionService, IReadOnlyList<FacturaDto>>(s => s.ListarMiasAsync(ana)));
         Assert.Equal(PoliticaEcoPuntos.PrecioPremiumCop, factura.TotalCop);
@@ -205,10 +206,86 @@ public class MonetizacionTests
     {
         using var e = new EntornoNegocio();
         var ana = (await e.RegistrarAsync("ana")).Usuario.Id;
-        await e.PagarAsync(ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 2_000 });
+        await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 2_000 });
         var f = Assert.Single(await e.EnScopeAsync<IFacturacionService, IReadOnlyList<FacturaDto>>(s => s.ListarMiasAsync(ana)));
         Assert.Equal(Factura.DocumentoConsumidorFinal, f.CompradorDocumento);
         Assert.Equal("Consumidor final", f.CompradorNombre);
+        // evidencia: quedó registrado que la persona eligió consumidor final y cuándo
+        Assert.False(f.ElegidaANombre);
+        Assert.NotNull(f.FechaEleccionUtc);
+    }
+
+    private static DatosFacturacionRequest DatosAna() => new()
+    {
+        TipoDocumento = TipoDocumentoFiscalDto.CC, Documento = "1020304050", Nombre = "Ana Prueba", Correo = "facturas@ana.co",
+        Direccion = "Calle 10 # 20-30", MunicipioCodigo = "11001"
+    };
+
+    [Fact]
+    public async Task Antes_de_pagar_hay_que_elegir_la_factura_y_a_nombre_propio_exige_los_datos_completos()
+    {
+        using var e = new EntornoNegocio();
+        var ana = (await e.RegistrarAsync("ana")).Usuario.Id;
+        Task Iniciar(IniciarPagoRequest r) => e.EnScopeAsync<IPagoService, PagoIniciadoDto>(s => s.IniciarAsync(ana, r));
+
+        // sin elegir, o consumidor final sin aceptarlo, no se puede pagar
+        await Assert.ThrowsAsync<ReglaDeNegocioException>(() => Iniciar(new IniciarPagoRequest { Concepto = ConceptoPagoDto.Premium }));
+        await Assert.ThrowsAsync<ReglaDeNegocioException>(() => Iniciar(new IniciarPagoRequest { Concepto = ConceptoPagoDto.Premium, FacturaANombre = false }));
+        // a su nombre sin datos de facturación completos tampoco
+        await Assert.ThrowsAsync<ReglaDeNegocioException>(() => Iniciar(new IniciarPagoRequest { Concepto = ConceptoPagoDto.Premium, FacturaANombre = true }));
+
+        // con datos completos, la factura usa la copia tomada al elegir aunque después edite su perfil
+        await e.EnScopeAsync<IFacturacionService, DatosFacturacionDto>(s => s.ActualizarDatosAsync(ana, DatosAna()));
+        var referencia = (await e.EnScopeAsync<IPagoService, PagoIniciadoDto>(s =>
+            s.IniciarAsync(ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Premium, FacturaANombre = true }))).Referencia!;
+        await e.EnScopeAsync<IFacturacionService, DatosFacturacionDto>(s => s.ActualizarDatosAsync(ana, new DatosFacturacionRequest
+        {
+            TipoDocumento = TipoDocumentoFiscalDto.CC, Documento = "99999999", Nombre = "Otro Nombre", Correo = "otro@ana.co",
+            Direccion = "Carrera 1 # 1-1", MunicipioCodigo = "11001"
+        }));
+        await e.EnScopeAsync<IPagoService, PagoEstadoDto>(s => s.SimularResultadoAsync(ana, referencia, aprobado: true));
+        var f = Assert.Single(await e.EnScopeAsync<IFacturacionService, IReadOnlyList<FacturaDto>>(s => s.ListarMiasAsync(ana)));
+        Assert.Equal("Ana Prueba", f.CompradorNombre);
+        Assert.True(f.ElegidaANombre);
+    }
+
+    [Fact]
+    public async Task El_SuperUsuario_corrige_una_factura_pendiente_y_reemplaza_una_emitida_dejando_auditoria()
+    {
+        using var e = new EntornoNegocio();
+        var ana = (await e.RegistrarAsync("ana")).Usuario.Id;
+        await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Premium });
+        var factura = Assert.Single(await e.EnScopeAsync<IFacturacionService, IReadOnlyList<FacturaDto>>(s => s.ListarMiasAsync(ana)));
+        var admin = (await e.RegistrarAsync("admin")).Usuario.Id;
+        await e.HacerModeradorAsync(admin, RolUsuarioEnum.Administrador);
+        var super = (await e.RegistrarAsync("super")).Usuario.Id;
+        await e.HacerModeradorAsync(super);
+        var correccion = new CorregirCompradorFacturaRequest { Comprador = DatosAna(), Motivo = "La compradora pidió la factura a su nombre por PQR-1" };
+
+        // un administrador no puede; un motivo corto tampoco sirve
+        await Assert.ThrowsAsync<AccesoDenegadoException>(() => e.EnScopeAsync<IAdministracionService, FacturaAdminDto>(s =>
+            s.CorregirCompradorFacturaAsync(admin, factura.Id, correccion)));
+        await Assert.ThrowsAsync<ReglaDeNegocioException>(() => e.EnScopeAsync<IAdministracionService, FacturaAdminDto>(s =>
+            s.CorregirCompradorFacturaAsync(super, factura.Id, new CorregirCompradorFacturaRequest { Comprador = DatosAna(), Motivo = "porque sí" })));
+
+        // pendiente: se corrige en la misma factura
+        var corregida = await e.EnScopeAsync<IAdministracionService, FacturaAdminDto>(s => s.CorregirCompradorFacturaAsync(super, factura.Id, correccion));
+        Assert.Equal(factura.Id, corregida.Id);
+        Assert.Equal("Ana Prueba", corregida.CompradorNombre);
+        Assert.Equal(super, corregida.CorregidaPorId);
+        Assert.False(corregida.ElegidaANombre); // la elección original se conserva como evidencia
+
+        // emitida: la original queda reemplazada (para nota crédito) y nace otra pendiente con los datos nuevos
+        await e.EnScopeAsync<IAdministracionService, FacturaAdminDto>(s => s.MarcarFacturaEmitidaAsync(admin, factura.Id, "FE-7", new string('b', 96)));
+        var nueva = await e.EnScopeAsync<IAdministracionService, FacturaAdminDto>(s => s.CorregirCompradorFacturaAsync(super, factura.Id,
+            new CorregirCompradorFacturaRequest { Comprador = DatosAna(), Motivo = "Error en el documento de la factura emitida FE-7" }));
+        Assert.NotEqual(factura.Id, nueva.Id);
+        Assert.Equal(factura.Id, nueva.ReemplazaAId);
+        Assert.Equal("Pendiente", nueva.Estado);
+        var reemplazadas = await e.EnScopeAsync<IAdministracionService, PaginaDto<FacturaAdminDto>>(s => s.ListarFacturasAsync(admin, EstadoFacturaDto.Reemplazada, 1, 20));
+        var original = Assert.Single(reemplazadas.Items);
+        Assert.True(original.RequiereNotaCredito);
+        Assert.Equal(nueva.Id, original.ReemplazadaPorId);
     }
 
     [Fact]
@@ -216,7 +293,7 @@ public class MonetizacionTests
     {
         using var e = new EntornoNegocio();
         var ana = (await e.RegistrarAsync("ana")).Usuario.Id;
-        var referencia = await e.PagarAsync(ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Premium });
+        var referencia = await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Premium });
         Assert.Equal("Premium", (await e.EnScopeAsync<IEcoPuntosService, EcoPuntosResumenDto>(s => s.ResumenAsync(ana))).TipoCuenta);
 
         var super = (await e.RegistrarAsync("super")).Usuario.Id;
@@ -234,7 +311,7 @@ public class MonetizacionTests
     {
         using var e = new EntornoNegocio();
         var ana = (await e.RegistrarAsync("ana")).Usuario.Id;
-        var referencia = await e.PagarAsync(ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 5_000 }); // +50
+        var referencia = await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 5_000 }); // +50
         var super = (await e.RegistrarAsync("super")).Usuario.Id;
         await e.HacerModeradorAsync(super);
         await e.EnScopeAsync<IAdministracionService, PagoAdminDto>(s => s.MarcarReembolsadoAsync(super, referencia, "Reversión"));
@@ -248,7 +325,7 @@ public class MonetizacionTests
         using var e = new EntornoNegocio();
         var ana = (await e.RegistrarAsync("ana")).Usuario.Id;
         var beto = (await e.RegistrarAsync("beto")).Usuario.Id;
-        var referencia = await e.PagarAsync(ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Premium });
+        var referencia = await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Premium });
 
         CrearPqrRequest Retracto(string? pago) => new() { Tipo = TipoPqrDto.Retracto, Asunto = "Quiero retractarme", Descripcion = "Compré el plan por error, solicito el retracto.", PagoReferencia = pago };
         await Assert.ThrowsAsync<ReglaDeNegocioException>(() => e.EnScopeAsync<IPqrService, PqrDto>(s => s.CrearAsync(ana, Retracto(null))));
@@ -282,8 +359,8 @@ public class MonetizacionTests
     {
         using var e = new EntornoNegocio();
         var ana = (await e.RegistrarAsync("ana")).Usuario.Id;
-        await e.PagarAsync(ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Premium });
-        var recarga = await e.PagarAsync(ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 10_000 });
+        await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Premium });
+        var recarga = await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 10_000 });
 
         var admin = (await e.RegistrarAsync("admin")).Usuario.Id;
         await e.HacerModeradorAsync(admin, RolUsuarioEnum.Administrador);
@@ -328,7 +405,7 @@ public class MonetizacionTests
 
         await Assert.ThrowsAsync<NoEncontradoException>(() => e.EnScopeAsync<IPublicacionService, EstadisticasPublicacionDto>(s => s.ObtenerEstadisticasAsync(beto, pub.Id)));
 
-        await e.PagarAsync(ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Premium });
+        await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Premium });
         var conPlan = await e.EnScopeAsync<IPublicacionService, EstadisticasPublicacionDto>(s => s.ObtenerEstadisticasAsync(ana, pub.Id));
         Assert.True(conPlan.SerieDisponible);
         Assert.Equal(30, conPlan.Serie.Count);
@@ -342,7 +419,7 @@ public class MonetizacionTests
         var ana = (await e.RegistrarAsync("ana")).Usuario.Id;
         var destacada = await CrearAsync(e, ana, Pub(titulo: "Destacada", municipio: "76001"));
         await CrearAsync(e, ana, Pub(titulo: "Normal"));
-        await e.PagarAsync(ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Destacar, PublicacionId = destacada.Id });
+        await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Destacar, PublicacionId = destacada.Id });
 
         var vitrina = await e.EnScopeAsync<IPublicacionService, IReadOnlyList<PublicacionDto>>(s => s.ListarDestacadasAsync(null, new DestacadasRequest()));
         Assert.Equal(destacada.Id, Assert.Single(vitrina).Id);

@@ -461,6 +461,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<Guid?>("CorregidaPorId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Cufe")
                         .HasMaxLength(120)
                         .IsUnicode(false)
@@ -471,10 +474,19 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
+                    b.Property<bool?>("ElegidaANombre")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Estado")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("FechaCorreccionUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaEleccionUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("FechaEmisionUtc")
                         .HasColumnType("datetime2");
@@ -490,6 +502,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)");
 
+                    b.Property<string>("MotivoCorreccion")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
                     b.Property<string>("NotaInterna")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
@@ -499,6 +515,12 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<Guid>("PagoId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ReemplazaAId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("ReemplazadaPorId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Referencia")
@@ -523,7 +545,8 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.HasKey("Id");
 
                     b.HasIndex("PagoId")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("[Estado] IN (N'Pendiente', N'Emitida')");
 
                     b.HasIndex("Estado", "FechaUtc");
 
@@ -641,6 +664,31 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<Guid>("Id")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CompradorCorreo")
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<string>("CompradorDireccion")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("CompradorDocumento")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("CompradorMunicipioCodigo")
+                        .HasMaxLength(5)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(5)");
+
+                    b.Property<string>("CompradorNombre")
+                        .HasMaxLength(150)
+                        .HasColumnType("nvarchar(150)");
+
+                    b.Property<string>("CompradorTipoDocumento")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
                     b.Property<string>("Concepto")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -654,6 +702,12 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<bool?>("FacturaANombre")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime?>("FechaEleccionFacturaUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("FechaResolucionUtc")
                         .HasColumnType("datetime2");

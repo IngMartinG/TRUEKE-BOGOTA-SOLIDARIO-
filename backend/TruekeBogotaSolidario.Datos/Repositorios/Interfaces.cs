@@ -29,6 +29,8 @@ public class FiltroPublicaciones
 public interface IUnidadDeTrabajo
 {
     Task GuardarCambiosAsync();
+    /// <summary>Ejecuta varios guardados como una sola transacción (todo o nada), p. ej. cuando el orden de escritura importa.</summary>
+    Task EnTransaccionAsync(Func<Task> trabajo);
 }
 
 public interface IUsuarioRepository

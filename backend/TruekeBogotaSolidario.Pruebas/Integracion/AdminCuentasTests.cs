@@ -80,7 +80,7 @@ public class AdminCuentasTests : IClassFixture<FabricaApi>
         var ses = await Api.RegistrarSesionAsync(_fabrica, "pagadora");
         var c = Api.ConToken(_fabrica, ses.Token);
         var pub = await Api.CrearPublicacionAsync(c);
-        var ini = await c.PostAsJsonAsync("/api/v1/pagos/iniciar", new { concepto = "Destacar", publicacionId = pub });
+        var ini = await c.PostAsJsonAsync("/api/v1/pagos/iniciar", new { concepto = "Destacar", publicacionId = pub, facturaANombre = false, aceptoConsumidorFinal = true });
         var referencia = (await ini.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("referencia").GetString()!;
         (await c.PostAsJsonAsync($"/api/v1/publicaciones/{pub}/cancelar", new { motivo = "Ya la vendí" })).EnsureSuccessStatusCode();
         (await c.PostAsync($"/api/v1/pagos/{referencia}/simular?aprobado=true", null)).EnsureSuccessStatusCode();

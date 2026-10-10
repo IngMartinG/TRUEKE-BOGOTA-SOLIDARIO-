@@ -44,6 +44,40 @@ public class Pago
 
     public long MontoEnCentavos => MontoCop * 100L;
 
+    // ---------------- Elección de factura (evidencia ante reclamos) ----------------
+    /// <summary>true = factura a su nombre; false = consumidor final (elegido expresamente); null = pago anterior a esta regla.</summary>
+    public bool? FacturaANombre { get; private set; }
+    public DateTime? FechaEleccionFacturaUtc { get; private set; }
+    /// <summary>Copia de los datos del comprador en el momento de elegir: la factura no cambia si después edita su perfil.</summary>
+    public TipoDocumentoFiscal? CompradorTipoDocumento { get; private set; }
+    public string? CompradorDocumento { get; private set; }
+    public string? CompradorNombre { get; private set; }
+    public string? CompradorCorreo { get; private set; }
+    public string? CompradorDireccion { get; private set; }
+    public string? CompradorMunicipioCodigo { get; private set; }
+
+    /// <summary>
+    /// Registra, antes de cobrar, si la persona quiere la factura a su nombre (con TODOS los datos de la DIAN) o a consumidor
+    /// final. Queda la fecha y la copia de los datos: es la evidencia de lo que eligió.
+    /// </summary>
+    public void RegistrarEleccionFactura(DatosComprador? aNombreDe, DateTime ahoraUtc)
+    {
+        Exigir(EstadoPago.Pendiente);
+        FacturaANombre = aNombreDe is not null;
+        FechaEleccionFacturaUtc = ahoraUtc;
+        CompradorTipoDocumento = aNombreDe?.TipoDocumento;
+        CompradorDocumento = aNombreDe?.Documento;
+        CompradorNombre = aNombreDe?.Nombre;
+        CompradorCorreo = aNombreDe?.Correo;
+        CompradorDireccion = aNombreDe?.Direccion;
+        CompradorMunicipioCodigo = aNombreDe?.MunicipioCodigo;
+    }
+
+    /// <summary>Los datos copiados al elegir "a mi nombre", o null.</summary>
+    public DatosComprador? DatosCompradorElegidos => FacturaANombre == true && CompradorTipoDocumento is { } t
+        ? DatosComprador.Crear(t, CompradorDocumento, CompradorNombre, CompradorCorreo, CompradorDireccion, CompradorMunicipioCodigo)
+        : null;
+
     public void Aprobar(string? transaccionId, DateTime ahoraUtc)
     {
         Exigir(EstadoPago.Pendiente);

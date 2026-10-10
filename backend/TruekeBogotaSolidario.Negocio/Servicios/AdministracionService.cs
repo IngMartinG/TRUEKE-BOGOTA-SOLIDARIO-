@@ -27,6 +27,7 @@ public interface IAdministracionService
     Task<PaginaDto<FacturaAdminDto>> ListarFacturasAsync(Guid actorId, EstadoFacturaDto estado, int pagina, int tamano);
     /// <summary>Registra el número y el CUFE asignados por la DIAN (o el proveedor tecnológico) a una factura pendiente.</summary>
     Task<FacturaAdminDto> MarcarFacturaEmitidaAsync(Guid actorId, Guid facturaId, string numeroDian, string cufe);
+    Task<FacturaAdminDto> CorregirCompradorFacturaAsync(Guid actorId, Guid facturaId, CorregirCompradorFacturaRequest r);
     /// <summary>CSV con los datos del comprador para cargar las facturas en el sistema de facturación.</summary>
     Task<string> ExportarFacturasCsvAsync(Guid actorId, EstadoFacturaDto estado);
     Task<PaginaDto<PqrAdminDto>> ListarPqrAsync(Guid actorId, EstadoPqrDto estado, int pagina, int tamano);
@@ -201,6 +202,37 @@ public sealed class AdministracionService : IAdministracionService
         return Mapeos.AFacturaAdminDto(f);
     }
 
+    public async Task<FacturaAdminDto> CorregirCompradorFacturaAsync(Guid actorId, Guid facturaId, CorregirCompradorFacturaRequest r)
+    {
+        await ExigirRolAsync(actorId, RolUsuarioEnum.SuperUsuario);
+        var f = await _facturas.ObtenerAsync(facturaId) ?? throw new NoEncontradoException("Factura no encontrada.");
+        var c = r.Comprador;
+        var datos = DatosComprador.Crear((TipoDocumentoFiscal)(int)c.TipoDocumento, c.Documento, c.Nombre, c.Correo, c.Direccion, c.MunicipioCodigo);
+        var ahora = Ahora;
+        var vigente = f;
+        if (f.Estado == EstadoFactura.Pendiente)
+        {
+            f.CorregirComprador(datos, actorId, r.Motivo, ahora);
+            Auditar(actorId, "FACTURA_CORREGIDA", "Factura", f.Id, r.Motivo);
+            await _uow.GuardarCambiosAsync();
+        }
+        else
+        {
+            // Orden obligatorio por el índice único de factura vigente: primero se marca la original, después se crea la nueva.
+            await _uow.EnTransaccionAsync(async () =>
+            {
+                vigente = f.Reemplazar(datos, actorId, r.Motivo, ahora);
+                Auditar(actorId, "FACTURA_REEMPLAZADA", "Factura", f.Id, r.Motivo);
+                await _uow.GuardarCambiosAsync();
+                _facturas.Agregar(vigente);
+                await _uow.GuardarCambiosAsync();
+            });
+        }
+        await NotificarAsync(vigente.UsuarioId, TiposNotificacion.FacturaEmitida,
+            $"Actualizamos los datos de tu factura del pago {vigente.Referencia}: quedará a nombre de {vigente.CompradorNombre}.", null);
+        return Mapeos.AFacturaAdminDto(vigente);
+    }
+
     public async Task<string> ExportarFacturasCsvAsync(Guid actorId, EstadoFacturaDto estado)
     {
         await ExigirRolAsync(actorId, RolUsuarioEnum.Administrador);
@@ -291,7 +323,9 @@ public sealed class AdministracionService : IAdministracionService
         await ExigirRolAsync(actorId, RolUsuarioEnum.SuperUsuario);
         var (desde, hasta) = Rango(r);
         var pagos = await _pagos.ListarCobradosAsync(desde, hasta, 50_000);
-        var facturas = (await _facturas.ListarPorPagosAsync(pagos.Select(p => p.Id).ToList())).ToDictionary(f => f.PagoId);
+        // Un pago puede tener historial (facturas reemplazadas): se toma la vigente.
+        var facturas = (await _facturas.ListarPorPagosAsync(pagos.Select(p => p.Id).ToList())).GroupBy(f => f.PagoId)
+            .ToDictionary(g => g.Key, g => g.FirstOrDefault(f => f.Estado is EstadoFactura.Pendiente or EstadoFactura.Emitida) ?? g.First());
         var sb = new StringBuilder();
         Csv.Fila(sb, "Referencia", "FechaResolucionUtc", "Concepto", "Estado", "MontoCop", "PuntosCanjeados", "TransaccionWompi", "UsuarioId",
             "FacturaEstado", "NumeroDian", "Cufe", "BaseCop", "IvaCop");
