@@ -1,0 +1,92 @@
+# Blueprint de Render: la API de Trueke Bogotá Solidario como contenedor Docker (fase gratuita).
+# Guía paso a paso (cuentas, llaves y cómo pasar a pago): docs/DESPLIEGUE.md
+#
+# Render construye backend/Dockerfile en cada merge a main, pero solo después de que pasen los checks de GitHub (CI/CD).
+# Los valores marcados con "sync: false" son SECRETOS: Render los pide al crear el Blueprint y se guardan solo en su panel,
+# nunca en este repositorio. Si falta alguno obligatorio, la API no arranca (fail-fast de Program.cs) y Render lo muestra en los logs.
+services:
+  - type: web
+    name: trueke-api
+    runtime: docker
+    plan: free # Gratis: se duerme a los 15 min sin tráfico y tarda ~30-60 s en despertar. Pasar a pago: plan "starter".
+    region: virginia # la más cercana a Colombia; poner Azure SQL en "East US" para que la base quede al lado
+    branch: main
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    autoDeployTrigger: checksPass
+    # Liveness (no toca la base): la oferta gratuita de Azure SQL puede estar pausada y tardar en despertar.
+    healthCheckPath: /health/live
+    envVars:
+      # ---------- Fijos (no son secretos) ----------
+      - key: ASPNETCORE_ENVIRONMENT
+        value: Production
+      - key: PORT # puerto en el que escucha el contenedor (ASPNETCORE_HTTP_PORTS=8080 en el Dockerfile)
+        value: "8080"
+      - key: Database__Inicializacion # aplica las migraciones de EF Core al arrancar
+        value: Migrate
+      - key: Redis__Habilitado # una sola instancia: no hace falta backplane. Con varias instancias, encender Redis.
+        value: "false"
+      # Render solo es alcanzable a través de su proxy, que agrega la IP real del cliente en X-Forwarded-For
+      # (el límite de intentos de login se calcula por IP; sin esto, todos compartirían la IP del proxy).
+      - key: Proxy__Confiar
+        value: "true"
+      # El front (github.io) y la API (onrender.com) están en sitios distintos: la cookie de sesión debe ser SameSite=None
+      # (sigue siendo HttpOnly + Secure, y refrescar/salir exigen la cabecera anti-CSRF). Con dominio propio, volver a Strict.
+      - key: Auth__CookieSameSite
+        value: None
+      - key: Cors__Origenes__0
+        value: https://ingmarting.github.io
+      - key: Urls__Frontend
+        value: https://ingmarting.github.io/TRUEKE-BOGOTA-SOLIDARIO-/
+      - key: Pagos__Proveedor
+        value: Wompi
+      - key: Pagos__Wompi__BaseUrl # sandbox mientras Wompi no apruebe el comercio; luego https://production.wompi.co/v1
+        value: https://sandbox.wompi.co/v1
+      - key: Facturacion__Modo
+        value: Manual
+      - key: Correo__Proveedor
+        value: Smtp
+
+      # ---------- Generados por Render (256 bits aleatorios en base64) ----------
+      - key: Jwt__Key
+        generateValue: true
+      - key: Seguridad__ClaveCifrado # cifra los secretos de 2FA: si se cambia, quien tenga 2FA debe volver a activarlo
+        generateValue: true
+
+      # ---------- Secretos: se escriben en el panel de Render ----------
+      - key: ConnectionStrings__TruekeDb # Azure SQL (ADO.NET), ver docs/DESPLIEGUE.md §2
+        sync: false
+      - key: Almacenamiento__CadenaConexion # cuenta de Storage → Claves de acceso → Cadena de conexión
+        sync: false
+      - key: Urls__HostsPermitidosImagenes__0 # <cuenta>.blob.core.windows.net
+        sync: false
+      - key: Urls__HostsPermitidosDocumentos__0 # <cuenta>.blob.core.windows.net
+        sync: false
+      - key: Captcha__ClaveSitio
+        sync: false
+      - key: Captcha__ClaveSecreta
+        sync: false
+      - key: Correo__Remitente
+        sync: false
+      - key: Correo__Smtp__Host
+        sync: false
+      - key: Correo__Smtp__Usuario
+        sync: false
+      - key: Correo__Smtp__Clave
+        sync: false
+      - key: Pagos__Wompi__LlavePublica
+        sync: false
+      - key: Pagos__Wompi__LlavePrivada
+        sync: false
+      - key: Pagos__Wompi__SecretoIntegridad
+        sync: false
+      - key: Pagos__Wompi__SecretoEventos
+        sync: false
+      - key: Google__ClientId # opcional: botón "Continuar con Google"
+        sync: false
+      - key: Legal__CorreoContacto
+        sync: false
+      - key: Bootstrap__SuperUsuarioCorreo # crea el SuperUsuario la primera vez; después se puede borrar
+        sync: false
+      - key: Bootstrap__SuperUsuarioClave
+        sync: false

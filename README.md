@@ -49,6 +49,10 @@ Plataforma comunitaria de **economía circular** en Colombia, nacida en Bogotá.
 
 Verificaciones: `dotnet test` en `backend/` y `npm run verificar` en `frontend/`.
 
+## Publicación
+- **Front:** https://ingmarting.github.io/TRUEKE-BOGOTA-SOLIDARIO-/ (GitHub Pages, se publica solo en cada merge a `main`).
+- **API:** Render + Azure SQL. Guía paso a paso, fase gratis y cómo pasar a pago: [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md).
+
 ## Documentación
 
 - Arquitectura: [`docs/c4/C4_MODELO_TRUEKE.md`](docs/c4/C4_MODELO_TRUEKE.md)

@@ -44,6 +44,21 @@ jobs:
       - name: Build con la subcarpeta del repositorio
         run: npx ng build --base-href "/${{ github.event.repository.name }}/"
 
+      # URL de la API: variable del repositorio (Settings → Secrets and variables → Actions → Variables → API_URL),
+      # p. ej. https://trueke-api.onrender.com. No es secreta (el navegador la ve). Tras cambiarla, re-ejecutar este
+      # workflow (Actions → "Front en GitHub Pages" → Run workflow). Sin la variable se publica el config.json del repo.
+      - name: Conectar con la API
+        if: ${{ vars.API_URL != '' }}
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          case "$API_URL" in
+            https://*) ;;
+            *) echo "::error::API_URL debe empezar por https:// (valor actual: $API_URL)"; exit 1 ;;
+          esac
+          printf '{\n  "apiUrl": "%s"\n}\n' "${API_URL%/}" > dist/trueke-web/browser/config.json
+          cat dist/trueke-web/browser/config.json
+
       - name: Fallback de la SPA y sin procesamiento Jekyll
         run: |
           cd dist/trueke-web/browser
