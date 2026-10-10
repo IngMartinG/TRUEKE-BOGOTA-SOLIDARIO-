@@ -1,0 +1,80 @@
+name: Pruebas E2E (Playwright)
+
+# Pruebas de punta a punta contra las MISMAS imágenes Docker de producción (API + front con nginx) con SQL Server
+# (migraciones), Redis, correo por SMTP con TLS (Mailpit) y fotos en Azurite. Ver frontend/e2e/docker-compose.e2e.yml.
+on:
+  push:
+    branches: [main]
+    paths: ["frontend/**", "backend/**", ".github/workflows/e2e.yml"]
+  pull_request:
+    paths: ["frontend/**", "backend/**", ".github/workflows/e2e.yml"]
+  workflow_dispatch:
+
+# Mínimo privilegio: el workflow solo lee el repositorio.
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: Navegador real en PC y celular
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Instalar dependencias (exactas del lock)
+        run: npm ci --no-audit --no-fund
+
+      - name: Instalar Chromium de Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Pruebas E2E (construye las imágenes, levanta el ambiente, prueba y lo baja)
+        env:
+          E2E_CONSERVAR: "1" # se baja en el último paso, después de guardar los registros si algo falla
+        run: npm run e2e
+
+      - name: Registros del ambiente (si falló)
+        if: failure()
+        run: |
+          docker compose -p trueke-e2e --project-directory ../backend -f ../backend/docker-compose.yml -f e2e/docker-compose.e2e.yml \
+            logs --no-color --tail 400 api web mailpit > e2e/registros.txt 2>&1 || true
+        env:
+          SQL_SA_PASSWORD: x
+          JWT_KEY: x
+          CLAVE_CIFRADO: x
+          REDIS_PASSWORD: x
+
+      - name: Guardar reporte, capturas, videos y trazas (si falló)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporte-e2e
+          path: |
+            frontend/e2e/.reporte
+            frontend/e2e/.resultados
+            frontend/e2e/registros.txt
+          retention-days: 7
+
+      - name: Bajar el ambiente
+        if: always()
+        run: |
+          docker compose -p trueke-e2e --project-directory ../backend -f ../backend/docker-compose.yml -f e2e/docker-compose.e2e.yml \
+            down -v --remove-orphans || true
+        env:
+          SQL_SA_PASSWORD: x
+          JWT_KEY: x
+          CLAVE_CIFRADO: x
+          REDIS_PASSWORD: x
