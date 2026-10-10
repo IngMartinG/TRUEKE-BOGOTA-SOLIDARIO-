@@ -245,6 +245,8 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 
 ## 9. Despliegue en Azure
 
+> Fase gratuita (Render + Azure SQL gratis) y cómo pasar a pago, paso a paso: [`docs/DESPLIEGUE.md`](../docs/DESPLIEGUE.md). Esta sección describe la topología de producción completa en Azure.
+
 1. **Imagen:** `docker build -t <registro>.azurecr.io/trueke-api:<versión> backend` y `docker push`.
 2. **App Service (Linux, contenedor):**
    - `WEBSITES_PORT=8080`;

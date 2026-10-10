@@ -74,7 +74,7 @@
 ## Hecho el 2026-10-09 — front en GitHub Pages
 - Workflow `.github/workflows/frontend-pages.yml`: compila el front con la subcarpeta del repo y lo publica en https://ingmarting.github.io/TRUEKE-BOGOTA-SOLIDARIO-/ (con `404.html` para que las rutas profundas carguen).
 - El front ya no asume la raíz del dominio (`config.json`, manifiesto e imagen para redes son relativos).
-- **Falta:** publicar el backend (Azure) y poner su URL en `frontend/public/config.json` (`apiUrl`), además de agregar el dominio de Pages a los CORS del backend. Mientras tanto la página carga pero los datos no.
+- **Falta:** publicar el backend. Ya está todo preparado (`render.yaml` + `API_URL` en el workflow de Pages); solo faltan las cuentas y llaves: ver [`docs/DESPLIEGUE.md`](DESPLIEGUE.md).
 
 - **ImageSharp 3.1.12 tuvo 5 avisos nuevos (2026-10-07)**, corregidos solo en la v4 (exige licencia). Primero se mitigó y se suprimieron con justificación; ese mismo día se resolvió del todo (ver la sección siguiente).
 
