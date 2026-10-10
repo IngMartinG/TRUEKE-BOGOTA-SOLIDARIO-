@@ -5,6 +5,7 @@ import type {
   DenunciaAgrupadaDto,
   EstadoApelacionDto,
   EstadoDenunciaDto,
+  CorregirCompradorFacturaRequest,
   EstadoFacturaDto,
   EstadoPagoDto,
   EstadoPqrDto,
@@ -66,6 +67,9 @@ export class AdminApi {
     this.api.get<FacturaAdminDtoPaginaDto>('/admin/facturas', { params: { estado, pagina, tamano } });
   marcarFacturaEmitida = (id: string, numeroDian: string, cufe: string) =>
     this.api.post<FacturaAdminDto>(`/admin/facturas/${seg(id)}/emitida`, { numeroDian, cufe }, { silencioso: true });
+  /** Solo SuperUsuario: corrige el comprador (pendiente) o reemplaza la factura (emitida). Devuelve la vigente. */
+  corregirCompradorFactura = (id: string, r: CorregirCompradorFacturaRequest) =>
+    this.api.put<FacturaAdminDto>(`/admin/facturas/${seg(id)}/comprador`, r, { silencioso: true });
   facturasCsv = (estado: EstadoFacturaDto) => this.api.archivo('/admin/facturas.csv', { params: { estado } });
 
   pqr = (estado: EstadoPqrDto, pagina = 1, tamano = 20) =>

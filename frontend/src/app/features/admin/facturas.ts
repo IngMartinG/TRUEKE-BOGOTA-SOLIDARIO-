@@ -1,16 +1,18 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { ETIQUETA_CONCEPTO, type EstadoFacturaDto, type FacturaAdminDto } from '../../api/tipos';
+import { ETIQUETA_CONCEPTO, TIPOS_DOCUMENTO, type EstadoFacturaDto, type FacturaAdminDto, type TipoDocumentoFiscalDto } from '../../api/tipos';
 import { AdminApi } from '../../core/api/admin.api';
 import { AvisosService } from '../../core/avisos.service';
 import { mensajeDe } from '../../core/http/problema';
+import { SesionService } from '../../core/sesion.service';
 import { descargar } from '../../shared/descargar';
 import { CopPipe, FechaPipe } from '../../shared/pipes';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
 import { Paginador } from '../../shared/ui/paginador';
+import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
 
 const TAMANO = 20;
 
@@ -19,7 +21,7 @@ const TAMANO = 20;
  * portal de la DIAN o en su proveedor tecnológico (con los datos del CSV) y registra aquí el número y el CUFE.
  */
 @Component({
-  imports: [FormsModule, Icono, Modal, Paginador, CopPipe, FechaPipe],
+  imports: [FormsModule, ReactiveFormsModule, Icono, Modal, Paginador, SelectorMunicipio, CopPipe, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-wrap items-end justify-between gap-3">
@@ -32,6 +34,7 @@ const TAMANO = 20;
           <option value="Pendiente">Pendientes</option>
           <option value="Emitida">Emitidas</option>
           <option value="Anulada">Anuladas</option>
+          <option value="Reemplazada">Reemplazadas</option>
         </select>
         <button type="button" class="btn btn-secundario" (click)="exportar()"><app-icono nombre="descargar" [tamano]="16" />CSV</button>
       </div>
@@ -46,20 +49,42 @@ const TAMANO = 20;
           @for (f of recurso.value()?.items ?? []; track f.id) {
             <tr>
               <td class="px-4 py-3 text-xs">{{ f.fechaUtc | fecha: true }}<span class="block font-mono text-[11px] text-tenue">{{ f.referencia }}</span></td>
-              <td class="px-4 py-3">{{ f.compradorNombre }}<span class="block text-xs text-tenue">{{ f.compradorTipoDocumento ?? 'Consumidor final' }} {{ f.compradorDocumento }} · {{ f.compradorCorreo }}</span></td>
+              <td class="px-4 py-3">
+                {{ f.compradorNombre }}<span class="block text-xs text-tenue">{{ f.compradorTipoDocumento ?? 'Consumidor final' }} {{ f.compradorDocumento }} · {{ f.compradorCorreo }}</span>
+                <!-- Evidencia de lo que eligió la persona al pagar -->
+                <span class="mt-1 block text-[11px] text-tenue">
+                  @if (f.elegidaANombre === true) {
+                    Eligió factura a su nombre el {{ f.fechaEleccionUtc | fecha: true }}
+                  } @else if (f.elegidaANombre === false) {
+                    Eligió y aceptó consumidor final el {{ f.fechaEleccionUtc | fecha: true }}
+                  } @else {
+                    Pago anterior a la elección de factura
+                  }
+                </span>
+                @if (f.motivoCorreccion) {
+                  <span class="mt-1 block text-[11px] text-agua-700 dark:text-agua-100">Corregida el {{ f.fechaCorreccionUtc | fecha: true }}: {{ f.motivoCorreccion }}</span>
+                }
+              </td>
               <td class="px-4 py-3">{{ etiquetaConcepto[f.concepto ?? ''] ?? f.concepto }}</td>
               <td class="px-4 py-3">{{ f.baseCop | cop }}</td>
               <td class="px-4 py-3">{{ f.ivaCop | cop }}</td>
               <td class="px-4 py-3 font-semibold">{{ f.totalCop | cop }}</td>
               <td class="px-4 py-3 text-right">
-                @if (f.estado === 'Pendiente') {
-                  <button type="button" class="btn btn-primario btn-sm" (click)="abrir(f)">Registrar emisión</button>
-                } @else if (f.estado === 'Emitida') {
-                  <span class="text-xs">{{ f.numeroDian }}</span>
-                  @if (f.requiereNotaCredito) {<span class="insignia-donacion mt-1 block">Requiere nota crédito</span>}
-                } @else {
-                  <span class="text-xs text-tenue">{{ f.notaInterna }}</span>
-                }
+                <div class="flex flex-col items-end gap-1.5">
+                  @if (f.estado === 'Pendiente') {
+                    <button type="button" class="btn btn-primario btn-sm" (click)="abrir(f)">Registrar emisión</button>
+                  } @else if (f.estado === 'Emitida' || f.estado === 'Reemplazada') {
+                    <span class="text-xs">{{ f.numeroDian }}</span>
+                    @if (f.requiereNotaCredito) {<span class="insignia-donacion">Requiere nota crédito</span>}
+                  } @else {
+                    <span class="text-xs text-tenue">{{ f.notaInterna }}</span>
+                  }
+                  @if (esSuper() && (f.estado === 'Pendiente' || f.estado === 'Emitida')) {
+                    <button type="button" class="btn btn-fantasma btn-sm" (click)="abrirCorreccion(f)">
+                      <app-icono nombre="editar" [tamano]="14" />{{ f.estado === 'Emitida' ? 'Reemplazar factura' : 'Corregir comprador' }}
+                    </button>
+                  }
+                </div>
               </td>
             </tr>
           } @empty {
@@ -85,6 +110,57 @@ const TAMANO = 20;
       <div pie class="flex justify-end gap-2 border-t border-borde p-4">
         <button type="button" class="btn btn-fantasma" (click)="abierto.set(false)">Cancelar</button>
         <button type="submit" form="form-factura" class="btn btn-primario" [disabled]="!numero().trim() || cufe().trim().length < 10">Registrar</button>
+      </div>
+    </app-modal>
+
+    <!-- Solo SuperUsuario: factura a nombre de la persona cuando lo pide (se equivocó o hubo un error) -->
+    <app-modal [(abierto)]="correccionAbierta" [titulo]="aCorregir()?.estado === 'Emitida' ? 'Reemplazar factura emitida' : 'Corregir comprador'"
+      [subtitulo]="aCorregir()?.referencia ?? ''" ancho="sm:max-w-xl">
+      <form id="form-correccion" [formGroup]="correccion" (ngSubmit)="corregir()" class="space-y-4">
+        @if (aCorregir()?.estado === 'Emitida') {
+          <p class="rounded-xl bg-sol-50 p-3 text-sm dark:bg-sol-500/10">
+            Esta factura ({{ aCorregir()?.numeroDian }}) ya se emitió: quedará <strong>reemplazada</strong> y marcada para emitir una
+            <strong>nota crédito</strong> en la DIAN. Se creará una factura nueva, pendiente, con estos datos.
+          </p>
+        }
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-[10rem_1fr]">
+          <div class="campo">
+            <label for="corr-tipo" class="etiqueta">Tipo de documento</label>
+            <select id="corr-tipo" class="entrada" formControlName="tipoDocumento">
+              @for (t of tipos; track t.valor) {<option [value]="t.valor">{{ t.etiqueta }}</option>}
+            </select>
+          </div>
+          <div class="campo">
+            <label for="corr-doc" class="etiqueta">Número</label>
+            <input id="corr-doc" class="entrada" formControlName="documento" maxlength="20" />
+          </div>
+        </div>
+        <div class="campo">
+          <label for="corr-nombre" class="etiqueta">Nombre completo o razón social</label>
+          <input id="corr-nombre" class="entrada" formControlName="nombre" maxlength="150" />
+        </div>
+        <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div class="campo">
+            <label for="corr-correo" class="etiqueta">Correo</label>
+            <input id="corr-correo" type="email" class="entrada" formControlName="correo" maxlength="160" />
+          </div>
+          <div class="campo">
+            <label for="corr-dir" class="etiqueta">Dirección</label>
+            <input id="corr-dir" class="entrada" formControlName="direccion" maxlength="150" />
+          </div>
+        </div>
+        <app-selector-municipio id="corr-municipio" formControlName="municipioCodigo" />
+        <div class="campo">
+          <label for="corr-motivo" class="etiqueta">Motivo (queda en la auditoría)</label>
+          <textarea id="corr-motivo" class="entrada" formControlName="motivo" maxlength="300" placeholder="Ej: la persona pidió la factura a su nombre por la PQR-2026-0012"></textarea>
+        </div>
+        @if (errorCorreccion()) {<p class="error-campo" role="alert">{{ errorCorreccion() }}</p>}
+      </form>
+      <div pie class="flex justify-end gap-2 border-t border-borde p-4">
+        <button type="button" class="btn btn-fantasma" (click)="correccionAbierta.set(false)">Cancelar</button>
+        <button type="submit" form="form-correccion" class="btn btn-primario" [disabled]="correccion.invalid || corrigiendo()">
+          {{ aCorregir()?.estado === 'Emitida' ? 'Reemplazar factura' : 'Guardar corrección' }}
+        </button>
       </div>
     </app-modal>
   `,
@@ -124,6 +200,60 @@ export default class Facturas {
       this.recurso.reload();
     } catch (e) {
       this.error.set(mensajeDe(e));
+    }
+  }
+
+  // ---- Corrección del comprador (solo SuperUsuario)
+  protected readonly esSuper = inject(SesionService).esSuperUsuario;
+  protected readonly tipos = TIPOS_DOCUMENTO;
+  protected readonly correccionAbierta = signal(false);
+  protected readonly aCorregir = signal<FacturaAdminDto | null>(null);
+  protected readonly corrigiendo = signal(false);
+  protected readonly errorCorreccion = signal<string | null>(null);
+  protected readonly correccion = inject(NonNullableFormBuilder).group({
+    tipoDocumento: ['CC' as TipoDocumentoFiscalDto, Validators.required],
+    documento: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
+    nombre: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(150)]],
+    correo: ['', [Validators.required, Validators.email]],
+    direccion: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(150)]],
+    municipioCodigo: ['', Validators.required],
+    motivo: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(300)]],
+  });
+
+  protected abrirCorreccion(f: FacturaAdminDto): void {
+    this.aCorregir.set(f);
+    this.errorCorreccion.set(null);
+    // Parte de lo que ya tiene la factura (si era a nombre de alguien); el motivo siempre se escribe de nuevo.
+    const aNombre = !!f.compradorTipoDocumento;
+    this.correccion.reset({
+      tipoDocumento: (f.compradorTipoDocumento as TipoDocumentoFiscalDto | undefined) ?? 'CC',
+      documento: aNombre ? (f.compradorDocumento ?? '') : '',
+      nombre: aNombre ? (f.compradorNombre ?? '') : '',
+      correo: f.compradorCorreo ?? '',
+      direccion: f.compradorDireccion ?? '',
+      municipioCodigo: '',
+      motivo: '',
+    });
+    this.correccionAbierta.set(true);
+  }
+
+  protected async corregir(): Promise<void> {
+    const f = this.aCorregir();
+    if (!f?.id || this.correccion.invalid) return;
+    const { motivo, ...comprador } = this.correccion.getRawValue();
+    this.corrigiendo.set(true);
+    try {
+      const vigente = await firstValueFrom(this.api.corregirCompradorFactura(f.id, { comprador, motivo: motivo.trim() }));
+      this.correccionAbierta.set(false);
+      this.avisos.exito(
+        vigente.id === f.id ? 'Factura corregida' : 'Factura reemplazada',
+        vigente.id === f.id ? 'Ya puedes emitirla con los datos nuevos.' : 'La original quedó para nota crédito y la nueva está en Pendientes.',
+      );
+      this.recurso.reload();
+    } catch (e) {
+      this.errorCorreccion.set(mensajeDe(e));
+    } finally {
+      this.corrigiendo.set(false);
     }
   }
 
