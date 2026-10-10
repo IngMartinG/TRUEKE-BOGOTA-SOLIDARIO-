@@ -39,31 +39,71 @@ public static class ProcesadorImagenes
     public static async Task<byte[]> MiniaturaAsync(Stream entrada, CancellationToken ct = default)
         => (await ProcesarAsync(entrada, null, miniatura: true, ct)).Miniatura;
 
-    private static Task<ImagenLimpia> ProcesarAsync(Stream entrada, SKEncodedImageFormat? formato, bool miniatura, CancellationToken ct)
+    /// <summary>Tamaño de la imagen de vista previa que recomiendan WhatsApp, Facebook y X (proporción 1,91:1).</summary>
+    public const int AnchoTarjeta = 1200, AltoTarjeta = 630;
+
+    /// <summary>
+    /// Imagen de vista previa al compartir: JPEG de 1200×630 que recorta la foto al centro (como una tarjeta), sin
+    /// metadatos. JPEG porque algunos clientes (WhatsApp entre ellos) no siempre muestran WEBP en las vistas previas.
+    /// </summary>
+    public static Task<byte[]> TarjetaAsync(Stream entrada, CancellationToken ct = default)
+        => Seguro(() =>
+        {
+            using var foto = AbrirOrientada(entrada, LadoMaximo, ct);
+            var escala = Math.Max((float)AnchoTarjeta / foto.Width, (float)AltoTarjeta / foto.Height); // "cover"
+            var (w, h) = (foto.Width * escala, foto.Height * escala);
+            using var tarjeta = new SKBitmap(new SKImageInfo(AnchoTarjeta, AltoTarjeta, SKColorType.Rgba8888, SKAlphaType.Premul, SKColorSpace.CreateSrgb()));
+            using (var lienzo = new SKCanvas(tarjeta))
+            {
+                lienzo.Clear(SKColors.White); // PNG con transparencia: fondo blanco en el JPEG
+                using var imagen = SKImage.FromBitmap(foto);
+                lienzo.DrawImage(imagen, SKRect.Create((AnchoTarjeta - w) / 2, (AltoTarjeta - h) / 2, w, h),
+                    new SKSamplingOptions(SKCubicResampler.Mitchell));
+            }
+            using var pixeles = tarjeta.PeekPixels();
+            using var salida = Codificar(pixeles, SKEncodedImageFormat.Jpeg) ?? throw new ReglaDeNegocioException(MensajeInvalida);
+            return Task.FromResult(salida.ToArray());
+        });
+
+    /// <summary>El archivo viene de un usuario: cualquier fallo del decodificador (incluso uno inesperado) es "imagen inválida".</summary>
+    private static T Seguro<T>(Func<T> trabajo)
+    {
+        try { return trabajo(); }
+        catch (Exception ex) when (ex is not ReglaDeNegocioException and not OperationCanceledException and not OutOfMemoryException)
+        {
+            throw new ReglaDeNegocioException(MensajeInvalida);
+        }
+    }
+
+    /// <summary>Valida formato y tamaño, decodifica (ya reducida si se puede) y aplica la orientación del EXIF.</summary>
+    private static SKBitmap AbrirOrientada(Stream entrada, int ladoObjetivo, CancellationToken ct)
     {
         ArgumentNullException.ThrowIfNull(entrada);
-        try
+        ct.ThrowIfCancellationRequested();
+        using var datos = SKData.Create(entrada) ?? throw new ReglaDeNegocioException(MensajeInvalida);
+        // SKCodec solo lee la cabecera: el tamaño se valida antes de reservar memoria para los píxeles.
+        using var codec = SKCodec.Create(datos) ?? throw new ReglaDeNegocioException(MensajeInvalida);
+
+        // Skia también decodifica GIF, BMP, ICO, WBMP, etc.: solo se aceptan los formatos de foto de la plataforma.
+        if (codec.EncodedFormat is not (SKEncodedImageFormat.Jpeg or SKEncodedImageFormat.Png or SKEncodedImageFormat.Webp))
+            throw new ReglaDeNegocioException(MensajeInvalida);
+
+        var (ancho, alto) = (codec.Info.Width, codec.Info.Height);
+        if (ancho <= 0 || alto <= 0 || ancho > DimensionMaximaEntrada || alto > DimensionMaximaEntrada
+            || (long)ancho * alto > PixelesMaximosEntrada)
+            throw new ReglaDeNegocioException("La imagen es demasiado grande. Usa una foto de máximo 12.000 píxeles por lado.");
+
+        ct.ThrowIfCancellationRequested();
+        using var decodificada = Decodificar(codec, ancho, alto, ladoObjetivo);
+        ct.ThrowIfCancellationRequested();
+        return OrientarYReducir(decodificada, codec.EncodedOrigin, ladoObjetivo);
+    }
+
+    private static Task<ImagenLimpia> ProcesarAsync(Stream entrada, SKEncodedImageFormat? formato, bool miniatura, CancellationToken ct)
+        => Seguro(() =>
         {
-            ct.ThrowIfCancellationRequested();
-            using var datos = SKData.Create(entrada) ?? throw new ReglaDeNegocioException(MensajeInvalida);
-            // SKCodec solo lee la cabecera: el tamaño se valida antes de reservar memoria para los píxeles.
-            using var codec = SKCodec.Create(datos) ?? throw new ReglaDeNegocioException(MensajeInvalida);
-
-            // Skia también decodifica GIF, BMP, ICO, WBMP, etc.: solo se aceptan los formatos de foto de la plataforma.
-            if (codec.EncodedFormat is not (SKEncodedImageFormat.Jpeg or SKEncodedImageFormat.Png or SKEncodedImageFormat.Webp))
-                throw new ReglaDeNegocioException(MensajeInvalida);
-
-            var (ancho, alto) = (codec.Info.Width, codec.Info.Height);
-            if (ancho <= 0 || alto <= 0 || ancho > DimensionMaximaEntrada || alto > DimensionMaximaEntrada
-                || (long)ancho * alto > PixelesMaximosEntrada)
-                throw new ReglaDeNegocioException("La imagen es demasiado grande. Usa una foto de máximo 12.000 píxeles por lado.");
-
-            ct.ThrowIfCancellationRequested();
             // Si solo se pide la miniatura, basta decodificar a ese tamaño (mucha menos memoria).
-            var ladoObjetivo = formato is null ? LadoMiniatura : LadoMaximo;
-            using var decodificada = Decodificar(codec, ancho, alto, ladoObjetivo);
-            ct.ThrowIfCancellationRequested();
-            using var final = OrientarYReducir(decodificada, codec.EncodedOrigin, ladoObjetivo);
+            using var final = AbrirOrientada(entrada, formato is null ? LadoMiniatura : LadoMaximo, ct);
 
             var foto = Array.Empty<byte>();
             if (formato is { } f)
@@ -83,13 +123,7 @@ public static class ProcesadorImagenes
                 mini = salida.ToArray();
             }
             return Task.FromResult(new ImagenLimpia(foto, mini));
-        }
-        catch (Exception ex) when (ex is not ReglaDeNegocioException and not OperationCanceledException and not OutOfMemoryException)
-        {
-            // El archivo viene de un usuario: cualquier fallo del decodificador (incluso uno inesperado) es "imagen inválida".
-            throw new ReglaDeNegocioException(MensajeInvalida);
-        }
-    }
+        });
 
     /// <summary>
     /// Decodifica solo el primer cuadro (un WEBP animado queda como foto fija), en sRGB. Si la foto es más grande de lo

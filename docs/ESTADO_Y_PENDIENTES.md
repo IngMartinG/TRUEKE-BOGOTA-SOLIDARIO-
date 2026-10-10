@@ -109,6 +109,12 @@
 - Costo $0 (misma Azure SQL). Si el catálogo llega a decenas de miles de publicaciones, evaluar Full-Text Search de Azure SQL (incluido) o Azure AI Search (~US$75/mes en el plan básico).
 - 280 pruebas del backend y 30 del front.
 
+## Hecho el 2026-10-10 — vista previa al compartir
+- `index.html`: `og:url`, `og:site_name`, `og:image:alt` y `twitter:card`; el workflow de Pages los deja con URL absoluta (variable opcional `FRONT_URL`).
+- `GET /compartir/publicaciones/{id}` (anónimo, fuera de `/api/v1` y del OpenAPI): HTML con Open Graph (título, "Compra · $50.000 · Kennedy, Bogotá", descripción en una línea de máx. 200 caracteres) que redirige a la publicación. `…/imagen.jpg`: JPEG de 1200×630 recortado al centro desde la foto ya limpia (solo se leen fotos del contenedor propio: sin SSRF). Lo no público muestra la vista general.
+- El botón *Compartir* del detalle usa ese enlace. `Urls__Api` en `render.yaml`. Costo $0.
+- 286 pruebas del backend y 30 del front.
+
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
 - **Dependabot:** `gh auth login` y cerrar los PR de .NET 10, EF Core 9, TypeScript 7 y Node 26 (los demás, fusionar si el CI pasa).

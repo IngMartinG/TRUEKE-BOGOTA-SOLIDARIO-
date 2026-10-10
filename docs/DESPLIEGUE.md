@@ -94,6 +94,13 @@ En un plan pago de Render se puede volver a Gmail u otro SMTP: `Correo__Proveedo
 2. **Actions** → *Front en GitHub Pages* → **Run workflow** (rama `main`).
 3. Abrir https://ingmarting.github.io/TRUEKE-BOGOTA-SOLIDARIO-/: deben cargar las categorías y el catálogo. Si es la primera visita del día, esperar a que la API despierte.
 
+### 6.1 Vista previa al compartir (WhatsApp, Facebook, X)
+- **Inicio y catálogo:** el workflow de Pages escribe `og:image` y `og:url` con URL absoluta (WhatsApp no resuelve rutas relativas). Por defecto usa la URL de GitHub Pages; con dominio propio, crear la variable del repositorio `FRONT_URL` (p. ej. `https://trueke.co/`) y volver a ejecutar el workflow.
+- **Cada publicación:** el botón *Compartir* usa `https://<API>/compartir/publicaciones/{id}`. Esa página trae título, modo, precio, lugar, descripción corta y la foto (JPEG de 1200×630), y redirige a la publicación en el front. Si la publicación no es pública (oculta, reservada, cancelada), muestra la vista general sin revelar nada.
+- `Urls__Api` (en `render.yaml`) es la URL pública de la API para armar la imagen absoluta. Si cambia la URL de Render o se usa dominio propio, actualizarla.
+- **Probar:** pegar el enlace en el [depurador de Facebook](https://developers.facebook.com/tools/debug/) (*Scrape Again* para refrescar). WhatsApp guarda la vista previa de cada enlace un tiempo; para ver un cambio, compartir otro enlace.
+- **Limitación de la fase gratis:** si la API está dormida, WhatsApp puede rendirse antes de que despierte (sale el enlace sin foto). El enlace sigue funcionando. Se resuelve con el plan pago o con el chequeo de disponibilidad (mejora 4).
+
 ## 7. Limitaciones de la fase gratis
 - **Arranque en frío:** tras 15 min sin uso, la primera petición tarda 30-60 s.
 - **iPhone/Safari:** el front (`github.io`) y la API (`onrender.com`) son sitios distintos, y Safari bloquea esa cookie de sesión "de terceros". En Safari la sesión se cierra cuando vence el token (15 min). En Chrome, Edge y Firefox funciona bien. **Se resuelve con dominio propio** (§8).
