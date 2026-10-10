@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 /**
  * Logotipo oficial: el emblema circular (manos con corazón sobre la ciudad) y el nombre "Trueke Bogotá Solidario".
- * El emblema es un PNG con fondo transparente (public/logo-emblema.png); el nombre es texto para que se lea nítido
+ * El emblema es un PNG de 512 px (public/logo-emblema.png): transparente fuera del círculo y con el centro blanco para que
+ * las manos se vean también en modo oscuro; el nombre es texto para que se lea nítido
  * en cualquier tamaño y se adapte al modo oscuro.
  */
 @Component({
