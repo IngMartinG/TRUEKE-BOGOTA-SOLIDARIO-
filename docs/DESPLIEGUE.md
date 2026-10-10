@@ -62,11 +62,25 @@ Después de esto, **cada merge a `main` se despliega solo** cuando pasan los che
 | Servicio | Dónde | Variables |
 |---|---|---|
 | reCAPTCHA v3 | [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin) → nuevo sitio → **v3** → dominios `ingmarting.github.io` y `localhost` | `Captcha__ClaveSitio`, `Captcha__ClaveSecreta` |
-| Correo (Gmail) | Cuenta de Google → *Seguridad* → verificación en 2 pasos → **Contraseñas de aplicaciones** | `Correo__Smtp__Host=smtp.gmail.com`, `Correo__Smtp__Usuario` y `Correo__Remitente` = el correo, `Correo__Smtp__Clave` = la clave de aplicación |
+| Correo (Azure) | Ver §5.1 | `Correo__Azure__CadenaConexion`, `Correo__Remitente` |
 | Wompi (sandbox) | [comercios.wompi.co](https://comercios.wompi.co) → *Desarrolladores* → llaves de **prueba** (`pub_test_…`, `prv_test_…`, integridad, eventos) | `Pagos__Wompi__*` · URL de eventos: `https://<api>/api/v1/pagos/wompi/eventos` |
 | Google (opcional) | Ver `backend/README.md` §7.1; origen autorizado `https://ingmarting.github.io` | `Google__ClientId` |
 
 Más detalle de cada llave: [`backend/README.md` §7.1](../backend/README.md).
+
+### 5.1 Correo con Azure Communication Services
+Render gratis **bloquea el SMTP** (puertos 25, 465 y 587), así que Gmail por SMTP no funciona ahí. La API envía por la API HTTPS de Azure (`Correo__Proveedor=AzureCommunication`, ya fijado en `render.yaml`). Cuesta unos US$0,00025 por correo.
+1. Portal → buscar **Email Communication Services** → *Crear*: grupo `trueke`, nombre (p. ej. `trueke-correo`), **ubicación de datos: United States**.
+2. Al terminar: el recurso → **Aprovisionar dominios** → **Agregar dominio gratuito de Azure** (Azure subdomain). Tarda 1-2 minutos. Queda un dominio como `xxxx.azurecomm.net`.
+3. Abrir ese dominio → **Direcciones MailFrom**: viene `DoNotReply@xxxx.azurecomm.net`. Ese es el **remitente** → `Correo__Remitente`. Ahí mismo se puede poner el nombre visible: *Trueke Bogotá Solidario*.
+4. Portal → buscar **Communication Services** (otro recurso, sin "Email") → *Crear*: grupo `trueke`, nombre (p. ej. `trueke-comunicaciones`), ubicación de datos **United States**.
+5. Ese recurso → **Correo electrónico → Dominios** → **Conectar dominio** → elegir el de los pasos 1-2.
+6. Ese recurso → **Configuración → Claves** → copiar la **Cadena de conexión** principal (`endpoint=https://…;accesskey=…`) → `Correo__Azure__CadenaConexion`.
+7. En Render → *Environment*, poner `Correo__Azure__CadenaConexion` y cambiar `Correo__Remitente` por la dirección del paso 3. **Si falta la cadena, la API no arranca** (avisa en los logs cuál falta).
+
+**Límite del dominio gratuito de Azure: 10 correos por hora** (5 por minuto) y no se puede subir. Alcanza para la demostración, no para usuarios reales. Con **dominio propio** verificado en el mismo recurso (paso 2 → *Agregar dominio personalizado*, con los registros DNS que pide Azure) el límite pasa a 100 por hora y se puede ampliar, y los correos salen desde `no-responder@tudominio`. Fuente: [límites de Azure Communication Services](https://learn.microsoft.com/azure/communication-services/concepts/service-limits).
+
+En un plan pago de Render se puede volver a Gmail u otro SMTP: `Correo__Proveedor=Smtp` en `render.yaml` y `Correo__Smtp__Host=smtp.gmail.com`, `Correo__Smtp__Usuario`, `Correo__Smtp__Clave` (contraseña de aplicación de Google) y `Correo__Remitente` = ese Gmail.
 
 ## 6. Conectar el front con la API
 1. GitHub → repositorio → **Settings** → **Secrets and variables** → **Actions** → pestaña **Variables** → *New repository variable*: `API_URL` = la URL de Render (sin `/` al final). No es secreta: el navegador la ve igual.

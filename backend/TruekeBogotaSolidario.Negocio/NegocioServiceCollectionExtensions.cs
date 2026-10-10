@@ -51,6 +51,14 @@ public static class NegocioServiceCollectionExtensions
         var correo = config.GetSection(CorreoOpciones.Seccion).Get<CorreoOpciones>() ?? new CorreoOpciones();
         if (correo.EsSimulado)
             services.AddScoped<ITransporteCorreo, TransporteCorreoSimulado>();
+        else if (correo.EsAzure)
+        {
+            if (string.IsNullOrWhiteSpace(correo.Azure.CadenaConexion))
+                throw new InvalidOperationException("Correo:Azure:CadenaConexion es obligatoria con Correo:Proveedor=AzureCommunication (variable Correo__Azure__CadenaConexion).");
+            // Valida el formato al arrancar (falla aquí con un mensaje claro, no en el primer envío).
+            services.AddSingleton(new Azure.Communication.Email.EmailClient(correo.Azure.CadenaConexion));
+            services.AddScoped<ITransporteCorreo, TransporteCorreoAzure>();
+        }
         else
         {
             if (string.IsNullOrWhiteSpace(correo.Smtp.Host))
