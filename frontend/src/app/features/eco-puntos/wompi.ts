@@ -24,6 +24,15 @@ export function urlCheckoutWompi(pago: PagoIniciadoDto, urlRetorno: string | nul
   return `https://checkout.wompi.co/p/?${params.toString()}`;
 }
 
+/**
+ * Dirección a la que Wompi devuelve al usuario: la página del pago dentro de la app. Se resuelve contra el
+ * `<base href>` (no contra el origen) para que funcione también si la app vive en una subcarpeta,
+ * p. ej. https://usuario.github.io/repositorio/pagos/REF.
+ */
+export function urlRetornoPago(referencia: string, base = document.baseURI): string {
+  return new URL(`pagos/${encodeURIComponent(referencia)}`, base).href;
+}
+
 /** Producción: redirige en la misma pestaña y Wompi devuelve al usuario a la página del pago. */
 export function abrirCheckoutWompi(pago: PagoIniciadoDto, urlRetorno: string): void {
   window.location.assign(urlCheckoutWompi(pago, urlRetorno));
