@@ -45,6 +45,9 @@ jobs:
             exit 1
           fi
 
+      - name: Tipos de las pruebas E2E
+        run: npx tsc -p e2e/tsconfig.json
+
       - name: Lint
         run: npm run lint
 

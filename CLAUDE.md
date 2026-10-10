@@ -90,5 +90,6 @@ Desde `frontend/` (Node 24 LTS):
 npm ci
 npm start            # http://localhost:4200 con proxy de /api y /hubs a https://localhost:7180
 npm run verificar    # lint + pruebas + build de producción
+npm run e2e          # Playwright contra las imágenes Docker de producción (requiere Docker; ver frontend/README.md)
 npm run api          # regenera los tipos desde docs/openapi.json (tras cambiar la API)
 ```
