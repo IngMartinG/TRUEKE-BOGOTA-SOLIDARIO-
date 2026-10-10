@@ -45,7 +45,11 @@ import { InsigniaModo } from './insignia-modo';
         }
         @if (p.estado && p.estado !== 'Disponible') {
           <span class="absolute right-3 bottom-3 insignia bg-bosque-950/80 text-white backdrop-blur">
-            {{ p.estado === 'EnNegociacion' ? 'En negociación' : p.estado === 'Intercambiada' ? 'Intercambiada' : 'No disponible' }}
+            {{ p.estado === 'EnNegociacion' ? 'Reservada' : p.estado === 'Intercambiada' ? 'Intercambiada' : 'No disponible' }}
+          </span>
+        } @else if ((p.interesados ?? 0) > 0) {
+          <span class="absolute right-3 bottom-3 insignia bg-bosque-950/80 text-white backdrop-blur">
+            <app-icono nombre="usuarios" [tamano]="12" />{{ p.interesados }} {{ p.interesados === 1 ? 'interesada' : 'interesadas' }}
           </span>
         }
       </div>

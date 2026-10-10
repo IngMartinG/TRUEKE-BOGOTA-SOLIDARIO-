@@ -90,9 +90,15 @@ public interface ISolicitudRepository
     Task<Solicitud?> ObtenerPorIdAsync(Guid id);
     Task<IReadOnlyList<Solicitud>> ListarPorSolicitanteAsync(Guid solicitanteId);
     Task<IReadOnlyList<Solicitud>> ListarRecibidasAsync(Guid propietarioId);
-    Task<Solicitud?> ObtenerPendientePorPublicacionAsync(Guid publicacionId);
-    /// <summary>La solicitud Pendiente o Aceptada de la publicación (con tracking), si existe.</summary>
-    Task<Solicitud?> ObtenerEnCursoPorPublicacionAsync(Guid publicacionId);
+    /// <summary>
+    /// Solicitudes Pendientes (y Aceptada si <paramref name="incluirAceptada"/>) de la publicación, con tracking. Varias personas
+    /// pueden estar interesadas a la vez; las pendientes mientras otra está aceptada forman la lista de espera.
+    /// </summary>
+    Task<IReadOnlyList<Solicitud>> ListarEnCursoPorPublicacionAsync(Guid publicacionId, bool incluirAceptada);
+    /// <summary>Cuántas solicitudes Pendientes tiene cada publicación (las que no tienen, no aparecen).</summary>
+    Task<IReadOnlyDictionary<Guid, int>> ContarPendientesPorPublicacionAsync(IReadOnlyCollection<Guid> publicacionIds);
+    /// <summary>El usuario ya tiene una solicitud Pendiente o Aceptada para la publicación.</summary>
+    Task<bool> ExisteEnCursoAsync(Guid publicacionId, Guid solicitanteId);
     Task<int> ContarPendientesPorSolicitanteAsync(Guid solicitanteId);
     /// <summary>Aceptada o Completada: el solicitante puede ver las coordenadas exactas.</summary>
     Task<bool> ExisteAceptadaAsync(Guid publicacionId, Guid solicitanteId);

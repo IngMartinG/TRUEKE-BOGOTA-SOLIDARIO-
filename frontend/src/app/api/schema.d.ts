@@ -5102,6 +5102,9 @@ export interface components {
             vistas?: number | null;
             /** Format: date-time */
             proximoImpulsoUtc?: string | null;
+            /** Format: int32 */
+            interesados?: number;
+            yaSolicite?: boolean;
         };
         PublicacionDtoPaginaDto: {
             items?: components["schemas"]["PublicacionDto"][];
@@ -5189,6 +5192,7 @@ export interface components {
             /** Format: date-time */
             cierreAutomaticoUtc?: string | null;
             puedoCalificar?: boolean;
+            enEspera?: boolean;
         };
         SubidaArchivoDto: {
             urlSubida?: string;

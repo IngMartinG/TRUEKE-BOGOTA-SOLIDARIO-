@@ -180,7 +180,7 @@ export default class Intercambios {
     this.seleccionada = s;
     switch (accion) {
       case 'aceptar':
-        void this.correr(s, () => this.api.aceptar(s.id!), '¡Solicitud aceptada!', 'Ya pueden coordinar la entrega por el chat.');
+        void this.correr(s, () => this.api.aceptar(s.id!), '¡Solicitud aceptada!', 'La publicación quedó reservada. Coordinen la entrega por el chat; si hay más interesados, quedan en lista de espera.');
         break;
       case 'cancelar':
         void this.correr(s, () => this.api.cancelar(s.id!), 'Solicitud retirada');

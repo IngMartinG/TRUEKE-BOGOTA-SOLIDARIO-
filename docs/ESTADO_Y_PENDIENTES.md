@@ -83,6 +83,11 @@
 - Sin avisos suprimidos: `backend/Directory.Build.props` queda vacío (el mecanismo sigue disponible) y la auditoría de paquetes está limpia.
 - 238 pruebas en verde (incluye SQL Server real); las del procesador también se corrieron en Linux (contenedor del SDK).
 
+## Hecho el 2026-10-10 — varias personas interesadas por publicación
+- Antes, la primera solicitud sacaba la publicación del catálogo y bloqueaba a los demás aunque no se concretara. Ahora varias personas pueden solicitarla y conversar; la publicación sigue visible con *"N personas interesadas"* hasta que el dueño **acepta** a una. Ahí queda **reservada** y las demás pasan a **lista de espera**. Si no se concreta, vuelve al catálogo y se avisa a la lista; si se completa, se otorgan los Eco-Puntos y la lista se cierra con aviso.
+- Con interesados no se puede editar la publicación (nadie recibe algo distinto de lo que pidió). Cancelarla avisa a todas las personas interesadas.
+- Migración de datos `LiberarPublicacionesSinAceptada`: las publicaciones que el sistema viejo dejó "en negociación" sin nadie aceptado vuelven a estar disponibles. 252 pruebas en verde, 6 nuevas en `ListaDeEsperaTests`.
+
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
 - **Dependabot:** `gh auth login` y cerrar los PR de .NET 10, EF Core 9, TypeScript 7 y Node 26 (los demás, fusionar si el CI pasa).

@@ -145,6 +145,9 @@ public sealed class PublicacionService : IPublicacionService
         var actor = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
         Guardas.ExigirCorreoVerificado(actor);
         var ahora = Ahora;
+        // Con personas interesadas no se cambia lo que pidieron (precio, modo, fotos...): nadie debe recibir algo distinto.
+        if ((await InteresadosAsync(new[] { p })).GetValueOrDefault(p.Id) > 0)
+            throw new ReglaDeNegocioException("Ya hay personas interesadas en esta publicación: no se puede editar para que nadie reciba algo distinto de lo que pidió. Respóndeles o cancélala y publica de nuevo.");
         await ExigirVendedorIdentificadoAsync(actor, r.Modo, p.Id, ahora);
 
         var categoria = await _categorias.ObtenerPorIdAsync(r.CategoriaId) ?? throw new ReglaDeNegocioException("La categoría no existe.");
@@ -180,8 +183,9 @@ public sealed class PublicacionService : IPublicacionService
         };
         var (items, total) = await _pubs.ListarVisiblesAsync(filtro, ahora);
         var favoritas = await FavoritasAsync(actorId, items);
+        var interesados = await InteresadosAsync(items);
         var dtos = items.Select(p => Mapeos.APublicacionDto(p, actorId, veExacto: actorId.HasValue && p.PropietarioId == actorId,
-            veModeracion: false, ahora, favoritas.Contains(p.Id))).ToList();
+            veModeracion: false, ahora, favoritas.Contains(p.Id), interesados: interesados.GetValueOrDefault(p.Id))).ToList();
         return new PaginaDto<PublicacionDto>(dtos, total, Math.Max(f.Pagina, 1), Math.Clamp(f.Tamano, 1, 50));
     }
 
@@ -190,9 +194,14 @@ public sealed class PublicacionService : IPublicacionService
         var ahora = Ahora;
         var items = await _pubs.ListarDestacadasAsync(r.DepartamentoCodigo, r.MunicipioCodigo, r.CategoriaId, Math.Clamp(r.Max, 1, 12), ahora);
         var favoritas = await FavoritasAsync(actorId, items);
+        var interesados = await InteresadosAsync(items);
         return items.Select(p => Mapeos.APublicacionDto(p, actorId, veExacto: actorId.HasValue && p.PropietarioId == actorId,
-            veModeracion: false, ahora, favoritas.Contains(p.Id))).ToList();
+            veModeracion: false, ahora, favoritas.Contains(p.Id), interesados: interesados.GetValueOrDefault(p.Id))).ToList();
     }
+
+    /// <summary>Solicitudes pendientes por publicación (una sola consulta para toda la página).</summary>
+    private Task<IReadOnlyDictionary<Guid, int>> InteresadosAsync(IEnumerable<Publicacion> pubs)
+        => _solicitudes.ContarPendientesPorPublicacionAsync(pubs.Select(p => p.Id).ToList());
 
     public async Task<PublicacionDto> ObtenerAsync(Guid? actorId, Guid id, string? visitante = null)
     {
@@ -215,7 +224,10 @@ public sealed class PublicacionService : IPublicacionService
 
         var favorita = actor is not null && (await _favoritos.ObtenerAsync(actor.Id, p.Id)) is not null;
         int? vistas = esDueno ? (await _estadisticas.TotalesAsync(new[] { p.Id })).GetValueOrDefault(p.Id) : null;
-        return Mapeos.APublicacionDto(p, actor?.Id, veExacto: esDueno || esModerador || aceptada, veModeracion: esModerador, ahora, favorita, vistas);
+        var interesados = (await InteresadosAsync(new[] { p })).GetValueOrDefault(p.Id);
+        var yaSolicite = actor is not null && !esDueno && await _solicitudes.ExisteEnCursoAsync(p.Id, actor.Id);
+        return Mapeos.APublicacionDto(p, actor?.Id, veExacto: esDueno || esModerador || aceptada, veModeracion: esModerador, ahora, favorita, vistas,
+            interesados, yaSolicite);
     }
 
     /// <summary>
@@ -250,8 +262,10 @@ public sealed class PublicacionService : IPublicacionService
             .Take(Math.Clamp(r.Max, 1, 50))
             .ToList();
         var favoritas = await FavoritasAsync(actorId, cercanas.Select(x => x.p));
+        var interesados = await InteresadosAsync(cercanas.Select(x => x.p));
         return cercanas.Select(x => new PublicacionCercanaDto(
-                Mapeos.APublicacionDto(x.p, actorId, veExacto: x.esMia, veModeracion: false, ahora, favoritas.Contains(x.p.Id)),
+                Mapeos.APublicacionDto(x.p, actorId, veExacto: x.esMia, veModeracion: false, ahora, favoritas.Contains(x.p.Id),
+                    interesados: interesados.GetValueOrDefault(x.p.Id)),
                 Math.Round(x.d, 1, MidpointRounding.AwayFromZero)))
             .ToList();
     }
@@ -262,8 +276,9 @@ public sealed class PublicacionService : IPublicacionService
         var lista = await _pubs.ListarPorPropietarioAsync(actorId);
         var favoritas = await FavoritasAsync(actorId, lista);
         var vistas = await _estadisticas.TotalesAsync(lista.Select(p => p.Id).ToList());
+        var interesados = await InteresadosAsync(lista);
         return lista.Select(p => Mapeos.APublicacionDto(p, actorId, veExacto: true, veModeracion: false, ahora, favoritas.Contains(p.Id),
-            vistas.GetValueOrDefault(p.Id))).ToList();
+            vistas.GetValueOrDefault(p.Id), interesados.GetValueOrDefault(p.Id))).ToList();
     }
 
     public async Task<IReadOnlyList<CategoriaDto>> ListarCategoriasAsync()
@@ -275,15 +290,19 @@ public sealed class PublicacionService : IPublicacionService
         if (p is null || p.PropietarioId != actorId) throw new NoEncontradoException("Publicación no encontrada.");
 
         var ahora = Ahora;
-        var enCurso = p.Estado == EstadoPublicacionEnum.EnNegociacion ? await _solicitudes.ObtenerEnCursoPorPublicacionAsync(p.Id) : null;
+        // Todas las personas interesadas (la aceptada, si la hay, y la lista de espera) se cierran y reciben aviso.
+        var enCurso = await _solicitudes.ListarEnCursoPorPublicacionAsync(p.Id, incluirAceptada: true);
         const string aviso = "La publicación fue cancelada por su propietario.";
-        if (enCurso?.Estado == EstadoSolicitud.Pendiente) enCurso.Rechazar(aviso);
-        else if (enCurso?.Estado == EstadoSolicitud.Aceptada) enCurso.MarcarNoConcretada(aviso, ahora);
+        foreach (var s in enCurso)
+        {
+            if (s.Estado == EstadoSolicitud.Aceptada) s.MarcarNoConcretada(aviso, ahora);
+            else s.Rechazar(aviso);
+        }
         p.Cancelar(motivo ?? "");
         await _uow.GuardarCambiosAsync();
-        if (enCurso is not null)
-            await _notificador.NotificarAsync(enCurso.SolicitanteId, TiposNotificacion.SolicitudRechazada,
-                $"La publicación \"{p.Titulo}\" fue cancelada por su propietario.", enCurso.Id);
+        foreach (var s in enCurso)
+            await _notificador.NotificarAsync(s.SolicitanteId, TiposNotificacion.SolicitudRechazada,
+                $"La publicación \"{p.Titulo}\" fue cancelada por su propietario.", s.Id);
     }
 
     // ---------------- Impulso y estadísticas ----------------

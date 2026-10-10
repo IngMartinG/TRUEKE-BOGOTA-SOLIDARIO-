@@ -7234,6 +7234,13 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "interesados": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "yaSolicite": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -7527,6 +7534,9 @@
             "nullable": true
           },
           "puedoCalificar": {
+            "type": "boolean"
+          },
+          "enEspera": {
             "type": "boolean"
           }
         },

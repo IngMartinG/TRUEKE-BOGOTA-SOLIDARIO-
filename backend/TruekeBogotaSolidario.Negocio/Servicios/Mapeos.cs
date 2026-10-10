@@ -57,7 +57,7 @@ internal static class Mapeos
     /// <paramref name="vistas"/> (rendimiento) y el próximo impulso solo se envían al dueño.
     /// </summary>
     public static PublicacionDto APublicacionDto(Publicacion p, Guid? actorId, bool veExacto, bool veModeracion, DateTime ahora,
-        bool esFavorita = false, int? vistas = null)
+        bool esFavorita = false, int? vistas = null, int interesados = 0, bool yaSolicite = false)
     {
         var esMia = actorId.HasValue && p.PropietarioId == actorId.Value;
         double? lat = p.Latitud, lon = p.Longitud;
@@ -76,7 +76,8 @@ internal static class Mapeos
             vigente ? p.DestacadaHasta : null, APerfilPublico(p.Propietario!, ahora), esMia, esFavorita, p.EstaOculta && verMotivo,
             verMotivo ? p.MotivoOcultamiento : null,
             p.Condicion.ToString(), p.DetalleCondicion, p.MunicipioCodigo, Divipola.NombreCompleto(p.MunicipioCodigo), p.DepartamentoCodigo,
-            esMia ? vistas ?? 0 : null, esMia ? p.ProximoImpulsoPosible : null);
+            esMia ? vistas ?? 0 : null, esMia ? p.ProximoImpulsoPosible : null,
+            p.Estado == EstadoPublicacionEnum.Disponible ? interesados : 0, yaSolicite);
     }
 
     public static DatosFacturacionDto ADatosFacturacion(Usuario u)
