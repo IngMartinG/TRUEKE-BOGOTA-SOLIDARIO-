@@ -31,7 +31,7 @@ public class PagosIdempotenciaTests
         var entorno = new EntornoNegocio(pasarela);
         var sesion = await entorno.RegistrarAsync("pagador");
         var pago = await entorno.EnScopeAsync<IPagoService, PagoIniciadoDto>(p => p.IniciarAsync(sesion.Usuario.Id,
-            new IniciarPagoRequest { Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = montoCop }));
+            new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = montoCop }));
         return (entorno, pasarela, sesion.Usuario.Id, pago);
     }
 

@@ -164,9 +164,9 @@ public class SqlServerTests : IClassFixture<SqlServerFixture>
             var pago = await (await c.PostAsJsonAsync("/api/v1/pagos/iniciar", cuerpo)).Content.ReadFromJsonAsync<JsonElement>();
             (await c.PostAsync($"/api/v1/pagos/{pago.GetProperty("referencia").GetString()}/simular?aprobado=true", null)).EnsureSuccessStatusCode();
         }
-        await PagarAsync(new { concepto = "Recarga", montoRecargaCop = 2000 });
+        await PagarAsync(new { concepto = "Recarga", montoRecargaCop = 2000, facturaANombre = false, aceptoConsumidorFinal = true });
         Assert.Equal(HttpStatusCode.OK, (await c.PostAsync($"/api/v1/publicaciones/{pub}/impulsar", null)).StatusCode);
-        await PagarAsync(new { concepto = "Premium" });
+        await PagarAsync(new { concepto = "Premium", facturaANombre = false, aceptoConsumidorFinal = true });
         var facturas = await c.GetFromJsonAsync<JsonElement>("/api/v1/cuenta/facturas");
         Assert.Equal(2, facturas.GetArrayLength());
 
@@ -215,6 +215,33 @@ public class SqlServerTests : IClassFixture<SqlServerFixture>
         ub.ActualizarPerfil("Segundo Cambio", "Usme");
         await new UnidadDeTrabajo(a).GuardarCambiosAsync();
         await Assert.ThrowsAsync<ConflictoDeConcurrenciaException>(() => new UnidadDeTrabajo(b).GuardarCambiosAsync());
+    }
+
+    [SkippableFact]
+    public async Task Reemplazar_una_factura_emitida_respeta_el_indice_de_factura_vigente()
+    {
+        Skip.IfNot(_sql.Disponible, _sql.MotivoNoDisponible);
+        await using var f = new FabricaApiSqlServer(_sql.NuevaBase());
+        var c = await Api.RegistrarAsync(f, "sqlfactura");
+        var pago = await (await c.PostAsJsonAsync("/api/v1/pagos/iniciar",
+            new { concepto = "Premium", facturaANombre = false, aceptoConsumidorFinal = true })).Content.ReadFromJsonAsync<JsonElement>();
+        (await c.PostAsync($"/api/v1/pagos/{pago.GetProperty("referencia").GetString()}/simular?aprobado=true", null)).EnsureSuccessStatusCode();
+        var factura = (await c.GetFromJsonAsync<JsonElement>("/api/v1/cuenta/facturas"))[0].GetProperty("id").GetGuid();
+
+        var super = Api.ConToken(f, await Api.LoginAsync(f, FabricaApi.CorreoSuper, FabricaApi.ClaveSuper));
+        (await super.PostAsJsonAsync($"/api/v1/admin/facturas/{factura}/emitida", new { numeroDian = "FE-9", cufe = new string('c', 96) })).EnsureSuccessStatusCode();
+        var cuerpo = new
+        {
+            comprador = new { tipoDocumento = "CC", documento = "1020304050", nombre = "Ana Prueba", correo = "ana@t.co", direccion = "Calle 10 # 20-30", municipioCodigo = "11001" },
+            motivo = "La persona pidió la factura a su nombre por PQR"
+        };
+        var r = await super.PutAsJsonAsync($"/api/v1/admin/facturas/{factura}/comprador", cuerpo);
+        Assert.True(r.IsSuccessStatusCode, await r.Content.ReadAsStringAsync()); // la transacción ordena las escrituras
+        var nueva = await r.Content.ReadFromJsonAsync<JsonElement>();
+        Assert.Equal("Pendiente", nueva.GetProperty("estado").GetString());
+        Assert.Equal(factura, nueva.GetProperty("reemplazaAId").GetGuid());
+        // la original ya no es vigente: no se puede reemplazar dos veces
+        Assert.Equal(HttpStatusCode.BadRequest, (await super.PutAsJsonAsync($"/api/v1/admin/facturas/{factura}/comprador", cuerpo)).StatusCode);
     }
 
     [SkippableFact]

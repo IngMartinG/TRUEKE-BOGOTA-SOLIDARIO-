@@ -71,6 +71,7 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.FacturacionMunicipioCodigo).HasMaxLength(5).IsUnicode(false);
             e.HasIndex(x => new { x.TipoCuenta, x.FechaVencimientoSuscripcion }); // recordatorios e ingresos recurrentes
             e.Ignore(x => x.TieneDatosFacturacion);
+            e.Ignore(x => x.DatosFacturacion);
             e.Ignore(x => x.EsVerificado);
             e.Ignore(x => x.TieneClave);
             e.Ignore(x => x.CalificacionPromedio);
@@ -321,6 +322,13 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.ProveedorTransaccionId).HasMaxLength(100);
             e.Property(x => x.NotaInterna).HasMaxLength(300);
             e.Ignore(x => x.MontoEnCentavos);
+            e.Ignore(x => x.DatosCompradorElegidos);
+            e.Property(x => x.CompradorTipoDocumento).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.CompradorDocumento).HasMaxLength(20);
+            e.Property(x => x.CompradorNombre).HasMaxLength(150);
+            e.Property(x => x.CompradorCorreo).HasMaxLength(160);
+            e.Property(x => x.CompradorDireccion).HasMaxLength(150);
+            e.Property(x => x.CompradorMunicipioCodigo).HasMaxLength(5).IsUnicode(false);
             e.HasIndex(x => x.Referencia).IsUnique();
             e.HasIndex(x => x.ProveedorTransaccionId).IsUnique().HasFilter("[ProveedorTransaccionId] IS NOT NULL");
             e.HasIndex(x => new { x.UsuarioId, x.Concepto, x.Estado });
@@ -350,7 +358,9 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.NotaInterna).HasMaxLength(300);
             e.HasOne<Pago>().WithMany().HasForeignKey(x => x.PagoId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => x.PagoId).IsUnique(); // una factura por pago (idempotencia)
+            // Una factura VIGENTE por pago (idempotencia); las anuladas o reemplazadas quedan como historial.
+            e.HasIndex(x => x.PagoId).IsUnique().HasFilter("[Estado] IN (N'Pendiente', N'Emitida')");
+            e.Property(x => x.MotivoCorreccion).HasMaxLength(300);
             e.HasIndex(x => new { x.UsuarioId, x.FechaUtc });
             e.HasIndex(x => new { x.Estado, x.FechaUtc });
             if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);

@@ -191,25 +191,30 @@ public class Usuario
     }
 
     // ---------------- Facturación electrónica ----------------
-    public bool TieneDatosFacturacion => FacturacionTipoDocumento.HasValue;
+    /// <summary>Tiene TODOS los datos que la DIAN exige para facturar a su nombre (los guardados antes sin dirección no cuentan).</summary>
+    public bool TieneDatosFacturacion => DatosFacturacion is not null;
+
+    /// <summary>Los datos fiscales completos, o null si faltan (se factura a consumidor final si así lo elige).</summary>
+    public DatosComprador? DatosFacturacion
+    {
+        get
+        {
+            if (FacturacionTipoDocumento is not { } tipo || string.IsNullOrWhiteSpace(FacturacionDireccion) || string.IsNullOrWhiteSpace(FacturacionMunicipioCodigo))
+                return null;
+            try { return DatosComprador.Crear(tipo, FacturacionDocumento, FacturacionNombre, FacturacionCorreo, FacturacionDireccion, FacturacionMunicipioCodigo); }
+            catch (ReglaDeNegocioException) { return null; }
+        }
+    }
 
     public void ActualizarDatosFacturacion(TipoDocumentoFiscal tipo, string documento, string nombre, string correo, string? direccion, string? municipioCodigo)
     {
-        if (!Enum.IsDefined(tipo)) throw new ReglaDeNegocioException("Tipo de documento no válido.");
-        var doc = DocumentosFiscales.Normalizar(tipo, documento);
-        var n = (nombre ?? "").Trim();
-        if (n.Length is < 3 or > 150 || n.Any(char.IsControl)) throw new ReglaDeNegocioException("El nombre o razón social debe tener entre 3 y 150 caracteres.");
-        var c = NormalizarCorreo(correo);
-        if (c.Length is < 5 or > 160 || !c.Contains('@')) throw new ReglaDeNegocioException("El correo para la factura no es válido.");
-        var dir = string.IsNullOrWhiteSpace(direccion) ? null : direccion.Trim();
-        if (dir is { Length: > 150 } || dir?.Any(char.IsControl) == true) throw new ReglaDeNegocioException("La dirección admite como máximo 150 caracteres.");
-        var mpio = string.IsNullOrWhiteSpace(municipioCodigo) ? null : Divipola.Exigir(municipioCodigo).Codigo;
-        FacturacionTipoDocumento = tipo;
-        FacturacionDocumento = doc;
-        FacturacionNombre = n;
-        FacturacionCorreo = c;
-        FacturacionDireccion = dir;
-        FacturacionMunicipioCodigo = mpio;
+        var d = DatosComprador.Crear(tipo, documento, nombre, correo, direccion, municipioCodigo); // todos obligatorios
+        FacturacionTipoDocumento = d.TipoDocumento;
+        FacturacionDocumento = d.Documento;
+        FacturacionNombre = d.Nombre;
+        FacturacionCorreo = d.Correo;
+        FacturacionDireccion = d.Direccion;
+        FacturacionMunicipioCodigo = d.MunicipioCodigo;
     }
 
     public void BorrarDatosFacturacion()

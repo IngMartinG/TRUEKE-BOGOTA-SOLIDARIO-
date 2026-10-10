@@ -75,6 +75,14 @@ public sealed class AdministracionController : ControllerBase
     public async Task<ActionResult<FacturaAdminDto>> FacturaEmitida(Guid id, [FromBody] EmitirFacturaRequest r)
         => Ok(await _admin.MarcarFacturaEmitidaAsync(User.IdActual(), id, r.NumeroDian, r.Cufe));
 
+    /// <summary>
+    /// SuperUsuario: la persona necesita la factura a su nombre (se equivocó al elegir o hubo un error). Si la factura está
+    /// pendiente se corrige; si ya se emitió, queda "Reemplazada" (para nota crédito) y se crea otra pendiente. Devuelve la vigente.
+    /// </summary>
+    [HttpPut("facturas/{id:guid}/comprador"), Authorize(Policy = Politicas.SuperUsuario)]
+    public async Task<ActionResult<FacturaAdminDto>> CorregirCompradorFactura(Guid id, [FromBody] CorregirCompradorFacturaRequest r)
+        => Ok(await _admin.CorregirCompradorFacturaAsync(User.IdActual(), id, r));
+
     /// <summary>CSV (separado por ";") con los datos del comprador, para cargar las facturas en el sistema de facturación.</summary>
     [HttpGet("facturas.csv"), Authorize(Policy = Politicas.Moderador)]
     public async Task<IActionResult> FacturasCsv([FromQuery] EstadoFacturaDto estado = EstadoFacturaDto.Pendiente)
