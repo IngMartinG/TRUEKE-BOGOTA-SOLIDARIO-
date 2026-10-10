@@ -14,7 +14,7 @@ import { SubidasService } from '../../core/subidas.service';
 import { CopPipe, FechaPipe, NumeroPipe } from '../../shared/pipes';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
-import { abrirCheckoutWompi, esOrigenLocal, urlCheckoutWompi } from './wompi';
+import { abrirCheckoutWompi, esOrigenLocal, urlCheckoutWompi, urlRetornoPago } from './wompi';
 
 interface Servicio {
   concepto: Exclude<ConceptoPagoDto, 'Recarga'>;
@@ -464,7 +464,7 @@ export default class EcoPuntos {
           this.avisos.info('Completa el pago en la pestaña de Wompi', 'Esta página se actualiza sola cuando Wompi lo apruebe.');
           await this.router.navigate(['/pagos', pago.referencia]);
         } else {
-          abrirCheckoutWompi(pago, `${window.location.origin}/pagos/${encodeURIComponent(pago.referencia ?? '')}`);
+          abrirCheckoutWompi(pago, urlRetornoPago(pago.referencia ?? ''));
         }
       } else {
         pestana?.close();
