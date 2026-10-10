@@ -28,7 +28,7 @@ import { Icono } from './shared/ui/icono';
       <div class="border-b border-sol-300/50 bg-sol-50 dark:bg-sol-500/10">
         <div class="contenedor flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2.5 text-center text-sm">
           <app-icono nombre="correo" [tamano]="16" class="text-sol-600" />
-          <span>Confirma tu correo para publicar, solicitar y chatear.</span>
+          <span>Confirma tu correo para activar tu cuenta. Mientras tanto solo puedes explorar el catálogo.</span>
           <a routerLink="/verifica-tu-correo" class="enlace">Ver cómo</a>
         </div>
       </div>

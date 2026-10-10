@@ -47,8 +47,13 @@ export class BarraMovil {
   private readonly sesion = inject(SesionService);
   private readonly tiempoReal = inject(TiempoRealService);
 
+  /** Con sesión y correo verificado: la barra completa. Sin verificar, la misma que un visitante. */
+  private completa(): boolean {
+    return this.sesion.autenticado() && this.sesion.correoVerificado();
+  }
+
   protected izquierda() {
-    return this.sesion.autenticado()
+    return this.completa()
       ? [
           { ruta: '/explorar', texto: 'Explorar', icono: 'brujula' },
           { ruta: '/intercambios', texto: 'Trueques', icono: 'apreton' },
@@ -60,14 +65,16 @@ export class BarraMovil {
   }
 
   protected derecha(): { ruta: string; texto: string; icono: string; contador?: () => number }[] {
-    return this.sesion.autenticado()
-      ? [
-          { ruta: '/mensajes', texto: 'Mensajes', icono: 'mensaje', contador: this.tiempoReal.mensajesNoLeidos },
-          { ruta: '/cuenta', texto: 'Cuenta', icono: 'usuario' },
-        ]
-      : [
-          { ruta: '/eco-puntos', texto: 'Eco-Puntos', icono: 'moneda' },
-          { ruta: '/ingresar', texto: 'Ingresar', icono: 'usuario' },
-        ];
+    if (this.completa())
+      return [
+        { ruta: '/mensajes', texto: 'Mensajes', icono: 'mensaje', contador: this.tiempoReal.mensajesNoLeidos },
+        { ruta: '/cuenta', texto: 'Cuenta', icono: 'usuario' },
+      ];
+    return [
+      { ruta: '/eco-puntos', texto: 'Eco-Puntos', icono: 'moneda' },
+      this.sesion.autenticado()
+        ? { ruta: '/verifica-tu-correo', texto: 'Confirmar', icono: 'correo' }
+        : { ruta: '/ingresar', texto: 'Ingresar', icono: 'usuario' },
+    ];
   }
 }
