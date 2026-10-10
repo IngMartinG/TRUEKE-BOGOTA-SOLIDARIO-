@@ -33,6 +33,15 @@ import { Icono } from './shared/ui/icono';
         </div>
       </div>
     }
+    @if (config.pagosDePrueba()) {
+      <div class="border-b border-cielo-100 bg-cielo-50 dark:border-cielo-700/40 dark:bg-cielo-700/20" role="note">
+        <div class="contenedor flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2 text-center text-sm">
+          <app-icono nombre="info" [tamano]="16" class="text-cielo-600" />
+          <span><strong>Sitio de demostración:</strong> los pagos están en modo de prueba y no se cobra dinero real.</span>
+          <a routerLink="/eco-puntos" fragment="pagos-de-prueba" class="enlace">Cómo probar</a>
+        </div>
+      </div>
+    }
 
     <main id="contenido" class="min-h-[60vh]" tabindex="-1">
       <router-outlet />
