@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, ElementRef, input, model, signal, viewChild } from '@angular/core';
-import { urlPublica } from '../imagenes';
+import { miniatura, urlPublica, usarOriginal } from '../imagenes';
 import { Icono } from './icono';
 
 /**
@@ -62,7 +62,7 @@ import { Icono } from './icono';
               <button type="button" class="size-14 shrink-0 overflow-hidden rounded-lg border-2 transition"
                 [class]="i === indice() ? 'border-white' : 'border-transparent opacity-60 hover:opacity-100'"
                 (click)="ir(i)" [attr.aria-label]="'Ver foto ' + (i + 1)" [attr.aria-current]="i === indice()">
-                <img [src]="url(img)" alt="" class="size-full object-cover" loading="lazy" referrerpolicy="no-referrer" />
+                <img [src]="url(miniatura(img))" alt="" class="size-full object-cover" loading="lazy" referrerpolicy="no-referrer" (error)="usarOriginal($event, img)" />
               </button>
             }
           </nav>
@@ -94,6 +94,9 @@ export class VisorImagenes {
   protected url(img: string): string {
     return urlPublica(img);
   }
+
+  protected readonly miniatura = miniatura;
+  protected readonly usarOriginal = usarOriginal;
 
   protected ir(i: number): void {
     this.indice.set(i);

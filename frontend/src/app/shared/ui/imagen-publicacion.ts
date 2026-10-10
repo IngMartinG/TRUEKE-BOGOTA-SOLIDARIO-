@@ -1,25 +1,28 @@
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, linkedSignal } from '@angular/core';
 import { iconoCategoria } from '../../api/tipos';
-import { urlPublica } from '../imagenes';
+import { miniatura, urlPublica } from '../imagenes';
 import { Icono } from './icono';
 
-/** Foto de la publicación o, si no tiene (o falla), una ilustración según categoría y modo. */
+/**
+ * Foto de la publicación o, si no tiene (o falla), una ilustración según categoría y modo.
+ * Con `miniatura`, primero intenta la versión liviana (tarjetas y listas) y, si no existe, la foto original.
+ */
 @Component({
   selector: 'app-imagen-publicacion',
   imports: [Icono],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block overflow-hidden' },
   template: `
-    @if (src() && !fallo()) {
+    @if (url(); as u) {
       <img
-        [src]="url()"
+        [src]="u"
         [alt]="alt()"
         loading="lazy"
         decoding="async"
         referrerpolicy="no-referrer"
         class="size-full object-cover transition duration-500"
         [class]="claseImagen()"
-        (error)="fallo.set(true)"
+        (error)="intento.set(intento() + 1)"
       />
     } @else {
       <div class="relative grid size-full place-items-center overflow-hidden" [class]="fondo()">
@@ -37,8 +40,16 @@ export class ImagenPublicacion {
   readonly modo = input<string | null | undefined>('Trueke');
   readonly categoriaId = input<number | null | undefined>(null);
   readonly claseImagen = input('');
-  protected readonly fallo = signal(false);
-  protected readonly url = computed(() => urlPublica(this.src()));
+  readonly miniatura = input(false);
+  /** URLs a probar en orden; cada error de carga pasa a la siguiente y, al agotarlas, se muestra la ilustración. */
+  private readonly candidatas = computed(() => {
+    const src = this.src();
+    if (!src) return [];
+    const mini = this.miniatura() ? miniatura(src) : src;
+    return (mini === src ? [src] : [mini, src]).map((u) => urlPublica(u));
+  });
+  protected readonly intento = linkedSignal({ source: this.candidatas, computation: () => 0 });
+  protected readonly url = computed(() => this.candidatas()[this.intento()] ?? null);
   protected readonly icono = computed(() => iconoCategoria(this.categoriaId()));
   protected readonly fondo = computed(() => {
     switch (this.modo()) {

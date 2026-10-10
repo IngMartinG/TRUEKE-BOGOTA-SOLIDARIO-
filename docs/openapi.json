@@ -5213,6 +5213,14 @@
           },
           "pagosDePrueba": {
             "type": "boolean"
+          },
+          "imagenesOrigenUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "imagenesCdnUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

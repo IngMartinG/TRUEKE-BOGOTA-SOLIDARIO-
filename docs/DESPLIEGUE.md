@@ -47,6 +47,13 @@ Guía para publicar la plataforma completa. Hay dos fases: **gratis** (para la c
 4. *Seguridad y redes* → **Claves de acceso** → *Mostrar* → copiar la **cadena de conexión** → `Almacenamiento__CadenaConexion`.
 5. El host `truekefotos<algo>.blob.core.windows.net` va en `Urls__HostsPermitidosImagenes__0` y `Urls__HostsPermitidosDocumentos__0`.
 
+### 3.1 Miniaturas y CDN
+- **Miniaturas (sin costo extra):** cada foto se publica con una miniatura WEBP de 640 px (`…/abc.jpg` → `…/abc.min.webp`) que usan el catálogo, las listas y los avatares. Pesa unas decenas de KB, contra cientos de KB de la foto grande. Al arrancar, la API crea sola las miniaturas que falten (fotos anteriores). No hay que configurar nada.
+- **CDN (opcional, apagada):** con `Almacenamiento__CdnUrl` (https, p. ej. `https://fotos.midominio.co`) y `Almacenamiento__ServicioUrl` (la URL de la cuenta), el front descarga las fotos desde la CDN. La base y la API siguen usando las URLs de Blob, así que se puede apagar en cualquier momento quitando la variable. Si el front corre en el contenedor nginx, agregar el host de la CDN a `CSP_IMG_EXTRA`.
+  - **Gratis:** Cloudflare (plan Free) delante del dominio propio: un subdominio `fotos` en modo proxy apuntando a `truekefotos<algo>.blob.core.windows.net` (con regla de *Host header* hacia la cuenta). Requiere el dominio propio.
+  - **De pago:** Azure Front Door Standard (~US$35/mes + tráfico). La CDN "clásica" de Azure ya no admite perfiles nuevos.
+  - Las fotos y miniaturas ya salen con `Cache-Control: public, max-age=31536000, immutable`, así que cualquier CDN las guarda un año sin configuración extra.
+
 ## 4. API en Render
 1. Render → **New** → **Blueprint** → elegir el repositorio `TRUEKE-BOGOTA-SOLIDARIO-`. Render lee [`render.yaml`](../render.yaml) y muestra el servicio `trueke-api`.
 2. Render pide los valores marcados como secretos. Llenarlos con lo de los pasos 2, 3 y 5 (reCAPTCHA, correo, Wompi). `Jwt__Key` y `Seguridad__ClaveCifrado` los genera Render solo. → **Apply**.

@@ -69,6 +69,8 @@ public sealed class AlmacenFalso : IAlmacenArchivos
         return Task.CompletedTask;
     }
 
+    public Task<int> GenerarMiniaturasFaltantesAsync(CancellationToken ct = default) => Task.FromResult(0);
+
     public bool Existe(string url) => _blobs.ContainsKey(url);
 
     public static byte[] Png(int tamano = 100)
