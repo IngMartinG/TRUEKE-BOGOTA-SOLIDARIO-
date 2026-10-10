@@ -72,4 +72,14 @@ public class ProcesadorImagenesTests
         new byte[] { 0xFF, 0xD8, 0xFF }.CopyTo(falso, 0); // firma JPEG, contenido basura
         await Assert.ThrowsAsync<ReglaDeNegocioException>(() => ProcesadorImagenes.LimpiarAsync(new MemoryStream(falso), "jpg"));
     }
+
+    [Fact]
+    public async Task Rechaza_un_TIFF_valido_aunque_venga_con_extension_de_foto()
+    {
+        // TIFF tiene vulnerabilidades conocidas en ImageSharp 3.1: el procesador ni siquiera debe intentar decodificarlo.
+        using var img = new Image<Rgba32>(20, 20);
+        using var ms = new MemoryStream();
+        img.SaveAsTiff(ms);
+        await Assert.ThrowsAsync<ReglaDeNegocioException>(() => ProcesadorImagenes.LimpiarAsync(new MemoryStream(ms.ToArray()), "jpg"));
+    }
 }

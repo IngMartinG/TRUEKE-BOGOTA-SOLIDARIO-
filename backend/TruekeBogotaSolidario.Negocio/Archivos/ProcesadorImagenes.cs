@@ -23,18 +23,28 @@ public static class ProcesadorImagenes
     public const int DimensionMaximaEntrada = 12_000;
     public const long PixelesMaximosEntrada = 60_000_000;
 
+    /// <summary>
+    /// Solo se registran los decodificadores de JPEG, PNG y WEBP. La configuración por defecto de ImageSharp también
+    /// reconoce TIFF, BMP, GIF, TGA, etc. aunque la extensión diga otra cosa, y eso abre vulnerabilidades de formatos que
+    /// la plataforma no acepta (p. ej. GHSA-wmxv-xphr-5c9g, GHSA-j9gm-c75j-xc9q y GHSA-jjfr-hcj7-qf5w, todas de TIFF).
+    /// </summary>
+    private static readonly Configuration SoloFotos = new(
+        new JpegConfigurationModule(), new PngConfigurationModule(), new WebpConfigurationModule());
+
+    private static readonly DecoderOptions OpcionesDecodificacion = new() { Configuration = SoloFotos, MaxFrames = 1 };
+
     public static async Task<byte[]> LimpiarAsync(Stream entrada, string extension, CancellationToken ct = default)
     {
         ArgumentNullException.ThrowIfNull(entrada);
         try
         {
-            var info = await Image.IdentifyAsync(entrada, ct); // solo lee la cabecera
+            var info = await Image.IdentifyAsync(OpcionesDecodificacion, entrada, ct); // solo lee la cabecera
             if (info.Width <= 0 || info.Height <= 0 || info.Width > DimensionMaximaEntrada || info.Height > DimensionMaximaEntrada
                 || (long)info.Width * info.Height > PixelesMaximosEntrada)
                 throw new ReglaDeNegocioException("La imagen es demasiado grande. Usa una foto de máximo 12.000 píxeles por lado.");
 
             entrada.Position = 0;
-            using var imagen = await Image.LoadAsync(new DecoderOptions { MaxFrames = 1 }, entrada, ct);
+            using var imagen = await Image.LoadAsync(OpcionesDecodificacion, entrada, ct);
             imagen.Mutate(x =>
             {
                 x.AutoOrient(); // usa la orientación del EXIF ANTES de borrarlo (si no, las fotos verticales quedarían de lado)
@@ -59,11 +69,15 @@ public static class ProcesadorImagenes
         imagen.Metadata.ExifProfile = null;
         imagen.Metadata.IptcProfile = null;
         imagen.Metadata.XmpProfile = null;
+        // El perfil ICC se descarta sin leer sus tablas (GHSA-gwg2-r3hj-4w44 está en el análisis de las tablas CLUT)
+        // y además puede identificar el dispositivo. La foto queda en sRGB, el espacio de color por defecto.
+        imagen.Metadata.IccProfile = null;
         foreach (var cuadro in imagen.Frames)
         {
             cuadro.Metadata.ExifProfile = null;
             cuadro.Metadata.IptcProfile = null;
             cuadro.Metadata.XmpProfile = null;
+            cuadro.Metadata.IccProfile = null;
         }
     }
 
