@@ -30,7 +30,7 @@ SuperUsuario: martincolombia15@gmail.com (con 2FA).
 ## Decisiones y reglas técnicas vigentes
 - Los Eco-Puntos se otorgan solo al completarse el intercambio (ambas partes confirman la entrega).
 - Administración exige sesión con 2FA (`amr=mfa`). Publicar, solicitar, comentar, chatear, denunciar y pagar exigen correo verificado (`Guardas.ExigirCorreoVerificado`).
-- La API nunca comparte correos entre usuarios (se usa el chat). Los archivos se suben directo a Blob con SAS y se validan al usarlos; `ProcesadorImagenes` (ImageSharp 3.1, NO subir a 4: exige llave) quita EXIF/GPS.
+- La API nunca comparte correos entre usuarios (se usa el chat). Los archivos se suben directo a Blob con SAS y se validan al usarlos; `ProcesadorImagenes` (SkiaSharp + `NativeAssets.Linux.NoDependencies`; ImageSharp descartado: la v3 tiene avisos sin parche y la v4 exige llave) re-codifica la foto, aplica la orientación y quita EXIF/GPS. Solo acepta JPEG, PNG y WEBP.
 - La clave JWT es `Jwt:Key` (variable `Jwt__Key`). La sesión solo se cierra con 401/403 al refrescar (candado entre pestañas en el front).
 - Escala Colombia (DANE-DIVIPOLA, Bogotá = 11001); la marca sigue siendo "Trueke Bogotá Solidario" (decisión del dueño). Logo oficial en `frontend/public/logo-emblema.png` y `logo-completo.png`.
 - Anti-farmeo: correo canónico único, correos desechables bloqueados, misma pareja suma 1 vez cada 30 días.

@@ -13,10 +13,10 @@ updates:
         patterns: ["Microsoft.*", "System.*"]
       pruebas:
         patterns: ["xunit*", "coverlet*", "Testcontainers*", "Microsoft.NET.Test.Sdk"]
+      # SkiaSharp y sus binarios nativos deben tener exactamente la misma versión.
+      skiasharp:
+        patterns: ["SkiaSharp*"]
     ignore:
-      # ImageSharp 4 exige una llave de licencia al compilar en Release; se queda en la rama 3.1 (parches de seguridad sí).
-      - dependency-name: SixLabors.ImageSharp
-        update-types: ["version-update:semver-major"]
       # El proyecto es .NET 8 (LTS). EF Core y Microsoft.Extensions 9/10 exigen otro runtime: se migra a propósito, no por Dependabot.
       - dependency-name: "Microsoft.EntityFrameworkCore*"
         update-types: ["version-update:semver-major"]
