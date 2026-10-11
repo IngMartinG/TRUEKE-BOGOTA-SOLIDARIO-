@@ -120,7 +120,7 @@ public class EntregaTests
             e.EnScopeAsync<ISolicitudService, CalificacionDto>(s => s.CalificarAsync(solicitante, sol, new CalificarRequest { Estrellas = 1 })));
         await e.EnScopeAsync<ISolicitudService, CalificacionDto>(s => s.CalificarAsync(duenio, sol, new CalificarRequest { Estrellas = 2 }));
 
-        var perfil = await e.EnScopeAsync<IPublicacionService, PerfilUsuarioDto>(s => s.ObtenerPerfilAsync(duenio));
+        var perfil = await e.EnScopeAsync<IPublicacionService, PerfilUsuarioDto>(s => s.ObtenerPerfilAsync(null, duenio));
         Assert.Equal(4.0m, perfil.CalificacionPromedio);
         Assert.Equal(1, perfil.TotalCalificaciones);
         var lista = await e.EnScopeAsync<ISolicitudService, PaginaDto<CalificacionDto>>(s => s.ListarCalificacionesAsync(duenio, 1, 20));
