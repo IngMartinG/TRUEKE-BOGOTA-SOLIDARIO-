@@ -27,9 +27,13 @@ public sealed class ComentarioService : IComentarioService
     private readonly INotificador _notificador;
     private readonly ILogger<ComentarioService> _log;
 
+    private readonly ISesionModeracion _sesionModeracion;
+
     public ComentarioService(IComentarioRepository comentarios, IPublicacionRepository pubs, IUsuarioRepository usuarios,
-        IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, TimeProvider reloj, INotificador notificador, ILogger<ComentarioService> log)
+        IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, TimeProvider reloj, INotificador notificador, ILogger<ComentarioService> log,
+        ISesionModeracion sesionModeracion)
     {
+        _sesionModeracion = sesionModeracion;
         _comentarios = comentarios; _pubs = pubs; _usuarios = usuarios; _auditoria = auditoria; _uow = uow; _reloj = reloj;
         _notificador = notificador; _log = log;
     }
@@ -41,7 +45,8 @@ public sealed class ComentarioService : IComentarioService
     {
         var pub = await _pubs.ObtenerPorIdAsync(publicacionId) ?? throw new NoEncontradoException("Publicación no encontrada.");
         var actor = actorId.HasValue ? await _usuarios.ObtenerPorIdAsync(actorId.Value) : null;
-        var esModerador = actor is not null && actor.Rol >= RolUsuarioEnum.Administrador;
+        // Ver lo oculto exige el rol Y una sesión con 2FA (la misma regla que las rutas de administración)
+        var esModerador = actor is not null && actor.Rol >= RolUsuarioEnum.Administrador && _sesionModeracion.ConDosFactores;
         var esDuenio = actor is not null && pub.PropietarioId == actor.Id;
         var visible = !pub.EstaOculta && pub.Estado is EstadoPublicacionEnum.Disponible or EstadoPublicacionEnum.EnNegociacion;
         if (!visible && !esDuenio && !esModerador) throw new NoEncontradoException("Publicación no encontrada.");

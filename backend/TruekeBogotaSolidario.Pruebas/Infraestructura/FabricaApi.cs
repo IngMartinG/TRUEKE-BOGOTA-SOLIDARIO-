@@ -8,7 +8,7 @@ using TruekeBogotaSolidario.Negocio.Correo;
 namespace TruekeBogotaSolidario.Pruebas.Infraestructura;
 
 /// <summary>
-/// Levanta la API real en memoria (entorno "Testing") con base InMemory aislada por instancia y pagos simulados.
+/// Levanta la API real en memoria (entorno "Local", como docker compose y las E2E) con base InMemory aislada por instancia y pagos simulados.
 /// Se usa UseSetting porque Program.cs lee la configuración ANTES de Build().
 /// </summary>
 public class FabricaApi : WebApplicationFactory<Program>
@@ -23,7 +23,7 @@ public class FabricaApi : WebApplicationFactory<Program>
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Testing");
+        builder.UseEnvironment("Local");
         builder.UseSetting("Database:Provider", "InMemory");
         builder.UseSetting("Database:NombreInMemory", _nombreBd);
         builder.UseSetting("Database:Inicializacion", "EnsureCreated");

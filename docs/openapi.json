@@ -2193,6 +2193,25 @@
         "tags": [
           "DosFactores"
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmarIdentidadRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmarIdentidadRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmarIdentidadRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -5350,6 +5369,12 @@
             "type": "string",
             "nullable": true
           },
+          "googleIdToken": {
+            "maxLength": 4096,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
           "claveNueva": {
             "maxLength": 128,
             "minLength": 8,
@@ -5594,6 +5619,23 @@
             "nullable": true
           },
           "pushClavePublica": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConfirmarIdentidadRequest": {
+        "type": "object",
+        "properties": {
+          "clave": {
+            "maxLength": 128,
+            "type": "string",
+            "nullable": true
+          },
+          "googleIdToken": {
+            "maxLength": 4096,
+            "minLength": 0,
             "type": "string",
             "nullable": true
           }

@@ -36,8 +36,11 @@ public static class NegocioServiceCollectionExtensions
         if (!pagos.EsSimulado)
         {
             var w = pagos.Wompi;
-            if (string.IsNullOrWhiteSpace(w.LlavePublica) || string.IsNullOrWhiteSpace(w.SecretoIntegridad) || string.IsNullOrWhiteSpace(w.SecretoEventos))
-                throw new InvalidOperationException("Pagos:Wompi requiere LlavePublica, SecretoIntegridad y SecretoEventos (o usa Pagos:Proveedor=Simulado solo en desarrollo).");
+            // Sin la llave privada, la consulta de transacciones a Wompi falla: los pagos pendientes nunca se resolverían
+            // (ni vencerían devolviendo los puntos reservados).
+            if (string.IsNullOrWhiteSpace(w.LlavePublica) || string.IsNullOrWhiteSpace(w.LlavePrivada)
+                || string.IsNullOrWhiteSpace(w.SecretoIntegridad) || string.IsNullOrWhiteSpace(w.SecretoEventos))
+                throw new InvalidOperationException("Pagos:Wompi requiere LlavePublica, LlavePrivada, SecretoIntegridad y SecretoEventos (o usa Pagos:Proveedor=Simulado solo en desarrollo).");
             if (!Uri.TryCreate(w.BaseUrl, UriKind.Absolute, out var u) || u.Scheme != Uri.UriSchemeHttps)
                 throw new InvalidOperationException("Pagos:Wompi:BaseUrl debe ser https.");
             services.AddHttpClient<IProveedorPagos, ProveedorPagosWompi>(c => c.Timeout = TimeSpan.FromSeconds(10));
@@ -87,7 +90,8 @@ public static class NegocioServiceCollectionExtensions
 
         services.TryAddSingleton(TimeProvider.System);
         services.TryAddSingleton<IEmisorTiempoReal, EmisorTiempoRealNulo>(); // Presentacion lo reemplaza por SignalR
-        services.TryAddSingleton<IPresencia, PresenciaEnMemoria>();          // con Redis, Presentacion usa la distribuida
+        services.TryAddSingleton<IPresencia, PresenciaEnMemoria>();
+        services.TryAddScoped<ISesionModeracion, SesionModeracionSinPeticion>(); // Presentacion la lee del JWT de la petición          // con Redis, Presentacion usa la distribuida
         services.AddScoped<INotificador, NotificadorPersistente>();
         services.AddScoped<INotificacionService, NotificacionService>();
         services.AddScoped<IChatService, ChatService>();
@@ -102,6 +106,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<IVistaPreviaService, VistaPreviaService>();
         services.AddSingleton<ICifradorSecretos, CifradorAesGcm>();
         services.AddScoped<VerificadorDosFactores>();
+        services.AddScoped<ConfirmadorIdentidad>();
         services.AddScoped<IDosFactoresService, DosFactoresService>();
 
         // Archivos: Azure Blob si está configurado; si no, deshabilitado (las URLs se validan solo por host permitido)

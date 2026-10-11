@@ -31,6 +31,7 @@ public sealed class EntornoNegocio : IDisposable
             ["Pagos:Proveedor"] = proveedor is null ? "Simulado" : "Wompi",
             ["Pagos:Wompi:BaseUrl"] = "https://sandbox.wompi.co/v1",
             ["Pagos:Wompi:LlavePublica"] = "pub_test_x",
+            ["Pagos:Wompi:LlavePrivada"] = "prv_test_x",
             ["Pagos:Wompi:SecretoIntegridad"] = "integridad-pruebas",
             ["Pagos:Wompi:SecretoEventos"] = SecretoEventos,
             ["Correo:Proveedor"] = "Simulado",
