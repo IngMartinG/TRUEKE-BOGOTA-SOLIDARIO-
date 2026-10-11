@@ -6,7 +6,7 @@
 #     confía el contenedor de la API).
 #   - Azure Blob → Azurite. Escucha en 127.0.0.2 DENTRO del contenedor de la API (comparte su red) y se publica en el
 #     equipo: así las URLs de las fotos son de loopback (las únicas http que acepta la API) y el navegador las alcanza.
-#   - Wompi → pagos simulados (ya es el valor por defecto del compose en Staging).
+#   - Wompi → pagos simulados (ya es el valor por defecto del compose en el entorno Local).
 
 services:
   # CA de un solo uso: emite el certificado de Mailpit y publica su lista de revocación (CRL) por HTTP, como una CA

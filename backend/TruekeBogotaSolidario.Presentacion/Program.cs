@@ -15,7 +15,9 @@ using TruekeBogotaSolidario.Presentacion.TiempoReal;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
-var esProduccion = builder.Environment.IsProduction();
+// Toda la configuración de producción se exige en CUALQUIER entorno publicado (Production, Staging…). Solo se relaja en
+// Development y en "Local" (docker compose y E2E en la propia máquina, con correo y pagos simulados).
+var esProduccion = !builder.Environment.IsDevelopment() && !builder.Environment.IsEnvironment("Local");
 
 // En Development, si no hay Jwt:Key en user-secrets se genera una efímera (los tokens dejan de valer al reiniciar).
 // Fuera de Development NUNCA se genera: si falta, la validación de JwtOpciones impide arrancar.
@@ -46,6 +48,8 @@ if (esProduccion)
         throw new InvalidOperationException("Urls:Frontend debe ser la URL https del front (los enlaces de los correos apuntan ahí).");
     if (string.Equals(config["Facturacion:Modo"], "Simulado", StringComparison.OrdinalIgnoreCase))
         throw new InvalidOperationException("Facturacion:Modo=Simulado no está permitido en Producción (usa Manual: el equipo registra número y CUFE de la DIAN).");
+    if (string.Equals(config["Seguridad:ExigirDosFactoresModeradores"], "false", StringComparison.OrdinalIgnoreCase))
+        throw new InvalidOperationException("Seguridad:ExigirDosFactoresModeradores=false no está permitido en Producción: moderar exige sesión con 2FA.");
 }
 
 // ---------- Kestrel: sin cabecera Server, cuerpo máximo 1 MB ----------
@@ -62,6 +66,8 @@ var monitoreoActivo = TruekeBogotaSolidario.Presentacion.Monitoreo.Telemetria.Co
 // ---------- Negocio (que internamente registra Datos) ----------
 builder.Services.AddNegocio(config);
 builder.Services.AddAutenticacionJwt();
+builder.Services.AddHttpContextAccessor();
+builder.Services.Replace(ServiceDescriptor.Scoped<ISesionModeracion, SesionModeracionHttp>());
 
 // ---------- SignalR (notificaciones en tiempo real) + backplane Redis opcional ----------
 var signalR = builder.Services.AddSignalR(o =>

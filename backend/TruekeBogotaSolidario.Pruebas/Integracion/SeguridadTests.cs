@@ -109,6 +109,40 @@ public class SeguridadTests : IClassFixture<FabricaApi>
         Assert.Equal(HttpStatusCode.OK, (await Api.ConToken(_fabrica, nueva.Token).GetAsync("/api/v1/usuarios/yo")).StatusCode);
     }
 
+    private sealed class FabricaEnEntorno(string entorno, params (string Clave, string Valor)[] ajustes) : FabricaApi
+    {
+        protected override void ConfigureWebHost(IWebHostBuilder builder)
+        {
+            base.ConfigureWebHost(builder);
+            builder.UseEnvironment(entorno);
+            foreach (var (clave, valor) in ajustes) builder.UseSetting(clave, valor);
+        }
+    }
+
+    [Theory]
+    [InlineData("Staging")]     // un entorno publicado con otro nombre no se salta las validaciones de producción
+    [InlineData("Production")]
+    public void Fuera_de_Development_y_Local_no_arranca_con_pagos_simulados(string entorno)
+    {
+        using var f = new FabricaEnEntorno(entorno);
+        var ex = Assert.ThrowsAny<Exception>(() => f.CreateClient());
+        Assert.Contains("no está permitido en Producción", ex.ToString());
+    }
+
+    [Fact]
+    public void En_produccion_no_arranca_sin_exigir_2FA_a_los_moderadores()
+    {
+        using var f = new FabricaEnEntorno("Production",
+            ("Pagos:Proveedor", "Wompi"), ("Pagos:Wompi:LlavePublica", "pub_test_x"), ("Pagos:Wompi:LlavePrivada", "prv_test_x"),
+            ("Pagos:Wompi:SecretoIntegridad", "i"), ("Pagos:Wompi:SecretoEventos", "e"), ("Database:Provider", "SqlServer"),
+            ("Almacenamiento:CadenaConexion", "UseDevelopmentStorage=true"), ("Seguridad:ClaveCifrado", FabricaApi.ClaveCifradoPruebas),
+            ("Captcha:ClaveSecreta", "x"), ("Captcha:ClaveSitio", "x"), ("Correo:Proveedor", "Smtp"),
+            ("Urls:Frontend", "https://front.trueke.test"), ("Facturacion:Modo", "Manual"),
+            ("Seguridad:ExigirDosFactoresModeradores", "false"));
+        var ex = Assert.ThrowsAny<Exception>(() => f.CreateClient());
+        Assert.Contains("ExigirDosFactoresModeradores", ex.ToString());
+    }
+
     [Fact]
     public async Task Cambiar_la_clave_con_la_actual_equivocada_cuenta_para_el_bloqueo()
     {
