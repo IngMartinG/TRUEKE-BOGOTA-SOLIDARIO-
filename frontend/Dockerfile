@@ -8,7 +8,8 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
 COPY . .
-RUN npx ng build --configuration production
+RUN npx ng build --configuration production \
+ && node scripts/csp-hash-inline.mjs dist/trueke-web/browser/index.html > /app/csp-script-hashes
 
 # Etapa 2: servidor estático sin privilegios (usuario nginx, puerto 8080).
 FROM nginxinc/nginx-unprivileged:1.27-alpine
@@ -26,5 +27,7 @@ COPY docker/config.json.template /etc/trueke/config.json.template
 COPY --chmod=755 docker/05-trueke-config.envsh /docker-entrypoint.d/05-trueke-config.envsh
 # Los archivos servidos pertenecen a root (solo lectura para nginx). config.json se genera en /tmp al arrancar.
 COPY --from=compilacion /app/dist/trueke-web/browser /usr/share/nginx/html
+# Hashes CSP de los <script> en línea de index.html (el importmap con la integridad de los chunks)
+COPY --from=compilacion /app/csp-script-hashes /etc/trueke/csp-script-hashes
 EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://127.0.0.1:8080/salud || exit 1
