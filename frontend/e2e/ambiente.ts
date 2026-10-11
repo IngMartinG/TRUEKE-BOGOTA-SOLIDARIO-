@@ -44,7 +44,7 @@ function secretos(): Record<string, string> {
     JWT_KEY: randomBytes(48).toString('base64'),
     CLAVE_CIFRADO: randomBytes(32).toString('base64'),
     REDIS_PASSWORD: randomBytes(16).toString('hex'),
-    ASPNETCORE_ENVIRONMENT: 'Staging',
+    ASPNETCORE_ENVIRONMENT: 'Local',
   };
   return generados;
 }
