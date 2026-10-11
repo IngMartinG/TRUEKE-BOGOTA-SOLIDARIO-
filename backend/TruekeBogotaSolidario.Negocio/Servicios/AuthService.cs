@@ -50,14 +50,15 @@ public sealed class AuthService : IAuthService
     public AuthService(IUsuarioRepository usuarios, ISesionRefreshRepository refrescos, IUnidadDeTrabajo uow, EmisorSesiones emisor,
         ISesionService sesiones, IOptions<SeguridadOpciones> seg, IOptions<LegalOpciones> legal, CorreosCuenta correos,
         ICorreoSaliente salida, IValidadorGoogle google, IVerificadorCaptcha captcha, VerificadorDosFactores dosFactores,
-        TimeProvider reloj, ILogger<AuthService> log, IImportadorFotoPerfil importadorFoto)
+        TimeProvider reloj, ILogger<AuthService> log, IImportadorFotoPerfil importadorFoto, ISuscripcionPushRepository suscripcionesPush)
     {
         _usuarios = usuarios; _refrescos = refrescos; _uow = uow; _emisor = emisor; _sesiones = sesiones; _seg = seg.Value;
         _legal = legal.Value; _correos = correos; _salida = salida; _google = google; _captcha = captcha; _dosFactores = dosFactores;
-        _reloj = reloj; _log = log; _importadorFoto = importadorFoto;
+        _reloj = reloj; _log = log; _importadorFoto = importadorFoto; _suscripcionesPush = suscripcionesPush;
     }
 
     private readonly IImportadorFotoPerfil _importadorFoto;
+    private readonly ISuscripcionPushRepository _suscripcionesPush;
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
@@ -276,6 +277,8 @@ public sealed class AuthService : IAuthService
         var u = await CargarAsync(actorId);
         u.InvalidarSesiones();
         await _refrescos.RevocarTodasDelUsuarioAsync(u.Id, Ahora);
+        // Un celular perdido tampoco debe seguir recibiendo avisos de la cuenta.
+        foreach (var s in await _suscripcionesPush.DeUsuarioAsync(u.Id)) _suscripcionesPush.Quitar(s);
         await _uow.GuardarCambiosAsync();
         _sesiones.Invalidar(u.Id);
     }

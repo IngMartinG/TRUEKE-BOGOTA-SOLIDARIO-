@@ -12,7 +12,7 @@ namespace TruekeBogotaSolidario.Negocio.Servicios;
 public sealed record ConfiguracionPublicaDto(string? CaptchaClaveSitio, string? GoogleClientId, string VersionPoliticaDatos,
     bool SubidaArchivosHabilitada, int MaxImagenesPorPublicacion, long TamanoMaximoArchivoBytes,
     int DiasCierreConUnaConfirmacion, int DiasCierreSinConfirmacion, bool PagosDePrueba,
-    string? ImagenesOrigenUrl = null, string? ImagenesCdnUrl = null);
+    string? ImagenesOrigenUrl = null, string? ImagenesCdnUrl = null, string? PushClavePublica = null);
 
 public interface IConfiguracionService
 {
@@ -27,12 +27,13 @@ public sealed class ConfiguracionService : IConfiguracionService
     private readonly PagosOpciones _pagos;
     private readonly IAlmacenArchivos _almacen;
     private readonly AlmacenamientoOpciones _almacenamiento;
+    private readonly Push.PushOpciones _push;
 
     public ConfiguracionService(IOptions<CaptchaOpciones> captcha, IOptions<GoogleOpciones> google, IOptions<LegalOpciones> legal,
-        IOptions<PagosOpciones> pagos, IAlmacenArchivos almacen, IOptions<AlmacenamientoOpciones> almacenamiento)
+        IOptions<PagosOpciones> pagos, IAlmacenArchivos almacen, IOptions<AlmacenamientoOpciones> almacenamiento, IOptions<Push.PushOpciones> push)
     {
         _captcha = captcha.Value; _google = google.Value; _legal = legal.Value; _pagos = pagos.Value; _almacen = almacen;
-        _almacenamiento = almacenamiento.Value;
+        _almacenamiento = almacenamiento.Value; _push = push.Value;
     }
 
     /// <summary>Con CDN, el front reemplaza el prefijo de origen por el de la CDN al mostrar las fotos.</summary>
@@ -49,5 +50,6 @@ public sealed class ConfiguracionService : IConfiguracionService
         Limites.DiasCierreSinConfirmacion,
         _pagos.EsDePrueba,
         CdnActiva ? _almacenamiento.ServicioUrl.TrimEnd('/') + "/" : null,
-        CdnActiva ? _almacenamiento.CdnUrl.TrimEnd('/') + "/" : null);
+        CdnActiva ? _almacenamiento.CdnUrl.TrimEnd('/') + "/" : null,
+        _push.Habilitado && _push.Validas ? _push.ClavePublica : null);
 }

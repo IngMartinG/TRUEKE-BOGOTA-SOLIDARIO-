@@ -293,6 +293,17 @@ public interface IDenunciaRepository
     void AgregarApelacion(Apelacion apelacion);
 }
 
+public interface ISuscripcionPushRepository
+{
+    Task<SuscripcionPush?> PorEndpointAsync(string endpoint);
+    /// <summary>De la más reciente a la más antigua.</summary>
+    Task<IReadOnlyList<SuscripcionPush>> DeUsuarioAsync(Guid usuarioId);
+    void Agregar(SuscripcionPush s);
+    void Quitar(SuscripcionPush s);
+    /// <summary>Borra (y guarda) las suscripciones con esos Id: las que el servicio de push dio por vencidas.</summary>
+    Task EliminarAsync(IReadOnlyCollection<Guid> ids);
+}
+
 public interface IFavoritoRepository
 {
     Task<Favorito?> ObtenerAsync(Guid usuarioId, Guid publicacionId);

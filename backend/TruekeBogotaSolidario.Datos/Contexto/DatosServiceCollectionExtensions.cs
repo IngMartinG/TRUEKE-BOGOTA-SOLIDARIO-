@@ -40,6 +40,7 @@ public static class DatosServiceCollectionExtensions
         services.AddScoped<IConversacionRepository, ConversacionRepository>();
         services.AddScoped<IDenunciaRepository, DenunciaRepository>();
         services.AddScoped<IFavoritoRepository, FavoritoRepository>();
+        services.AddScoped<ISuscripcionPushRepository, SuscripcionPushRepository>();
         services.AddScoped<ICalificacionRepository, CalificacionRepository>();
         services.AddScoped<IFacturaRepository, FacturaRepository>();
         services.AddScoped<IPqrRepository, PqrRepository>();

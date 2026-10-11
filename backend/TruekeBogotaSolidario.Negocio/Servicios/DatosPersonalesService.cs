@@ -43,6 +43,7 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
     private readonly IFacturaRepository _facturas;
     private readonly IPqrRepository _pqrs;
     private readonly IBloqueoService _bloqueos;
+    private readonly ISuscripcionPushRepository _suscripcionesPush;
     private readonly ILogger<DatosPersonalesService> _log;
 
     public DatosPersonalesService(IUsuarioRepository usuarios, IPublicacionRepository pubs, ISolicitudRepository solicitudes,
@@ -51,9 +52,9 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         IUnidadDeTrabajo uow, IPublicacionService publicacionService, ISolicitudService solicitudService, IValidadorGoogle google,
         IAlmacenArchivos almacen, ISesionService sesiones, INotificador notificador, TimeProvider reloj,
         ICalificacionRepository calificaciones, IFavoritoRepository favoritos, IFacturaRepository facturas, IPqrRepository pqrs,
-        IBloqueoService bloqueos, ILogger<DatosPersonalesService> log)
+        IBloqueoService bloqueos, ILogger<DatosPersonalesService> log, ISuscripcionPushRepository suscripcionesPush)
     {
-        _bloqueos = bloqueos;
+        _bloqueos = bloqueos; _suscripcionesPush = suscripcionesPush;
         _calificaciones = calificaciones; _favoritos = favoritos; _facturas = facturas; _pqrs = pqrs;
         _usuarios = usuarios; _pubs = pubs; _solicitudes = solicitudes; _comentarios = comentarios; _conversaciones = conversaciones;
         _transacciones = transacciones; _pagos = pagos; _notificaciones = notificaciones; _denuncias = denuncias; _refrescos = refrescos;
@@ -159,6 +160,7 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         foreach (var c in await _comentarios.ListarDelAutorAsync(actorId, 10_000)) if (!c.EstaOculto) c.Ocultar("Cuenta eliminada por su titular.");
         // 4) Sesiones y datos personales
         await _refrescos.RevocarTodasDelUsuarioAsync(actorId, ahora);
+        foreach (var s in await _suscripcionesPush.DeUsuarioAsync(actorId)) _suscripcionesPush.Quitar(s); // ningún aviso más
         u.Anonimizar(ahora);
         _auditoria.Agregar(new AuditoriaEvento(actorId, "CUENTA_ELIMINADA", "Usuario", actorId, null, ahora));
         await _uow.GuardarCambiosAsync();

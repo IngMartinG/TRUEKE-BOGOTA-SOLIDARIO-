@@ -758,6 +758,27 @@ public sealed class DenunciaRepository : IDenunciaRepository
     public void AgregarApelacion(Apelacion apelacion) => _db.Apelaciones.Add(apelacion);
 }
 
+public sealed class SuscripcionPushRepository : ISuscripcionPushRepository
+{
+    private readonly TruekeDbContext _db;
+    public SuscripcionPushRepository(TruekeDbContext db) => _db = db;
+
+    public Task<SuscripcionPush?> PorEndpointAsync(string endpoint) => _db.SuscripcionesPush.FirstOrDefaultAsync(s => s.Endpoint == endpoint);
+
+    public async Task<IReadOnlyList<SuscripcionPush>> DeUsuarioAsync(Guid usuarioId)
+        => await _db.SuscripcionesPush.Where(s => s.UsuarioId == usuarioId).OrderByDescending(s => s.FechaUtc).ToListAsync();
+
+    public void Agregar(SuscripcionPush s) => _db.SuscripcionesPush.Add(s);
+    public void Quitar(SuscripcionPush s) => _db.SuscripcionesPush.Remove(s);
+
+    public async Task EliminarAsync(IReadOnlyCollection<Guid> ids)
+    {
+        if (ids.Count == 0) return;
+        _db.SuscripcionesPush.RemoveRange(await _db.SuscripcionesPush.Where(s => ids.Contains(s.Id)).ToListAsync());
+        await _db.SaveChangesAsync();
+    }
+}
+
 public sealed class FavoritoRepository : IFavoritoRepository
 {
     private readonly TruekeDbContext _db;

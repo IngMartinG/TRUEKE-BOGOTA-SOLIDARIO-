@@ -21,6 +21,8 @@ export class ConfigService {
   readonly tamanoMaximo = computed(() => this._config().tamanoMaximoArchivoBytes ?? 5 * 1024 * 1024);
   /** Pagos sin dinero real (sandbox de Wompi o pasarela simulada): la interfaz lo avisa. */
   readonly pagosDePrueba = computed(() => this._config().pagosDePrueba === true);
+  /** Llave pública VAPID para las notificaciones push (null = apagadas en el servidor). */
+  readonly pushClavePublica = computed(() => this._config().pushClavePublica ?? null);
 
   async cargar(): Promise<void> {
     try {
