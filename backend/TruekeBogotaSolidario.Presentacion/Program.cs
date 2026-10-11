@@ -182,14 +182,14 @@ builder.Services.Configure<ForwardedHeadersOptions>(o =>
     o.ForwardLimit = config.GetValue("Proxy:Saltos", 1);
     if (redesConfiables.Length > 0 || proxiesConfiables.Length > 0)
     {
-        o.KnownNetworks.Clear();
+        o.KnownIPNetworks.Clear();
         o.KnownProxies.Clear();
         foreach (var red in redesConfiables)
         {
             var partes = red.Split('/');
             if (partes.Length != 2 || !IPAddress.TryParse(partes[0], out var ipRed) || !int.TryParse(partes[1], out var prefijo))
                 throw new InvalidOperationException($"Proxy:RedesConfiables contiene un CIDR inválido: '{red}'.");
-            o.KnownNetworks.Add(new Microsoft.AspNetCore.HttpOverrides.IPNetwork(ipRed, prefijo));
+            o.KnownIPNetworks.Add(new System.Net.IPNetwork(ipRed, prefijo));
         }
         foreach (var proxy in proxiesConfiables)
             o.KnownProxies.Add(IPAddress.TryParse(proxy, out var ip) ? ip : throw new InvalidOperationException($"Proxy:ProxiesConfiables contiene una IP inválida: '{proxy}'."));
@@ -197,7 +197,7 @@ builder.Services.Configure<ForwardedHeadersOptions>(o =>
     else if (config.GetValue<bool>("Proxy:Confiar"))
     {
         // Solo si la API NO es alcanzable directamente (App Service con restricciones de acceso / red privada).
-        o.KnownNetworks.Clear();
+        o.KnownIPNetworks.Clear();
         o.KnownProxies.Clear();
     }
 });

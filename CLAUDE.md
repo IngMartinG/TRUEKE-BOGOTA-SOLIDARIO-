@@ -8,7 +8,7 @@ Repo: https://github.com/IngMartinG/TRUEKE-BOGOTA-SOLIDARIO- · Flujo Git: rama 
 El modelo C4 en `docs/c4/` es la fuente de verdad de la arquitectura.
 
 ## Stack obligatorio (no cambiar)
-ASP.NET Core 8 (C#) + SignalR · SQL Server (PostgreSQL rechazado) · Redis (backplane de SignalR / caché) · Wompi (solo recargas entrantes) · Docker / Compose · GitHub Actions · Azure App Service + VNet + Blob Storage · Front-end: Angular.
+ASP.NET Core 10 (C#, LTS) + SignalR · SQL Server (PostgreSQL rechazado) · Redis (backplane de SignalR / caché) · Wompi (solo recargas entrantes) · Docker / Compose · GitHub Actions · Azure App Service + VNet + Blob Storage · Front-end: Angular.
 
 ## Arquitectura (un proyecto por capa, obligatorio)
 ```

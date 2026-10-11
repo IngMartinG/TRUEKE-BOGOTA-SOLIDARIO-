@@ -2,7 +2,7 @@
 
 API REST + tiempo real para la plataforma comunitaria de economía circular de **Colombia** (nació en Bogotá y opera en los 1.122 municipios del país): **Trueke, Compra y Donación**, con moneda interna **Eco-Puntos**.
 
-ASP.NET Core 8 · EF Core 8 · SQL Server · SignalR (+ Redis) · Azure Blob Storage · Wompi · SMTP · Google Identity · reCAPTCHA v3 · TOTP (2FA) · Application Insights · Docker · GitHub Actions · Azure App Service.
+ASP.NET Core 10 · EF Core 10 · SQL Server · SignalR (+ Redis) · Azure Blob Storage · Wompi · SMTP · Google Identity · reCAPTCHA v3 · TOTP (2FA) · Application Insights · Docker · GitHub Actions · Azure App Service.
 La arquitectura sigue el modelo C4 de [`docs/c4`](../docs/c4) y el contrato para el front está en [`docs/openapi.json`](../docs/openapi.json).
 
 ---
@@ -141,7 +141,7 @@ Los **Eco-Puntos y la reputación se otorgan solo al completarse**. La fuente ú
 
 ## 6. Ejecutar en local
 
-Requisitos: SDK de .NET 8 (`global.json` fija la línea 8.0.4xx).
+Requisitos: SDK de .NET 10 (`global.json` fija la línea 10.0.1xx o posterior).
 
 ```bash
 cd backend
@@ -372,7 +372,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 - **Cadena de suministro:**
   - solo nuget.org;
   - el CI falla con paquetes vulnerables o con pruebas de SQL Server omitidas;
-  - dependencias Azure y OpenTelemetry fijadas a versiones compatibles con .NET 8;
+  - dependencias Azure y OpenTelemetry fijadas a versiones compatibles con .NET 10;
   - imagen sin SDK y sin root.
 
 ## 12. Limitaciones conocidas
