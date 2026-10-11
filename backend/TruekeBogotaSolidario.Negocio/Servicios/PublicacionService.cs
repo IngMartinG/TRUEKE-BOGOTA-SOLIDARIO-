@@ -46,6 +46,7 @@ public sealed class PublicacionService : IPublicacionService
     private readonly IUsuarioRepository _usuarios;
     private readonly ICategoriaRepository _categorias;
     private readonly ISolicitudRepository _solicitudes;
+    private readonly ISolicitudService _truekes;
     private readonly IFavoritoRepository _favoritos;
     private readonly IEstadisticaRepository _estadisticas;
     private readonly IUnidadDeTrabajo _uow;
@@ -58,11 +59,11 @@ public sealed class PublicacionService : IPublicacionService
     public PublicacionService(IPublicacionRepository pubs, IUsuarioRepository usuarios, ICategoriaRepository categorias,
         ISolicitudRepository solicitudes, IFavoritoRepository favoritos, IEstadisticaRepository estadisticas, IUnidadDeTrabajo uow,
         IOptions<UrlsOpciones> urls, TimeProvider reloj, INotificador notificador, IAlmacenArchivos almacen, IRegistroVistas vistas,
-        ICalificacionRepository calificaciones, IPresencia presencia)
+        ICalificacionRepository calificaciones, IPresencia presencia, ISolicitudService truekes)
     {
         _pubs = pubs; _usuarios = usuarios; _categorias = categorias; _solicitudes = solicitudes; _favoritos = favoritos;
         _estadisticas = estadisticas; _uow = uow; _urls = urls.Value; _reloj = reloj; _notificador = notificador; _almacen = almacen;
-        _vistas = vistas; _calificaciones = calificaciones; _presencia = presencia;
+        _vistas = vistas; _calificaciones = calificaciones; _presencia = presencia; _truekes = truekes;
     }
 
     private readonly ICalificacionRepository _calificaciones;
@@ -154,6 +155,9 @@ public sealed class PublicacionService : IPublicacionService
         // Con personas interesadas no se cambia lo que pidieron (precio, modo, fotos...): nadie debe recibir algo distinto.
         if ((await InteresadosAsync(new[] { p })).GetValueOrDefault(p.Id) > 0)
             throw new ReglaDeNegocioException("Ya hay personas interesadas en esta publicación: no se puede editar para que nadie reciba algo distinto de lo que pidió. Respóndeles o cancélala y publica de nuevo.");
+        // Lo mismo si la ofreciste en un trueke: quien la evalúa debe recibir lo que vio.
+        if ((await _solicitudes.ListarEnCursoQueOfrecenAsync(p.Id, incluirAceptada: true)).Count > 0)
+            throw new ReglaDeNegocioException("Ofreciste este objeto en un trueke en curso: no se puede editar para que la otra persona reciba lo que vio. Retira la propuesta primero.");
         await ExigirVendedorIdentificadoAsync(actor, r.Modo, p.Id, ahora);
 
         var categoria = await _categorias.ObtenerPorIdAsync(r.CategoriaId) ?? throw new ReglaDeNegocioException("La categoría no existe.");
@@ -224,9 +228,11 @@ public sealed class PublicacionService : IPublicacionService
         var esModerador = actor is not null && actor.Rol >= RolUsuarioEnum.Administrador;
         var aceptada = actor is not null && !esDueno && await _solicitudes.ExisteAceptadaAsync(p.Id, actor.Id);
         var visiblePublicamente = p.Estado == EstadoPublicacionEnum.Disponible && !p.EstaOculta && !SuspendidoOEliminado(p.Propietario!, ahora);
+        // A quien le ofrecieron este objeto en un trueke puede verlo aunque ya esté reservado (es lo que va a recibir).
+        var seLeOfrecio = !visiblePublicamente && actor is not null && !esDueno && await _solicitudes.SeLeOfrecioAsync(p.Id, actor.Id);
 
         // Lo que no puede ver, "no existe" para el usuario (no se filtra información por códigos distintos)
-        if (!visiblePublicamente && !esDueno && !esModerador && !aceptada)
+        if (!visiblePublicamente && !esDueno && !esModerador && !aceptada && !seLeOfrecio)
             throw new NoEncontradoException("Publicación no encontrada.");
 
         // Vista única por persona: ni el dueño ni los moderadores inflan las estadísticas
@@ -304,16 +310,24 @@ public sealed class PublicacionService : IPublicacionService
         // Todas las personas interesadas (la aceptada, si la hay, y la lista de espera) se cierran y reciben aviso.
         var enCurso = await _solicitudes.ListarEnCursoPorPublicacionAsync(p.Id, incluirAceptada: true);
         const string aviso = "La publicación fue cancelada por su propietario.";
+        var avisos = new AvisosDiferidos();
         foreach (var s in enCurso)
         {
-            if (s.Estado == EstadoSolicitud.Aceptada) s.MarcarNoConcretada(aviso, ahora);
+            if (s.Estado == EstadoSolicitud.Aceptada)
+            {
+                s.MarcarNoConcretada(aviso, ahora);
+                avisos.Agregar(await _truekes.LiberarOfrecidaAsync(s)); // el objeto que le ofrecieron vuelve al catálogo
+            }
             else s.Rechazar(aviso);
         }
+        // Si este objeto estaba ofrecido en otros truekes, esas propuestas se cierran (y un trueke aceptado no se concreta).
+        avisos.Agregar(await _truekes.RetirarOfertasAsync(p.Id, $"\"{p.Titulo}\" fue retirado por su dueño.", incluirAceptadas: true));
         p.Cancelar(motivo ?? "");
         await _uow.GuardarCambiosAsync();
         foreach (var s in enCurso)
             await _notificador.NotificarAsync(s.SolicitanteId, TiposNotificacion.SolicitudRechazada,
                 $"La publicación \"{p.Titulo}\" fue cancelada por su propietario.", s.Id);
+        await avisos.EnviarAsync(_notificador);
     }
 
     // ---------------- Impulso y estadísticas ----------------

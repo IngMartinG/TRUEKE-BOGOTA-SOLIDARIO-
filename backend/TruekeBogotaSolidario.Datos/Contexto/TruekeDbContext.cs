@@ -145,6 +145,8 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
             e.HasOne(x => x.Publicacion).WithMany().HasForeignKey(x => x.PublicacionId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Solicitante).WithMany().HasForeignKey(x => x.SolicitanteId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne(x => x.PublicacionOfrecida).WithMany().HasForeignKey(x => x.PublicacionOfrecidaId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.PublicacionOfrecidaId, x.Estado });
             e.HasIndex(x => new { x.PublicacionId, x.Estado });
             e.HasIndex(x => new { x.SolicitanteId, x.Estado });
             if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);

@@ -138,6 +138,15 @@
   - De entrada solo se guarda lo básico (grupo `base`); el resto se guarda a medida que se usa.
 - 306 pruebas del backend y 31 del front; E2E con Chromium completo (el "headless shell" reporta mal el permiso de notificaciones) y pruebas de PWA (service worker, sin conexión, sección de avisos).
 
+## Hecho el 2026-10-11 — ofrecer un objeto propio en un trueke
+- `Solicitud.PublicacionOfrecidaId` (migración `TruekeConObjeto`): al proponer un trueke se puede ofrecer una publicación propia, disponible y visible (opcional; el mismo objeto puede ofrecerse en varios truekes).
+- **Aceptar** reserva los dos objetos. Quienes pidieron el objeto ofrecido quedan en lista de espera, y las otras propuestas donde se ofrecía cualquiera de los dos se cancelan con aviso.
+- **Completar** intercambia los dos y cierra las dos listas de espera (un solo intercambio: +10 Eco-Puntos a cada uno). **No concretado** (manual o automático) devuelve los dos al catálogo y avisa a sus listas de espera.
+- Si quien ofrece **retira** su objeto, se cierran sus propuestas (y un trueke ya aceptado no se concreta: lo pedido vuelve al catálogo). Si **moderación lo oculta**, se cierran las propuestas pendientes. Mientras esté ofrecido en un trueke en curso **no se puede editar**.
+- Quien recibe la oferta puede ver el objeto aunque ya esté reservado (nadie más).
+- Front: elección del objeto en "Proponer trueke" y tarjeta "Te ofrece / Ofreces a cambio" en *Mis intercambios*.
+- 310 pruebas del backend (nuevas: `TruekeConObjetoTests`) y una E2E del trueke con objeto en pantalla.
+
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
 - **Dependabot:** `gh auth login` y cerrar los PR de .NET 10, EF Core 9, TypeScript 7 y Node 26 (los demás, fusionar si el CI pasa).
