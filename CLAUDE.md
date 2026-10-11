@@ -24,8 +24,8 @@ Un controller nunca puede tocar un repositorio ni el DbContext.
 El detalle de lo hecho y lo pendiente está en `docs/ESTADO_Y_PENDIENTES.md` (fuente única; no repetirlo aquí). Resumen al 2026-10-04:
 backend y front completos (234 pruebas + build `-warnaserror`; front: lint, 15 pruebas y build de producción), 6 migraciones,
 diseño adaptable a celular/tablet/PC, chat en tiempo real con respuestas, entregado/leído, escribiendo y en línea.
-Estructura: `backend/`, `frontend/`, `docs/` (c4, openapi.json, migraciones, diseno, historico). Lo académico (prototipo, C4 viejo) está archivado en `docs/historico/`.
-SuperUsuario: martincolombia15@gmail.com (con 2FA).
+Estructura: `backend/`, `frontend/`, `docs/` (c4, openapi.json, migraciones, diseno, historico; guías DESPLIEGUE, STAGING y ANALITICA). Lo académico (prototipo, C4 viejo) está archivado en `docs/historico/`.
+SuperUsuario: la cuenta del dueño (con 2FA). El correo no se escribe aquí porque el repositorio es público.
 
 ## Decisiones y reglas técnicas vigentes
 - Los Eco-Puntos se otorgan solo al completarse el intercambio (ambas partes confirman la entrega).
