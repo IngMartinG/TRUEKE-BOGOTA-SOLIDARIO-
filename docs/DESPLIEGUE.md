@@ -144,6 +144,8 @@ La API envía errores, peticiones lentas, consultas a SQL (sin el texto ni los p
 4. **Pagos reales:** cuando Wompi apruebe el comercio, usar las llaves `pub_prod_…` y cambiar `Pagos__Wompi__BaseUrl` a `https://production.wompi.co/v1` **en `render.yaml`** (si se cambia solo en el panel, la sincronización del Blueprint lo devuelve a sandbox). Con eso desaparece sola la franja "Sitio de demostración". **Antes**, borrar los datos de prueba (la app promete a los testers que los beneficios de prueba se borran): lo más limpio es una base nueva vacía (`Database__Inicializacion=Migrate` crea las tablas).
 5. **Monitoreo:** Application Insights ya funciona en la fase gratis (§7.1); con plan pago, activar el chequeo de disponibilidad (§7.2).
 6. **Más de una instancia:** Azure Cache for Redis (`Redis__Habilitado=true`, `Redis__Conexion`).
+7. **Ambiente de staging** antes de los pagos reales: guía y costos en `docs/STAGING.md` (gratis si va en otro workspace de Render).
+8. **Analítica de visitas** sin cookies y métricas del negocio desde la base: `docs/ANALITICA.md`.
 
 ## 9. Kubernetes, ¿hace falta?
 No. Kubernetes administra **muchos** contenedores (los reparte entre servidores, los reinicia y los escala) y conviene cuando hay decenas de servicios y mucho tráfico. Trueke es **una API y un front**: un PaaS que corre el contenedor (Render o App Service) hace lo mismo con mucho menos costo y trabajo. Si algún día hiciera falta, la misma imagen Docker sirve en Azure Kubernetes Service sin cambios.
