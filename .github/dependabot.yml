@@ -17,7 +17,7 @@ updates:
       skiasharp:
         patterns: ["SkiaSharp*"]
     ignore:
-      # El proyecto es .NET 8 (LTS). EF Core y Microsoft.Extensions 9/10 exigen otro runtime: se migra a propósito, no por Dependabot.
+      # El proyecto es .NET 10 (LTS hasta nov-2028). Las versiones mayores de EF Core y Microsoft.* se adoptan a propósito, junto con el runtime.
       - dependency-name: "Microsoft.EntityFrameworkCore*"
         update-types: ["version-update:semver-major"]
       - dependency-name: "Microsoft.Extensions.*"
@@ -49,7 +49,7 @@ updates:
     schedule:
       interval: weekly
     ignore:
-      # Imágenes de .NET 8 (parches sí; .NET 10 se adopta a propósito, junto con el código)
+      # Imágenes de .NET 10 (parches sí; la siguiente LTS se adopta a propósito, junto con el código)
       - dependency-name: "dotnet/aspnet"
         update-types: ["version-update:semver-major"]
       - dependency-name: "dotnet/sdk"

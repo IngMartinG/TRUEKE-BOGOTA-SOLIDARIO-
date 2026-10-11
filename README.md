@@ -5,7 +5,7 @@ Plataforma comunitaria de **economía circular** en Colombia, nacida en Bogotá.
 ## Estructura del repositorio
 
 ```
-├── backend/        API ASP.NET Core 8 en capas (Datos · Negocio · Presentación · Pruebas), SignalR, Docker
+├── backend/        API ASP.NET Core 10 en capas (Datos · Negocio · Presentación · Pruebas), SignalR, Docker
 ├── frontend/       Aplicación Angular 22 (celular, tablet y PC), nginx con CSP, Docker
 ├── docs/
 │   ├── c4/                      Modelo C4: fuente de verdad de la arquitectura
@@ -22,8 +22,8 @@ Plataforma comunitaria de **economía circular** en Colombia, nacida en Bogotá.
 | Capa | Tecnología |
 |---|---|
 | Front-end | Angular 22 (signals, sin Zone.js), Tailwind v4 |
-| API | ASP.NET Core 8 (C#), SignalR |
-| Datos | SQL Server (EF Core 8), Redis (backplane de SignalR, presencia y límite de peticiones) |
+| API | ASP.NET Core 10 (C#, LTS), SignalR |
+| Datos | SQL Server (EF Core 10), Redis (backplane de SignalR, presencia y límite de peticiones) |
 | Archivos | Azure Blob Storage (subida directa con SAS; fotos sin GPS ni metadatos) |
 | Pagos | Wompi (solo dinero hacia la plataforma) y factura electrónica por cada pago |
 | Infraestructura | Docker, GitHub Actions, Azure App Service + VNet + Key Vault + Application Insights |

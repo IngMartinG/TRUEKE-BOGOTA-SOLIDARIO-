@@ -17,7 +17,7 @@ Aplicación web de la plataforma comunitaria de economía circular de Bogotá: *
 
 ## Desarrollo local
 
-Requisitos: **Node 24 LTS** y **.NET 8 SDK** (para la API).
+Requisitos: **Node 24 LTS** y **.NET 10 SDK** (para la API).
 
 ```bash
 # 1) API (Swagger en https://localhost:7180/swagger, base en memoria, pagos y correos simulados)
