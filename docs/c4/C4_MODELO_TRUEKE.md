@@ -44,8 +44,8 @@ flowchart TB
     subgraph SYS["Trueke Bogotá Solidario (Azure)"]
         direction TB
         FE["🖥️ Front-end<br/>Angular 22 (signals, Tailwind)<br/>nginx sin root · CSP"]:::contenedor
-        API["⚙️ API<br/>ASP.NET Core 8 (C#)<br/>REST /api/v1 + SignalR /hubs/notificaciones"]:::contenedor
-        DB[("🗄️ SQL Server / Azure SQL<br/>EF Core 8 · migraciones")]:::datos
+        API["⚙️ API<br/>ASP.NET Core 10 (C#)<br/>REST /api/v1 + SignalR /hubs/notificaciones"]:::contenedor
+        DB[("🗄️ SQL Server / Azure SQL<br/>EF Core 10 · migraciones")]:::datos
         REDIS[("⚡ Redis<br/>backplane SignalR · presencia<br/>límite de peticiones")]:::datos
         BLOB["☁️ Azure Blob Storage<br/>imagenes (público) · documentos (privado)<br/>subida directa con SAS"]:::contenedor
     end

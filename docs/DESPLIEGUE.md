@@ -5,7 +5,7 @@ Guía para publicar la plataforma completa. Hay dos fases: **gratis** (para la c
 | Pieza | Fase gratis | Fase de pago |
 |---|---|---|
 | Front (Angular) | GitHub Pages (ya publicado) | GitHub Pages o Azure Static Web Apps, con dominio propio |
-| API (.NET 8, Docker) | Render Free | Render Starter (~US$7/mes) o Azure App Service B1 |
+| API (.NET 10, Docker) | Render Free | Render Starter (~US$7/mes) o Azure App Service B1 |
 | Base de datos (SQL Server) | Azure SQL Database, oferta gratuita | Azure SQL Database (Basic/S0) con backups |
 | Fotos | Azure Blob Storage (centavos al mes) | Igual |
 | Tiempo real entre instancias | No hace falta (1 instancia) | Azure Cache for Redis si hay más de una instancia |
