@@ -74,10 +74,10 @@ public class GoogleTests : IClassFixture<FabricaApi>
         return bytes.ToArray();
     }
 
-    /// <summary>Activa 2FA con la sesión dada; devuelve el secreto y el paso TOTP ya usado.</summary>
+    /// <summary>Activa 2FA con la sesión dada (confirmando con la contraseña); devuelve el secreto y el paso TOTP ya usado.</summary>
     private static async Task<(byte[] Secreto, long Paso)> ActivarDosFactoresAsync(HttpClient c)
     {
-        var cfg = (await (await c.PostAsync("/api/v1/auth/2fa/configurar", null)).Content.ReadFromJsonAsync<ConfiguracionDosFactoresDto>())!;
+        var cfg = (await (await c.PostAsJsonAsync("/api/v1/auth/2fa/configurar", new { clave = Api.ClaveValida })).Content.ReadFromJsonAsync<ConfiguracionDosFactoresDto>())!;
         var secreto = DesdeBase32(cfg.SecretoBase32);
         var paso = Totp.Paso(DateTimeOffset.UtcNow);
         var r = await c.PostAsJsonAsync("/api/v1/auth/2fa/activar", new { codigo = Totp.Calcular(secreto, paso) });
