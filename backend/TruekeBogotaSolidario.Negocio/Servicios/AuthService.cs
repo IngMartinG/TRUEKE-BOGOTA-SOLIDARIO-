@@ -150,6 +150,7 @@ public sealed class AuthService : IAuthService
         var ahora = Ahora;
         var creada = false;
         var usuario = await _usuarios.ObtenerPorGoogleSubAsync(id.Sub);
+        var vincular = false;
         if (usuario is null)
         {
             usuario = await _usuarios.ObtenerPorCorreoCanonicoAsync(Usuario.CanonizarCorreo(id.Correo));
@@ -157,16 +158,7 @@ public sealed class AuthService : IAuthService
             {
                 // Vincula una cuenta existente con el mismo correo (Google ya demostró que el correo es de esta persona).
                 if (usuario.GoogleSub is not null) throw new AutenticacionException("No se pudo validar tu cuenta de Google.");
-                if (!usuario.CorreoVerificado)
-                {
-                    // La cuenta se creó con clave pero nadie confirmó el correo: podría haberla creado un tercero
-                    // para esperar a la víctima. Se elimina esa clave y se cierran sus sesiones.
-                    usuario.QuitarClave();
-                    await _refrescos.RevocarTodasDelUsuarioAsync(usuario.Id, ahora);
-                    _log.LogWarning("Clave eliminada al vincular Google a una cuenta no verificada {UsuarioId}", usuario.Id);
-                }
-                usuario.VincularGoogle(id.Sub);
-                usuario.MarcarCorreoVerificado(ahora);
+                vincular = true;
             }
             else
             {
@@ -179,8 +171,35 @@ public sealed class AuthService : IAuthService
             }
         }
         if (usuario.EstaEliminado) throw new AutenticacionException("No se pudo validar tu cuenta de Google.");
+
+        // Una cuenta con el correo SIN verificar pudo crearla un tercero para esperar a la víctima: su clave y su 2FA
+        // (si la activó) son de ese tercero, así que no se le piden a quien demuestra con Google que el correo es suyo.
+        var impostorPosible = vincular && !usuario.CorreoVerificado;
+        if (!creada && !impostorPosible)
+        {
+            // Mismo bloqueo que el login con clave: sin esto, quien controle la cuenta de Google podría probar
+            // códigos de 6 dígitos sin límite. El mensaje es idéntico: no revela que la cuenta está bloqueada.
+            if (usuario.EstaBloqueado(ahora))
+            {
+                _log.LogWarning("Intento de login con Google sobre cuenta bloqueada {UsuarioId}", usuario.Id);
+                throw new AutenticacionException();
+            }
+        }
         ExigirNoSuspendido(usuario, ahora);
-        var conDosFactores = await ExigirSegundoFactorAsync(usuario, r.CodigoDosFactores, ahora);
+        // El segundo factor se exige ANTES de vincular: un código incorrecto no deja la cuenta vinculada a ese Google.
+        var conDosFactores = !impostorPosible && await ExigirSegundoFactorAsync(usuario, r.CodigoDosFactores, ahora);
+        if (vincular)
+        {
+            if (impostorPosible)
+            {
+                usuario.QuitarClave();
+                if (usuario.DosFactoresActivo || usuario.SecretoDosFactoresCifrado is not null) usuario.DesactivarDosFactores();
+                await _refrescos.RevocarTodasDelUsuarioAsync(usuario.Id, ahora);
+                _log.LogWarning("Clave y 2FA eliminados al vincular Google a una cuenta no verificada {UsuarioId}", usuario.Id);
+            }
+            usuario.VincularGoogle(id.Sub);
+            usuario.MarcarCorreoVerificado(ahora);
+        }
         // Sin foto propia, se trae la de Google (copiada y limpia). Si falla, la persona la sube a mano: el login sigue.
         if (string.IsNullOrWhiteSpace(usuario.FotoUrl) && await _importadorFoto.ImportarAsync(usuario.Id, id.Foto) is { } foto)
             usuario.CambiarFoto(foto);
