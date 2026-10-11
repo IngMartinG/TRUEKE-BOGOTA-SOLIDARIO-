@@ -158,9 +158,10 @@ export class TarjetaSolicitud {
         lista.push({ accion: 'cancelar', texto: 'Retirar solicitud', icono: 'x', clase: 'btn-fantasma' });
       }
     }
-    if (s.estado === 'Aceptada') {
+    // Quien ya confirmó no puede desdecirse; quien no ha confirmado puede indicar que no se concretó.
+    if (s.estado === 'Aceptada' && !this.miConfirmacion()) {
       lista.push({ accion: 'noConcretada', texto: 'No se concretó', icono: 'alerta', clase: 'btn-fantasma' });
-      if (!this.miConfirmacion()) lista.push({ accion: 'confirmar', texto: 'Confirmar entrega', icono: 'apreton', clase: 'btn-primario' });
+      lista.push({ accion: 'confirmar', texto: 'Confirmar entrega', icono: 'apreton', clase: 'btn-primario' });
     }
     if (s.puedoCalificar) lista.push({ accion: 'calificar', texto: 'Calificar', icono: 'estrella', clase: 'btn-sol' });
     return lista;

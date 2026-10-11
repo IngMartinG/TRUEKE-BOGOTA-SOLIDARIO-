@@ -279,7 +279,7 @@ public sealed class SolicitudService : ISolicitudService
         {
             await _uow.GuardarCambiosAsync();
             await NotificarAsync(otra, TiposNotificacion.EntregaConfirmada,
-                $"La otra parte confirmó la entrega de \"{s.Publicacion.Titulo}\". Confírmala tú también (si no, se completará sola en {Limites.DiasCierreConUnaConfirmacion} días).", s.Id);
+                $"La otra parte confirmó la entrega de \"{s.Publicacion.Titulo}\". Confírmala tú también o, si no se concretó, márcalo así (si no haces nada, se completará sola en {Limites.DiasCierreConUnaConfirmacion} días).", s.Id);
         }
         return await UnaAsync(actorId, s);
     }
@@ -287,13 +287,20 @@ public sealed class SolicitudService : ISolicitudService
     public async Task<SolicitudDto> MarcarNoConcretadaAsync(Guid actorId, Guid solicitudId, string motivo)
     {
         var s = await CargarComoParticipanteAsync(actorId, solicitudId);
-        if (s.ConfirmadaPorDuenioUtc is not null || s.ConfirmadaPorSolicitanteUtc is not null)
-            throw new ReglaDeNegocioException("Alguien ya confirmó la entrega. Si hay un problema, repórtalo con una denuncia.");
+        var esDuenio = s.Publicacion!.PropietarioId == actorId;
+        // Solo quien YA confirmó la entrega no puede desdecirse. La otra parte sí puede indicar que no se concretó: si no,
+        // una sola persona podía confirmar y dejar que el intercambio se completara solo (con puntos y reputación para ambos).
+        if ((esDuenio ? s.ConfirmadaPorDuenioUtc : s.ConfirmadaPorSolicitanteUtc) is not null)
+            throw new ReglaDeNegocioException("Ya confirmaste la entrega. Si hay un problema, repórtalo con una denuncia.");
+        var otraConfirmo = (esDuenio ? s.ConfirmadaPorSolicitanteUtc : s.ConfirmadaPorDuenioUtc) is not null;
         s.MarcarNoConcretada(motivo, Ahora);
         var avisos = await LiberarPublicacionesAsync(s);
-        var otra = s.Publicacion!.PropietarioId == actorId ? s.SolicitanteId : s.Publicacion.PropietarioId;
+        var otra = esDuenio ? s.SolicitanteId : s.Publicacion.PropietarioId;
         await _uow.GuardarCambiosAsync();
-        await NotificarAsync(otra, TiposNotificacion.IntercambioNoConcretado, $"El intercambio de \"{s.Publicacion.Titulo}\" se marcó como no concretado.", s.Id);
+        if (otraConfirmo) _log.LogInformation("Intercambio {SolicitudId} disputado: una parte confirmó y la otra no", s.Id);
+        await NotificarAsync(otra, TiposNotificacion.IntercambioNoConcretado, otraConfirmo
+            ? $"La otra parte indicó que el intercambio de \"{s.Publicacion.Titulo}\" no se concretó. Si no es así, repórtalo con una denuncia."
+            : $"El intercambio de \"{s.Publicacion.Titulo}\" se marcó como no concretado.", s.Id);
         await avisos.EnviarAsync(_notificador);
         return await UnaAsync(actorId, s);
     }
