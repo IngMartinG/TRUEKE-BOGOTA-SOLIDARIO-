@@ -11,12 +11,13 @@ public class Solicitud
 {
     private Solicitud() { Mensaje = ""; } // EF Core
 
-    public Solicitud(Guid publicacionId, Guid solicitanteId, string mensaje)
+    public Solicitud(Guid publicacionId, Guid solicitanteId, string mensaje, Guid? publicacionOfrecidaId = null)
     {
         mensaje = (mensaje ?? "").Trim();
         if (mensaje.Length is < 1 or > 500) throw new ReglaDeNegocioException("El mensaje es obligatorio (máximo 500 caracteres).");
         Id = Guid.NewGuid();
         PublicacionId = publicacionId;
+        PublicacionOfrecidaId = publicacionOfrecidaId;
         SolicitanteId = solicitanteId;
         Mensaje = mensaje;
         FechaSolicitud = DateTime.UtcNow;
@@ -26,6 +27,12 @@ public class Solicitud
     public Guid Id { get; private set; }
     public Guid PublicacionId { get; private set; }
     public Publicacion? Publicacion { get; private set; }
+    /// <summary>
+    /// Trueke: publicación del solicitante que ofrece a cambio (opcional). Al aceptar, también queda reservada; al completarse,
+    /// también se intercambia; si no se concreta, vuelve al catálogo.
+    /// </summary>
+    public Guid? PublicacionOfrecidaId { get; private set; }
+    public Publicacion? PublicacionOfrecida { get; private set; }
     public Guid SolicitanteId { get; private set; }
     public Usuario? Solicitante { get; private set; }
     public DateTime FechaSolicitud { get; private set; }
@@ -56,10 +63,12 @@ public class Solicitud
         FechaCierreUtc = DateTime.UtcNow;
     }
 
-    public void Cancelar()
+    /// <param name="motivo">Si la cancela el sistema (p. ej. el objeto ofrecido dejó de estar disponible).</param>
+    public void Cancelar(string? motivo = null)
     {
         ExigirPendiente();
         Estado = EstadoSolicitud.Cancelada;
+        MotivoRechazo = Recortar(motivo);
         FechaCierreUtc = DateTime.UtcNow;
     }
 

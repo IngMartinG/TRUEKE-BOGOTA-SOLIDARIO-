@@ -99,6 +99,10 @@ public interface ISolicitudRepository
     /// pueden estar interesadas a la vez; las pendientes mientras otra está aceptada forman la lista de espera.
     /// </summary>
     Task<IReadOnlyList<Solicitud>> ListarEnCursoPorPublicacionAsync(Guid publicacionId, bool incluirAceptada);
+    /// <summary>Truekes en curso (Pendientes, y Aceptada si se pide) donde esa publicación se OFRECE a cambio. Con tracking e incluye la publicación pedida.</summary>
+    Task<IReadOnlyList<Solicitud>> ListarEnCursoQueOfrecenAsync(Guid publicacionId, bool incluirAceptada);
+    /// <summary>Esa publicación se le ofreció a ese usuario en un trueke pendiente, aceptado o completado (puede ver su detalle).</summary>
+    Task<bool> SeLeOfrecioAsync(Guid publicacionOfrecidaId, Guid duenioPedidaId);
     /// <summary>Cuántas solicitudes Pendientes tiene cada publicación (las que no tienen, no aparecen).</summary>
     Task<IReadOnlyDictionary<Guid, int>> ContarPendientesPorPublicacionAsync(IReadOnlyCollection<Guid> publicacionIds);
     /// <summary>El usuario ya tiene una solicitud Pendiente o Aceptada para la publicación.</summary>

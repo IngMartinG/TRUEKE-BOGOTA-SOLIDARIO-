@@ -256,15 +256,26 @@ public sealed class SolicitudRepository : ISolicitudRepository
     public SolicitudRepository(TruekeDbContext db) => _db = db;
 
     public Task<Solicitud?> ObtenerPorIdAsync(Guid id)
-        => _db.Solicitudes.Include(s => s.Publicacion).ThenInclude(p => p!.Propietario).Include(s => s.Solicitante).FirstOrDefaultAsync(s => s.Id == id);
+        => _db.Solicitudes.Include(s => s.Publicacion).ThenInclude(p => p!.Propietario).Include(s => s.Solicitante)
+            .Include(s => s.PublicacionOfrecida).FirstOrDefaultAsync(s => s.Id == id);
 
     public async Task<IReadOnlyList<Solicitud>> ListarPorSolicitanteAsync(Guid solicitanteId)
         => await _db.Solicitudes.AsNoTracking().Include(s => s.Publicacion).ThenInclude(p => p!.Propietario).Include(s => s.Solicitante)
+            .Include(s => s.PublicacionOfrecida)
             .Where(s => s.SolicitanteId == solicitanteId).OrderByDescending(s => s.FechaSolicitud).Take(200).ToListAsync();
 
     public async Task<IReadOnlyList<Solicitud>> ListarRecibidasAsync(Guid propietarioId)
         => await _db.Solicitudes.AsNoTracking().Include(s => s.Publicacion).ThenInclude(p => p!.Propietario).Include(s => s.Solicitante)
+            .Include(s => s.PublicacionOfrecida)
             .Where(s => s.Publicacion!.PropietarioId == propietarioId).OrderByDescending(s => s.FechaSolicitud).Take(200).ToListAsync();
+
+    public Task<bool> SeLeOfrecioAsync(Guid publicacionOfrecidaId, Guid duenioPedidaId)
+        => _db.Solicitudes.AnyAsync(s => s.PublicacionOfrecidaId == publicacionOfrecidaId && s.Publicacion!.PropietarioId == duenioPedidaId
+            && (s.Estado == EstadoSolicitud.Pendiente || s.Estado == EstadoSolicitud.Aceptada || s.Estado == EstadoSolicitud.Completada));
+
+    public async Task<IReadOnlyList<Solicitud>> ListarEnCursoQueOfrecenAsync(Guid publicacionId, bool incluirAceptada)
+        => await _db.Solicitudes.Include(s => s.Publicacion).Include(s => s.PublicacionOfrecida).Where(s => s.PublicacionOfrecidaId == publicacionId
+            && (s.Estado == EstadoSolicitud.Pendiente || (incluirAceptada && s.Estado == EstadoSolicitud.Aceptada))).ToListAsync();
 
     public async Task<IReadOnlyList<Solicitud>> ListarEnCursoPorPublicacionAsync(Guid publicacionId, bool incluirAceptada)
         => await _db.Solicitudes.Where(s => s.PublicacionId == publicacionId

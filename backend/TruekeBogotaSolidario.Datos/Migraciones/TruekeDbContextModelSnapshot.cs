@@ -1050,6 +1050,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<Guid>("PublicacionId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("PublicacionOfrecidaId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()
@@ -1061,6 +1064,8 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.HasKey("Id");
 
                     b.HasIndex("PublicacionId", "Estado");
+
+                    b.HasIndex("PublicacionOfrecidaId", "Estado");
 
                     b.HasIndex("SolicitanteId", "Estado");
 
@@ -1685,6 +1690,11 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Publicacion", "PublicacionOfrecida")
+                        .WithMany()
+                        .HasForeignKey("PublicacionOfrecidaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", "Solicitante")
                         .WithMany()
                         .HasForeignKey("SolicitanteId")
@@ -1692,6 +1702,8 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .IsRequired();
 
                     b.Navigation("Publicacion");
+
+                    b.Navigation("PublicacionOfrecida");
 
                     b.Navigation("Solicitante");
                 });

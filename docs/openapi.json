@@ -5627,6 +5627,11 @@
             "maxLength": 500,
             "minLength": 1,
             "type": "string"
+          },
+          "publicacionOfrecidaId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7549,6 +7554,29 @@
         },
         "additionalProperties": false
       },
+      "PublicacionResumenDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "foto": {
+            "type": "string",
+            "nullable": true
+          },
+          "condicion": {
+            "type": "string"
+          },
+          "estado": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "PuntoSerieDto": {
         "type": "object",
         "properties": {
@@ -7860,6 +7888,9 @@
           },
           "enEspera": {
             "type": "boolean"
+          },
+          "ofrecida": {
+            "$ref": "#/components/schemas/PublicacionResumenDto"
           }
         },
         "additionalProperties": false
