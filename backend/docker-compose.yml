@@ -4,7 +4,7 @@
 #   3) Front en http://localhost:8081 (sirve también /api y /hubs: mismo origen, sin CORS)
 #      API directa en http://localhost:8080  (health: /health/ready)
 # SQL Server y Redis NO se publican al host: solo la API los ve por la red interna.
-# Por defecto corre en "Staging" (permite correo y pagos simulados). Con ASPNETCORE_ENVIRONMENT=Production
+# Por defecto corre en "Local" (permite correo y pagos simulados; cualquier otro entorno exige la configuración real). Con ASPNETCORE_ENVIRONMENT=Production
 # la API exige TODOS los servicios reales (SMTP, Wompi, Azure Blob, Urls__Frontend https) o no arranca.
 
 name: trueke
@@ -16,7 +16,7 @@ services:
     ports:
       - "8080:8080"
     environment:
-      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Staging}
+      ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Local}
       ConnectionStrings__TruekeDb: "Server=sqlserver,1433;Database=TruekeDb;User Id=sa;Password=${SQL_SA_PASSWORD:?Define SQL_SA_PASSWORD en .env};TrustServerCertificate=True;Encrypt=True"
       Database__Provider: SqlServer
       Database__Inicializacion: Migrate

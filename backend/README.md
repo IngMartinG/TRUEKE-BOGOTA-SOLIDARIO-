@@ -181,7 +181,7 @@ cp .env.example .env
 docker compose up --build
 ```
 
-Antes de levantarlo, completa los valores de `.env`. La API queda en `http://localhost:8080` y arranca en `Staging`: correo y pagos simulados permitidos, base y Redis reales.
+Antes de levantarlo, completa los valores de `.env`. La API queda en `http://localhost:8080` y arranca en el entorno `Local`: correo y pagos simulados permitidos, base y Redis reales. Cualquier otro entorno que no sea `Development` (por ejemplo `Staging`) exige la configuración completa de producción.
 
 ## 7. Configuración y secretos
 
