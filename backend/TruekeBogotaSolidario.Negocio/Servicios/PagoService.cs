@@ -309,9 +309,12 @@ public sealed class PagoService : IPagoService
                 {
                     case EstadoPago.Pendiente:
                         return await AprobarAsync(pago, tx, ahora);
-                    case EstadoPago.Expirado:
-                        pago.MarcarRequiereRevision("Aprobado por la pasarela después de expirar: requiere reembolso manual.", tx.Id, ahora);
-                        _log.LogError("Pago {Referencia} aprobado tras expirar: reembolso manual requerido", pago.Referencia);
+                    // Se cobró, pero el pago ya se había dado por perdido (y los puntos reservados se devolvieron): el
+                    // beneficio no se aplica solo y el equipo debe reembolsar. Si se ignorara, el dinero quedaría cobrado sin aviso.
+                    case EstadoPago.Expirado or EstadoPago.Rechazado:
+                        var antes = pago.Estado == EstadoPago.Expirado ? "expirar" : "ser rechazado";
+                        pago.MarcarRequiereRevision($"Aprobado por la pasarela después de {antes}: requiere reembolso manual.", tx.Id, ahora);
+                        _log.LogError("Pago {Referencia} aprobado tras {Antes}: reembolso manual requerido", pago.Referencia, antes);
                         return true;
                     default:
                         return false; // ya resuelto: webhook repetido
