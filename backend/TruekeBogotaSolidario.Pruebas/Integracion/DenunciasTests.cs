@@ -148,6 +148,50 @@ public class DenunciasTests : IClassFixture<FabricaApi>
     }
 
     [Fact]
+    public async Task Un_moderador_no_resuelve_denuncias_ni_apelaciones_sobre_su_propio_contenido()
+    {
+        var (adminA, _) = await AdminAsync("moderadoraDenunciada");
+        var (adminB, _) = await AdminAsync("moderadorRevisor");
+        var pub = await Api.CrearPublicacionAsync(adminA);
+        var vecino = await Api.RegistrarAsync(_fabrica, "vecinoAtento");
+        await DenunciarAsync(vecino, "Publicacion", pub, "Fraude");
+
+        // No puede descartar (ni resolver) la denuncia contra su publicación
+        var g = await GrupoAsync(adminA, pub);
+        Assert.Equal(HttpStatusCode.BadRequest, (await adminA.PostAsJsonAsync($"/api/v1/admin/denuncias/{g.GetProperty("denunciaId").GetGuid()}/resolver",
+            new { accion = "Descartar" })).StatusCode);
+
+        // Otro moderador la oculta; la apelación de A tampoco la puede resolver A (aunque no resolvió la original)
+        await ResolverAsync(adminB, pub, "OcultarContenido", "Publicación engañosa");
+        var resolucion = (await adminA.GetFromJsonAsync<JsonElement>("/api/v1/denuncias/recibidas")).EnumerateArray().Single().GetProperty("resolucionId").GetGuid();
+        (await adminA.PostAsJsonAsync($"/api/v1/denuncias/recibidas/{resolucion}/apelacion", new { texto = "Mi publicación es legítima, revisen por favor." }))
+            .EnsureSuccessStatusCode();
+        var enCola = (await adminA.GetFromJsonAsync<JsonElement>("/api/v1/admin/apelaciones")).EnumerateArray().Single(x => x.GetProperty("resolucionId").GetGuid() == resolucion);
+        Assert.False(enCola.GetProperty("puedoResolver").GetBoolean());
+        Assert.Equal(HttpStatusCode.BadRequest, (await adminA.PostAsJsonAsync($"/api/v1/admin/apelaciones/{enCola.GetProperty("id").GetGuid()}/resolver",
+            new { aceptar = true, nota = "Yo misma lo reviso" })).StatusCode);
+
+        // Ni la vuelve a mostrar por la vía directa de moderación
+        Assert.Equal(HttpStatusCode.BadRequest, (await adminA.PostAsync($"/api/v1/admin/publicaciones/{pub}/mostrar", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NotFound, (await _fabrica.CreateClient().GetAsync($"/api/v1/publicaciones/{pub}")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Un_moderador_no_vuelve_a_mostrar_su_propio_comentario_oculto()
+    {
+        var (adminA, _) = await AdminAsync("comentaristaModera");
+        var duenio = await Api.RegistrarAsync(_fabrica, "duenioComentado");
+        var pub = await Api.CrearPublicacionAsync(duenio);
+        var comentario = (await (await adminA.PostAsJsonAsync($"/api/v1/publicaciones/{pub}/comentarios", new { texto = "Comentario a moderar" }))
+            .Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+        var super = await SuperAsync();
+        (await super.PostAsJsonAsync($"/api/v1/admin/comentarios/{comentario}/ocultar", new { motivo = "Lenguaje ofensivo" })).EnsureSuccessStatusCode();
+
+        Assert.Equal(HttpStatusCode.BadRequest, (await adminA.PostAsync($"/api/v1/admin/comentarios/{comentario}/mostrar", null)).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await super.PostAsync($"/api/v1/admin/comentarios/{comentario}/mostrar", null)).StatusCode);
+    }
+
+    [Fact]
     public async Task Apelacion_rechazada_mantiene_el_mensaje_oculto_y_un_cliente_no_ve_la_cola()
     {
         var duenio = await Api.RegistrarAsync(_fabrica, "duenioMsg");

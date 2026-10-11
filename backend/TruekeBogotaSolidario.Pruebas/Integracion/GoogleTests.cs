@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Comun;
+using TruekeBogotaSolidario.Negocio.Dtos;
 using TruekeBogotaSolidario.Pruebas.Infraestructura;
 
 namespace TruekeBogotaSolidario.Pruebas.Integracion;
@@ -56,8 +57,36 @@ public class GoogleTests : IClassFixture<FabricaApi>
         return token;
     }
 
-    private Task<HttpResponseMessage> GoogleAsync(string idToken, bool acepto = true)
-        => _f.CreateClient().PostAsJsonAsync("/api/v1/auth/google", new { idToken, aceptoPoliticaDatos = acepto });
+    private Task<HttpResponseMessage> GoogleAsync(string idToken, bool acepto = true, string? codigo = null)
+        => _f.CreateClient().PostAsJsonAsync("/api/v1/auth/google", new { idToken, aceptoPoliticaDatos = acepto, codigoDosFactores = codigo });
+
+    private static byte[] DesdeBase32(string s)
+    {
+        const string alfabeto = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+        var bytes = new List<byte>();
+        int buffer = 0, bits = 0;
+        foreach (var c in s)
+        {
+            buffer = (buffer << 5) | alfabeto.IndexOf(c);
+            bits += 5;
+            if (bits >= 8) { bytes.Add((byte)(buffer >> (bits - 8))); bits -= 8; }
+        }
+        return bytes.ToArray();
+    }
+
+    /// <summary>Activa 2FA con la sesión dada; devuelve el secreto y el paso TOTP ya usado.</summary>
+    private static async Task<(byte[] Secreto, long Paso)> ActivarDosFactoresAsync(HttpClient c)
+    {
+        var cfg = (await (await c.PostAsync("/api/v1/auth/2fa/configurar", null)).Content.ReadFromJsonAsync<ConfiguracionDosFactoresDto>())!;
+        var secreto = DesdeBase32(cfg.SecretoBase32);
+        var paso = Totp.Paso(DateTimeOffset.UtcNow);
+        var r = await c.PostAsJsonAsync("/api/v1/auth/2fa/activar", new { codigo = Totp.Calcular(secreto, paso) });
+        Assert.True(r.StatusCode == HttpStatusCode.OK, await r.Content.ReadAsStringAsync());
+        return (secreto, paso);
+    }
+
+    private static async Task<string?> CodigoErrorAsync(HttpResponseMessage r)
+        => (await r.Content.ReadFromJsonAsync<JsonElement>()).TryGetProperty("codigo", out var c) ? c.GetString() : null;
 
     private static string Correo() => $"g{Guid.NewGuid():N}@gmail.test";
 
@@ -135,6 +164,55 @@ public class GoogleTests : IClassFixture<FabricaApi>
         Assert.Equal(HttpStatusCode.OK, (await GoogleAsync(Emitir(correo))).StatusCode);   // el verdadero dueño entra con Google
         Assert.Equal(HttpStatusCode.Unauthorized, (await _f.CreateClient().PostAsJsonAsync("/api/v1/auth/login",
             new { correo, clave = Api.ClaveValida })).StatusCode);                          // la clave del impostor ya no sirve
+    }
+
+    [Fact]
+    public async Task Con_Google_los_codigos_2FA_incorrectos_bloquean_la_cuenta_igual_que_con_clave()
+    {
+        var ses = await Api.RegistrarSesionAsync(_f, "googleBloqueo");
+        var sub = Guid.NewGuid().ToString("N");
+        Assert.Equal(HttpStatusCode.OK, (await GoogleAsync(Emitir(ses.Usuario.Correo, sub: sub), acepto: false)).StatusCode); // vinculada
+        var (secreto, paso) = await ActivarDosFactoresAsync(Api.ConToken(_f, ses.Token));
+
+        for (var i = 0; i < 5; i++)
+            Assert.Equal(HttpStatusCode.Unauthorized, (await GoogleAsync(Emitir(ses.Usuario.Correo, sub: sub), false, "000000")).StatusCode);
+
+        // Bloqueada: ni el código correcto sirve hasta que pase el bloqueo (ni con Google ni con clave)
+        var bueno = Totp.Calcular(secreto, paso + 1);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await GoogleAsync(Emitir(ses.Usuario.Correo, sub: sub), false, bueno)).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _f.CreateClient().PostAsJsonAsync("/api/v1/auth/login",
+            new { correo = ses.Usuario.Correo, clave = Api.ClaveValida, codigoDosFactores = bueno })).StatusCode);
+    }
+
+    [Fact]
+    public async Task Un_codigo_2FA_incorrecto_no_deja_la_cuenta_vinculada_a_ese_Google()
+    {
+        var ses = await Api.RegistrarSesionAsync(_f, "googleSinVincular");
+        await ActivarDosFactoresAsync(Api.ConToken(_f, ses.Token));
+
+        Assert.Equal(HttpStatusCode.Unauthorized, (await GoogleAsync(Emitir(ses.Usuario.Correo), false, "000000")).StatusCode);
+
+        // Si hubiera quedado vinculada, otra cuenta de Google con el mismo correo recibiría un 401 genérico;
+        // sin vincular, se le pide el segundo factor como a cualquiera.
+        var r = await GoogleAsync(Emitir(ses.Usuario.Correo), acepto: false);
+        Assert.Equal(HttpStatusCode.Unauthorized, r.StatusCode);
+        Assert.Equal("2fa_requerido", await CodigoErrorAsync(r));
+    }
+
+    [Fact]
+    public async Task El_2FA_que_puso_un_impostor_en_una_cuenta_sin_verificar_no_bloquea_al_dueno_del_correo()
+    {
+        var correo = Correo();
+        var registro = await _f.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar", new
+        { nombreCompleto = "Impostor Prueba", localidad = "Usme", correo, clave = Api.ClaveValida, aceptoPoliticaDatos = true });
+        var tokenImpostor = (await registro.Content.ReadFromJsonAsync<SesionMinDto>())!.Token;
+        await ActivarDosFactoresAsync(Api.ConToken(_f, tokenImpostor));
+
+        var r = await GoogleAsync(Emitir(correo), acepto: false);   // el verdadero dueño entra con Google, sin código
+        Assert.True(r.StatusCode == HttpStatusCode.OK, await r.Content.ReadAsStringAsync());
+        var yo = await Api.ConToken(_f, (await r.Content.ReadFromJsonAsync<SesionMinDto>())!.Token).GetFromJsonAsync<JsonElement>("/api/v1/usuarios/yo");
+        Assert.False(yo.GetProperty("dosFactoresActivo").GetBoolean());
+        Assert.Equal(HttpStatusCode.Unauthorized, (await Api.ConToken(_f, tokenImpostor).GetAsync("/api/v1/usuarios/yo")).StatusCode);
     }
 
     [Fact]
