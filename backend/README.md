@@ -257,9 +257,9 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 3. **Datos y caché:** Azure SQL con endpoint privado; Azure Cache for Redis (`:6380,ssl=true,password=...`).
 4. **Storage:**
    - contenedor `imagenes` con acceso anónimo **solo de lectura de blobs**;
-   - contenedor `documentos` **privado**;
+   - contenedores `documentos` y `subidas` **privados** (la API los crea si no existen);
    - CORS de la cuenta: `PUT` desde el origen del front, con las cabeceras `x-ms-blob-type` y `content-type`;
-   - regla de *lifecycle* para borrar blobs huérfanos.
+   - opcional: regla de *lifecycle* para las fotos quitadas al editar (las subidas sin usar ya las borra la API).
 5. **Monitoreo:** recurso de Application Insights → `APPLICATIONINSIGHTS_CONNECTION_STRING`.
 6. **Dominio:** el mismo para front y API (`app.` y `api.`), para usar la cookie con `SameSite=Strict`.
 7. **Externos:**
@@ -354,8 +354,8 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
   - Habeas Data: consentimiento, exportación y supresión;
   - purga de datos vencidos;
   - el monitoreo redacta la query string.
-- **Archivos:** SAS de 5 minutos (crear/escribir) sobre un blob con nombre elegido por el servidor; luego se valida dueño, tamaño ≤ 5 MB y *magic bytes*.
-- **Fotos sin ubicación oculta:** al publicar, cada foto se **re-codifica** (SkiaSharp; solo se aceptan JPEG, PNG y WEBP aunque Skia lea otros formatos): se aplica la orientación, se reduce a 1.600 px y se eliminan **todos los metadatos** (EXIF con GPS, modelo del celular, IPTC, XMP). La copia limpia se guarda con un **nombre nuevo** y se borra el original, para que la SAS aún vigente no pueda reemplazarla. Protege contra "bombas de descompresión" (máx. 12.000 px por lado).
+- **Archivos:** SAS de 5 minutos **solo para crear** (no puede sobrescribir, leer, listar ni borrar) sobre un blob con nombre elegido por el servidor, en el contenedor **privado** `subidas`. Al usarlo se valida dueño, tamaño ≤ 5 MB y *magic bytes*, y lo que se guarda es siempre una **copia hecha por el servidor** con otro nombre (fotos limpias en `imagenes`, documentos en `documentos`); la subida se borra. Nunca se confía en metadatos que pueda poner el cliente. Las subidas que nadie usa se borran a la hora (servicio en segundo plano).
+- **Fotos sin ubicación oculta:** al publicar, cada foto se **re-codifica** (SkiaSharp; solo se aceptan JPEG, PNG y WEBP aunque Skia lea otros formatos): se aplica la orientación, se reduce a 1.600 px y se eliminan **todos los metadatos** (EXIF con GPS, modelo del celular, IPTC, XMP). La copia limpia se guarda con un **nombre nuevo** en el contenedor público y se borra el original, para que la SAS aún vigente no pueda reemplazarla. Protege contra "bombas de descompresión" (máx. 12.000 px por lado).
 - **Límite de peticiones distribuido:** con Redis, los contadores se comparten entre instancias (el límite de login no se multiplica al escalar). Solo se acepta `X-Forwarded-For` de proxies configurados.
 - **CSV seguros:** las exportaciones neutralizan fórmulas (`=`, `+`, `-`, `@`) para evitar inyección en Excel.
 - **Endurecimiento HTTP:**
@@ -380,7 +380,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 - **Propagación de la revocación:** entre instancias tarda hasta 30 s (caché local). Una conexión SignalR abierta vive hasta que expira su token (≤ 15 min).
 - **Token en la URL del hub:** para WebSockets va en `?access_token=` (solo se acepta en `/hubs/*`). Desactiva el registro de *query strings* en los logs del proxy.
 - **Enumeración de cuentas:** el registro indica si el correo ya existe (mitigado con rate limiting y reCAPTCHA).
-- **Archivos huérfanos:** las fotos quitadas al editar y las subidas que nunca se usan quedan en Blob. Usa una regla de *lifecycle*.
+- **Archivos huérfanos:** las subidas que nunca se usan se borran solas a la hora; las fotos quitadas al editar quedan en Blob (regla de *lifecycle* opcional).
 - **Correo en memoria:** la cola vive en memoria; un reinicio puede perder un correo en tránsito, y el usuario puede pedir "reenviar".
 - **Reembolsos manuales:** se hacen en el panel de Wompi; la API solo los registra (y revierte el beneficio).
 - **Sin cobro recurrente automático:** los planes se renuevan pagando de nuevo (con recordatorio). El débito automático requiere habilitar *fuentes de pago* (tokenización) con Wompi; se implementará cuando el comercio esté aprobado.

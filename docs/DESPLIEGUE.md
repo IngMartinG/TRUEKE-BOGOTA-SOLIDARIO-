@@ -38,7 +38,7 @@ Guía para publicar la plataforma completa. Hay dos fases: **gratis** (para la c
 
 ## 3. Fotos: Azure Blob Storage
 1. Portal → **Cuentas de almacenamiento** → *Crear*: grupo `trueke`, nombre único en minúsculas (p. ej. `truekefotos<algo>`), región **la misma de la base** (Central US), rendimiento **Estándar**, redundancia **LRS** (la más barata).
-2. *Configuración* → **Permitir el acceso anónimo de blobs: Habilitado**. Solo el contenedor `imagenes` es público (de solo lectura); `documentos` queda privado. La API crea ambos contenedores sola.
+2. *Configuración* → **Permitir el acceso anónimo de blobs: Habilitado**. Solo el contenedor `imagenes` es público (de solo lectura); `documentos` y `subidas` quedan privados. La API crea los tres contenedores sola.
 3. *Uso compartido de recursos (CORS)* → pestaña **Blob service** → agregar una regla:
    - Orígenes permitidos: `https://ingmarting.github.io`
    - Métodos: `PUT`, `GET`, `HEAD`, `OPTIONS`

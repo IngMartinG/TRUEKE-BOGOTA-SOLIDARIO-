@@ -5,7 +5,10 @@ using TruekeBogotaSolidario.Negocio.Dtos;
 
 namespace TruekeBogotaSolidario.Pruebas.Infraestructura;
 
-/// <summary>Almacén en memoria con las MISMAS reglas que el de Azure (ReglasArchivos). Subir() simula el PUT del navegador.</summary>
+/// <summary>
+/// Almacén en memoria con las MISMAS reglas que el de Azure (ReglasArchivos). Subir() simula el PUT del navegador al
+/// contenedor privado de subidas; al validar, se publica una copia con nombre nuevo y se borra la subida (como en Azure).
+/// </summary>
 public sealed class AlmacenFalso : IAlmacenArchivos
 {
     public static readonly Uri Base = new("https://almacen.test/");
@@ -14,12 +17,13 @@ public sealed class AlmacenFalso : IAlmacenArchivos
     public bool Habilitado => true;
 
     private static Uri Contenedor(TipoArchivoDto tipo) => new(Base, tipo == TipoArchivoDto.Documento ? "documentos" : "imagenes");
+    private static readonly Uri Subidas = new(Base, "subidas");
 
     public Task<SubidaArchivoDto> CrearSubidaAsync(Guid usuarioId, TipoArchivoDto tipo, string contentType, long tamanoBytes, CancellationToken ct = default)
     {
         var ext = ReglasArchivos.Extension(tipo, contentType);
         ReglasArchivos.ValidarTamano(tamanoBytes);
-        var url = $"{Contenedor(tipo)}/{ReglasArchivos.NuevoNombre(usuarioId, ext)}";
+        var url = $"{Subidas}/{ReglasArchivos.NuevoNombre(usuarioId, ext)}";
         return Task.FromResult(new SubidaArchivoDto(url + "?sas=falsa", url, "PUT",
             new Dictionary<string, string> { ["Content-Type"] = contentType }, DateTime.UtcNow.AddMinutes(5)));
     }
@@ -37,15 +41,22 @@ public sealed class AlmacenFalso : IAlmacenArchivos
     /// <summary>Mismas validaciones que Azure; no re-codifica (eso se prueba con imágenes reales en ProcesadorImagenesTests).</summary>
     public Task<string> ValidarArchivoPropioAsync(string url, Guid usuarioId, TipoArchivoDto tipo, CancellationToken ct = default)
     {
-        var a = ReglasArchivos.AnalizarUrl(url, Contenedor(tipo), usuarioId)
+        var esSubida = ReglasArchivos.AnalizarUrl(url, Subidas, usuarioId) is not null;
+        var a = ReglasArchivos.AnalizarUrl(url, Subidas, usuarioId)
+                ?? (tipo == TipoArchivoDto.Imagen ? ReglasArchivos.AnalizarUrl(url, Contenedor(tipo), usuarioId) : null)
                 ?? throw new ReglaDeNegocioException("El archivo debe subirse primero con POST /api/v1/archivos/subidas.");
         if (!_blobs.TryGetValue(url, out var b)) throw new ReglaDeNegocioException("El archivo no existe o aún no terminó de subirse.");
         ReglasArchivos.ValidarTamano(b.Datos.Length);
         if (ReglasArchivos.Extension(tipo, b.ContentType) != a.Extension) throw new ReglaDeNegocioException("El tipo del archivo no coincide con su extensión.");
         if (!ReglasArchivos.FirmaCoincide(a.Extension, b.Datos.AsSpan(0, Math.Min(ReglasArchivos.BytesFirma, b.Datos.Length))))
             throw new ReglaDeNegocioException("El contenido del archivo no corresponde a una imagen o documento válido.");
-        return Task.FromResult(url);
+        var final = $"{Contenedor(tipo)}/{ReglasArchivos.NuevoNombre(usuarioId, a.Extension)}";
+        _blobs[final] = b;
+        if (esSubida) _blobs.TryRemove(url, out _);
+        return Task.FromResult(final);
     }
+
+    public Task<int> EliminarSubidasVencidasAsync(CancellationToken ct = default) => Task.FromResult(0);
 
     public Task<string?> UrlLecturaTemporalAsync(string url, CancellationToken ct = default) => Task.FromResult<string?>(url + "?sas=lectura");
 
