@@ -41,6 +41,7 @@ function secretos(): Record<string, string> {
     E2E_PUSH_PUBLICA: vapid.publica,
     E2E_PUSH_PRIVADA: vapid.privada,
     SQL_SA_PASSWORD: `E2e!${randomBytes(12).toString('hex')}Aa1`,
+    SQL_APP_PASSWORD: `App!${randomBytes(12).toString('hex')}Bb2`,
     JWT_KEY: randomBytes(48).toString('base64'),
     CLAVE_CIFRADO: randomBytes(32).toString('base64'),
     REDIS_PASSWORD: randomBytes(16).toString('hex'),

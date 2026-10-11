@@ -3,7 +3,9 @@
 #   2) docker compose up --build
 #   3) Front en http://localhost:8081 (sirve también /api y /hubs: mismo origen, sin CORS)
 #      API directa en http://localhost:8080  (health: /health/ready)
+# Los puertos se publican SOLO en este equipo (127.0.0.1), no en la red local.
 # SQL Server y Redis NO se publican al host: solo la API los ve por la red interna.
+# La API entra a SQL Server con su propio usuario (trueke_app, dueño solo de TruekeDb), no con "sa".
 # Por defecto corre en "Local" (permite correo y pagos simulados; cualquier otro entorno exige la configuración real). Con ASPNETCORE_ENVIRONMENT=Production
 # la API exige TODOS los servicios reales (SMTP, Wompi, Azure Blob, Urls__Frontend https) o no arranca.
 
@@ -14,10 +16,10 @@ services:
     build: .
     image: trueke-api:local
     ports:
-      - "8080:8080"
+      - "127.0.0.1:8080:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Local}
-      ConnectionStrings__TruekeDb: "Server=sqlserver,1433;Database=TruekeDb;User Id=sa;Password=${SQL_SA_PASSWORD:?Define SQL_SA_PASSWORD en .env};TrustServerCertificate=True;Encrypt=True"
+      ConnectionStrings__TruekeDb: "Server=sqlserver,1433;Database=TruekeDb;User Id=trueke_app;Password=${SQL_APP_PASSWORD:?Define SQL_APP_PASSWORD en .env};TrustServerCertificate=True;Encrypt=True"
       Database__Provider: SqlServer
       Database__Inicializacion: Migrate
       Jwt__Key: ${JWT_KEY:?Define JWT_KEY en .env}
@@ -53,8 +55,8 @@ services:
       Facturacion__IvaPorcentaje: ${FACTURACION_IVA:-19}
       Legal__CorreoContacto: ${CORREO_CONTACTO:-}
     depends_on:
-      sqlserver:
-        condition: service_healthy
+      sql-usuario:
+        condition: service_completed_successfully
       redis:
         condition: service_healthy
     restart: unless-stopped
@@ -71,7 +73,7 @@ services:
     build: ../frontend
     image: trueke-web:local
     ports:
-      - "8081:8080"
+      - "127.0.0.1:8081:8080"
     environment:
       # Vacío = la API se usa en el mismo origen a través del proxy de nginx (recomendado).
       API_URL: ${WEB_API_URL:-}
@@ -92,7 +94,7 @@ services:
       - ALL
 
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest
+    image: mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD:?Define SQL_SA_PASSWORD en .env}
@@ -106,18 +108,63 @@ services:
       retries: 12
       start_period: 30s
     restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+
+  # Crea la base, el usuario de la aplicación (trueke_app, db_owner SOLO de TruekeDb: puede migrar su esquema pero no
+  # administrar el servidor) y le pone la clave de .env. Corre una vez en cada arranque y termina.
+  sql-usuario:
+    image: mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090
+    entrypoint: ["/bin/bash", "-ec"]
+    command:
+      - |
+        clave=$${SQL_APP_PASSWORD//\'/\'\'}   # comillas simples duplicadas para el literal de T-SQL
+        /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -Q "
+          IF DB_ID('TruekeDb') IS NULL CREATE DATABASE TruekeDb;
+          IF SUSER_ID('trueke_app') IS NULL CREATE LOGIN trueke_app WITH PASSWORD = N'$$clave', CHECK_POLICY = ON;
+          ELSE ALTER LOGIN trueke_app WITH PASSWORD = N'$$clave';"
+        /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -d TruekeDb -Q "
+          IF USER_ID('trueke_app') IS NULL CREATE USER trueke_app FOR LOGIN trueke_app;
+          ALTER ROLE db_owner ADD MEMBER trueke_app;"
+        echo "Usuario trueke_app listo"
+    environment:
+      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD:?Define SQL_SA_PASSWORD en .env}
+      SQL_APP_PASSWORD: ${SQL_APP_PASSWORD:?Define SQL_APP_PASSWORD en .env}
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    restart: "no"
+    security_opt:
+      - no-new-privileges:true
 
   redis:
-    image: redis:7-alpine
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env}", "--appendonly", "no"]
+    image: redis:7-alpine@sha256:858f009f9709ce576febc734aa78b8f6d624b82571f9ddb6bda4377c833b3499
+    # La clave va a un archivo de configuración en memoria (no en los argumentos del proceso, que ve cualquiera con "ps").
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        umask 077
+        printf 'requirepass %s\nappendonly no\n' "$$REDIS_PASSWORD" > /tmp/redis.conf
+        exec redis-server /tmp/redis.conf
     healthcheck:
       test: ["CMD-SHELL", "redis-cli -a \"$$REDIS_PASSWORD\" --no-auth-warning ping | grep PONG"]
       interval: 5s
       timeout: 3s
       retries: 10
     environment:
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env}
     restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /data
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETUID
+      - SETGID
 
 volumes:
   sqldata:

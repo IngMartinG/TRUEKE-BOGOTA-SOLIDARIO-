@@ -53,6 +53,7 @@ jobs:
             logs --no-color --tail 400 api web mailpit > e2e/registros.txt 2>&1 || true
         env:
           SQL_SA_PASSWORD: x
+          SQL_APP_PASSWORD: x
           JWT_KEY: x
           CLAVE_CIFRADO: x
           REDIS_PASSWORD: x
@@ -75,6 +76,7 @@ jobs:
             down -v --remove-orphans || true
         env:
           SQL_SA_PASSWORD: x
+          SQL_APP_PASSWORD: x
           JWT_KEY: x
           CLAVE_CIFRADO: x
           REDIS_PASSWORD: x
