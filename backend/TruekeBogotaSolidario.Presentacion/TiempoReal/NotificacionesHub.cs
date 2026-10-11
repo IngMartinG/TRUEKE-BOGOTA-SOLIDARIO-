@@ -78,20 +78,27 @@ public sealed class NotificacionesHub : Hub
         if (Context.Items.TryGetValue("ultimoEscribiendo", out var previo) && previo is long p && ahora - p < 1000) return;
         Context.Items["ultimoEscribiendo"] = ahora;
 
-        // La contraparte se recuerda por conexión: no se consulta la base en cada tecla.
-        var cache = Context.Items.TryGetValue("contrapartes", out var c) && c is Dictionary<Guid, Guid?> d ? d : null;
-        if (cache is null) Context.Items["contrapartes"] = cache = new Dictionary<Guid, Guid?>();
-        if (!cache.TryGetValue(conversacionId, out var otra))
+        // La contraparte se recuerda por conexión un minuto: no se consulta la base en cada tecla, pero un bloqueo
+        // (o una conversación cerrada) deja de recibir "escribiendo…" pronto.
+        var cache = Context.Items.TryGetValue("contrapartes", out var c) && c is Dictionary<Guid, (Guid? Otra, long Cuando)> d ? d : null;
+        if (cache is null) Context.Items["contrapartes"] = cache = new Dictionary<Guid, (Guid?, long)>();
+        if (!cache.TryGetValue(conversacionId, out var guardada) || ahora - guardada.Cuando > 60_000)
         {
             if (cache.Count > 50) cache.Clear();
-            cache[conversacionId] = otra = await _chat.ContraparteParaEscribirAsync(id, conversacionId);
+            cache[conversacionId] = guardada = (await _chat.ContraparteParaEscribirAsync(id, conversacionId), ahora);
         }
-        if (otra is { } destino) await _emisor.EscribiendoAsync(destino, new EscribiendoDto(conversacionId));
+        if (guardada.Otra is { } destino) await _emisor.EscribiendoAsync(destino, new EscribiendoDto(conversacionId));
     }
 
-    /// <summary>El navegador recibió mensajes de esta conversación (✓✓ entregado).</summary>
+    /// <summary>El navegador recibió mensajes de esta conversación (✓✓ entregado). Cada aviso escribe en la base: máximo 2 por segundo.</summary>
     public Task Recibido(Guid conversacionId)
-        => UsuarioId is { } id ? _chat.MarcarEntregadosAsync(id, conversacionId) : Task.CompletedTask;
+    {
+        if (UsuarioId is not { } id) return Task.CompletedTask;
+        var ahora = Environment.TickCount64;
+        if (Context.Items.TryGetValue("ultimoRecibido", out var previo) && previo is long p && ahora - p < 500) return Task.CompletedTask;
+        Context.Items["ultimoRecibido"] = ahora;
+        return _chat.MarcarEntregadosAsync(id, conversacionId);
+    }
 
     private async Task AvisarPresenciaAsync(Guid usuarioId, bool enLinea)
     {

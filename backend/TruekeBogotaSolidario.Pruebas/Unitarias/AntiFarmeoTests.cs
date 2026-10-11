@@ -92,7 +92,7 @@ public class AntiFarmeoTests
         await e.EnScopeAsync<ISolicitudService, CalificacionDto>(s => s.CalificarAsync(beto, s1.Id, new CalificarRequest { Estrellas = 1 }));
         await e.EnScopeAsync<ISolicitudService, CalificacionDto>(s => s.CalificarAsync(beto, s2.Id, new CalificarRequest { Estrellas = 5 }));
 
-        var perfil = await e.EnScopeAsync<IPublicacionService, PerfilUsuarioDto>(s => s.ObtenerPerfilAsync(ana));
+        var perfil = await e.EnScopeAsync<IPublicacionService, PerfilUsuarioDto>(s => s.ObtenerPerfilAsync(null, ana));
         Assert.Equal(1, perfil.TotalCalificaciones);   // la segunda (5 estrellas) no infla el promedio
         Assert.Equal(1m, perfil.CalificacionPromedio);
     }

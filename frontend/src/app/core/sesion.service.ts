@@ -56,7 +56,14 @@ export class SesionService {
 
   constructor() {
     // Otra pestaña cerró la sesión (botón "Salir" o sesión rechazada): esta también.
-    if (this.canal) this.canal.onmessage = (e: MessageEvent<MensajeCanal>) => e.data?.tipo === 'cerrada' && this.limpiar(false);
+    if (this.canal)
+      this.canal.onmessage = (e: MessageEvent<MensajeCanal>) => {
+        if (e.data?.tipo !== 'cerrada') return;
+        this.limpiar(false);
+        // Los guardas solo corren al navegar: si esta pestaña mostraba una página con sesión (mensajes, cuenta,
+        // administración), sus datos seguirían a la vista. Se sale de ella.
+        if (this.enPaginaProtegida()) void this.router.navigateByUrl('/ingresar');
+      };
 
     // Al volver a la pestaña o despertar el equipo, los temporizadores pudieron no correr: se renueva si hace falta.
     const alVolver = () => {
@@ -72,6 +79,13 @@ export class SesionService {
       window.removeEventListener('online', alVolver);
       this.canal?.close();
     });
+  }
+
+  /** ¿La página actual (o alguna de sus rutas padre) tiene un guarda de sesión? */
+  private enPaginaProtegida(): boolean {
+    for (let r: import('@angular/router').ActivatedRouteSnapshot | null = this.router.routerState.snapshot.root; r; r = r.firstChild)
+      if (r.routeConfig?.canActivate?.length || r.routeConfig?.canMatch?.length) return true;
+    return false;
   }
 
   /** Milisegundos que le quedan al token actual (negativo si ya venció). */

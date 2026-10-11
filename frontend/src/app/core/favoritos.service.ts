@@ -1,4 +1,4 @@
-import { inject, Injectable, signal } from '@angular/core';
+import { effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { CatalogoApi } from './api/catalogo.api';
@@ -16,6 +16,17 @@ export class FavoritosService {
   private readonly router = inject(Router);
   private readonly avisos = inject(AvisosService);
   private readonly cambios = signal<Record<string, boolean>>({});
+
+  constructor() {
+    // Los cambios son de una persona: al cerrar sesión (o entrar otra) no se muestran sus favoritos.
+    let usuarioAnterior: string | undefined;
+    effect(() => {
+      const usuario = this.sesion.usuario()?.id;
+      if (usuario === usuarioAnterior) return;
+      usuarioAnterior = usuario;
+      untracked(() => this.cambios.set({}));
+    });
+  }
 
   esFavorita(id: string | undefined, valorServidor: boolean | undefined): boolean {
     if (!id) return false;
