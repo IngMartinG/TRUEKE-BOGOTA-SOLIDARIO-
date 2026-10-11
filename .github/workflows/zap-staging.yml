@@ -42,7 +42,7 @@ jobs:
             fi
           done
       - name: Escaneo baseline de ZAP
-        uses: zaproxy/action-baseline@66042c8e7e24680119199a017e5b0e8603bf4dae # v0.12.0 (Dependabot propone las versiones nuevas)
+        uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.12.0 (Dependabot propone las versiones nuevas)
         with:
           target: ${{ inputs.url }}
           allow_issue_writing: true
