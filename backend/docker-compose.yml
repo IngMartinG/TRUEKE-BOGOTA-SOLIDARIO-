@@ -94,7 +94,7 @@ services:
       - ALL
 
   sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090
+    image: mcr.microsoft.com/mssql/server:2025-latest@sha256:2b5b581621126574f3d1f75e78d3eebe8d05aedb59ad0cfdf9aa42cb0634d726
     environment:
       ACCEPT_EULA: "Y"
       MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD:?Define SQL_SA_PASSWORD en .env}
@@ -114,7 +114,7 @@ services:
   # Crea la base, el usuario de la aplicación (trueke_app, db_owner SOLO de TruekeDb: puede migrar su esquema pero no
   # administrar el servidor) y le pone la clave de .env. Corre una vez en cada arranque y termina.
   sql-usuario:
-    image: mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090
+    image: mcr.microsoft.com/mssql/server:2025-latest@sha256:2b5b581621126574f3d1f75e78d3eebe8d05aedb59ad0cfdf9aa42cb0634d726
     entrypoint: ["/bin/bash", "-ec"]
     command:
       - |
