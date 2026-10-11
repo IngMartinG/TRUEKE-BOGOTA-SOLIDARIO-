@@ -24,7 +24,7 @@ Mientras el equipo sea una persona y el tráfico sea de amistades, **las E2E en 
 | Front | GitHub Pages (`ingmarting.github.io/TRUEKE-BOGOTA-SOLIDARIO-/`) | **Render Static Site** (`trueke-staging.onrender.com`). Pages solo permite un sitio por repositorio. |
 | API | Render Free, servicio `trueke-api` | Render Free, servicio `trueke-api-staging` en **otro workspace** (ver costos) |
 | Base | Azure SQL `TruekeDb` (oferta gratis) | Azure SQL **`TruekeDbStaging`** en el mismo servidor (otra base gratis) |
-| Fotos | Storage `<cuenta-de-fotos>` | **Otra cuenta de Storage** (`truekefotosstaging…`), para que nunca se mezclen ni se borren fotos reales |
+| Fotos | La cuenta de Storage de producción | **Otra cuenta de Storage** (p. ej. `truekefotosstaging…`), para que nunca se mezclen ni se borren fotos reales |
 | Correo | Azure Communication Services | El mismo recurso (10 correos/hora compartidos) o uno propio |
 | Pagos | Wompi **sandbox** (por ahora) | Wompi **sandbox, siempre**. Nunca llaves de producción. |
 | Monitoreo | App Insights `trueke-monitoreo` | Opcional: otro recurso o el mismo con `Monitoreo` separado por rol |
@@ -45,7 +45,7 @@ Mientras el equipo sea una persona y el tráfico sea de amistades, **las E2E en 
 5. Los buscadores no deben indexarla: el front de staging debe enviar `X-Robots-Tag: noindex` (en Render Static Site → *Headers*).
 
 ## Pasos para crearlo (cuando se decida)
-1. **Base:** Azure → servidor `<servidor-sql>` → *Crear base de datos* `TruekeDbStaging` → **Aplicar oferta gratis** → al agotar la cuota: **auto-pausa** (nunca cobrar).
+1. **Base:** Azure → el servidor SQL de producción (grupo `trueke`) → *Crear base de datos* `TruekeDbStaging` → **Aplicar oferta gratis** → al agotar la cuota: **auto-pausa** (nunca cobrar).
 2. **Storage:** crear `truekefotosstaging<algo>` (mismo grupo, Central US, LRS). Activar acceso anónimo de blobs y una regla CORS para el dominio del front de staging (igual que `docs/DESPLIEGUE.md` §3).
 3. **API en Render** (en el workspace nuevo): *New → Web Service* desde este repositorio, **Docker**, `backend/Dockerfile`, rama `staging`.
    - Variables: las mismas de `render.yaml`, con los valores de staging.
