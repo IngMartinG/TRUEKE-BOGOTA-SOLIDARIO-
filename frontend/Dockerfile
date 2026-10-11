@@ -13,7 +13,7 @@ RUN npx ng build --configuration production \
 
 # Etapa 2: servidor estático sin privilegios (usuario nginx, puerto 8080).
 # nginx estable (la rama 1.27 ya no recibe parches). Fijada por digest: Dependabot propone las nuevas.
-FROM nginxinc/nginx-unprivileged:1.30-alpine@sha256:15c994d10d6d78658721c3bcafff14cb281fba2a4bdf9d5ba92c416a472516e3
+FROM nginxinc/nginx-unprivileged:1.31-alpine@sha256:b9241c6e7b8e9a862f129d8d4199ab64b10390949a78bdd5603379b32c844083
 # Valores por defecto: API en el mismo origen, servida por el proxy inverso de este nginx.
 ENV API_URL="" \
     API_UPSTREAM="http://api:8080" \
