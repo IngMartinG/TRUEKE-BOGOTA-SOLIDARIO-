@@ -12,7 +12,7 @@ services:
   # CA de un solo uso: emite el certificado de Mailpit y publica su lista de revocación (CRL) por HTTP, como una CA
   # real. La API valida la cadena Y la revocación (MailKit lo exige): no se desactiva ninguna verificación.
   certificados:
-    image: alpine:3.22
+    image: alpine:3.24
     command:
       - sh
       - -ec
