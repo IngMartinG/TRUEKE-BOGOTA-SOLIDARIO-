@@ -3,7 +3,7 @@
 #   docker build -t trueke-web .
 #   docker run -p 8081:8080 -e API_UPSTREAM=http://api:8080 trueke-web
 # Etapa 1: compilación (Node solo existe aquí; la imagen final no lleva código fuente ni herramientas).
-FROM node:24-alpine AS compilacion
+FROM node:24-alpine@sha256:ebfe2f90462722a7a4de65e91990e97fe0d401c70e0e762c5b53302f905ec1c1 AS compilacion
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --no-audit --no-fund
@@ -12,7 +12,8 @@ RUN npx ng build --configuration production \
  && node scripts/csp-hash-inline.mjs dist/trueke-web/browser/index.html > /app/csp-script-hashes
 
 # Etapa 2: servidor estático sin privilegios (usuario nginx, puerto 8080).
-FROM nginxinc/nginx-unprivileged:1.27-alpine
+# nginx estable (la rama 1.27 ya no recibe parches). Fijada por digest: Dependabot propone las nuevas.
+FROM nginxinc/nginx-unprivileged:1.30-alpine@sha256:15c994d10d6d78658721c3bcafff14cb281fba2a4bdf9d5ba92c416a472516e3
 # Valores por defecto: API en el mismo origen, servida por el proxy inverso de este nginx.
 ENV API_URL="" \
     API_UPSTREAM="http://api:8080" \
