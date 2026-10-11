@@ -1840,3 +1840,64 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261011060716_BusquedasGuardadas'
+)
+BEGIN
+    CREATE TABLE [BusquedasGuardadas] (
+        [Id] uniqueidentifier NOT NULL,
+        [UsuarioId] uniqueidentifier NOT NULL,
+        [Texto] nvarchar(100) NULL,
+        [CategoriaId] int NULL,
+        [Modo] nvarchar(20) NULL,
+        [Condicion] nvarchar(20) NULL,
+        [DepartamentoCodigo] varchar(2) NULL,
+        [MunicipioCodigo] varchar(5) NULL,
+        [Localidad] nvarchar(60) NULL,
+        [PrecioMin] decimal(18,2) NULL,
+        [PrecioMax] decimal(18,2) NULL,
+        [SoloVerificados] bit NOT NULL,
+        [AlertasActivas] bit NOT NULL,
+        [FechaUtc] datetime2 NOT NULL,
+        [RevisadaHastaUtc] datetime2 NOT NULL,
+        CONSTRAINT [PK_BusquedasGuardadas] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_BusquedasGuardadas_Usuarios_UsuarioId] FOREIGN KEY ([UsuarioId]) REFERENCES [Usuarios] ([Id]) ON DELETE CASCADE
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261011060716_BusquedasGuardadas'
+)
+BEGIN
+    CREATE INDEX [IX_BusquedasGuardadas_AlertasActivas_RevisadaHastaUtc] ON [BusquedasGuardadas] ([AlertasActivas], [RevisadaHastaUtc]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261011060716_BusquedasGuardadas'
+)
+BEGIN
+    CREATE INDEX [IX_BusquedasGuardadas_UsuarioId] ON [BusquedasGuardadas] ([UsuarioId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261011060716_BusquedasGuardadas'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261011060716_BusquedasGuardadas', N'8.0.31');
+END;
+GO
+
+COMMIT;
+GO
+

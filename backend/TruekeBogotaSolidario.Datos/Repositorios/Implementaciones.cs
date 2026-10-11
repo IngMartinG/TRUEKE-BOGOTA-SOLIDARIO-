@@ -136,6 +136,9 @@ public sealed class PublicacionRepository : IPublicacionRepository
         if (f.PrecioMin.HasValue) q = q.Where(p => p.PrecioReferenciaCop >= f.PrecioMin.Value);
         if (f.PrecioMax.HasValue) q = q.Where(p => p.PrecioReferenciaCop <= f.PrecioMax.Value);
         if (f.SoloVerificados) q = q.Where(p => p.Propietario!.EstadoVerificacion == EstadoVerificacion.Aprobada);
+        if (f.PublicadasDesde.HasValue) q = q.Where(p => p.FechaPublicacion > f.PublicadasDesde.Value);
+        if (f.PublicadasHasta.HasValue) q = q.Where(p => p.FechaPublicacion <= f.PublicadasHasta.Value);
+        if (f.ExcluirPropietarioId.HasValue) q = q.Where(p => p.PropietarioId != f.ExcluirPropietarioId.Value);
 
         var total = await q.CountAsync();
         var ordenada = f.Orden switch
@@ -767,6 +770,26 @@ public sealed class DenunciaRepository : IDenunciaRepository
         => await _db.Apelaciones.AsNoTracking().Where(a => a.UsuarioId == usuarioId).OrderByDescending(a => a.FechaUtc).Take(maximo).ToListAsync();
 
     public void AgregarApelacion(Apelacion apelacion) => _db.Apelaciones.Add(apelacion);
+}
+
+public sealed class BusquedaGuardadaRepository : IBusquedaGuardadaRepository
+{
+    private readonly TruekeDbContext _db;
+    public BusquedaGuardadaRepository(TruekeDbContext db) => _db = db;
+
+    public async Task<IReadOnlyList<BusquedaGuardada>> DeUsuarioAsync(Guid usuarioId)
+        => await _db.BusquedasGuardadas.Where(b => b.UsuarioId == usuarioId).OrderByDescending(b => b.FechaUtc).ToListAsync();
+
+    public Task<BusquedaGuardada?> ObtenerAsync(Guid id) => _db.BusquedasGuardadas.FirstOrDefaultAsync(b => b.Id == id);
+
+    public async Task<IReadOnlyList<BusquedaGuardada>> ListarParaAlertasAsync(DateTime revisadasAntesDeUtc, int maximo)
+        => await _db.BusquedasGuardadas
+            .Where(b => b.AlertasActivas && b.RevisadaHastaUtc < revisadasAntesDeUtc
+                && _db.Usuarios.Any(u => u.Id == b.UsuarioId && !u.EstaEliminado && !u.EstaSuspendido))
+            .OrderBy(b => b.RevisadaHastaUtc).Take(maximo).ToListAsync();
+
+    public void Agregar(BusquedaGuardada b) => _db.BusquedasGuardadas.Add(b);
+    public void Quitar(BusquedaGuardada b) => _db.BusquedasGuardadas.Remove(b);
 }
 
 public sealed class SuscripcionPushRepository : ISuscripcionPushRepository

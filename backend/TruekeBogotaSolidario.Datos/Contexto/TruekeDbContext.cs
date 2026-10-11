@@ -25,6 +25,7 @@ public class TruekeDbContext : DbContext
     public DbSet<Bloqueo> Bloqueos => Set<Bloqueo>();
     public DbSet<Favorito> Favoritos => Set<Favorito>();
     public DbSet<SuscripcionPush> SuscripcionesPush => Set<SuscripcionPush>();
+    public DbSet<BusquedaGuardada> BusquedasGuardadas => Set<BusquedaGuardada>();
     public DbSet<Calificacion> Calificaciones => Set<Calificacion>();
     public DbSet<Factura> Facturas => Set<Factura>();
     public DbSet<Pqr> Pqrs => Set<Pqr>();
@@ -269,6 +270,24 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => new { x.Estado, x.FechaUtc });
             e.HasIndex(x => x.UsuarioId);
             if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+        });
+
+        mb.Entity<BusquedaGuardada>(e =>
+        {
+            e.ToTable("BusquedasGuardadas");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Texto).HasMaxLength(100);
+            e.Property(x => x.Modo).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Condicion).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.DepartamentoCodigo).HasMaxLength(2).IsUnicode(false);
+            e.Property(x => x.MunicipioCodigo).HasMaxLength(5).IsUnicode(false);
+            e.Property(x => x.Localidad).HasMaxLength(60);
+            e.Property(x => x.PrecioMin).HasPrecision(18, 2);
+            e.Property(x => x.PrecioMax).HasPrecision(18, 2);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.UsuarioId);
+            e.HasIndex(x => new { x.AlertasActivas, x.RevisadaHastaUtc });
         });
 
         mb.Entity<SuscripcionPush>(e =>

@@ -44,6 +44,8 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
     private readonly IPqrRepository _pqrs;
     private readonly IBloqueoService _bloqueos;
     private readonly ISuscripcionPushRepository _suscripcionesPush;
+    private readonly IBusquedaGuardadaService _busquedas;
+    private readonly IBusquedaGuardadaRepository _busquedasRepo;
     private readonly ILogger<DatosPersonalesService> _log;
 
     public DatosPersonalesService(IUsuarioRepository usuarios, IPublicacionRepository pubs, ISolicitudRepository solicitudes,
@@ -52,9 +54,10 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         IUnidadDeTrabajo uow, IPublicacionService publicacionService, ISolicitudService solicitudService, IValidadorGoogle google,
         IAlmacenArchivos almacen, ISesionService sesiones, INotificador notificador, TimeProvider reloj,
         ICalificacionRepository calificaciones, IFavoritoRepository favoritos, IFacturaRepository facturas, IPqrRepository pqrs,
-        IBloqueoService bloqueos, ILogger<DatosPersonalesService> log, ISuscripcionPushRepository suscripcionesPush)
+        IBloqueoService bloqueos, ILogger<DatosPersonalesService> log, ISuscripcionPushRepository suscripcionesPush,
+        IBusquedaGuardadaService busquedas, IBusquedaGuardadaRepository busquedasRepo)
     {
-        _bloqueos = bloqueos; _suscripcionesPush = suscripcionesPush;
+        _bloqueos = bloqueos; _suscripcionesPush = suscripcionesPush; _busquedas = busquedas; _busquedasRepo = busquedasRepo;
         _calificaciones = calificaciones; _favoritos = favoritos; _facturas = facturas; _pqrs = pqrs;
         _usuarios = usuarios; _pubs = pubs; _solicitudes = solicitudes; _comentarios = comentarios; _conversaciones = conversaciones;
         _transacciones = transacciones; _pagos = pagos; _notificaciones = notificaciones; _denuncias = denuncias; _refrescos = refrescos;
@@ -101,7 +104,7 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
             Mapeos.ADatosFacturacion(u), (await _facturas.ListarPorUsuarioAsync(actorId, 500)).Select(Mapeos.AFacturaDto).ToList(),
             (await _pqrs.ListarPorUsuarioAsync(actorId, 200)).Select(Mapeos.APqrDto).ToList(),
             (await _denuncias.ListarApelacionesDelUsuarioAsync(actorId, Maximo)).Select(DenunciaService.AApelacionDto).ToList(),
-            await _bloqueos.PreferenciasAsync(actorId), await _bloqueos.ListarAsync(actorId));
+            await _bloqueos.PreferenciasAsync(actorId), await _bloqueos.ListarAsync(actorId), await _busquedas.ListarAsync(actorId));
     }
 
     /// <summary>Volver a demostrar identidad: con un token robado (o un equipo desatendido) no basta para borrar la cuenta.</summary>
@@ -161,6 +164,7 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         // 4) Sesiones y datos personales
         await _refrescos.RevocarTodasDelUsuarioAsync(actorId, ahora);
         foreach (var s in await _suscripcionesPush.DeUsuarioAsync(actorId)) _suscripcionesPush.Quitar(s); // ningún aviso más
+        foreach (var b in await _busquedasRepo.DeUsuarioAsync(actorId)) _busquedasRepo.Quitar(b);
         u.Anonimizar(ahora);
         _auditoria.Agregar(new AuditoriaEvento(actorId, "CUENTA_ELIMINADA", "Usuario", actorId, null, ahora));
         await _uow.GuardarCambiosAsync();

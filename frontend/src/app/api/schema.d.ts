@@ -1246,6 +1246,150 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/busquedas-guardadas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BusquedaGuardadaDto"][];
+                        "application/json": components["schemas"]["BusquedaGuardadaDto"][];
+                        "text/json": components["schemas"]["BusquedaGuardadaDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["GuardarBusquedaRequest"];
+                    "text/json": components["schemas"]["GuardarBusquedaRequest"];
+                    "application/*+json": components["schemas"]["GuardarBusquedaRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BusquedaGuardadaDto"];
+                        "application/json": components["schemas"]["BusquedaGuardadaDto"];
+                        "text/json": components["schemas"]["BusquedaGuardadaDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/busquedas-guardadas/{id}/alertas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["AlertasBusquedaRequest"];
+                    "text/json": components["schemas"]["AlertasBusquedaRequest"];
+                    "application/*+json": components["schemas"]["AlertasBusquedaRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["BusquedaGuardadaDto"];
+                        "application/json": components["schemas"]["BusquedaGuardadaDto"];
+                        "text/json": components["schemas"]["BusquedaGuardadaDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/busquedas-guardadas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/publicaciones/{id}/comentarios": {
         parameters: {
             query?: never;
@@ -4405,6 +4549,9 @@ export interface components {
             planes?: boolean;
             novedades?: boolean;
         };
+        AlertasBusquedaRequest: {
+            activas?: boolean;
+        };
         ApelacionAdminDto: {
             /** Format: uuid */
             id?: string;
@@ -4441,6 +4588,27 @@ export interface components {
         };
         BloqueadoDto: {
             perfil?: components["schemas"]["PerfilPublicoDto"];
+            /** Format: date-time */
+            fechaUtc?: string;
+        };
+        BusquedaGuardadaDto: {
+            /** Format: uuid */
+            id?: string;
+            nombre?: string;
+            texto?: string | null;
+            /** Format: int32 */
+            categoriaId?: number | null;
+            modo?: string | null;
+            condicion?: string | null;
+            departamentoCodigo?: string | null;
+            municipioCodigo?: string | null;
+            localidad?: string | null;
+            /** Format: double */
+            precioMin?: number | null;
+            /** Format: double */
+            precioMax?: number | null;
+            soloVerificados?: boolean;
+            alertasActivas?: boolean;
             /** Format: date-time */
             fechaUtc?: string;
         };
@@ -4684,6 +4852,7 @@ export interface components {
             apelaciones?: components["schemas"]["ApelacionDto"][];
             preferenciasAvisos?: components["schemas"]["PreferenciasAvisosDto"];
             bloqueados?: components["schemas"]["BloqueadoDto"][] | null;
+            busquedasGuardadas?: components["schemas"]["BusquedaGuardadaDto"][] | null;
         };
         DenunciaAgrupadaDto: {
             /** Format: uuid */
@@ -4901,6 +5070,22 @@ export interface components {
             idToken: string;
             aceptoPoliticaDatos?: boolean;
             codigoDosFactores?: string | null;
+        };
+        GuardarBusquedaRequest: {
+            /** Format: int32 */
+            categoriaId?: number | null;
+            modo?: components["schemas"]["ModoDto"];
+            condicion?: components["schemas"]["CondicionDto"];
+            departamentoCodigo?: string | null;
+            municipioCodigo?: string | null;
+            localidad?: string | null;
+            texto?: string | null;
+            /** Format: double */
+            precioMin?: number | null;
+            /** Format: double */
+            precioMax?: number | null;
+            soloVerificados?: boolean;
+            alertas?: boolean;
         };
         IngresoConceptoDto: {
             concepto?: string;
@@ -5541,10 +5726,12 @@ export type AccionDenunciaDto = components['schemas']['AccionDenunciaDto'];
 export type ActivacionDosFactoresDto = components['schemas']['ActivacionDosFactoresDto'];
 export type ActualizarPerfilRequest = components['schemas']['ActualizarPerfilRequest'];
 export type ActualizarPreferenciasAvisosRequest = components['schemas']['ActualizarPreferenciasAvisosRequest'];
+export type AlertasBusquedaRequest = components['schemas']['AlertasBusquedaRequest'];
 export type ApelacionAdminDto = components['schemas']['ApelacionAdminDto'];
 export type ApelacionDto = components['schemas']['ApelacionDto'];
 export type BajaPushRequest = components['schemas']['BajaPushRequest'];
 export type BloqueadoDto = components['schemas']['BloqueadoDto'];
+export type BusquedaGuardadaDto = components['schemas']['BusquedaGuardadaDto'];
 export type CalificacionDto = components['schemas']['CalificacionDto'];
 export type CalificacionDtoPaginaDto = components['schemas']['CalificacionDtoPaginaDto'];
 export type CalificacionExportDto = components['schemas']['CalificacionExportDto'];
@@ -5597,6 +5784,7 @@ export type FacturaAdminDtoPaginaDto = components['schemas']['FacturaAdminDtoPag
 export type FacturaDto = components['schemas']['FacturaDto'];
 export type GananciaDto = components['schemas']['GananciaDto'];
 export type GoogleLoginRequest = components['schemas']['GoogleLoginRequest'];
+export type GuardarBusquedaRequest = components['schemas']['GuardarBusquedaRequest'];
 export type IngresoConceptoDto = components['schemas']['IngresoConceptoDto'];
 export type IngresoMesDto = components['schemas']['IngresoMesDto'];
 export type IngresosDto = components['schemas']['IngresosDto'];

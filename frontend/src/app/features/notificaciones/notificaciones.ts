@@ -28,6 +28,8 @@ function destino(n: NotificacionDto): { icono: string; color: string; ruta: unkn
   if (t === 'DenunciaRevisada') return { icono: 'bandera', color: 'bg-agua-100 text-agua-700', ruta: [] };
   if (t === 'PqrRespondida') return { icono: 'soporte', color: 'bg-agua-100 text-agua-700', ruta: ['/cuenta/soporte'] };
   if (t === 'FacturaEmitida') return { icono: 'factura', color: 'bg-cielo-100 text-cielo-700', ruta: ['/cuenta/facturacion'] };
+  if (t === 'BusquedaGuardada')
+    return { icono: 'buscar', color: 'bg-bosque-100 text-bosque-700', ruta: ['/cuenta/busquedas'], ...(n.recursoId ? { query: { ver: n.recursoId } } : {}) };
   if (t === 'PlanPorVencer') return { icono: 'corona', color: 'bg-sol-100 text-sol-600', ruta: ['/eco-puntos'] };
   if (t.startsWith('Pago')) return { icono: 'billetera', color: 'bg-cielo-100 text-cielo-700', ruta: ['/eco-puntos'] };
   if (t.startsWith('Publicacion') && n.recursoId) return { icono: 'escudo', color: 'bg-agua-100 text-agua-700', ruta: ['/publicacion', n.recursoId] };
