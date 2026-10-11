@@ -3,7 +3,7 @@
 #   docker build -t trueke-api .
 
 # ---------- 1) Compilación ----------
-FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0@sha256:e70cdb7f80b0348f5cb85f19a8f670fca061f033d57eed12fa003d58b0e06317 AS build
 WORKDIR /src
 
 # Primero solo los .csproj: la restauración queda en caché mientras no cambien las dependencias
@@ -20,7 +20,7 @@ RUN dotnet publish TruekeBogotaSolidario.Presentacion/TruekeBogotaSolidario.Pres
     -c Release -o /app/publish --no-restore /p:UseAppHost=false /p:DebugType=None /p:DebugSymbols=false
 
 # ---------- 2) Ejecución (solo runtime, sin SDK ni código fuente) ----------
-FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS final
+FROM mcr.microsoft.com/dotnet/aspnet:10.0@sha256:222759b391a1aaf241166672c8f99b2d4ada452e7b5319f3c6e8f265a37b5ad4 AS final
 WORKDIR /app
 
 ENV ASPNETCORE_ENVIRONMENT=Production \
