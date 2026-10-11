@@ -22,7 +22,7 @@ public sealed class AzuriteFixture : IAsyncLifetime
     {
         try
         {
-            _contenedor = new ContainerBuilder("mcr.microsoft.com/azure-storage/azurite:3.35.0")
+            _contenedor = new ContainerBuilder("mcr.microsoft.com/azure-storage/azurite:3.37.0@sha256:830430c1da1a2d537e08f3e6764dd1f5ae00cf0346bcaf625b968ec3f0971fd5")
                 .WithCommand("azurite-blob", "--blobHost", "0.0.0.0", "--blobPort", "10000", "--inMemoryPersistence", "--skipApiVersionCheck")
                 .WithPortBinding(10000, true)
                 .WithWaitStrategy(Wait.ForUnixContainer().UntilMessageIsLogged("successfully listen"))
