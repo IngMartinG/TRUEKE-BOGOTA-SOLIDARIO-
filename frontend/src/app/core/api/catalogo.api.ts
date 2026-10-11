@@ -1,12 +1,14 @@
 import { inject, Injectable } from '@angular/core';
 import { shareReplay } from 'rxjs';
 import type {
+  BusquedaGuardadaDto,
   CategoriaDto,
   ComentarioDto,
   ComentarioDtoPaginaDto,
   CondicionDto,
   CrearPublicacionRequest,
   EstadisticasPublicacionDto,
+  GuardarBusquedaRequest,
   ModoDto,
   OrdenPublicacionesDto,
   PublicacionCercanaDto,
@@ -60,6 +62,12 @@ export class CatalogoApi {
   estadisticas = (id: string) => this.api.get<EstadisticasPublicacionDto>(`/publicaciones/${seg(id)}/estadisticas`);
   destacadas = (f: { departamentoCodigo?: string | null; municipioCodigo?: string | null; categoriaId?: number | null }, max = 8) =>
     this.api.get<PublicacionDto[]>('/publicaciones/destacadas', { params: { ...f, max }, silencioso: true });
+
+  busquedasGuardadas = () => this.api.get<BusquedaGuardadaDto[]>('/busquedas-guardadas');
+  guardarBusqueda = (r: GuardarBusquedaRequest) => this.api.post<BusquedaGuardadaDto>('/busquedas-guardadas', r, { silencioso: true });
+  alertasBusqueda = (id: string, activas: boolean) =>
+    this.api.put<BusquedaGuardadaDto>(`/busquedas-guardadas/${seg(id)}/alertas`, { activas });
+  eliminarBusqueda = (id: string) => this.api.delete<void>(`/busquedas-guardadas/${seg(id)}`);
 
   marcarFavorito = (id: string) => this.api.post<void>(`/publicaciones/${seg(id)}/favorito`);
   quitarFavorito = (id: string) => this.api.delete<void>(`/publicaciones/${seg(id)}/favorito`);

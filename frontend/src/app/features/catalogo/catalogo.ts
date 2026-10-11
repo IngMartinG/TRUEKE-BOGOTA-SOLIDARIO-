@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, u
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { catchError, of } from 'rxjs';
+import { catchError, firstValueFrom, of } from 'rxjs';
 import {
   CODIGO_BOGOTA,
   CONDICIONES,
@@ -18,6 +18,7 @@ import {
 } from '../../api/tipos';
 import { CatalogoApi, type FiltrosCatalogo } from '../../core/api/catalogo.api';
 import { AvisosService } from '../../core/avisos.service';
+import { mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
 import { NumeroPipe } from '../../shared/pipes';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
@@ -102,6 +103,11 @@ const TAMANO = 12;
               <button type="button" class="enlace ml-2 text-xs" (click)="limpiar()">Limpiar filtros</button>
             }
           </p>
+          @if (filtrosActivos() > 0 && !cercaDeMi() && sesion.correoVerificado()) {
+            <button type="button" class="btn btn-secundario btn-sm" (click)="guardarBusqueda()" [disabled]="guardandoBusqueda()">
+              <app-icono nombre="campana" [tamano]="14" />{{ guardandoBusqueda() ? 'Guardando…' : 'Guardar búsqueda' }}
+            </button>
+          }
           <div class="flex flex-wrap items-center gap-2">
             <button type="button" class="btn btn-secundario btn-sm lg:hidden" (click)="filtrosMovil.set(true)">
               <app-icono nombre="ajustes" [tamano]="16" /> Filtros
@@ -394,6 +400,36 @@ export default class Catalogo {
   protected irAPagina(pagina: number): void {
     void this.router.navigate([], { relativeTo: this.ruta, queryParams: { pagina }, queryParamsHandling: 'merge' });
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  protected readonly guardandoBusqueda = signal(false);
+
+  /** Guarda los filtros actuales; las alertas avisan de lo que se publique después. */
+  protected async guardarBusqueda(): Promise<void> {
+    const f = this.filtros();
+    this.guardandoBusqueda.set(true);
+    try {
+      await firstValueFrom(
+        this.api.guardarBusqueda({
+          texto: f.texto || null,
+          categoriaId: f.categoriaId ?? null,
+          modo: f.modo ?? undefined,
+          condicion: f.condicion ?? undefined,
+          departamentoCodigo: f.departamentoCodigo ?? null,
+          municipioCodigo: f.municipioCodigo ?? null,
+          localidad: f.localidad || null,
+          precioMin: f.precioMin ?? null,
+          precioMax: f.precioMax ?? null,
+          soloVerificados: !!f.soloVerificados,
+          alertas: true,
+        }),
+      );
+      this.avisos.exito('Búsqueda guardada', 'Te avisaremos cuando publiquen algo nuevo. Adminístrala en Cuenta → Búsquedas guardadas.');
+    } catch (e) {
+      this.avisos.error('No se pudo guardar la búsqueda', mensajeDe(e));
+    } finally {
+      this.guardandoBusqueda.set(false);
+    }
   }
 
   protected limpiar(): void {

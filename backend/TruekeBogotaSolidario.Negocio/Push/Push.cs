@@ -275,9 +275,10 @@ public sealed class AvisosPush : IAvisosPush
         try
         {
             if (!await DebeAvisarAsync(usuarioId)) return;
-            var intercambio = TiposIntercambio.Contains(tipo);
-            _cola.Encolar(new AvisoPush(usuarioId, intercambio ? "Novedades en tu intercambio" : "Trueke Bogotá Solidario", mensaje,
-                intercambio ? "intercambios" : "notificaciones", $"aviso-{tipo}"));
+            var (titulo, ruta) = tipo == TiposNotificacion.BusquedaGuardada ? ("Novedades en tus búsquedas", "cuenta/busquedas")
+                : TiposIntercambio.Contains(tipo) ? ("Novedades en tu intercambio", "intercambios")
+                : ("Trueke Bogotá Solidario", "notificaciones");
+            _cola.Encolar(new AvisoPush(usuarioId, titulo, mensaje, ruta, $"aviso-{tipo}"));
         }
         catch (Exception ex)
         {
