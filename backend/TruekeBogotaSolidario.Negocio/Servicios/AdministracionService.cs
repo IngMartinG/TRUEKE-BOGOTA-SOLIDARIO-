@@ -52,6 +52,7 @@ public sealed class AdministracionService : IAdministracionService
 {
     private readonly IUsuarioRepository _usuarios;
     private readonly IPublicacionRepository _pubs;
+    private readonly ISolicitudService _truekes;
     private readonly IUnidadDeTrabajo _uow;
     private readonly IAuditoriaRepository _auditoria;
     private readonly ISesionService _sesiones;
@@ -68,9 +69,9 @@ public sealed class AdministracionService : IAdministracionService
     public AdministracionService(IUsuarioRepository usuarios, IPublicacionRepository pubs, IUnidadDeTrabajo uow,
         IAuditoriaRepository auditoria, ISesionService sesiones, TimeProvider reloj, INotificador notificador,
         ISesionRefreshRepository refrescos, IAlmacenArchivos almacen, IPagoRepository pagos, ICorreoSaliente correo,
-        IFacturaRepository facturas, IPqrRepository pqrs, ILogger<AdministracionService> log)
+        IFacturaRepository facturas, IPqrRepository pqrs, ILogger<AdministracionService> log, ISolicitudService truekes)
     {
-        _usuarios = usuarios; _pubs = pubs; _uow = uow; _auditoria = auditoria; _sesiones = sesiones; _reloj = reloj;
+        _usuarios = usuarios; _pubs = pubs; _uow = uow; _auditoria = auditoria; _sesiones = sesiones; _reloj = reloj; _truekes = truekes;
         _notificador = notificador; _refrescos = refrescos; _almacen = almacen; _pagos = pagos; _correo = correo;
         _facturas = facturas; _pqrs = pqrs; _log = log;
     }
@@ -358,10 +359,13 @@ public sealed class AdministracionService : IAdministracionService
         await ExigirRolAsync(actorId, RolUsuarioEnum.Administrador);
         var p = await _pubs.ObtenerPorIdAsync(publicacionId) ?? throw new NoEncontradoException("Publicación no encontrada.");
         p.Ocultar(motivo);
+        // Nadie debe aceptar a cambio un objeto oculto por moderación: se retiran las propuestas pendientes que lo ofrecían.
+        var avisos = await _truekes.RetirarOfertasAsync(p.Id, "El objeto ofrecido fue ocultado por moderación.", incluirAceptadas: false);
         Auditar(actorId, "PUBLICACION_OCULTADA", "Publicacion", publicacionId, motivo);
         await _uow.GuardarCambiosAsync();
         _log.LogWarning("Publicación {PublicacionId} ocultada por moderador {ActorId}", publicacionId, actorId);
         await NotificarAsync(p.PropietarioId, TiposNotificacion.PublicacionOcultada, $"Tu publicación \"{p.Titulo}\" fue ocultada por moderación.", p.Id);
+        await avisos.EnviarAsync(_notificador);
     }
 
     public async Task MostrarPublicacionAsync(Guid actorId, Guid publicacionId)

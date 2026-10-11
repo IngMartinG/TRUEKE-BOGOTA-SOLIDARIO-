@@ -25,6 +25,28 @@ public interface ISolicitudService
     /// <summary>Tarea en segundo plano: cierra las aceptadas que vencieron.</summary>
     Task<IReadOnlyList<Guid>> ListarParaCierreAutomaticoAsync(int maximo);
     Task CerrarAutomaticamenteAsync(Guid solicitudId);
+
+    /// <summary>
+    /// La publicación deja de estar disponible por fuera de un trueke (su dueño la retiró o moderación la ocultó): se cierran
+    /// los truekes donde se OFRECÍA. Si estaba reservada como objeto ofrecido (y <paramref name="incluirAceptadas"/>), ese
+    /// trueke queda no concretado y la otra publicación vuelve al catálogo. NO guarda: el llamador guarda todo junto y
+    /// después envía los avisos devueltos.
+    /// </summary>
+    Task<AvisosDiferidos> RetirarOfertasAsync(Guid publicacionId, string motivo, bool incluirAceptadas);
+    /// <summary>Un trueke aceptado no se concretó: el objeto ofrecido (si había) vuelve al catálogo. NO guarda.</summary>
+    Task<AvisosDiferidos> LiberarOfrecidaAsync(Solicitud noConcretada);
+}
+
+/// <summary>Avisos que se envían DESPUÉS de guardar (si el guardado falla, nadie recibe un aviso falso).</summary>
+public sealed class AvisosDiferidos
+{
+    private readonly List<(Guid Usuario, string Tipo, string Mensaje, Guid Recurso)> _avisos = new();
+    public void Agregar(Guid usuarioId, string tipo, string mensaje, Guid recursoId) => _avisos.Add((usuarioId, tipo, mensaje, recursoId));
+    public void Agregar(AvisosDiferidos otros) => _avisos.AddRange(otros._avisos);
+    public async Task EnviarAsync(INotificador notificador)
+    {
+        foreach (var a in _avisos) await notificador.NotificarAsync(a.Usuario, a.Tipo, a.Mensaje, a.Recurso);
+    }
 }
 
 public sealed class SolicitudService : ISolicitudService
@@ -74,8 +96,11 @@ public sealed class SolicitudService : ISolicitudService
         if (await _solicitudes.ContarPendientesPorSolicitanteAsync(actorId) >= Limites.MaxSolicitudesPendientesPorUsuario)
             throw new ReglaDeNegocioException($"Tienes {Limites.MaxSolicitudesPendientesPorUsuario} solicitudes pendientes. Espera respuesta o cancela alguna.");
 
+        var ofrecida = await ValidarOfrecidaAsync(r.PublicacionOfrecidaId, pub, actorId);
+
         // Varias personas pueden estar interesadas a la vez: la publicación sigue en el catálogo hasta que el dueño elija a una.
-        var solicitud = new Solicitud(pub.Id, actorId, r.Mensaje);
+        // El objeto ofrecido también sigue disponible (se puede ofrecer en varios truekes) hasta que alguno se acepte.
+        var solicitud = new Solicitud(pub.Id, actorId, r.Mensaje, ofrecida?.Id);
         _solicitudes.Agregar(solicitud);
 
         // El chat nace con la solicitud; su mensaje es el primero de la conversación.
@@ -84,8 +109,23 @@ public sealed class SolicitudService : ISolicitudService
         _conversaciones.AgregarMensaje(new Mensaje(conversacion.Id, actorId, solicitud.Mensaje, ahora));
         await _uow.GuardarCambiosAsync();
 
-        await NotificarAsync(pub.PropietarioId, TiposNotificacion.SolicitudNueva, $"Nueva solicitud para \"{pub.Titulo}\".", solicitud.Id);
-        return ADto(solicitud, pub, solicitante, actorId, conversacion.Id, puedoCalificar: false, ahora);
+        await NotificarAsync(pub.PropietarioId, TiposNotificacion.SolicitudNueva, ofrecida is null
+            ? $"Nueva solicitud para \"{pub.Titulo}\"."
+            : $"Nueva propuesta de trueke para \"{pub.Titulo}\": te ofrecen \"{ofrecida.Titulo}\".", solicitud.Id);
+        return ADto(solicitud, pub, solicitante, actorId, conversacion.Id, puedoCalificar: false, ahora, ofrecida);
+    }
+
+    /// <summary>Lo que se ofrece en un trueke: una publicación PROPIA, disponible y visible (null si no se ofrece nada).</summary>
+    private async Task<Publicacion?> ValidarOfrecidaAsync(Guid? ofrecidaId, Publicacion pedida, Guid actorId)
+    {
+        if (ofrecidaId is null) return null;
+        if (pedida.Modo != ModoTransaccion.Trueke)
+            throw new ReglaDeNegocioException("Solo en un trueke se ofrece un objeto a cambio.");
+        var o = await _pubs.ObtenerPorIdAsync(ofrecidaId.Value);
+        if (o is null || o.PropietarioId != actorId) throw new NoEncontradoException("No encontramos el objeto que quieres ofrecer.");
+        if (o.Id == pedida.Id || o.Estado != EstadoPublicacionEnum.Disponible || o.EstaOculta)
+            throw new ReglaDeNegocioException("Ese objeto no está disponible para ofrecerlo: debe estar publicado y sin reservar.");
+        return o;
     }
 
     private async Task<IReadOnlyList<SolicitudDto>> MapearAsync(Guid actorId, IReadOnlyList<Solicitud> lista)
@@ -96,7 +136,7 @@ public sealed class SolicitudService : ISolicitudService
         var calificadas = await _calificaciones.SolicitudesCalificadasPorAsync(actorId, ids);
         return lista.Select(s => ADto(s, s.Publicacion!, s.Solicitante!, actorId,
             conversaciones.TryGetValue(s.Id, out var c) ? c : null,
-            PuedeCalificar(s, ahora) && !calificadas.Contains(s.Id), ahora)).ToList();
+            PuedeCalificar(s, ahora) && !calificadas.Contains(s.Id), ahora, s.PublicacionOfrecida)).ToList();
     }
 
     public async Task<IReadOnlyList<SolicitudDto>> ListarEnviadasAsync(Guid actorId)
@@ -130,17 +170,80 @@ public sealed class SolicitudService : ISolicitudService
         Guardas.ExigirCuentaCompleta(pub.Propietario!); // quien entrega también debe mostrar su cara (publicaciones anteriores a la regla)
         if (pub.Estado == EstadoPublicacionEnum.EnNegociacion)
             throw new ReglaDeNegocioException("Ya elegiste a otra persona para esta publicación. Si no se concreta, podrás elegir a alguien de la lista de espera.");
+        var ofrecida = s.PublicacionOfrecida;
+        if (ofrecida is not null && (ofrecida.Estado != EstadoPublicacionEnum.Disponible || ofrecida.EstaOculta))
+            throw new ReglaDeNegocioException("El objeto que te ofrecieron ya no está disponible. Puedes rechazar la propuesta o conversar por el chat.");
+
         // Elegir a alguien reserva la publicación y la saca del catálogo. RowVersion: dos aceptaciones simultáneas → una recibe 409.
         pub.MarcarEnNegociacion();
         s.Aceptar(Ahora);
-        var enEspera = (await _solicitudes.ListarEnCursoPorPublicacionAsync(pub.Id, incluirAceptada: false)).Where(x => x.Id != s.Id).ToList();
+        var avisos = new AvisosDiferidos();
+        avisos.Agregar(s.SolicitanteId, TiposNotificacion.SolicitudAceptada, ofrecida is null
+            ? $"¡Aceptaron tu solicitud para \"{pub.Titulo}\"! Coordinen la entrega por el chat y confírmala cuando ocurra."
+            : $"¡Aceptaron tu trueke: \"{ofrecida.Titulo}\" por \"{pub.Titulo}\"! Los dos objetos quedan reservados. Coordinen la entrega por el chat.", s.Id);
+        await PonerEnEsperaAsync(pub, exceptoId: s.Id, avisos);
+        // Un objeto reservado ya no puede entregarse en otro trueke: se cierran las propuestas donde se ofrecía.
+        await CancelarOfertasPendientesAsync(pub.Id, s.Id, $"\"{pub.Titulo}\" quedó reservado en otro intercambio.", avisos);
+
+        if (ofrecida is not null)
+        {
+            // El objeto ofrecido también se reserva: sale del catálogo y quienes lo pidieron quedan en lista de espera.
+            ofrecida.MarcarEnNegociacion();
+            await PonerEnEsperaAsync(ofrecida, exceptoId: null, avisos);
+            await CancelarOfertasPendientesAsync(ofrecida.Id, s.Id, $"Ofreciste \"{ofrecida.Titulo}\" en otro trueke que ya fue aceptado.", avisos);
+        }
         await _uow.GuardarCambiosAsync();
-        await NotificarAsync(s.SolicitanteId, TiposNotificacion.SolicitudAceptada,
-            $"¡Aceptaron tu solicitud para \"{pub.Titulo}\"! Coordinen la entrega por el chat y confírmala cuando ocurra.", s.Id);
-        foreach (var otra in enEspera)
-            await NotificarAsync(otra.SolicitanteId, TiposNotificacion.SolicitudEnEspera,
-                $"El dueño de \"{pub.Titulo}\" está concretando con otra persona. Tu solicitud queda en lista de espera: si no se concreta, podrá elegirte.", otra.Id);
+        await avisos.EnviarAsync(_notificador);
         return await UnaAsync(actorId, s);
+    }
+
+    /// <summary>Las solicitudes pendientes de una publicación que acaba de reservarse quedan en lista de espera (se avisa).</summary>
+    private async Task PonerEnEsperaAsync(Publicacion pub, Guid? exceptoId, AvisosDiferidos avisos)
+    {
+        foreach (var otra in (await _solicitudes.ListarEnCursoPorPublicacionAsync(pub.Id, incluirAceptada: false)).Where(x => x.Id != exceptoId))
+            avisos.Agregar(otra.SolicitanteId, TiposNotificacion.SolicitudEnEspera,
+                $"El dueño de \"{pub.Titulo}\" está concretando con otra persona. Tu solicitud queda en lista de espera: si no se concreta, podrá elegirte.", otra.Id);
+    }
+
+    /// <summary>Cancela (con aviso a ambas partes) las propuestas PENDIENTES donde esa publicación se ofrecía a cambio.</summary>
+    private async Task CancelarOfertasPendientesAsync(Guid publicacionId, Guid? exceptoId, string motivo, AvisosDiferidos avisos)
+    {
+        foreach (var o in (await _solicitudes.ListarEnCursoQueOfrecenAsync(publicacionId, incluirAceptada: false)).Where(x => x.Id != exceptoId))
+        {
+            o.Cancelar(motivo);
+            avisos.Agregar(o.Publicacion!.PropietarioId, TiposNotificacion.SolicitudCancelada,
+                $"Se retiró una propuesta de trueke para \"{o.Publicacion.Titulo}\": el objeto ofrecido ya no está disponible.", o.Id);
+            avisos.Agregar(o.SolicitanteId, TiposNotificacion.SolicitudCancelada,
+                $"Se retiró tu propuesta de trueke para \"{o.Publicacion.Titulo}\". {motivo}", o.Id);
+        }
+    }
+
+    public async Task<AvisosDiferidos> RetirarOfertasAsync(Guid publicacionId, string motivo, bool incluirAceptadas)
+    {
+        var avisos = new AvisosDiferidos();
+        await CancelarOfertasPendientesAsync(publicacionId, null, motivo, avisos);
+        if (!incluirAceptadas) return avisos;
+        foreach (var s in await _solicitudes.ListarEnCursoQueOfrecenAsync(publicacionId, incluirAceptada: true))
+        {
+            if (s.Estado != EstadoSolicitud.Aceptada) continue;
+            // El objeto ofrecido ya no se entregará: el trueke no se concreta y lo pedido vuelve al catálogo.
+            s.MarcarNoConcretada(motivo, Ahora);
+            s.Publicacion!.VolverADisponible();
+            avisos.Agregar(s.Publicacion.PropietarioId, TiposNotificacion.IntercambioNoConcretado,
+                $"El trueke por \"{s.Publicacion.Titulo}\" no se concretará: {motivo} Tu publicación volvió al catálogo.", s.Id);
+            await AgregarAvisosListaDeEsperaAsync(s.Publicacion, avisos);
+        }
+        return avisos;
+    }
+
+    public async Task<AvisosDiferidos> LiberarOfrecidaAsync(Solicitud noConcretada)
+    {
+        var avisos = new AvisosDiferidos();
+        var ofrecida = noConcretada.PublicacionOfrecida;
+        if (ofrecida is null || ofrecida.Estado != EstadoPublicacionEnum.EnNegociacion) return avisos;
+        ofrecida.VolverADisponible();
+        await AgregarAvisosListaDeEsperaAsync(ofrecida, avisos);
+        return avisos;
     }
 
     public async Task RechazarAsync(Guid actorId, Guid solicitudId, string? motivo)
@@ -187,31 +290,35 @@ public sealed class SolicitudService : ISolicitudService
         if (s.ConfirmadaPorDuenioUtc is not null || s.ConfirmadaPorSolicitanteUtc is not null)
             throw new ReglaDeNegocioException("Alguien ya confirmó la entrega. Si hay un problema, repórtalo con una denuncia.");
         s.MarcarNoConcretada(motivo, Ahora);
-        var enEspera = await LiberarPublicacionAsync(s);
-        await _uow.GuardarCambiosAsync();
+        var avisos = await LiberarPublicacionesAsync(s);
         var otra = s.Publicacion!.PropietarioId == actorId ? s.SolicitanteId : s.Publicacion.PropietarioId;
+        await _uow.GuardarCambiosAsync();
         await NotificarAsync(otra, TiposNotificacion.IntercambioNoConcretado, $"El intercambio de \"{s.Publicacion.Titulo}\" se marcó como no concretado.", s.Id);
-        await AvisarListaDeEsperaAsync(s.Publicacion, enEspera);
+        await avisos.EnviarAsync(_notificador);
         return await UnaAsync(actorId, s);
     }
 
     /// <summary>
-    /// El intercambio aceptado no ocurrió: la publicación vuelve al catálogo (y la ve todo el mundo otra vez).
-    /// Devuelve la lista de espera, que se avisa DESPUÉS de guardar.
+    /// El intercambio aceptado no ocurrió: la publicación (y el objeto ofrecido, si era un trueke con objeto) vuelve al
+    /// catálogo. Devuelve los avisos para las listas de espera, que se envían DESPUÉS de guardar.
     /// </summary>
-    private async Task<IReadOnlyList<Solicitud>> LiberarPublicacionAsync(Solicitud noConcretada)
+    private async Task<AvisosDiferidos> LiberarPublicacionesAsync(Solicitud noConcretada)
     {
+        var avisos = new AvisosDiferidos();
         noConcretada.Publicacion!.VolverADisponible();
-        return await _solicitudes.ListarEnCursoPorPublicacionAsync(noConcretada.PublicacionId, incluirAceptada: false);
+        await AgregarAvisosListaDeEsperaAsync(noConcretada.Publicacion, avisos);
+        avisos.Agregar(await LiberarOfrecidaAsync(noConcretada));
+        return avisos;
     }
 
-    private async Task AvisarListaDeEsperaAsync(Publicacion pub, IReadOnlyList<Solicitud> enEspera)
+    private async Task AgregarAvisosListaDeEsperaAsync(Publicacion pub, AvisosDiferidos avisos)
     {
+        var enEspera = await _solicitudes.ListarEnCursoPorPublicacionAsync(pub.Id, incluirAceptada: false);
         foreach (var s in enEspera)
-            await NotificarAsync(s.SolicitanteId, TiposNotificacion.SolicitudDisponibleDeNuevo,
+            avisos.Agregar(s.SolicitanteId, TiposNotificacion.SolicitudDisponibleDeNuevo,
                 $"\"{pub.Titulo}\" vuelve a estar disponible y tu solicitud sigue en pie: el dueño ahora puede elegirte.", s.Id);
         if (enEspera.Count > 0)
-            await NotificarAsync(pub.PropietarioId, TiposNotificacion.SolicitudNueva,
+            avisos.Agregar(pub.PropietarioId, TiposNotificacion.SolicitudNueva,
                 $"\"{pub.Titulo}\" volvió al catálogo. Tienes {enEspera.Count} {(enEspera.Count == 1 ? "persona" : "personas")} en lista de espera: puedes elegir a otra.", pub.Id);
     }
 
@@ -239,18 +346,27 @@ public sealed class SolicitudService : ISolicitudService
 
         s.Completar(ahora);
         pub.ConfirmarIntercambio();
+        // Trueke con objeto: el objeto ofrecido también cambió de manos (es un solo intercambio: los puntos se suman una vez).
+        var ofrecida = s.PublicacionOfrecida;
+        if (ofrecida is { Estado: EstadoPublicacionEnum.EnNegociacion }) ofrecida.ConfirmarIntercambio();
         oferente.RegistrarTransaccionCompletada(pub.Modo, puntosOferente);
         receptor.RegistrarTransaccionCompletada(pub.Modo, puntosReceptor);
         _transacciones.Agregar(new Transaccion(pub.Id, s.Id, oferente.Id, receptor.Id, pub.Modo, puntosOferente, puntosReceptor, ahora));
-        // El objeto ya se entregó: la lista de espera se cierra (en el mismo guardado, todo o nada).
-        var enEspera = await _solicitudes.ListarEnCursoPorPublicacionAsync(pub.Id, incluirAceptada: false);
-        foreach (var otra in enEspera) otra.Rechazar("El objeto ya se entregó a otra persona.");
+        // Los objetos ya se entregaron: sus listas de espera se cierran (en el mismo guardado, todo o nada).
+        var avisos = new AvisosDiferidos();
+        foreach (var entregada in new[] { pub, ofrecida }.OfType<Publicacion>())
+        {
+            foreach (var otra in await _solicitudes.ListarEnCursoPorPublicacionAsync(entregada.Id, incluirAceptada: false))
+            {
+                otra.Rechazar("El objeto ya se entregó a otra persona.");
+                avisos.Agregar(otra.SolicitanteId, TiposNotificacion.SolicitudRechazada,
+                    $"\"{entregada.Titulo}\" ya se entregó a otra persona. ¡Gracias por tu interés! Hay más publicaciones esperándote.", otra.Id);
+            }
+        }
 
         // Un solo SaveChanges = todo o nada. Con RowVersion, dos confirmaciones simultáneas no duplican puntos (la segunda recibe 409).
         await _uow.GuardarCambiosAsync();
-        foreach (var otra in enEspera)
-            await NotificarAsync(otra.SolicitanteId, TiposNotificacion.SolicitudRechazada,
-                $"\"{pub.Titulo}\" ya se entregó a otra persona. ¡Gracias por tu interés! Hay más publicaciones esperándote.", otra.Id);
+        await avisos.EnviarAsync(_notificador);
         _log.LogInformation("Transacción completada {SolicitudId} modo {Modo}", s.Id, pub.Modo);
         foreach (var id in new[] { oferente.Id, receptor.Id })
             await NotificarAsync(id, TiposNotificacion.IntercambioCompletado, parejaRepetida
@@ -278,12 +394,12 @@ public sealed class SolicitudService : ISolicitudService
         else if (!algunaConfirmacion && s.FechaAceptacionUtc < ahora.AddDays(-Limites.DiasCierreSinConfirmacion))
         {
             s.MarcarNoConcretada($"Nadie confirmó la entrega en {Limites.DiasCierreSinConfirmacion} días.", ahora);
-            var enEspera = await LiberarPublicacionAsync(s);
+            var avisos = await LiberarPublicacionesAsync(s);
             await _uow.GuardarCambiosAsync();
             foreach (var id in new[] { s.SolicitanteId, s.Publicacion!.PropietarioId })
                 await NotificarAsync(id, TiposNotificacion.IntercambioNoConcretado,
                     $"El intercambio de \"{s.Publicacion.Titulo}\" se cerró sin confirmación de entrega.", s.Id);
-            await AvisarListaDeEsperaAsync(s.Publicacion, enEspera);
+            await avisos.EnviarAsync(_notificador);
         }
     }
 
@@ -325,8 +441,11 @@ public sealed class SolicitudService : ISolicitudService
         return new PaginaDto<CalificacionDto>(dtos, total, Math.Max(pagina, 1), Math.Clamp(tamano, 1, 50));
     }
 
-    private static SolicitudDto ADto(Solicitud s, Publicacion pub, Usuario solicitante, Guid actorId, Guid? conversacionId, bool puedoCalificar, DateTime ahora)
+    private static SolicitudDto ADto(Solicitud s, Publicacion pub, Usuario solicitante, Guid actorId, Guid? conversacionId, bool puedoCalificar,
+        DateTime ahora, Publicacion? ofrecida = null)
     {
+        var resumen = ofrecida is null ? null : new PublicacionResumenDto(ofrecida.Id, ofrecida.Titulo,
+            ofrecida.Imagenes.OrderBy(i => i.Orden).Select(i => i.Url).FirstOrDefault(), ofrecida.Condicion.ToString(), ofrecida.Estado.ToString());
         DateTime? cierre = null;
         if (s.Estado == EstadoSolicitud.Aceptada && s.FechaAceptacionUtc is { } aceptada)
             cierre = aceptada.AddDays(s.ConfirmadaPorDuenioUtc is not null || s.ConfirmadaPorSolicitanteUtc is not null
@@ -335,6 +454,6 @@ public sealed class SolicitudService : ISolicitudService
             Mapeos.APerfilPublico(solicitante, ahora), pub.PropietarioId == actorId, s.FechaSolicitud, s.Mensaje, s.Estado.ToString(),
             s.MotivoRechazo, conversacionId, s.FechaAceptacionUtc, s.ConfirmadaPorDuenioUtc is not null, s.ConfirmadaPorSolicitanteUtc is not null,
             s.FechaCierreUtc, cierre, puedoCalificar,
-            EnEspera: s.Estado == EstadoSolicitud.Pendiente && pub.Estado == EstadoPublicacionEnum.EnNegociacion);
+            EnEspera: s.Estado == EstadoSolicitud.Pendiente && pub.Estado == EstadoPublicacionEnum.EnNegociacion, Ofrecida: resumen);
     }
 }

@@ -1797,3 +1797,46 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261011054145_TruekeConObjeto'
+)
+BEGIN
+    ALTER TABLE [Solicitudes] ADD [PublicacionOfrecidaId] uniqueidentifier NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261011054145_TruekeConObjeto'
+)
+BEGIN
+    CREATE INDEX [IX_Solicitudes_PublicacionOfrecidaId_Estado] ON [Solicitudes] ([PublicacionOfrecidaId], [Estado]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261011054145_TruekeConObjeto'
+)
+BEGIN
+    ALTER TABLE [Solicitudes] ADD CONSTRAINT [FK_Solicitudes_Publicaciones_PublicacionOfrecidaId] FOREIGN KEY ([PublicacionOfrecidaId]) REFERENCES [Publicaciones] ([Id]) ON DELETE NO ACTION;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261011054145_TruekeConObjeto'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261011054145_TruekeConObjeto', N'8.0.31');
+END;
+GO
+
+COMMIT;
+GO
+

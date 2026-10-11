@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { Title } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
-import { ETIQUETA_ESTADO_PUBLICACION, infoCondicion, INFO_MODO, type ModoDto } from '../../api/tipos';
+import { ETIQUETA_ESTADO_PUBLICACION, infoCondicion, INFO_MODO, type ModoDto, type PublicacionDto } from '../../api/tipos';
 import { AdminApi } from '../../core/api/admin.api';
 import { CatalogoApi } from '../../core/api/catalogo.api';
 import { CuentaApi } from '../../core/api/cuenta.api';
@@ -333,6 +333,37 @@ import { Volver } from '../../shared/ui/volver';
             <textarea id="mensaje-solicitud" name="mensaje" class="entrada" maxlength="500" required [(ngModel)]="mensaje" [placeholder]="sugerencia()"></textarea>
             <p class="ayuda">{{ p.modo === 'Trueke' ? 'Cuenta qué ofreces a cambio.' : 'Preséntate y di cuándo podrías recogerlo.' }} No compartas tu teléfono: el chat se abre al aceptar.</p>
           </div>
+          @if (p.modo === 'Trueke') {
+            <fieldset>
+              <legend class="etiqueta">¿Ofreces uno de tus objetos? <span class="font-normal text-tenue">(opcional)</span></legend>
+              <p class="ayuda mb-2">Si aceptan, tu objeto también queda reservado para este trueke.</p>
+              @if (misObjetos() === null) {
+                <div class="esqueleto h-16"></div>
+              } @else {
+                <div class="grid gap-2">
+                  <label class="flex cursor-pointer items-center gap-3 rounded-2xl border-2 p-3 text-sm transition"
+                    [class]="ofrecida() === null ? 'border-bosque-500 bg-bosque-50 dark:bg-bosque-900/50' : 'border-borde hover:border-bosque-200'">
+                    <input type="radio" name="ofrecida" class="sr-only" [checked]="ofrecida() === null" (change)="ofrecida.set(null)" aria-label="Solo mi mensaje" />
+                    <app-icono nombre="mensaje" [tamano]="20" class="shrink-0 text-tenue" />
+                    <span class="font-semibold">Solo mi mensaje</span>
+                  </label>
+                  @for (o of misObjetos(); track o.id) {
+                    <label class="flex cursor-pointer items-center gap-3 rounded-2xl border-2 p-2 text-sm transition"
+                      [class]="ofrecida() === o.id ? 'border-bosque-500 bg-bosque-50 dark:bg-bosque-900/50' : 'border-borde hover:border-bosque-200'">
+                      <input type="radio" name="ofrecida" class="sr-only" [checked]="ofrecida() === o.id" (change)="ofrecida.set(o.id!)" [attr.aria-label]="'Ofrecer ' + o.titulo" />
+                      <app-imagen-publicacion class="size-12 shrink-0 rounded-xl" [src]="o.imagenes?.[0]" [miniatura]="true" [modo]="o.modo" [categoriaId]="o.categoria?.id" />
+                      <span class="min-w-0">
+                        <span class="block truncate font-semibold">{{ o.titulo }}</span>
+                        <span class="block text-xs text-tenue">{{ condicionDe(o.condicion) }}</span>
+                      </span>
+                    </label>
+                  } @empty {
+                    <p class="text-sm text-tenue">No tienes objetos publicados disponibles. <a routerLink="/publicar" class="enlace">Publica el que quieres ofrecer</a>.</p>
+                  }
+                </div>
+              }
+            </fieldset>
+          }
           @if (errorSolicitud()) {
             <p class="error-campo" role="alert">{{ errorSolicitud() }}</p>
           }
@@ -432,6 +463,10 @@ export default class Detalle {
   protected readonly denunciaAbierta = signal(false);
   protected readonly ocultarAbierto = signal(false);
   protected readonly mensaje = signal('');
+  /** Trueke: mis publicaciones que puedo ofrecer (null = cargando) y la elegida (null = solo el mensaje). */
+  protected readonly misObjetos = signal<PublicacionDto[] | null>(null);
+  protected readonly ofrecida = signal<string | null>(null);
+  protected readonly condicionDe = (c: string | null | undefined) => infoCondicion(c).etiqueta;
   protected readonly motivoCancelar = signal('');
   protected readonly motivoOcultar = signal('');
   protected readonly errorSolicitud = signal<string | null>(null);
@@ -464,6 +499,18 @@ export default class Detalle {
     }
     this.errorSolicitud.set(null);
     this.solicitudAbierta.set(true);
+    if (this.p()?.modo === 'Trueke') void this.cargarMisObjetos();
+  }
+
+  /** Solo lo que se puede ofrecer: publicado, sin reservar, visible y distinto de lo que se pide. */
+  private async cargarMisObjetos(): Promise<void> {
+    if (this.misObjetos() !== null) return;
+    try {
+      const mias = await firstValueFrom(this.api.mias());
+      this.misObjetos.set(mias.filter((o) => o.estado === 'Disponible' && !o.oculta && o.id !== this.p()?.id));
+    } catch {
+      this.misObjetos.set([]);
+    }
   }
 
   protected async enviarSolicitud(): Promise<void> {
@@ -473,9 +520,12 @@ export default class Detalle {
     this.trabajando.set(true);
     this.errorSolicitud.set(null);
     try {
-      await firstValueFrom(this.intercambios.solicitar({ publicacionId: p.id, mensaje }));
+      const publicacionOfrecidaId = p.modo === 'Trueke' ? this.ofrecida() : null;
+      await firstValueFrom(this.intercambios.solicitar({ publicacionId: p.id, mensaje, publicacionOfrecidaId }));
       this.solicitudAbierta.set(false);
       this.mensaje.set('');
+      this.ofrecida.set(null);
+      this.misObjetos.set(null);
       this.avisos.exito('¡Solicitud enviada!', 'Te avisaremos cuando te respondan.');
       await this.router.navigate(['/intercambios'], { queryParams: { tab: 'enviadas' } });
     } catch (e) {

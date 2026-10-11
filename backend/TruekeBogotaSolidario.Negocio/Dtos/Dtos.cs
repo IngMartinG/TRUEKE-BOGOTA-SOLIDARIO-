@@ -145,6 +145,8 @@ public sealed class CrearSolicitudRequest
 {
     public Guid PublicacionId { get; init; }
     [Required, StringLength(500, MinimumLength = 1)] public string Mensaje { get; init; } = "";
+    /// <summary>Solo en un Trueke y opcional: una publicación propia y disponible que se ofrece a cambio.</summary>
+    public Guid? PublicacionOfrecidaId { get; init; }
 }
 
 public sealed class RechazarSolicitudRequest
@@ -575,7 +577,10 @@ public sealed record PaginaDto<T>(IReadOnlyList<T> Items, int Total, int Pagina,
 public sealed record SolicitudDto(Guid Id, Guid PublicacionId, string PublicacionTitulo, string Modo, PerfilPublicoDto Propietario,
     PerfilPublicoDto Solicitante, bool SoyDuenio, DateTime FechaSolicitud, string Mensaje, string Estado, string? MotivoRechazo,
     Guid? ConversacionId, DateTime? FechaAceptacionUtc, bool ConfirmadaPorDuenio, bool ConfirmadaPorSolicitante,
-    DateTime? FechaCierreUtc, DateTime? CierreAutomaticoUtc, bool PuedoCalificar, bool EnEspera);
+    DateTime? FechaCierreUtc, DateTime? CierreAutomaticoUtc, bool PuedoCalificar, bool EnEspera, PublicacionResumenDto? Ofrecida = null);
+
+/// <summary>Lo que se ofrece a cambio en un trueke: datos que ya son públicos en el catálogo.</summary>
+public sealed record PublicacionResumenDto(Guid Id, string Titulo, string? Foto, string Condicion, string Estado);
 
 public sealed class NoConcretadaRequest
 {
