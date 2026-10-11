@@ -85,6 +85,27 @@ public class ListaDeEsperaTests : IClassFixture<FabricaApi>
     }
 
     [Fact]
+    public async Task Si_solo_una_parte_confirma_la_otra_puede_indicar_que_no_se_concreto()
+    {
+        var (duenio, a, _, pub, solA, _) = await DosInteresadosAsync("d");
+        (await duenio.PostAsync($"/api/v1/solicitudes/{solA}/aceptar", null)).EnsureSuccessStatusCode();
+        (await a.PostAsync($"/api/v1/solicitudes/{solA}/confirmar-entrega", null)).EnsureSuccessStatusCode();
+
+        // Quien confirmó ya no puede desdecirse...
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await a.PostAsJsonAsync($"/api/v1/solicitudes/{solA}/no-concretada", new { motivo = "Me arrepentí" })).StatusCode);
+        // ...pero la otra parte no queda obligada a que se complete sola (con puntos y reputación para ambos)
+        var r = await duenio.PostAsJsonAsync($"/api/v1/solicitudes/{solA}/no-concretada", new { motivo = "Nunca llegó al punto de encuentro" });
+        Assert.True(r.IsSuccessStatusCode, await r.Content.ReadAsStringAsync());
+
+        Assert.Equal("NoConcretada", (await MiSolicitudAsync(a, solA)).GetProperty("estado").GetString());
+        Assert.Equal("Disponible", (await _fabrica.CreateClient().GetFromJsonAsync<JsonElement>($"/api/v1/publicaciones/{pub}")).GetProperty("estado").GetString());
+        var avisos = (await a.GetFromJsonAsync<JsonElement>("/api/v1/notificaciones")).GetProperty("items").EnumerateArray();
+        Assert.Contains(avisos, n => n.GetProperty("tipo").GetString() == "IntercambioNoConcretado"
+                                     && n.GetProperty("mensaje").GetString()!.Contains("denuncia"));
+    }
+
+    [Fact]
     public async Task Al_completar_se_cierra_la_lista_de_espera_y_la_publicacion_queda_intercambiada()
     {
         var (duenio, a, b, pub, solA, solB) = await DosInteresadosAsync("c");
