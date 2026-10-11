@@ -34,9 +34,9 @@ public class DosFactoresTests : IClassFixture<FabricaApi>
     /// Activa 2FA y devuelve el paso TOTP usado. Las pruebas calculan sus códigos a partir de ese paso fijo (no del reloj):
     /// si no, cruzar el límite de 30 s entre dos llamadas convertiría un "código repetido" en uno nuevo y válido.
     /// </summary>
-    private static async Task<(byte[] Secreto, IReadOnlyList<string> Codigos, string Token, long Paso)> ActivarAsync(HttpClient c)
+    private static async Task<(byte[] Secreto, IReadOnlyList<string> Codigos, string Token, long Paso)> ActivarAsync(HttpClient c, string clave = Api.ClaveValida)
     {
-        var cfg = await (await c.PostAsync("/api/v1/auth/2fa/configurar", null)).Content.ReadFromJsonAsync<ConfiguracionDosFactoresDto>();
+        var cfg = await (await c.PostAsJsonAsync("/api/v1/auth/2fa/configurar", new { clave })).Content.ReadFromJsonAsync<ConfiguracionDosFactoresDto>();
         Assert.StartsWith("otpauth://totp/", cfg!.UriOtpauth);
         var secreto = DesdeBase32(cfg.SecretoBase32);
         Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/auth/2fa/activar", new { codigo = "000000" })).StatusCode);
@@ -49,6 +49,21 @@ public class DosFactoresTests : IClassFixture<FabricaApi>
 
     private Task<HttpResponseMessage> LoginAsync(string correo, string? codigo)
         => _fabrica.CreateClient().PostAsJsonAsync("/api/v1/auth/login", new { correo, clave = Api.ClaveValida, codigoDosFactores = codigo });
+
+    [Fact]
+    public async Task Configurar_exige_la_contrasena_y_los_fallos_cuentan_para_el_bloqueo()
+    {
+        var ses = await Api.RegistrarSesionAsync(_fabrica, "tokenRobado");
+        var c = Api.ConToken(_fabrica, ses.Token);
+        // Con solo el token (p. ej. robado por XSS) no se puede poner un 2FA propio y dejar fuera al dueño
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/auth/2fa/configurar", new { })).StatusCode);
+        for (var i = 0; i < 4; i++)
+            Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/auth/2fa/configurar", new { clave = "Equivocada1" })).StatusCode);
+
+        // 5 fallos en total: la cuenta queda bloqueada como en el login (ni la clave correcta sirve por ahora)
+        Assert.Equal(HttpStatusCode.Unauthorized, (await LoginAsync(ses.Usuario.Correo, null)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/auth/2fa/configurar", new { clave = Api.ClaveValida })).StatusCode);
+    }
 
     [Fact]
     public async Task Activar_exige_el_codigo_en_cada_login_y_los_de_recuperacion_sirven_una_vez()
@@ -95,7 +110,7 @@ public class DosFactoresTests : IClassFixture<FabricaApi>
         Assert.Equal(HttpStatusCode.Forbidden, r.StatusCode);
         Assert.Equal(DosFactoresCodigo, (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("codigo").GetString());
 
-        var (secreto, _, tokenMfa, paso) = await ActivarAsync(super);
+        var (secreto, _, tokenMfa, paso) = await ActivarAsync(super, FabricaApi.ClaveSuper);
         Assert.Equal(HttpStatusCode.OK, (await Api.ConToken(f, tokenMfa).GetAsync("/api/v1/admin/verificaciones")).StatusCode);
 
         // la marca 2FA sobrevive al refresco del token
@@ -107,6 +122,29 @@ public class DosFactoresTests : IClassFixture<FabricaApi>
         req.Headers.Add("X-Trueke-Csrf", "1");
         var refrescada = (await (await f.CreateClient().SendAsync(req)).Content.ReadFromJsonAsync<SesionMinDto>())!;
         Assert.Equal(HttpStatusCode.OK, (await Api.ConToken(f, refrescada.Token).GetAsync("/api/v1/admin/verificaciones")).StatusCode);
+    }
+
+    [Fact]
+    public async Task Con_la_exigencia_activa_un_admin_sin_2FA_no_ve_lo_oculto_en_las_rutas_publicas()
+    {
+        await using var f = new FabricaApiDosFactores();
+        var superSinMfa = Api.ConToken(f, await Api.LoginAsync(f, FabricaApi.CorreoSuper, FabricaApi.ClaveSuper));
+        var (_, _, tokenMfa, _) = await ActivarAsync(superSinMfa, FabricaApi.ClaveSuper);
+        var super = Api.ConToken(f, tokenMfa);
+
+        var autor = await Api.RegistrarAsync(f, "ocultable");
+        var pub = await Api.CrearPublicacionAsync(autor);
+        (await super.PostAsJsonAsync($"/api/v1/admin/publicaciones/{pub}/ocultar", new { motivo = "Contenido prohibido" })).EnsureSuccessStatusCode();
+
+        // Un Administrador que inició sesión SIN 2FA: para las rutas públicas es un usuario más
+        var ses = await Api.RegistrarSesionAsync(f, "adminSinMfa");
+        (await super.PatchAsJsonAsync($"/api/v1/admin/usuarios/{ses.Usuario.Id}/rol", new { rol = "Administrador" })).EnsureSuccessStatusCode();
+        var admin = Api.ConToken(f, await Api.LoginAsync(f, ses.Usuario.Correo, Api.ClaveValida));
+        Assert.Equal(HttpStatusCode.NotFound, (await admin.GetAsync($"/api/v1/publicaciones/{pub}")).StatusCode);
+
+        // Con sesión 2FA sí la ve (con el motivo de moderación)
+        var vista = await super.GetAsync($"/api/v1/publicaciones/{pub}");
+        Assert.Equal(HttpStatusCode.OK, vista.StatusCode);
     }
 
     private const string DosFactoresCodigo = "2fa_requerido_admin";

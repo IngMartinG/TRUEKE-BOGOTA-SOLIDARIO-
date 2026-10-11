@@ -104,7 +104,7 @@ public class Pago
     /// <summary>Se cobró (o llegó una aprobación tardía) pero el beneficio no pudo aplicarse: requiere reembolso manual.</summary>
     public void MarcarRequiereRevision(string nota, string? transaccionId, DateTime ahoraUtc)
     {
-        if (Estado is not (EstadoPago.Pendiente or EstadoPago.Expirado))
+        if (Estado is not (EstadoPago.Pendiente or EstadoPago.Expirado or EstadoPago.Rechazado))
             throw new ReglaDeNegocioException("El pago ya fue resuelto.");
         Estado = EstadoPago.RequiereRevision;
         NotaInterna = nota.Length > 300 ? nota[..300] : nota;

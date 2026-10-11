@@ -2018,7 +2018,13 @@ export interface paths {
                 path?: never;
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ConfirmarIdentidadRequest"];
+                    "text/json": components["schemas"]["ConfirmarIdentidadRequest"];
+                    "application/*+json": components["schemas"]["ConfirmarIdentidadRequest"];
+                };
+            };
             responses: {
                 /** @description OK */
                 200: {
@@ -4649,6 +4655,7 @@ export interface components {
         };
         CambiarClaveRequest: {
             claveActual?: string | null;
+            googleIdToken?: string | null;
             claveNueva: string;
         };
         CambiarFotoRequest: {
@@ -4729,6 +4736,10 @@ export interface components {
             imagenesOrigenUrl?: string | null;
             imagenesCdnUrl?: string | null;
             pushClavePublica?: string | null;
+        };
+        ConfirmarIdentidadRequest: {
+            clave?: string | null;
+            googleIdToken?: string | null;
         };
         ConversacionDto: {
             /** Format: uuid */
@@ -5750,6 +5761,7 @@ export type ConceptoPagoDto = components['schemas']['ConceptoPagoDto'];
 export type CondicionDto = components['schemas']['CondicionDto'];
 export type ConfiguracionDosFactoresDto = components['schemas']['ConfiguracionDosFactoresDto'];
 export type ConfiguracionPublicaDto = components['schemas']['ConfiguracionPublicaDto'];
+export type ConfirmarIdentidadRequest = components['schemas']['ConfirmarIdentidadRequest'];
 export type ConversacionDto = components['schemas']['ConversacionDto'];
 export type CorregirCompradorFacturaRequest = components['schemas']['CorregirCompradorFacturaRequest'];
 export type CotizacionDto = components['schemas']['CotizacionDto'];

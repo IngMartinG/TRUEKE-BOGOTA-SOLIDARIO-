@@ -33,7 +33,7 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
     private readonly IUnidadDeTrabajo _uow;
     private readonly IPublicacionService _publicacionService;
     private readonly ISolicitudService _solicitudService;
-    private readonly IValidadorGoogle _google;
+    private readonly ConfirmadorIdentidad _confirmador;
     private readonly IAlmacenArchivos _almacen;
     private readonly ISesionService _sesiones;
     private readonly INotificador _notificador;
@@ -51,7 +51,7 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
     public DatosPersonalesService(IUsuarioRepository usuarios, IPublicacionRepository pubs, ISolicitudRepository solicitudes,
         IComentarioRepository comentarios, IConversacionRepository conversaciones, ITransaccionRepository transacciones, IPagoRepository pagos,
         INotificacionRepository notificaciones, IDenunciaRepository denuncias, ISesionRefreshRepository refrescos, IAuditoriaRepository auditoria,
-        IUnidadDeTrabajo uow, IPublicacionService publicacionService, ISolicitudService solicitudService, IValidadorGoogle google,
+        IUnidadDeTrabajo uow, IPublicacionService publicacionService, ISolicitudService solicitudService, ConfirmadorIdentidad confirmador,
         IAlmacenArchivos almacen, ISesionService sesiones, INotificador notificador, TimeProvider reloj,
         ICalificacionRepository calificaciones, IFavoritoRepository favoritos, IFacturaRepository facturas, IPqrRepository pqrs,
         IBloqueoService bloqueos, ILogger<DatosPersonalesService> log, ISuscripcionPushRepository suscripcionesPush,
@@ -61,7 +61,7 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         _calificaciones = calificaciones; _favoritos = favoritos; _facturas = facturas; _pqrs = pqrs;
         _usuarios = usuarios; _pubs = pubs; _solicitudes = solicitudes; _comentarios = comentarios; _conversaciones = conversaciones;
         _transacciones = transacciones; _pagos = pagos; _notificaciones = notificaciones; _denuncias = denuncias; _refrescos = refrescos;
-        _auditoria = auditoria; _uow = uow; _publicacionService = publicacionService; _solicitudService = solicitudService; _google = google;
+        _auditoria = auditoria; _uow = uow; _publicacionService = publicacionService; _solicitudService = solicitudService; _confirmador = confirmador;
         _almacen = almacen; _sesiones = sesiones; _notificador = notificador; _reloj = reloj; _log = log;
     }
 
@@ -107,27 +107,11 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
             await _bloqueos.PreferenciasAsync(actorId), await _bloqueos.ListarAsync(actorId), await _busquedas.ListarAsync(actorId));
     }
 
-    /// <summary>Volver a demostrar identidad: con un token robado (o un equipo desatendido) no basta para borrar la cuenta.</summary>
-    private async Task ExigirReautenticacionAsync(Usuario u, EliminarCuentaRequest r)
-    {
-        if (u.TieneClave)
-        {
-            if (string.IsNullOrEmpty(r.Clave) || !u.VerificarClave(r.Clave))
-                throw new ReglaDeNegocioException("La contraseña no es correcta.");
-            return;
-        }
-        if (u.GoogleSub is not null && !string.IsNullOrEmpty(r.GoogleIdToken))
-        {
-            var id = await _google.ValidarAsync(r.GoogleIdToken);
-            if (id is not null && id.Sub == u.GoogleSub) return;
-        }
-        throw new ReglaDeNegocioException("Confirma tu identidad con tu contraseña o volviendo a iniciar sesión con Google.");
-    }
 
     public async Task EliminarCuentaAsync(Guid actorId, EliminarCuentaRequest r)
     {
         var u = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
-        await ExigirReautenticacionAsync(u, r);
+        await _confirmador.ExigirAsync(u, r.Clave, r.GoogleIdToken); // con un token robado no basta para borrar la cuenta
         if (await _pagos.ContarPendientesAsync(actorId, DateTime.MinValue) > 0)
             throw new ReglaDeNegocioException("Tienes pagos en proceso. Espera a que se resuelvan (máximo una hora) y vuelve a intentarlo.");
         if (u.Rol == RolUsuarioEnum.SuperUsuario && await _usuarios.ContarPorRolAsync(RolUsuarioEnum.SuperUsuario) <= 1)
