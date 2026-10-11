@@ -25,8 +25,11 @@ public sealed class VerificadorDosFactores
 
 public interface IDosFactoresService
 {
-    /// <summary>Genera un secreto nuevo (aún inactivo) y devuelve la URI otpauth para el código QR.</summary>
-    Task<ConfiguracionDosFactoresDto> IniciarAsync(Guid actorId);
+    /// <summary>
+    /// Tras confirmar la identidad (contraseña o Google), genera un secreto nuevo (aún inactivo) y devuelve la URI otpauth
+    /// para el código QR. Sin esa confirmación, un token robado bastaría para poner un 2FA del atacante y dejar fuera al dueño.
+    /// </summary>
+    Task<ConfiguracionDosFactoresDto> IniciarAsync(Guid actorId, ConfirmarIdentidadRequest confirmacion);
     /// <summary>Activa con el primer código de la app. Cierra las demás sesiones y devuelve una sesión nueva con 2FA + códigos de recuperación.</summary>
     Task<(ResultadoAutenticacion Sesion, IReadOnlyList<string> CodigosRecuperacion)> ActivarAsync(Guid actorId, string codigo);
     Task<ResultadoAutenticacion> DesactivarAsync(Guid actorId, string codigo);
@@ -46,20 +49,24 @@ public sealed class DosFactoresService : IDosFactoresService
     private readonly EmisorSesiones _emisor;
     private readonly ISesionService _sesiones;
     private readonly TimeProvider _reloj;
+    private readonly ConfirmadorIdentidad _confirmador;
     private readonly ILogger<DosFactoresService> _log;
 
     public DosFactoresService(IUsuarioRepository usuarios, ISesionRefreshRepository refrescos, IUnidadDeTrabajo uow, ICifradorSecretos cifrador,
-        VerificadorDosFactores verificador, EmisorSesiones emisor, ISesionService sesiones, TimeProvider reloj, ILogger<DosFactoresService> log)
+        VerificadorDosFactores verificador, EmisorSesiones emisor, ISesionService sesiones, TimeProvider reloj, ConfirmadorIdentidad confirmador,
+        ILogger<DosFactoresService> log)
     {
         _usuarios = usuarios; _refrescos = refrescos; _uow = uow; _cifrador = cifrador; _verificador = verificador; _emisor = emisor;
-        _sesiones = sesiones; _reloj = reloj; _log = log;
+        _sesiones = sesiones; _reloj = reloj; _confirmador = confirmador; _log = log;
     }
 
     private async Task<Usuario> CargarAsync(Guid id) => await _usuarios.ObtenerPorIdAsync(id) ?? throw new AutenticacionException("Sesión no válida.");
 
-    public async Task<ConfiguracionDosFactoresDto> IniciarAsync(Guid actorId)
+    public async Task<ConfiguracionDosFactoresDto> IniciarAsync(Guid actorId, ConfirmarIdentidadRequest confirmacion)
     {
         var u = await CargarAsync(actorId);
+        if (u.DosFactoresActivo) throw new ReglaDeNegocioException("La verificación en dos pasos ya está activa.");
+        await _confirmador.ExigirAsync(u, confirmacion.Clave, confirmacion.GoogleIdToken);
         var secreto = Totp.GenerarSecreto();
         u.PrepararDosFactores(_cifrador.Cifrar(secreto));
         await _uow.GuardarCambiosAsync();

@@ -34,9 +34,9 @@ public class DosFactoresTests : IClassFixture<FabricaApi>
     /// Activa 2FA y devuelve el paso TOTP usado. Las pruebas calculan sus códigos a partir de ese paso fijo (no del reloj):
     /// si no, cruzar el límite de 30 s entre dos llamadas convertiría un "código repetido" en uno nuevo y válido.
     /// </summary>
-    private static async Task<(byte[] Secreto, IReadOnlyList<string> Codigos, string Token, long Paso)> ActivarAsync(HttpClient c)
+    private static async Task<(byte[] Secreto, IReadOnlyList<string> Codigos, string Token, long Paso)> ActivarAsync(HttpClient c, string clave = Api.ClaveValida)
     {
-        var cfg = await (await c.PostAsync("/api/v1/auth/2fa/configurar", null)).Content.ReadFromJsonAsync<ConfiguracionDosFactoresDto>();
+        var cfg = await (await c.PostAsJsonAsync("/api/v1/auth/2fa/configurar", new { clave })).Content.ReadFromJsonAsync<ConfiguracionDosFactoresDto>();
         Assert.StartsWith("otpauth://totp/", cfg!.UriOtpauth);
         var secreto = DesdeBase32(cfg.SecretoBase32);
         Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/auth/2fa/activar", new { codigo = "000000" })).StatusCode);
@@ -49,6 +49,21 @@ public class DosFactoresTests : IClassFixture<FabricaApi>
 
     private Task<HttpResponseMessage> LoginAsync(string correo, string? codigo)
         => _fabrica.CreateClient().PostAsJsonAsync("/api/v1/auth/login", new { correo, clave = Api.ClaveValida, codigoDosFactores = codigo });
+
+    [Fact]
+    public async Task Configurar_exige_la_contrasena_y_los_fallos_cuentan_para_el_bloqueo()
+    {
+        var ses = await Api.RegistrarSesionAsync(_fabrica, "tokenRobado");
+        var c = Api.ConToken(_fabrica, ses.Token);
+        // Con solo el token (p. ej. robado por XSS) no se puede poner un 2FA propio y dejar fuera al dueño
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/auth/2fa/configurar", new { })).StatusCode);
+        for (var i = 0; i < 4; i++)
+            Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/auth/2fa/configurar", new { clave = "Equivocada1" })).StatusCode);
+
+        // 5 fallos en total: la cuenta queda bloqueada como en el login (ni la clave correcta sirve por ahora)
+        Assert.Equal(HttpStatusCode.Unauthorized, (await LoginAsync(ses.Usuario.Correo, null)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/auth/2fa/configurar", new { clave = Api.ClaveValida })).StatusCode);
+    }
 
     [Fact]
     public async Task Activar_exige_el_codigo_en_cada_login_y_los_de_recuperacion_sirven_una_vez()
@@ -95,7 +110,7 @@ public class DosFactoresTests : IClassFixture<FabricaApi>
         Assert.Equal(HttpStatusCode.Forbidden, r.StatusCode);
         Assert.Equal(DosFactoresCodigo, (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("codigo").GetString());
 
-        var (secreto, _, tokenMfa, paso) = await ActivarAsync(super);
+        var (secreto, _, tokenMfa, paso) = await ActivarAsync(super, FabricaApi.ClaveSuper);
         Assert.Equal(HttpStatusCode.OK, (await Api.ConToken(f, tokenMfa).GetAsync("/api/v1/admin/verificaciones")).StatusCode);
 
         // la marca 2FA sobrevive al refresco del token

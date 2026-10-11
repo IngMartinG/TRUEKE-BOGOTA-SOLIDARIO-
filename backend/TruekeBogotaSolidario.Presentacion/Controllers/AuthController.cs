@@ -89,8 +89,11 @@ public sealed class AuthController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Cambia (o crea, si la cuenta es solo de Google) la contraseña. Revoca TODAS las sesiones y devuelve una nueva.</summary>
-    [HttpPost("cambiar-clave")]
+    /// <summary>
+    /// Cambia (o crea, si la cuenta es solo de Google, con un ID token de Google reciente) la contraseña.
+    /// Revoca TODAS las sesiones y devuelve una nueva.
+    /// </summary>
+    [HttpPost("cambiar-clave"), EnableRateLimiting(Politicas.LimiteAuth)]
     public async Task<ActionResult<SesionDto>> CambiarClave([FromBody] CambiarClaveRequest r)
         => Ok(Iniciar(await _auth.CambiarClaveAsync(User.IdActual(), r)));
 

@@ -102,6 +102,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<IVistaPreviaService, VistaPreviaService>();
         services.AddSingleton<ICifradorSecretos, CifradorAesGcm>();
         services.AddScoped<VerificadorDosFactores>();
+        services.AddScoped<ConfirmadorIdentidad>();
         services.AddScoped<IDosFactoresService, DosFactoresService>();
 
         // Archivos: Azure Blob si está configurado; si no, deshabilitado (las URLs se validan solo por host permitido)
