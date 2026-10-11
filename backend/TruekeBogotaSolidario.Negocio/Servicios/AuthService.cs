@@ -46,12 +46,15 @@ public sealed class AuthService : IAuthService
     private readonly VerificadorDosFactores _dosFactores;
     private readonly TimeProvider _reloj;
     private readonly ILogger<AuthService> _log;
+    private readonly ConfirmadorIdentidad _confirmador;
 
     public AuthService(IUsuarioRepository usuarios, ISesionRefreshRepository refrescos, IUnidadDeTrabajo uow, EmisorSesiones emisor,
         ISesionService sesiones, IOptions<SeguridadOpciones> seg, IOptions<LegalOpciones> legal, CorreosCuenta correos,
         ICorreoSaliente salida, IValidadorGoogle google, IVerificadorCaptcha captcha, VerificadorDosFactores dosFactores,
-        TimeProvider reloj, ILogger<AuthService> log, IImportadorFotoPerfil importadorFoto, ISuscripcionPushRepository suscripcionesPush)
+        TimeProvider reloj, ILogger<AuthService> log, IImportadorFotoPerfil importadorFoto, ISuscripcionPushRepository suscripcionesPush,
+        ConfirmadorIdentidad confirmador)
     {
+        _confirmador = confirmador;
         _usuarios = usuarios; _refrescos = refrescos; _uow = uow; _emisor = emisor; _sesiones = sesiones; _seg = seg.Value;
         _legal = legal.Value; _correos = correos; _salida = salida; _google = google; _captcha = captcha; _dosFactores = dosFactores;
         _reloj = reloj; _log = log; _importadorFoto = importadorFoto; _suscripcionesPush = suscripcionesPush;
@@ -276,12 +279,11 @@ public sealed class AuthService : IAuthService
     public async Task<ResultadoAutenticacion> CambiarClaveAsync(Guid actorId, CambiarClaveRequest r)
     {
         var u = await CargarAsync(actorId);
-        if (u.TieneClave)
-        {
-            if (string.IsNullOrEmpty(r.ClaveActual) || !u.VerificarClave(r.ClaveActual))
-                throw new ReglaDeNegocioException("La contraseña actual no es correcta.");
-            if (r.ClaveActual == r.ClaveNueva) throw new ReglaDeNegocioException("La nueva contraseña debe ser distinta de la actual.");
-        }
+        // Contraseña actual (los fallos cuentan para el bloqueo) o, si la cuenta es solo de Google, un ID token reciente:
+        // con un token de acceso robado no se puede crear ni cambiar la contraseña.
+        await _confirmador.ExigirAsync(u, r.ClaveActual, r.GoogleIdToken);
+        if (u.TieneClave && r.ClaveActual == r.ClaveNueva)
+            throw new ReglaDeNegocioException("La nueva contraseña debe ser distinta de la actual.");
         u.EstablecerClave(r.ClaveNueva); // sube VersionSeguridad: todos los tokens de acceso anteriores quedan revocados
         await _refrescos.RevocarTodasDelUsuarioAsync(u.Id, Ahora);
         var sesion = _emisor.Emitir(u);

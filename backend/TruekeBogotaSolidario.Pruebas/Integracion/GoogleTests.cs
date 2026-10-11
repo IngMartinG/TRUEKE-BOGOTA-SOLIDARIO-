@@ -48,10 +48,12 @@ public class GoogleTests : IClassFixture<FabricaApi>
             s.AddHttpClient(ImportadorFotoGoogle.ClienteHttp).ConfigurePrimaryHttpMessageHandler(() => _fotos);
         }));
 
-    private string Emitir(string correo, bool verificado = true, string? sub = null, string nombre = "Laura Gómez", string? foto = FotoGoogle)
+    private string Emitir(string correo, bool verificado = true, string? sub = null, string nombre = "Laura Gómez", string? foto = FotoGoogle,
+        TimeSpan? antiguedad = null)
     {
         var token = "google-" + Guid.NewGuid().ToString("N");
-        _google.Tokens[token] = new IdentidadGoogle(sub ?? Guid.NewGuid().ToString("N"), correo, verificado, nombre, foto);
+        _google.Tokens[token] = new IdentidadGoogle(sub ?? Guid.NewGuid().ToString("N"), correo, verificado, nombre, foto,
+            DateTimeOffset.UtcNow - (antiguedad ?? TimeSpan.Zero));
         return token;
     }
 
@@ -72,10 +74,10 @@ public class GoogleTests : IClassFixture<FabricaApi>
         return bytes.ToArray();
     }
 
-    /// <summary>Activa 2FA con la sesión dada; devuelve el secreto y el paso TOTP ya usado.</summary>
+    /// <summary>Activa 2FA con la sesión dada (confirmando con la contraseña); devuelve el secreto y el paso TOTP ya usado.</summary>
     private static async Task<(byte[] Secreto, long Paso)> ActivarDosFactoresAsync(HttpClient c)
     {
-        var cfg = (await (await c.PostAsync("/api/v1/auth/2fa/configurar", null)).Content.ReadFromJsonAsync<ConfiguracionDosFactoresDto>())!;
+        var cfg = (await (await c.PostAsJsonAsync("/api/v1/auth/2fa/configurar", new { clave = Api.ClaveValida })).Content.ReadFromJsonAsync<ConfiguracionDosFactoresDto>())!;
         var secreto = DesdeBase32(cfg.SecretoBase32);
         var paso = Totp.Paso(DateTimeOffset.UtcNow);
         var r = await c.PostAsJsonAsync("/api/v1/auth/2fa/activar", new { codigo = Totp.Calcular(secreto, paso) });
@@ -221,11 +223,21 @@ public class GoogleTests : IClassFixture<FabricaApi>
     }
 
     [Fact]
-    public async Task Cuenta_solo_Google_puede_crear_una_clave_sin_clave_actual()
+    public async Task Cuenta_solo_Google_crea_su_clave_solo_confirmando_con_un_token_de_Google_reciente()
     {
         var correo = Correo();
-        var ses = (await (await GoogleAsync(Emitir(correo))).Content.ReadFromJsonAsync<SesionMinDto>())!;
-        var r = await Api.ConToken(_f, ses.Token).PostAsJsonAsync("/api/v1/auth/cambiar-clave", new { claveNueva = "MiClave2026" });
+        var sub = Guid.NewGuid().ToString("N");
+        var ses = (await (await GoogleAsync(Emitir(correo, sub: sub))).Content.ReadFromJsonAsync<SesionMinDto>())!;
+        var c = Api.ConToken(_f, ses.Token);
+        Task<HttpResponseMessage> CrearAsync(string? googleIdToken)
+            => c.PostAsJsonAsync("/api/v1/auth/cambiar-clave", new { claveNueva = "MiClave2026", googleIdToken });
+
+        // Con solo el token de acceso (p. ej. robado) no se puede poner una contraseña
+        Assert.Equal(HttpStatusCode.BadRequest, (await CrearAsync(null)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await CrearAsync(Emitir(correo, sub: sub, antiguedad: TimeSpan.FromMinutes(30)))).StatusCode); // viejo
+        Assert.Equal(HttpStatusCode.BadRequest, (await CrearAsync(Emitir(Correo()))).StatusCode);                                          // otra cuenta
+
+        var r = await CrearAsync(Emitir(correo, sub: sub));
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await _f.CreateClient().PostAsJsonAsync("/api/v1/auth/login", new { correo, clave = "MiClave2026" })).StatusCode);
     }

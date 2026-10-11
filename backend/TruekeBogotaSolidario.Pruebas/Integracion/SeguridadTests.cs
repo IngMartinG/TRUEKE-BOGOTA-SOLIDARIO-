@@ -110,6 +110,22 @@ public class SeguridadTests : IClassFixture<FabricaApi>
     }
 
     [Fact]
+    public async Task Cambiar_la_clave_con_la_actual_equivocada_cuenta_para_el_bloqueo()
+    {
+        var ses = await Api.RegistrarSesionAsync(_fabrica, "adivina");
+        var c = Api.ConToken(_fabrica, ses.Token);
+        for (var i = 0; i < 5; i++)
+            Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/auth/cambiar-clave",
+                new { claveActual = $"Intento{i}abc", claveNueva = "OtraClave999" })).StatusCode);
+
+        // Bloqueada: con el token no se puede seguir adivinando la contraseña actual, ni entrar con ella
+        Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/auth/cambiar-clave",
+            new { claveActual = Api.ClaveValida, claveNueva = "OtraClave999" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _fabrica.CreateClient().PostAsJsonAsync("/api/v1/auth/login",
+            new { correo = ses.Usuario.Correo, clave = Api.ClaveValida })).StatusCode);
+    }
+
+    [Fact]
     public async Task Cerrar_sesiones_revoca_los_tokens()
     {
         var c = await Api.RegistrarAsync(_fabrica, "cerrar");
