@@ -14,8 +14,7 @@ Plataforma comunitaria de **economía circular** en Colombia, nacida en Bogotá.
 │   ├── diseno/                  Especificación UI/UX original
 │   ├── historico/               Prototipo y diagramas de la etapa académica (solo consulta)
 │   └── ESTADO_Y_PENDIENTES.md   Qué está hecho y qué falta
-├── .github/        CI (backend, frontend, CodeQL, ZAP) y Dependabot
-└── .claude/        Servidores de desarrollo para la vista previa (api + front)
+└── .github/        CI (backend, frontend, CodeQL, ZAP) y Dependabot
 ```
 
 ## Stack

@@ -52,7 +52,7 @@ public class ArquitecturaTests
         Assert.DoesNotContain("<InvariantGlobalization>true</InvariantGlobalization>", csproj);
     }
 
-    /// <summary>Lista blanca de CLAUDE.md: login, registro, GET de catálogo (incluye compartir) y categorías, política de Eco-Puntos y webhook de Wompi.</summary>
+    /// <summary>Lista blanca de endpoints anónimos (reglas de seguridad del proyecto): login, registro, GET de catálogo (incluye compartir) y categorías, política de Eco-Puntos y webhook de Wompi.</summary>
     [Fact]
     public void Solo_los_endpoints_permitidos_son_anonimos()
     {

@@ -33,7 +33,7 @@ npm start
 - Los **pagos** usan la pasarela simulada: la página del pago muestra los botones "Aprobar / Rechazar".
 - Las **fotos** requieren Azure Blob (o Azurite); sin él, la interfaz lo indica y permite publicar sin fotos.
 - **Google** y **reCAPTCHA** se activan solos cuando la API publica `googleClientId` / `captchaClaveSitio` en `GET /configuracion`.
-- Para probar la moderación en local, la configuración `api` de `.claude/launch.json` crea un SuperUsuario de prueba (`admin@trueke.test`, solo en la base en memoria de desarrollo).
+- Para probar la moderación en local, define `Bootstrap__SuperUsuarioCorreo` y `Bootstrap__SuperUsuarioClave` (user-secrets o variables de entorno): la API crea ese SuperUsuario al arrancar si no existe.
 
 ### Scripts
 

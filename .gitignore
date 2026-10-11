@@ -1,5 +1,4 @@
 # Configuración local de herramientas
-.claude/settings.local.json
 .vs/
 .vscode/
 .idea/
