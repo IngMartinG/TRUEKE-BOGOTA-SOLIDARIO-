@@ -20,8 +20,10 @@ public sealed class DosFactoresController : ControllerBase
     private readonly IDosFactoresService _dosFactores;
     public DosFactoresController(IDosFactoresService dosFactores) => _dosFactores = dosFactores;
 
+    /// <summary>Exige confirmar la identidad (contraseña, o Google en cuentas sin contraseña).</summary>
     [HttpPost("configurar"), EnableRateLimiting(Politicas.LimiteAuth)]
-    public async Task<ActionResult<ConfiguracionDosFactoresDto>> Configurar() => Ok(await _dosFactores.IniciarAsync(User.IdActual()));
+    public async Task<ActionResult<ConfiguracionDosFactoresDto>> Configurar([FromBody] ConfirmarIdentidadRequest r)
+        => Ok(await _dosFactores.IniciarAsync(User.IdActual(), r));
 
     /// <summary>Cierra las demás sesiones y devuelve una sesión nueva (con 2FA) más 10 códigos de recuperación que se muestran una sola vez.</summary>
     [HttpPost("activar"), EnableRateLimiting(Politicas.LimiteAuth)]

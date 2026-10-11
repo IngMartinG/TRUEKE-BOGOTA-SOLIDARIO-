@@ -4,6 +4,7 @@ import type {
   CambiarClaveRequest,
   CodigosRecuperacionDto,
   ConfiguracionDosFactoresDto,
+  ConfirmarIdentidadRequest,
   GoogleLoginRequest,
   LoginRequest,
   RegistroRequest,
@@ -31,7 +32,9 @@ export class AuthApi {
     this.api.post<SesionDto>('/auth/cambiar-clave', r, { silencioso: true });
   cerrarSesiones = () => this.api.post<void>('/auth/cerrar-sesiones');
 
-  configurar2fa = () => this.api.post<ConfiguracionDosFactoresDto>('/auth/2fa/configurar');
+  /** Exige confirmar la identidad: contraseña, o un ID token de Google recién obtenido si la cuenta no tiene contraseña. */
+  configurar2fa = (r: ConfirmarIdentidadRequest) =>
+    this.api.post<ConfiguracionDosFactoresDto>('/auth/2fa/configurar', r, { silencioso: true });
   activar2fa = (codigo: string) =>
     this.api.post<ActivacionDosFactoresDto>('/auth/2fa/activar', { codigo }, { silencioso: true });
   desactivar2fa = (codigo: string) =>
