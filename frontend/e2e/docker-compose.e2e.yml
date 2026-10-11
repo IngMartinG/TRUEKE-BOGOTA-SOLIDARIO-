@@ -52,7 +52,7 @@ services:
       MP_SMTP_REQUIRE_STARTTLS: "true"
       MP_MAX_MESSAGES: "5000"
     ports:
-      - "8025:8025" # API HTTP de Mailpit: las pruebas leen ahí los correos (enlace de verificación)
+      - "127.0.0.1:8025:8025" # API HTTP de Mailpit (solo en este equipo): las pruebas leen ahí los correos
     volumes:
       - certs:/certs:ro
     depends_on:
