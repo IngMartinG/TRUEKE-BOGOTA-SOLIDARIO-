@@ -21,6 +21,11 @@ public sealed class AlmacenamientoOpciones
     public string ContenedorImagenes { get; set; } = "imagenes";
     /// <summary>Contenedor de documentos de identidad (PRIVADO: solo se leen con SAS temporal).</summary>
     public string ContenedorDocumentos { get; set; } = "documentos";
+    /// <summary>
+    /// Contenedor PRIVADO donde el navegador sube los archivos con SAS. Nada de aquí se publica tal cual: al usar el archivo,
+    /// el servidor publica una copia propia (foto limpia o documento copiado) con un nombre nuevo y borra la subida.
+    /// </summary>
+    public string ContenedorSubidas { get; set; } = "subidas";
     public bool Configurado => !string.IsNullOrWhiteSpace(ServicioUrl) || !string.IsNullOrWhiteSpace(CadenaConexion);
 
     /// <summary>
@@ -61,6 +66,11 @@ public interface IAlmacenArchivos
     /// </summary>
     Task<string> GuardarImagenAsync(Guid usuarioId, byte[] contenido, CancellationToken ct = default);
     /// <summary>
+    /// Borra las subidas que nadie usó (más de una hora en el contenedor de subidas) y los originales sin limpiar que
+    /// quedaron en el contenedor de imágenes de versiones anteriores. Devuelve cuántos borró.
+    /// </summary>
+    Task<int> EliminarSubidasVencidasAsync(CancellationToken ct = default);
+    /// <summary>
     /// Crea la miniatura de las fotos publicadas que aún no la tienen (las anteriores a las miniaturas o aquellas cuya
     /// miniatura falló). Devuelve cuántas creó. Es idempotente: varias instancias a la vez no se estorban.
     /// </summary>
@@ -84,17 +94,22 @@ public sealed class AlmacenDeshabilitado : IAlmacenArchivos
     public Task EliminarImagenPropiaAsync(string url, Guid usuarioId, CancellationToken ct = default) => Task.CompletedTask;
     public Task<string> GuardarImagenAsync(Guid usuarioId, byte[] contenido, CancellationToken ct = default)
         => throw new ReglaDeNegocioException("La subida de archivos no está configurada en este entorno.");
+    public Task<int> EliminarSubidasVencidasAsync(CancellationToken ct = default) => Task.FromResult(0);
     public Task<int> GenerarMiniaturasFaltantesAsync(CancellationToken ct = default) => Task.FromResult(0);
     public Task<byte[]?> LeerFotoPublicadaAsync(string url, CancellationToken ct = default) => Task.FromResult<byte[]?>(null);
 }
 
 /// <summary>
-/// Azure Blob Storage con SAS de alcance mínimo: un solo blob (nombre elegido por el servidor), solo crear/escribir,
-/// válida 5 minutos. El tamaño no se puede limitar con una SAS, por eso se verifica DESPUÉS, al usar la URL.
+/// Azure Blob Storage con SAS de alcance mínimo: un solo blob nuevo (nombre elegido por el servidor) en el contenedor
+/// PRIVADO de subidas, solo crear (no puede sobrescribir, leer, listar ni borrar), válida 5 minutos. El tamaño no se puede
+/// limitar con una SAS, por eso se verifica DESPUÉS, al usar la URL. Lo que se publica es siempre una copia hecha por el
+/// servidor con otro nombre: ni los metadatos que ponga el cliente ni la SAS aún vigente pueden alterar lo publicado.
 /// </summary>
 public sealed class AlmacenBlobAzure : IAlmacenArchivos
 {
     private static readonly TimeSpan VigenciaSas = TimeSpan.FromMinutes(5);
+    /// <summary>Una subida que nadie usó en este tiempo se borra (el formulario ya la habría enviado).</summary>
+    private static readonly TimeSpan VidaSubida = TimeSpan.FromHours(1);
 
     private readonly AlmacenamientoOpciones _o;
     private readonly BlobServiceClient _servicio;
@@ -118,6 +133,8 @@ public sealed class AlmacenBlobAzure : IAlmacenArchivos
 
     private BlobContainerClient Contenedor(TipoArchivoDto tipo)
         => _servicio.GetBlobContainerClient(tipo == TipoArchivoDto.Documento ? _o.ContenedorDocumentos : _o.ContenedorImagenes);
+
+    private BlobContainerClient Subidas => _servicio.GetBlobContainerClient(_o.ContenedorSubidas);
 
     /// <summary>Azurite (desarrollo) usa siempre la cuenta "devstoreaccount1"; una cuenta real de Azure nunca se llama así.</summary>
     private bool EsEmuladorLocal => string.Equals(_servicio.AccountName, "devstoreaccount1", StringComparison.Ordinal);
@@ -150,6 +167,7 @@ public sealed class AlmacenBlobAzure : IAlmacenArchivos
         {
             await Contenedor(TipoArchivoDto.Imagen).CreateIfNotExistsAsync(PublicAccessType.Blob, cancellationToken: ct);
             await Contenedor(TipoArchivoDto.Documento).CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: ct);
+            await Subidas.CreateIfNotExistsAsync(PublicAccessType.None, cancellationToken: ct);
             if (EsEmuladorLocal) await PermitirSubidasDelNavegadorEnEmuladorAsync(ct);
         }
         catch (RequestFailedException ex)
@@ -197,17 +215,22 @@ public sealed class AlmacenBlobAzure : IAlmacenArchivos
     /// <summary>Solo firma (sin llamadas de red cuando hay llave de cuenta): lo prueban las pruebas unitarias.</summary>
     internal async Task<SubidaArchivoDto> ConstruirSubidaAsync(Guid usuarioId, TipoArchivoDto tipo, string contentType, string ext, CancellationToken ct)
     {
-        var blob = Contenedor(tipo).GetBlobClient(ReglasArchivos.NuevoNombre(usuarioId, ext));
-        var url = await FirmarAsync(blob, BlobSasPermissions.Create | BlobSasPermissions.Write, ct);
+        var blob = Subidas.GetBlobClient(ReglasArchivos.NuevoNombre(usuarioId, ext));
+        var url = await FirmarAsync(blob, BlobSasPermissions.Create, ct); // solo crear: un blob ya subido no se puede reemplazar
         var cabeceras = new Dictionary<string, string> { ["x-ms-blob-type"] = "BlockBlob", ["Content-Type"] = contentType.ToLowerInvariant() };
         return new SubidaArchivoDto(url.ToString(), blob.Uri.ToString(), "PUT", cabeceras, _reloj.GetUtcNow().UtcDateTime + VigenciaSas);
     }
 
     public async Task<string> ValidarArchivoPropioAsync(string url, Guid usuarioId, TipoArchivoDto tipo, CancellationToken ct = default)
     {
-        var contenedor = Contenedor(tipo);
-        var analisis = ReglasArchivos.AnalizarUrl(url, contenedor.Uri, usuarioId)
-                       ?? throw new ReglaDeNegocioException("El archivo debe subirse primero con POST /api/v1/archivos/subidas.");
+        await AsegurarContenedoresAsync(ct);
+        var (contenedor, analisis, esSubida) = ReglasArchivos.AnalizarUrl(url, Subidas.Uri, usuarioId) is { } subida
+            ? (Subidas, subida, true)
+            // Compatibilidad: una foto propia que ya está en el contenedor público (versiones anteriores o la misma foto
+            // otra vez). Se vuelve a limpiar igual: los metadatos de un blob nunca prueban que ya esté limpio.
+            : tipo == TipoArchivoDto.Imagen && ReglasArchivos.AnalizarUrl(url, Contenedor(TipoArchivoDto.Imagen).Uri, usuarioId) is { } publicada
+                ? (Contenedor(TipoArchivoDto.Imagen), publicada, false)
+                : throw new ReglaDeNegocioException("El archivo debe subirse primero con POST /api/v1/archivos/subidas.");
         var blob = contenedor.GetBlobClient(analisis.Nombre);
         try
         {
@@ -216,47 +239,67 @@ public sealed class AlmacenBlobAzure : IAlmacenArchivos
             if (ReglasArchivos.Extension(tipo, props.ContentType) != analisis.Extension)
                 throw new ReglaDeNegocioException("El tipo del archivo no coincide con su extensión.");
 
-            var inicio = (await blob.DownloadContentAsync(new BlobDownloadOptions { Range = new HttpRange(0, ReglasArchivos.BytesFirma) }, ct)).Value.Content;
-            if (!ReglasArchivos.FirmaCoincide(analisis.Extension, inicio.ToArray()))
+            // Se descarga UNA vez (la misma versión revisada) y se valida y copia ese contenido: no hay ventana para cambiarlo.
+            var contenido = (await blob.DownloadContentAsync(new BlobDownloadOptions
             {
-                await blob.DeleteIfExistsAsync(cancellationToken: ct); // contenido disfrazado: se elimina
+                Conditions = new BlobRequestConditions { IfMatch = props.ETag }
+            }, ct)).Value.Content.ToArray();
+            ReglasArchivos.ValidarTamano(contenido.Length);
+            if (!ReglasArchivos.FirmaCoincide(analisis.Extension, contenido.AsSpan(0, Math.Min(ReglasArchivos.BytesFirma, contenido.Length))))
+            {
+                if (esSubida) await blob.DeleteIfExistsAsync(cancellationToken: ct); // contenido disfrazado: se elimina
                 throw new ReglaDeNegocioException("El contenido del archivo no corresponde a una imagen o documento válido.");
             }
 
-            // Fotos públicas: se publica una copia limpia (sin GPS ni metadatos) con un nombre NUEVO y se borra el original.
-            // Con un nombre nuevo, la SAS de subida (aún vigente unos minutos) ya no puede reemplazar la foto publicada.
-            if (tipo == TipoArchivoDto.Imagen && !(props.Metadata.TryGetValue(MetadatoLimpia, out var limpia) && limpia == "1"))
-                return await LimpiarImagenAsync(contenedor, blob, usuarioId, analisis.Extension, ct);
-            return url;
+            string final;
+            if (tipo == TipoArchivoDto.Imagen)
+            {
+                // Siempre se publica una copia limpia (sin GPS ni metadatos) con un nombre NUEVO en el contenedor público.
+                final = await LimpiarImagenAsync(contenido, usuarioId, analisis.Extension, esSubida ? blob : null, ct);
+            }
+            else
+            {
+                // Documento: copia del servidor con nombre nuevo en el contenedor privado (ninguna SAS de subida llega ahí).
+                var destino = Contenedor(TipoArchivoDto.Documento).GetBlobClient(ReglasArchivos.NuevoNombre(usuarioId, analisis.Extension));
+                await SubirInmutableAsync(destino, contenido, props.ContentType, "private, no-store", ct);
+                final = destino.Uri.ToString();
+            }
+
+            // La subida ya no sirve. Una foto que ya estaba publicada solo se borra si nunca se limpió (original antiguo):
+            // una limpia puede estar en uso en otra publicación.
+            if (esSubida || !(props.Metadata.TryGetValue(MetadatoLimpia, out var limpia) && limpia == "1"))
+                await blob.DeleteIfExistsAsync(cancellationToken: ct);
+            return final;
         }
         catch (RequestFailedException ex) when (ex.Status == 404)
         {
             throw new ReglaDeNegocioException("El archivo no existe o aún no terminó de subirse.");
         }
+        catch (RequestFailedException ex) when (ex.Status == 412)
+        {
+            throw new ReglaDeNegocioException("El archivo cambió mientras se revisaba. Súbelo de nuevo.");
+        }
     }
 
     private const string MetadatoLimpia = "limpia";
 
-    private async Task<string> LimpiarImagenAsync(BlobContainerClient contenedor, BlobClient original, Guid usuarioId, string extension, CancellationToken ct)
+    private async Task<string> LimpiarImagenAsync(byte[] contenido, Guid usuarioId, string extension, BlobClient? borrarSiFalla, CancellationToken ct)
     {
-        var contenido = (await original.DownloadContentAsync(ct)).Value.Content;
-        ReglasArchivos.ValidarTamano(contenido.ToMemory().Length);
         ProcesadorImagenes.ImagenLimpia limpia;
         try
         {
-            using var flujo = contenido.ToStream();
+            using var flujo = new MemoryStream(contenido, writable: false);
             limpia = await ProcesadorImagenes.LimpiarConMiniaturaAsync(flujo, extension, ct);
         }
         catch (ReglaDeNegocioException)
         {
-            await original.DeleteIfExistsAsync(cancellationToken: ct); // imagen corrupta o "bomba": no se conserva
+            if (borrarSiFalla is not null) await borrarSiFalla.DeleteIfExistsAsync(cancellationToken: ct); // corrupta o "bomba": no se conserva
             throw;
         }
 
-        var url = await PublicarLimpiaAsync(contenedor, usuarioId, limpia, extension, ct);
-        await original.DeleteIfExistsAsync(cancellationToken: ct);
+        var url = await PublicarLimpiaAsync(Contenedor(TipoArchivoDto.Imagen), usuarioId, limpia, extension, ct);
         _log.LogInformation("Imagen limpiada y publicada ({Antes} → {Despues} bytes, miniatura {Miniatura} bytes)",
-            contenido.ToMemory().Length, limpia.Foto.Length, limpia.Miniatura.Length);
+            contenido.Length, limpia.Foto.Length, limpia.Miniatura.Length);
         return url;
     }
 
@@ -268,10 +311,10 @@ public sealed class AlmacenBlobAzure : IAlmacenArchivos
         string extension, CancellationToken ct)
     {
         var destino = contenedor.GetBlobClient(ReglasArchivos.NuevoNombre(usuarioId, extension));
-        await SubirInmutableAsync(destino, limpia.Foto, extension switch { "png" => "image/png", "webp" => "image/webp", _ => "image/jpeg" }, ct);
+        await SubirInmutableAsync(destino, limpia.Foto, extension switch { "png" => "image/png", "webp" => "image/webp", _ => "image/jpeg" }, CachePublica, ct);
         try
         {
-            await SubirInmutableAsync(contenedor.GetBlobClient(ReglasArchivos.NombreMiniatura(destino.Name)), limpia.Miniatura, "image/webp", ct);
+            await SubirInmutableAsync(contenedor.GetBlobClient(ReglasArchivos.NombreMiniatura(destino.Name)), limpia.Miniatura, "image/webp", CachePublica, ct);
         }
         catch (RequestFailedException ex)
         {
@@ -280,13 +323,16 @@ public sealed class AlmacenBlobAzure : IAlmacenArchivos
         return destino.Uri.ToString();
     }
 
-    private static Task SubirInmutableAsync(BlobClient destino, byte[] datos, string contentType, CancellationToken ct)
+    private const string CachePublica = "public, max-age=31536000, immutable"; // el nombre nunca se reutiliza
+
+    /// <summary>Solo el servidor escribe así: nombre nuevo y nunca sobrescribe.</summary>
+    private static Task SubirInmutableAsync(BlobClient destino, byte[] datos, string contentType, string cacheControl, CancellationToken ct)
         => destino.UploadAsync(new BinaryData(datos), new BlobUploadOptions
         {
             HttpHeaders = new BlobHttpHeaders
             {
                 ContentType = contentType,
-                CacheControl = "public, max-age=31536000, immutable" // el nombre nunca se reutiliza
+                CacheControl = cacheControl
             },
             Metadata = new Dictionary<string, string> { [MetadatoLimpia] = "1" },
             Conditions = new BlobRequestConditions { IfNoneMatch = ETag.All } // nunca sobrescribir
@@ -299,6 +345,34 @@ public sealed class AlmacenBlobAzure : IAlmacenArchivos
         using var flujo = new MemoryStream(contenido);
         var limpia = await ProcesadorImagenes.LimpiarConMiniaturaAsync(flujo, "jpg", ct); // siempre JPEG, sin metadatos
         return await PublicarLimpiaAsync(Contenedor(TipoArchivoDto.Imagen), usuarioId, limpia, "jpg", ct);
+    }
+
+    public async Task<int> EliminarSubidasVencidasAsync(CancellationToken ct = default)
+    {
+        await AsegurarContenedoresAsync(ct);
+        var limite = _reloj.GetUtcNow() - VidaSubida;
+        var borrados = 0;
+        try
+        {
+            await foreach (var item in Subidas.GetBlobsAsync(BlobTraits.None, BlobStates.None, null, ct))
+                if (item.Properties.CreatedOn is { } creado && creado < limite
+                    && (await Subidas.DeleteBlobIfExistsAsync(item.Name, cancellationToken: ct)).Value)
+                    borrados++;
+
+            // Versiones anteriores subían directo al contenedor público: los originales que nunca se limpiaron se borran.
+            var imagenes = Contenedor(TipoArchivoDto.Imagen);
+            await foreach (var item in imagenes.GetBlobsAsync(BlobTraits.Metadata, BlobStates.None, null, ct))
+                if (!(item.Metadata.TryGetValue(MetadatoLimpia, out var limpia) && limpia == "1")
+                    && item.Properties.CreatedOn is { } creado && creado < limite
+                    && (await imagenes.DeleteBlobIfExistsAsync(item.Name, cancellationToken: ct)).Value)
+                    borrados++;
+        }
+        catch (RequestFailedException ex)
+        {
+            _log.LogWarning(ex, "No se pudieron borrar las subidas vencidas; se reintentará más tarde");
+        }
+        if (borrados > 0) _log.LogInformation("Subidas sin usar borradas: {Total}", borrados);
+        return borrados;
     }
 
     public async Task<int> GenerarMiniaturasFaltantesAsync(CancellationToken ct = default)
@@ -325,7 +399,7 @@ public sealed class AlmacenBlobAzure : IAlmacenArchivos
                 var contenido = (await contenedor.GetBlobClient(nombre).DownloadContentAsync(ct)).Value.Content;
                 using var flujo = contenido.ToStream();
                 var miniatura = await ProcesadorImagenes.MiniaturaAsync(flujo, ct);
-                await SubirInmutableAsync(contenedor.GetBlobClient(nombreMiniatura), miniatura, "image/webp", ct);
+                await SubirInmutableAsync(contenedor.GetBlobClient(nombreMiniatura), miniatura, "image/webp", CachePublica, ct);
                 creadas++;
             }
             catch (RequestFailedException ex) when (ex.Status is 404 or 409)
