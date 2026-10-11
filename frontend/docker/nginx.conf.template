@@ -67,6 +67,13 @@ server {
     include /etc/nginx/conf.d/seguridad.inc;
   }
 
+  # Service worker (PWA): el navegador debe ver siempre la versión nueva para poder actualizar la app.
+  location ~ ^/(?:ngsw-worker\.js|safety-worker\.js|worker-basic\.min\.js|ngsw\.json)$ {
+    add_header Cache-Control "no-cache" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    try_files $uri =404;
+  }
+
   # Recursos con hash en el nombre: caché de un año.
   location ~* \.(?:js|css|woff2?|svg|png|ico|webp)$ {
     expires 1y;

@@ -5,6 +5,7 @@ import type {
   ActualizarPreferenciasAvisosRequest,
   BloqueadoDto,
   PreferenciasAvisosDto,
+  SuscripcionPushRequest,
   CalificacionDtoPaginaDto,
   ConceptoPagoDto,
   ConfiguracionPublicaDto,
@@ -51,6 +52,8 @@ export class CuentaApi {
     this.api.put<PreferenciasAvisosDto>('/usuarios/yo/preferencias-avisos', p);
   cambiarFoto =(url: string) => this.api.put<UsuarioDto>('/usuarios/yo/foto', { url }, { silencioso: true });
   quitarFoto = () => this.api.delete<UsuarioDto>('/usuarios/yo/foto');
+  registrarPush = (s: SuscripcionPushRequest) => this.api.put<void>('/push/suscripciones', s, { silencioso: true });
+  bajaPush = (endpoint: string) => this.api.post<void>('/push/suscripciones/baja', { endpoint }, { silencioso: true });
   actualizarEmpresa =(r: PerfilEmpresaRequest) => this.api.put<UsuarioDto>('/usuarios/yo/empresa', r, { silencioso: true });
 
   datosFacturacion = () => this.api.get<DatosFacturacionDto>('/cuenta/facturacion');

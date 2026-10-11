@@ -101,6 +101,19 @@ En un plan pago de Render se puede volver a Gmail u otro SMTP: `Correo__Proveedo
 - **Probar:** pegar el enlace en el [depurador de Facebook](https://developers.facebook.com/tools/debug/) (*Scrape Again* para refrescar). WhatsApp guarda la vista previa de cada enlace un tiempo; para ver un cambio, compartir otro enlace.
 - **Limitación de la fase gratis:** si la API está dormida, WhatsApp puede rendirse antes de que despierte (sale el enlace sin foto). El enlace sigue funcionando. Se resuelve con el plan pago o con el chequeo de disponibilidad (mejora 4).
 
+### 6.2 App instalable y notificaciones push (gratis)
+- **App instalable (PWA):** el build de producción incluye el service worker de Angular. En Android y PC (Chrome/Edge) aparece "Instalar la app" en *Cuenta → Avisos*; en iPhone se instala desde Safari → *Compartir* → *Agregar a pantalla de inicio*. Guarda la app (no los datos: la API siempre se consulta en vivo) y las versiones nuevas se usan la próxima vez que se abre.
+- **Notificaciones push** (estándar Web Push con llaves VAPID; los servicios de push de Google, Mozilla, Apple y Microsoft son gratis). Mientras no haya llaves, quedan apagadas y la app no las ofrece. Para activarlas:
+  1. Generar las llaves UNA vez, en una terminal con Node (por ejemplo dentro de `frontend/`):
+     ```bash
+     node -e "const c=require('crypto');const k=c.generateKeyPairSync('ec',{namedCurve:'prime256v1'});const p=k.publicKey.export({format:'jwk'});console.log('Push__ClavePublica='+Buffer.concat([Buffer.from([4]),Buffer.from(p.x,'base64url'),Buffer.from(p.y,'base64url')]).toString('base64url'));console.log('Push__ClavePrivada='+k.privateKey.export({format:'jwk'}).d)"
+     ```
+  2. Render → *trueke-api* → *Environment*: pegar `Push__ClavePublica` y `Push__ClavePrivada` → *Save, rebuild, and deploy*. La privada es secreta: no va al repositorio ni a chats.
+  3. **No cambiarlas después:** con llaves nuevas, todos los dispositivos dejan de recibir avisos hasta que cada persona las vuelva a activar.
+- Cada persona las activa por dispositivo en *Cuenta → Avisos* (el permiso del navegador es el consentimiento). Llegan solo si no tiene la app abierta, con el mismo criterio que los correos: solicitudes, entregas, calificaciones y mensajes (nunca el texto del mensaje). Al cerrar sesión, cerrar todas las sesiones o eliminar la cuenta, los dispositivos se dan de baja.
+- **iPhone/iPad:** Apple solo permite notificaciones con la app instalada en la pantalla de inicio (iOS 16.4 o superior); la pantalla lo explica.
+- El servidor solo envía a los servicios de push reconocidos (`fcm.googleapis.com`, `*.push.services.mozilla.com`, `*.notify.windows.com`, `*.push.apple.com`): nunca a una URL arbitraria.
+
 ## 7. Limitaciones de la fase gratis
 - **Arranque en frío:** tras 15 min sin uso, la primera petición tarda 30-60 s.
 - **iPhone/Safari:** el front (`github.io`) y la API (`onrender.com`) son sitios distintos, y Safari bloquea esa cookie de sesión "de terceros". En Safari la sesión se cierra cuando vence el token (15 min). En Chrome, Edge y Firefox funciona bien. **Se resuelve con dominio propio** (§8).

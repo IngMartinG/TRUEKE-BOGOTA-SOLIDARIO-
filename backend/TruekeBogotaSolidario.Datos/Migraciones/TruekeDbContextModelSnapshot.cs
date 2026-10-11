@@ -1067,6 +1067,45 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("Solicitudes");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.SuscripcionPush", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Auth")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<string>("Endpoint")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("P256dh")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Endpoint")
+                        .IsUnique();
+
+                    b.HasIndex("UsuarioId");
+
+                    b.ToTable("SuscripcionesPush", (string)null);
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.TokenUsoUnico", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1655,6 +1694,15 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Navigation("Publicacion");
 
                     b.Navigation("Solicitante");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.SuscripcionPush", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.TokenUsoUnico", b =>

@@ -74,7 +74,7 @@ export const routes: Routes = [
       { path: 'facturacion', title: 'Pagos y facturas', loadComponent: () => import('./features/cuenta/facturacion') },
       { path: 'soporte', title: 'Soporte y PQR', loadComponent: () => import('./features/cuenta/soporte') },
       { path: 'reportes', title: 'Reportes sobre ti', loadComponent: () => import('./features/cuenta/reportes') },
-      { path: 'avisos', title: 'Avisos por correo', loadComponent: () => import('./features/cuenta/avisos') },
+      { path: 'avisos', title: 'Avisos y notificaciones', loadComponent: () => import('./features/cuenta/avisos') },
       { path: 'privacidad', title: 'Privacidad y datos', loadComponent: () => import('./features/cuenta/privacidad') },
     ],
   },
