@@ -3765,6 +3765,68 @@
         }
       }
     },
+    "/api/v1/push/suscripciones": {
+      "put": {
+        "tags": [
+          "Push"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuscripcionPushRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SuscripcionPushRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/SuscripcionPushRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/push/suscripciones/baja": {
+      "post": {
+        "tags": [
+          "Push"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BajaPushRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BajaPushRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/BajaPushRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/solicitudes": {
       "post": {
         "tags": [
@@ -4921,6 +4983,20 @@
         },
         "additionalProperties": false
       },
+      "BajaPushRequest": {
+        "required": [
+          "endpoint"
+        ],
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "maxLength": 1000,
+            "minLength": 0,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "BloqueadoDto": {
         "type": "object",
         "properties": {
@@ -5277,6 +5353,10 @@
             "nullable": true
           },
           "imagenesCdnUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "pushClavePublica": {
             "type": "string",
             "nullable": true
           }
@@ -7805,6 +7885,32 @@
           "expiraUtc": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SuscripcionPushRequest": {
+        "required": [
+          "auth",
+          "endpoint",
+          "p256dh"
+        ],
+        "type": "object",
+        "properties": {
+          "endpoint": {
+            "maxLength": 1000,
+            "minLength": 20,
+            "type": "string"
+          },
+          "p256dh": {
+            "maxLength": 200,
+            "minLength": 20,
+            "type": "string"
+          },
+          "auth": {
+            "maxLength": 100,
+            "minLength": 8,
+            "type": "string"
           }
         },
         "additionalProperties": false

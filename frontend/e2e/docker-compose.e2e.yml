@@ -77,6 +77,9 @@ services:
       SSL_CERT_DIR: /certs/confianza
       Almacenamiento__CadenaConexion: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.2:10000/devstoreaccount1;"
       Urls__Frontend: http://localhost:8081
+      # Notificaciones push con llaves VAPID de un solo uso (las genera e2e/ambiente.ts)
+      Push__ClavePublica: ${E2E_PUSH_PUBLICA:-}
+      Push__ClavePrivada: ${E2E_PUSH_PRIVADA:-}
       # Varias cuentas desde la misma IP en pocos segundos: límites más altos que en producción.
       RateLimiting__AuthPorMinuto: "300"
       RateLimiting__EscrituraPorMinuto: "300"

@@ -3,6 +3,7 @@ using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Datos.Repositorios;
 using TruekeBogotaSolidario.Negocio.Comun;
+using TruekeBogotaSolidario.Negocio.Push;
 using TruekeBogotaSolidario.Negocio.Dtos;
 
 namespace TruekeBogotaSolidario.Negocio.Servicios;
@@ -38,15 +39,16 @@ public sealed class ChatService : IChatService
     private readonly IPresencia _presencia;
     private readonly IBloqueoRepository _bloqueos;
     private readonly IAvisosCorreo _avisosCorreo;
+    private readonly IAvisosPush _avisosPush;
     private readonly TimeProvider _reloj;
     private readonly ILogger<ChatService> _log;
 
     public ChatService(IConversacionRepository conversaciones, IUsuarioRepository usuarios, IUnidadDeTrabajo uow,
-        IEmisorTiempoReal emisor, IPresencia presencia, IBloqueoRepository bloqueos, IAvisosCorreo avisosCorreo, TimeProvider reloj,
+        IEmisorTiempoReal emisor, IPresencia presencia, IBloqueoRepository bloqueos, IAvisosCorreo avisosCorreo, IAvisosPush avisosPush, TimeProvider reloj,
         ILogger<ChatService> log)
     {
         _conversaciones = conversaciones; _usuarios = usuarios; _uow = uow; _emisor = emisor; _presencia = presencia; _bloqueos = bloqueos;
-        _avisosCorreo = avisosCorreo; _reloj = reloj; _log = log;
+        _avisosCorreo = avisosCorreo; _avisosPush = avisosPush; _reloj = reloj; _log = log;
     }
 
     /// <summary>El tiempo real es un extra: si falla, la operación ya quedó guardada y se verá al recargar.</summary>
@@ -147,8 +149,9 @@ public sealed class ChatService : IChatService
             // El mensaje ya quedó guardado: la contraparte lo verá al abrir la conversación.
             _log.LogWarning(ex, "No se pudo empujar en tiempo real el mensaje {MensajeId}", m.Id);
         }
-        // Si la otra persona no tiene la app abierta, un correo (sin el texto) como mucho cada 2 horas por conversación
+        // Si la otra persona no tiene la app abierta: un correo (sin el texto) como mucho cada 2 horas por conversación y un aviso push
         await _avisosCorreo.MensajeChatAsync(c.Contraparte(actorId), c.Id, Mapeos.NombrePublico(actor.NombreCompleto));
+        await _avisosPush.MensajeChatAsync(c.Contraparte(actorId), c.Id, Mapeos.NombrePublico(actor.NombreCompleto));
         return ADto(m, actorId);
     }
 

@@ -124,7 +124,15 @@ export class SesionService {
     return this.refrescoEnCurso;
   }
 
+  private readonly antesDeSalir: (() => Promise<void>)[] = [];
+
+  /** Tareas que necesitan la sesión todavía válida al salir (p. ej. dar de baja las notificaciones de este dispositivo). */
+  registrarAntesDeSalir(tarea: () => Promise<void>): void {
+    this.antesDeSalir.push(tarea);
+  }
+
   async salir(destino = '/'): Promise<void> {
+    await Promise.allSettled(this.antesDeSalir.map((t) => t()));
     try {
       await firstValueFrom(this.authApi.salir());
     } catch {

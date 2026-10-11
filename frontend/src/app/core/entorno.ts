@@ -45,7 +45,8 @@ export const apiBase = (): string => `${entorno.apiUrl}/api/v1`;
  */
 export const urlCompartirPublicacion = (id: string): string | null =>
   entorno.apiUrl ? `${entorno.apiUrl}/compartir/publicaciones/${encodeURIComponent(id)}` : null;
-export const hubUrl = (): string => `${entorno.apiUrl}/hubs/notificaciones`;
+// ?ngsw-bypass: la negociación y el respaldo por long polling no pasan por el service worker (PWA).
+export const hubUrl = (): string => `${entorno.apiUrl}/hubs/notificaciones?ngsw-bypass=true`;
 export const mapaTeselas = (): { url: string; atribucion: string } => ({
   url: entorno.mapaTeselas,
   atribucion: entorno.mapaAtribucion,

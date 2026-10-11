@@ -7,6 +7,7 @@ using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Correo;
 using TruekeBogotaSolidario.Negocio.Pagos;
+using TruekeBogotaSolidario.Negocio.Push;
 using TruekeBogotaSolidario.Negocio.Servicios;
 
 namespace TruekeBogotaSolidario.Negocio;
@@ -65,6 +66,17 @@ public static class NegocioServiceCollectionExtensions
                 throw new InvalidOperationException("Correo:Smtp:Host es obligatorio (o usa Correo:Proveedor=Simulado solo en desarrollo).");
             services.AddScoped<ITransporteCorreo, TransporteCorreoSmtp>();
         }
+        // Notificaciones push (Web Push + VAPID): sin llaves, apagadas. Solo se habla con los servicios de push permitidos.
+        services.AddOptions<PushOpciones>().Bind(config.GetSection(PushOpciones.Seccion))
+            .Validate(o => o.Validas, "Push:ClavePublica/ClavePrivada no son llaves VAPID P-256 válidas (base64url, 65 y 32 bytes).")
+            .ValidateOnStart();
+        services.AddHttpClient(EnvioPushHostedService.ClienteHttp, c => c.Timeout = TimeSpan.FromSeconds(10))
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+        services.AddSingleton<ColaPush>();
+        services.AddScoped<IPushService, PushService>();
+        services.AddScoped<IAvisosPush, AvisosPush>();
+        services.AddHostedService<EnvioPushHostedService>();
+
         services.AddSingleton<ColaCorreo>();
         services.AddSingleton<ICorreoSaliente>(sp => sp.GetRequiredService<ColaCorreo>());
         services.AddHostedService<EnvioCorreosHostedService>();
