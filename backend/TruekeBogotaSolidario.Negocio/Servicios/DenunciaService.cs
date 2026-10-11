@@ -195,6 +195,10 @@ public sealed class DenunciaService : IDenunciaService
         if (d.Estado != EstadoDenuncia.Pendiente) throw new ReglaDeNegocioException("La denuncia ya fue resuelta.");
         if (accion == AccionDenunciaDto.OcultarContenido && string.IsNullOrWhiteSpace(nota))
             throw new ReglaDeNegocioException("Indica el motivo para ocultar el contenido (lo verá su autor).");
+        // Nadie modera lo suyo: una denuncia contra el propio moderador la resuelve otro (si no, podría descartarla).
+        var denunciado = d.DenunciadoId ?? await AutorDelObjetivoAsync(d.Tipo, d.ObjetivoId);
+        if (denunciado == moderadorId)
+            throw new ReglaDeNegocioException("Otro moderador debe resolver esta denuncia: es sobre tu propio contenido.");
 
         var ahora = Ahora;
         if (accion == AccionDenunciaDto.OcultarContenido)
@@ -232,7 +236,6 @@ public sealed class DenunciaService : IDenunciaService
 
         var accionTomada = (AccionModeracion)(int)accion;
         var procedente = accionTomada != AccionModeracion.Descartar;
-        var denunciado = d.DenunciadoId ?? await AutorDelObjetivoAsync(d.Tipo, d.ObjetivoId);
         var resolucionId = Guid.NewGuid();
         var grupo = await _denuncias.PendientesDelObjetivoAsync(d.Tipo, d.ObjetivoId);
         foreach (var x in grupo) x.Resolver(moderadorId, accionTomada, nota, ahora, resolucionId, denunciado);
@@ -310,9 +313,13 @@ public sealed class DenunciaService : IDenunciaService
         return AApelacionDto(a);
     }
 
-    /// <summary>Quien resolvió la denuncia no revisa su propia decisión (salvo un SuperUsuario).</summary>
-    private static bool PuedeResolverApelacion(Usuario moderador, Denuncia original)
-        => moderador.Rol == RolUsuarioEnum.SuperUsuario || original.ModeradorId != moderador.Id;
+    /// <summary>
+    /// Nadie resuelve su propia apelación (ni siquiera un SuperUsuario), y quien resolvió la denuncia no revisa su propia
+    /// decisión (salvo un SuperUsuario).
+    /// </summary>
+    private static bool PuedeResolverApelacion(Usuario moderador, Denuncia original, Apelacion apelacion)
+        => apelacion.UsuarioId != moderador.Id
+           && (moderador.Rol == RolUsuarioEnum.SuperUsuario || original.ModeradorId != moderador.Id);
 
     public async Task<IReadOnlyList<ApelacionAdminDto>> ListarApelacionesAsync(Guid moderadorId, EstadoApelacionDto estado)
     {
@@ -327,7 +334,7 @@ public sealed class DenunciaService : IDenunciaService
                 grupo.Select(x => x.Motivo.ToString()).Distinct().ToList(),
                 grupo.Where(x => x.Detalle is not null).Select(x => x.Detalle!).Take(10).ToList(),
                 original.NotaResolucion, vista, a.Texto, a.FechaUtc, a.Estado.ToString(), a.NotaResolucion,
-                a.Estado == EstadoApelacion.Pendiente && PuedeResolverApelacion(moderador, original)));
+                a.Estado == EstadoApelacion.Pendiente && PuedeResolverApelacion(moderador, original, a)));
         }
         return resultado;
     }
@@ -338,7 +345,9 @@ public sealed class DenunciaService : IDenunciaService
         var a = await _denuncias.ObtenerApelacionAsync(apelacionId) ?? throw new NoEncontradoException("Apelación no encontrada.");
         if (a.Estado != EstadoApelacion.Pendiente) throw new ReglaDeNegocioException("La apelación ya fue resuelta.");
         var grupo = await _denuncias.DeResolucionAsync(a.ResolucionId);
-        if (!PuedeResolverApelacion(moderador, grupo.First()))
+        if (a.UsuarioId == moderadorId)
+            throw new ReglaDeNegocioException("Otro moderador debe revisar esta apelación: es sobre tu propio contenido.");
+        if (!PuedeResolverApelacion(moderador, grupo.First(), a))
             throw new ReglaDeNegocioException("Otro moderador debe revisar esta apelación: tú resolviste la denuncia original.");
 
         var ahora = Ahora;

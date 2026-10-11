@@ -92,6 +92,8 @@ public sealed class ComentarioService : IComentarioService
     {
         await ExigirModeradorAsync(actorId);
         var c = await _comentarios.ObtenerPorIdAsync(comentarioId) ?? throw new NoEncontradoException("Comentario no encontrado.");
+        if (c.AutorId == actorId) // nadie modera lo suyo: para eso está la apelación, que revisa otro moderador
+            throw new ReglaDeNegocioException("Otro moderador debe revisar tu comentario. Si no estás de acuerdo, apela la decisión.");
         c.Mostrar();
         _auditoria.Agregar(new AuditoriaEvento(actorId, "COMENTARIO_RESTAURADO", "Comentario", c.Id, null, Ahora));
         await _uow.GuardarCambiosAsync();

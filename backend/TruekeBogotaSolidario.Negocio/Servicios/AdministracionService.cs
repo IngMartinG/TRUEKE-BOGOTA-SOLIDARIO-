@@ -372,6 +372,8 @@ public sealed class AdministracionService : IAdministracionService
     {
         await ExigirRolAsync(actorId, RolUsuarioEnum.Administrador);
         var p = await _pubs.ObtenerPorIdAsync(publicacionId) ?? throw new NoEncontradoException("Publicación no encontrada.");
+        if (p.PropietarioId == actorId) // nadie modera lo suyo: para eso está la apelación, que revisa otro moderador
+            throw new ReglaDeNegocioException("Otro moderador debe revisar tu publicación. Si no estás de acuerdo, apela la decisión.");
         p.Mostrar();
         Auditar(actorId, "PUBLICACION_RESTAURADA", "Publicacion", publicacionId, null);
         await _uow.GuardarCambiosAsync();
