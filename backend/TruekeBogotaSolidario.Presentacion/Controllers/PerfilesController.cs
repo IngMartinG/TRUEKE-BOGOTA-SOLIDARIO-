@@ -17,7 +17,7 @@ public sealed class PerfilesController : ControllerBase
     public PerfilesController(IPublicacionService pubs, ISolicitudService solicitudes) { _pubs = pubs; _solicitudes = solicitudes; }
 
     [HttpGet("perfil"), AllowAnonymous]
-    public async Task<ActionResult<PerfilUsuarioDto>> Perfil(Guid id) => Ok(await _pubs.ObtenerPerfilAsync(id));
+    public async Task<ActionResult<PerfilUsuarioDto>> Perfil(Guid id) => Ok(await _pubs.ObtenerPerfilAsync(User.IdActualOpcional(), id));
 
     [HttpGet("publicaciones"), AllowAnonymous]
     public async Task<ActionResult<PaginaDto<PublicacionDto>>> Publicaciones(Guid id, [FromQuery] PaginacionRequest p)
