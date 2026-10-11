@@ -30,9 +30,9 @@ jobs:
       run:
         working-directory: frontend
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 24
           cache: npm
@@ -42,7 +42,9 @@ jobs:
         run: npm ci --no-audit --no-fund
 
       - name: Build con la subcarpeta del repositorio
-        run: npx ng build --base-href "/${{ github.event.repository.name }}/"
+        env:
+          REPO: ${{ github.event.repository.name }}
+        run: npx ng build --base-href "/${REPO}/"
 
       # URL de la API: variable del repositorio (Settings → Secrets and variables → Actions → Variables → API_URL),
       # p. ej. https://trueke-api.onrender.com. No es secreta (el navegador la ve). Tras cambiarla, re-ejecutar este
@@ -76,6 +78,39 @@ jobs:
           grep -q "og:image\" content=\"${url}og-imagen.png\"" "$index" || { echo "::error::No se pudo fijar og:image"; exit 1; }
           grep -o '<meta property="og:\(url\|image\)" content="[^"]*"' "$index"
 
+      # GitHub Pages no permite cabeceras propias: la Content-Security-Policy va en un <meta> (la misma política que
+      # nginx, salvo frame-ancestors, que un <meta> no admite; contra iframes ajenos, main.ts no arranca la app).
+      # Las fotos se suben y se leen de Azure Blob (*.blob.core.windows.net).
+      - name: Content-Security-Policy
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          api=""
+          if [ -n "$API_URL" ]; then
+            origen=$(printf '%s' "$API_URL" | sed -E 's#^(https://[^/]+).*#\1#')
+            api="$origen $(printf '%s' "$origen" | sed 's#^https://#wss://#')"   # wss: SignalR
+          fi
+          index=dist/trueke-web/browser/index.html
+          hashes=$(node scripts/csp-hash-inline.mjs "$index")   # el importmap de Angular (integridad de los chunks)
+          csp="default-src 'self'; script-src 'self' ${hashes} https://accounts.google.com/gsi/client https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org https://*.blob.core.windows.net https://*.googleusercontent.com; font-src 'self'; connect-src 'self' ${api} https://*.blob.core.windows.net https://accounts.google.com/gsi/ https://www.google.com/recaptcha/; frame-src https://accounts.google.com/gsi/ https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"
+          sed -i -E "s#<meta charset=\"utf-8\" ?/?>#&\n    <meta http-equiv=\"Content-Security-Policy\" content=\"${csp}\">#" "$index"
+          grep -q 'http-equiv="Content-Security-Policy"' "$index" || { echo "::error::No se pudo insertar la CSP"; exit 1; }
+          grep -o '<meta http-equiv="Content-Security-Policy"[^>]*>' "$index"
+
+      # index.html cambió después del build (og:, CSP): el service worker valida cada archivo con el SHA-1 de ngsw.json y,
+      # si no coincide, no se instala. Se actualiza el hash.
+      - name: Actualizar el hash de index.html en ngsw.json
+        run: |
+          node -e '
+            const fs = require("fs"), crypto = require("crypto");
+            const dir = "dist/trueke-web/browser", ngsw = JSON.parse(fs.readFileSync(dir + "/ngsw.json", "utf8"));
+            const sha1 = crypto.createHash("sha1").update(fs.readFileSync(dir + "/index.html")).digest("hex");
+            const claves = Object.keys(ngsw.hashTable).filter((k) => k.endsWith("/index.html"));
+            if (claves.length === 0) { console.error("ngsw.json sin index.html"); process.exit(1); }
+            for (const k of claves) ngsw.hashTable[k] = sha1;
+            fs.writeFileSync(dir + "/ngsw.json", JSON.stringify(ngsw, null, 2));
+            console.log(claves.join(", "), "→", sha1);'
+
       - name: Fallback de la SPA y sin procesamiento Jekyll
         run: |
           cd dist/trueke-web/browser
@@ -87,7 +122,7 @@ jobs:
             exit 1
           fi
 
-      - uses: actions/upload-pages-artifact@v3
+      - uses: actions/upload-pages-artifact@56afc609e74202658d3ffba0e8f6dda462b719fa # v3.0.1
         with:
           path: frontend/dist/trueke-web/browser
 
@@ -101,4 +136,4 @@ jobs:
       url: ${{ steps.despliegue.outputs.page_url }}
     steps:
       - id: despliegue
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5
