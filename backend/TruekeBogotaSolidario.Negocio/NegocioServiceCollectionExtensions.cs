@@ -133,6 +133,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddSingleton<IUbicacionService, UbicacionService>();
         services.AddScoped<IFacturacionService, FacturacionService>();
         services.AddScoped<IPqrService, PqrService>();
+        services.AddScoped<IBusquedaGuardadaService, BusquedaGuardadaService>();
         services.AddSingleton<IRegistroVistas, RegistroVistasEnMemoria>();
         services.AddHostedService<VolcadoVistasHostedService>();
         services.AddHostedService<ReconciliadorPagosHostedService>();

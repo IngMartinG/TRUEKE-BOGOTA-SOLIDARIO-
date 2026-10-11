@@ -147,6 +147,17 @@
 - Front: elección del objeto en "Proponer trueke" y tarjeta "Te ofrece / Ofreces a cambio" en *Mis intercambios*.
 - 310 pruebas del backend (nuevas: `TruekeConObjetoTests`) y una E2E del trueke con objeto en pantalla.
 
+## Hecho el 2026-10-11 — búsquedas guardadas con alertas
+- Tabla `BusquedasGuardadas` (migración `BusquedasGuardadas`): los mismos filtros del catálogo, máximo 10 por persona, sin duplicados (texto normalizado), con nombre legible ("bicicleta · Trueke · Bogotá, D.C. · hasta $200.000").
+- `GET/POST /api/v1/busquedas-guardadas`, `PUT …/{id}/alertas`, `DELETE …/{id}` (solo su dueño; exige correo verificado).
+- **Alertas** en la tarea de mantenimiento de cada hora (no despierta la base más de lo que ya lo hace). Cuenta las publicaciones NUEVAS desde la última revisión (sin contar las propias) y envía como mucho un aviso por búsqueda por hora, en la app y por push. Al reactivar una alerta no avisa de lo publicado mientras estuvo apagada.
+- Front: botón "Guardar búsqueda" en el catálogo, pantalla *Cuenta → Búsquedas guardadas* (ver resultados, alerta on/off, borrar), y la notificación abre los resultados.
+- Se incluyen en "Exportar mis datos" y se borran con la cuenta.
+- **Encontrado por las E2E y corregido:** la subida directa de fotos al almacenamiento (PUT con SAS) también pasaba por el service worker. Al reenviarla, podía fallar (504) y la foto no subía. Ahora:
+  - Lleva `ngsw-bypass` como parámetro.
+  - Si el almacenamiento rechazara ese parámetro (400/403), reintenta una vez sin él. **Verificar en producción** subiendo una foto después del despliegue.
+- Las E2E locales usan 1 navegador a la vez: con Docker en el mismo equipo, 2 navegadores agotaban la memoria (`ERR_BLOB_OUT_OF_MEMORY`). En GitHub siguen siendo 2.
+
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
 - **Dependabot:** `gh auth login` y cerrar los PR de .NET 10, EF Core 9, TypeScript 7 y Node 26 (los demás, fusionar si el CI pasa).

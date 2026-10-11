@@ -75,6 +75,7 @@ export const routes: Routes = [
       { path: 'soporte', title: 'Soporte y PQR', loadComponent: () => import('./features/cuenta/soporte') },
       { path: 'reportes', title: 'Reportes sobre ti', loadComponent: () => import('./features/cuenta/reportes') },
       { path: 'avisos', title: 'Avisos y notificaciones', loadComponent: () => import('./features/cuenta/avisos') },
+      { path: 'busquedas', title: 'Búsquedas guardadas', loadComponent: () => import('./features/cuenta/busquedas') },
       { path: 'privacidad', title: 'Privacidad y datos', loadComponent: () => import('./features/cuenta/privacidad') },
     ],
   },

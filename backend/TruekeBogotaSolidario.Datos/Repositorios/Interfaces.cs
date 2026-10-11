@@ -16,6 +16,10 @@ public class FiltroPublicaciones
     public decimal? PrecioMin { get; set; }
     public decimal? PrecioMax { get; set; }
     public bool SoloVerificados { get; set; }
+    /// <summary>Alertas de búsquedas guardadas: publicadas en (desde, hasta] y que no sean de esa persona.</summary>
+    public DateTime? PublicadasDesde { get; set; }
+    public DateTime? PublicadasHasta { get; set; }
+    public Guid? ExcluirPropietarioId { get; set; }
     public OrdenPublicaciones Orden { get; set; } = OrdenPublicaciones.Recientes;
     public int Pagina { get; set; } = 1;
     public int Tamano { get; set; } = 20;
@@ -295,6 +299,17 @@ public interface IDenunciaRepository
     Task<IReadOnlyList<Apelacion>> ListarApelacionesAsync(EstadoApelacion estado, int maximo);
     Task<IReadOnlyList<Apelacion>> ListarApelacionesDelUsuarioAsync(Guid usuarioId, int maximo);
     void AgregarApelacion(Apelacion apelacion);
+}
+
+public interface IBusquedaGuardadaRepository
+{
+    /// <summary>Más recientes primero.</summary>
+    Task<IReadOnlyList<BusquedaGuardada>> DeUsuarioAsync(Guid usuarioId);
+    Task<BusquedaGuardada?> ObtenerAsync(Guid id);
+    /// <summary>Con alertas activas y de cuentas activas, las revisadas hace más tiempo primero (con tracking).</summary>
+    Task<IReadOnlyList<BusquedaGuardada>> ListarParaAlertasAsync(DateTime revisadasAntesDeUtc, int maximo);
+    void Agregar(BusquedaGuardada b);
+    void Quitar(BusquedaGuardada b);
 }
 
 public interface ISuscripcionPushRepository

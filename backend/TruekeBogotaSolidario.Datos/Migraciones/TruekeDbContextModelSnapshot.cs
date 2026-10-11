@@ -141,6 +141,72 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("Bloqueos");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.BusquedaGuardada", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("AlertasActivas")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("CategoriaId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Condicion")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("DepartamentoCodigo")
+                        .HasMaxLength(2)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(2)");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Localidad")
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<string>("Modo")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("MunicipioCodigo")
+                        .HasMaxLength(5)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(5)");
+
+                    b.Property<decimal?>("PrecioMax")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<decimal?>("PrecioMin")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("decimal(18,2)");
+
+                    b.Property<DateTime>("RevisadaHastaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("SoloVerificados")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Texto")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.HasIndex("AlertasActivas", "RevisadaHastaUtc");
+
+                    b.ToTable("BusquedasGuardadas", (string)null);
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Calificacion", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1447,6 +1513,15 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .IsRequired();
 
                     b.Navigation("Bloqueado");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.BusquedaGuardada", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Calificacion", b =>

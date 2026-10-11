@@ -1,6 +1,6 @@
-import { HttpClient, HttpEventType } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse, HttpEventType } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { filter, firstValueFrom, map, Observable, switchMap } from 'rxjs';
+import { catchError, filter, firstValueFrom, map, Observable, switchMap, throwError } from 'rxjs';
 import type { TipoArchivoDto } from '../api/tipos';
 import { urlPublica } from '../shared/imagenes';
 import { CuentaApi } from './api/cuenta.api';
@@ -42,14 +42,17 @@ export class SubidasService {
         if (!Object.keys(headers).some((h) => h.toLowerCase() === 'content-type')) {
           headers = { ...headers, 'Content-Type': archivo.type };
         }
-        return this.http
-          .request(s.metodo ?? 'PUT', urlPublica(s.urlSubida ?? ''), {
-            body: archivo,
-            headers,
-            reportProgress: true,
-            observe: 'events',
-          })
+        const url = urlPublica(s.urlSubida ?? '');
+        const enviar = (destino: string) =>
+          this.http.request(s.metodo ?? 'PUT', destino, { body: archivo, headers, reportProgress: true, observe: 'events' });
+        // ?ngsw-bypass: la subida directa al almacenamiento no pasa por el service worker (PWA); si pasara, el service
+        // worker reenvía el PUT y puede fallar (504). Si el almacenamiento rechazara ese parámetro extra (400/403), se
+        // reintenta una vez sin él: nunca queda peor que sin la PWA.
+        return enviar(conBypass(url))
           .pipe(
+            catchError((e: unknown) =>
+              e instanceof HttpErrorResponse && (e.status === 400 || e.status === 403) ? enviar(url) : throwError(() => e),
+            ),
             filter((e) => e.type === HttpEventType.UploadProgress || e.type === HttpEventType.Response),
             map((e) =>
               e.type === HttpEventType.UploadProgress
@@ -65,4 +68,9 @@ export class SubidasService {
     const final = await firstValueFrom(this.subir(archivo, tipo).pipe(filter((p) => !!p.url)));
     return final.url!;
   }
+}
+
+/** Agrega ?ngsw-bypass=true sin tocar los parámetros de la SAS. */
+export function conBypass(url: string): string {
+  return url ? `${url}${url.includes('?') ? '&' : '?'}ngsw-bypass=true` : url;
 }

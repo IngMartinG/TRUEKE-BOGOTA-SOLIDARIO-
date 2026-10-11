@@ -37,6 +37,7 @@ public static class TiposNotificacion
     public const string PlanPorVencer = "PlanPorVencer";
     public const string FacturaEmitida = "FacturaEmitida";
     public const string PqrRespondida = "PqrRespondida";
+    public const string BusquedaGuardada = "BusquedaGuardada";
     // Solo para moderadores
     public const string AlertaPagoEnRevision = "AlertaPagoEnRevision";
     public const string PqrNueva = "PqrNueva";

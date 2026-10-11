@@ -17,7 +17,9 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
-  workers: 2, // Chromium completo es pesado: más navegadores a la vez vuelven lentas (e inestables) las pruebas
+  // Chromium completo es pesado: con Docker en el mismo equipo, más navegadores a la vez agotan la memoria
+  // (ERR_BLOB_OUT_OF_MEMORY al subir fotos). En GitHub Actions hay memoria para 2.
+  workers: process.env['CI'] ? 2 : 1,
   reporter: process.env['CI'] ? [['github'], ['html', { open: 'never', outputFolder: 'e2e/.reporte' }]] : [['list'], ['html', { open: 'never', outputFolder: 'e2e/.reporte' }]],
   use: {
     baseURL: URL_FRONT,

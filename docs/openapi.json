@@ -1303,6 +1303,172 @@
         }
       }
     },
+    "/api/v1/busquedas-guardadas": {
+      "get": {
+        "tags": [
+          "BusquedasGuardadas"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BusquedaGuardadaDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BusquedaGuardadaDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/BusquedaGuardadaDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "BusquedasGuardadas"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarBusquedaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarBusquedaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarBusquedaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusquedaGuardadaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusquedaGuardadaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusquedaGuardadaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/busquedas-guardadas/{id}/alertas": {
+      "put": {
+        "tags": [
+          "BusquedasGuardadas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertasBusquedaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertasBusquedaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/AlertasBusquedaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusquedaGuardadaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusquedaGuardadaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BusquedaGuardadaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/busquedas-guardadas/{id}": {
+      "delete": {
+        "tags": [
+          "BusquedasGuardadas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/publicaciones/{id}/comentarios": {
       "get": {
         "tags": [
@@ -4893,6 +5059,15 @@
         },
         "additionalProperties": false
       },
+      "AlertasBusquedaRequest": {
+        "type": "object",
+        "properties": {
+          "activas": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "ApelacionAdminDto": {
         "type": "object",
         "properties": {
@@ -5002,6 +5177,68 @@
         "properties": {
           "perfil": {
             "$ref": "#/components/schemas/PerfilPublicoDto"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "BusquedaGuardadaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "texto": {
+            "type": "string",
+            "nullable": true
+          },
+          "categoriaId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "modo": {
+            "type": "string",
+            "nullable": true
+          },
+          "condicion": {
+            "type": "string",
+            "nullable": true
+          },
+          "departamentoCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "municipioCodigo": {
+            "type": "string",
+            "nullable": true
+          },
+          "localidad": {
+            "type": "string",
+            "nullable": true
+          },
+          "precioMin": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "precioMax": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "soloVerificados": {
+            "type": "boolean"
+          },
+          "alertasActivas": {
+            "type": "boolean"
           },
           "fechaUtc": {
             "type": "string",
@@ -5825,6 +6062,13 @@
               "$ref": "#/components/schemas/BloqueadoDto"
             },
             "nullable": true
+          },
+          "busquedasGuardadas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BusquedaGuardadaDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6449,6 +6693,63 @@
             "maxLength": 20,
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "GuardarBusquedaRequest": {
+        "type": "object",
+        "properties": {
+          "categoriaId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "modo": {
+            "$ref": "#/components/schemas/ModoDto"
+          },
+          "condicion": {
+            "$ref": "#/components/schemas/CondicionDto"
+          },
+          "departamentoCodigo": {
+            "pattern": "^[0-9]{2}$",
+            "type": "string",
+            "nullable": true
+          },
+          "municipioCodigo": {
+            "pattern": "^[0-9]{5}$",
+            "type": "string",
+            "nullable": true
+          },
+          "localidad": {
+            "maxLength": 60,
+            "type": "string",
+            "nullable": true
+          },
+          "texto": {
+            "maxLength": 100,
+            "type": "string",
+            "nullable": true
+          },
+          "precioMin": {
+            "maximum": 1000000000,
+            "minimum": 0,
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "precioMax": {
+            "maximum": 1000000000,
+            "minimum": 0,
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "soloVerificados": {
+            "type": "boolean"
+          },
+          "alertas": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

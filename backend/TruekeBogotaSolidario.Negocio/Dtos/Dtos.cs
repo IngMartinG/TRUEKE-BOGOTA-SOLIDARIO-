@@ -194,6 +194,32 @@ public sealed class FiltroPublicacionesRequest
     [Range(1, 50)] public int Tamano { get; init; } = 20;
 }
 
+/// <summary>Guardar la búsqueda actual del catálogo (mismos filtros), con o sin alertas.</summary>
+public sealed class GuardarBusquedaRequest
+{
+    public int? CategoriaId { get; init; }
+    public ModoDto? Modo { get; init; }
+    public CondicionDto? Condicion { get; init; }
+    [RegularExpression(FormatosUbicacion.Departamento, ErrorMessage = "El departamento no es válido.")] public string? DepartamentoCodigo { get; init; }
+    [RegularExpression(FormatosUbicacion.Municipio, ErrorMessage = "El municipio no es válido.")] public string? MunicipioCodigo { get; init; }
+    [MaxLength(60)] public string? Localidad { get; init; }
+    [MaxLength(100)] public string? Texto { get; init; }
+    [Range(0, 1_000_000_000)] public decimal? PrecioMin { get; init; }
+    [Range(0, 1_000_000_000)] public decimal? PrecioMax { get; init; }
+    public bool SoloVerificados { get; init; }
+    public bool Alertas { get; init; } = true;
+}
+
+public sealed class AlertasBusquedaRequest
+{
+    public bool Activas { get; init; }
+}
+
+/// <param name="Nombre">Resumen legible: "bicicleta · Trueke · Bogotá, D.C."</param>
+public sealed record BusquedaGuardadaDto(Guid Id, string Nombre, string? Texto, int? CategoriaId, string? Modo, string? Condicion,
+    string? DepartamentoCodigo, string? MunicipioCodigo, string? Localidad, decimal? PrecioMin, decimal? PrecioMax, bool SoloVerificados,
+    bool AlertasActivas, DateTime FechaUtc);
+
 /// <summary>Autocompletar del buscador del catálogo.</summary>
 public sealed class SugerenciasRequest
 {
@@ -563,7 +589,8 @@ public sealed record DatosPersonalesDto(DateTime GeneradoUtc, UsuarioDto Perfil,
     IReadOnlyList<NotificacionDto> Notificaciones, IReadOnlyList<DenunciaExportDto> DenunciasRealizadas,
     IReadOnlyList<CalificacionExportDto> CalificacionesRealizadas, IReadOnlyList<Guid> Favoritos,
     DatosFacturacionDto DatosFacturacion, IReadOnlyList<FacturaDto> Facturas, IReadOnlyList<PqrDto> Pqrs,
-    IReadOnlyList<ApelacionDto> Apelaciones, PreferenciasAvisosDto? PreferenciasAvisos = null, IReadOnlyList<BloqueadoDto>? Bloqueados = null);
+    IReadOnlyList<ApelacionDto> Apelaciones, PreferenciasAvisosDto? PreferenciasAvisos = null, IReadOnlyList<BloqueadoDto>? Bloqueados = null,
+    IReadOnlyList<BusquedaGuardadaDto>? BusquedasGuardadas = null);
 
 public sealed record CalificacionExportDto(Guid Id, Guid SolicitudId, int Estrellas, string? Comentario, DateTime FechaUtc);
 
