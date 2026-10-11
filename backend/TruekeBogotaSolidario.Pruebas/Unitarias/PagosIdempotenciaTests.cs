@@ -85,7 +85,7 @@ public class PagosIdempotenciaTests
     }
 
     [Fact]
-    public async Task Pago_rechazado_y_luego_aprobado_no_acredita()
+    public async Task Pago_rechazado_y_luego_aprobado_no_acredita_y_queda_en_revision_para_reembolso()
     {
         var (entorno, pasarela, usuarioId, pago) = await PrepararRecargaAsync(5_000);
         using var _ = entorno;
@@ -100,6 +100,9 @@ public class PagosIdempotenciaTests
             WebhookWompiTests.EventoFirmado(EntornoNegocio.SecretoEventos, "tx-4", "APPROVED", pago.MontoEnCentavos, pago.Referencia)));
 
         Assert.Equal(saldoInicial, await SaldoAsync(entorno, usuarioId));
+        // Se cobró: no puede quedar "rechazado" sin que nadie se entere. Queda en revisión (y se avisa a los moderadores).
+        var estado = await entorno.EnScopeAsync<IPagoService, PagoEstadoDto>(p => p.ObtenerEstadoAsync(usuarioId, pago.Referencia));
+        Assert.Equal("RequiereRevision", estado.Estado);
     }
 
     [Fact]
