@@ -29,7 +29,8 @@ public interface IPublicacionService
     /// <summary>Rendimiento de la publicación (solo el dueño). La serie diaria es un beneficio de los planes pagos.</summary>
     Task<EstadisticasPublicacionDto> ObtenerEstadisticasAsync(Guid actorId, Guid id);
     /// <summary>Perfil público; usuarios eliminados o suspendidos "no existen" (404).</summary>
-    Task<PerfilUsuarioDto> ObtenerPerfilAsync(Guid usuarioId);
+    /// <summary>Perfil público. Si está en línea solo se informa a quien tiene sesión (no a cualquier visitante anónimo).</summary>
+    Task<PerfilUsuarioDto> ObtenerPerfilAsync(Guid? actorId, Guid usuarioId);
     Task<PaginaDto<PublicacionDto>> ListarDePerfilAsync(Guid? actorId, Guid usuarioId, int pagina, int tamano);
     Task MarcarFavoritaAsync(Guid actorId, Guid publicacionId);
     Task QuitarFavoritaAsync(Guid actorId, Guid publicacionId);
@@ -380,16 +381,16 @@ public sealed class PublicacionService : IPublicacionService
         return u;
     }
 
-    public async Task<PerfilUsuarioDto> ObtenerPerfilAsync(Guid usuarioId)
+    public async Task<PerfilUsuarioDto> ObtenerPerfilAsync(Guid? actorId, Guid usuarioId)
     {
         var u = await PerfilVisibleAsync(usuarioId);
         var ahora = Ahora;
         var (_, total) = await _pubs.ListarVisiblesDePropietarioAsync(usuarioId, 1, 1, ahora);
-        return Mapeos.APerfilUsuario(u, total, await SenalesConfianzaAsync(u, ahora), ahora);
+        return Mapeos.APerfilUsuario(u, total, await SenalesConfianzaAsync(u, ahora, verPresencia: actorId.HasValue), ahora);
     }
 
     /// <summary>Hechos verificables y agregados del último año que ayudan a decidir si intercambiar con alguien.</summary>
-    private async Task<SenalesConfianzaDto> SenalesConfianzaAsync(Usuario u, DateTime ahora)
+    private async Task<SenalesConfianzaDto> SenalesConfianzaAsync(Usuario u, DateTime ahora, bool verPresencia)
     {
         var (completados, noConcretados, horas) = await _solicitudes.ConfianzaAsync(u.Id, ahora.AddYears(-1));
         int? tasa = completados + noConcretados > 0
@@ -401,7 +402,8 @@ public sealed class PublicacionService : IPublicacionService
             var mediana = orden.Count % 2 == 1 ? orden[orden.Count / 2] : (orden[orden.Count / 2 - 1] + orden[orden.Count / 2]) / 2;
             respuesta = Math.Round(mediana, 1, MidpointRounding.AwayFromZero);
         }
-        var enLinea = (await _presencia.EnLineaAsync(new[] { u.Id })).Contains(u.Id);
+        // Un anónimo no puede vigilar cuándo se conecta alguien
+        var enLinea = verPresencia && (await _presencia.EnLineaAsync(new[] { u.Id })).Contains(u.Id);
         return new SenalesConfianzaDto(u.CorreoVerificado, u.EsVerificado, u.GoogleSub is not null, u.DosFactoresActivo, enLinea,
             u.TotalTruekesCompletados + u.TotalComprasRealizadas + u.TotalDonacionesRealizadas, tasa, respuesta,
             await _calificaciones.DistribucionAsync(u.Id));

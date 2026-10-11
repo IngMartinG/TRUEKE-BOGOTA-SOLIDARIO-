@@ -170,6 +170,9 @@ export class TiempoRealService {
     this.notificacionesNoLeidas.set(0);
     this.mensajesNoLeidos.set(0);
     this.conectado.set(false);
+    // Presencia y "escribiendo…" son de las conversaciones de quien cerró sesión
+    this.enLinea.set(new Map());
+    this.escribiendoEn.set(new Set());
     if (conexion && String(conexion.state) !== 'Disconnected') await conexion.stop();
   }
 

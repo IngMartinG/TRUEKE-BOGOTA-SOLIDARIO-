@@ -158,6 +158,9 @@ public sealed class AuthService : IAuthService
             {
                 // Vincula una cuenta existente con el mismo correo (Google ya demostró que el correo es de esta persona).
                 if (usuario.GoogleSub is not null) throw new AutenticacionException("No se pudo validar tu cuenta de Google.");
+                // El correo canónico quita el alias "+…" en cualquier dominio (anti-farmeo), pero fuera de Gmail "ana+x@dominio"
+                // puede ser OTRO buzón: solo se vincula si es exactamente el mismo correo (en Gmail, el mismo buzón).
+                if (!MismoBuzon(usuario.Correo, id.Correo)) throw new AutenticacionException("No se pudo validar tu cuenta de Google.");
                 vincular = true;
             }
             else
@@ -210,6 +213,15 @@ public sealed class AuthService : IAuthService
         _sesiones.Invalidar(usuario.Id);
         if (creada) _log.LogInformation("Usuario registrado con Google {UsuarioId}", usuario.Id);
         return sesion with { CuentaCreada = creada };
+    }
+
+    internal static bool MismoBuzon(string correoCuenta, string correoGoogle)
+    {
+        var a = Usuario.NormalizarCorreo(correoCuenta);
+        var b = Usuario.NormalizarCorreo(correoGoogle);
+        if (a == b) return true;
+        static bool EsGmail(string c) => c.EndsWith("@gmail.com", StringComparison.Ordinal) || c.EndsWith("@googlemail.com", StringComparison.Ordinal);
+        return EsGmail(a) && EsGmail(b) && Usuario.CanonizarCorreo(a) == Usuario.CanonizarCorreo(b);
     }
 
     public async Task<ResultadoAutenticacion> RefrescarAsync(string? tokenRefresco)

@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Caching.Memory;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Comun;
@@ -20,12 +21,20 @@ public sealed class VistaPreviaService : IVistaPreviaService
 {
     public const int LongitudDescripcion = 200;
 
+    /// <summary>
+    /// La ruta de la imagen es anónima: sin caché, cada petición descargaría y re-codificaría la foto (CPU y memoria).
+    /// Se guarda la tarjeta ya hecha por foto (si la foto cambia, cambia la clave) y se limita cuántas se generan a la vez.
+    /// </summary>
+    private static readonly TimeSpan VidaTarjeta = TimeSpan.FromHours(6);
+    private static readonly SemaphoreSlim Generando = new(2, 2);
+
     private readonly IPublicacionService _publicaciones;
     private readonly IAlmacenArchivos _almacen;
+    private readonly IMemoryCache _cache;
 
-    public VistaPreviaService(IPublicacionService publicaciones, IAlmacenArchivos almacen)
+    public VistaPreviaService(IPublicacionService publicaciones, IAlmacenArchivos almacen, IMemoryCache cache)
     {
-        _publicaciones = publicaciones; _almacen = almacen;
+        _publicaciones = publicaciones; _almacen = almacen; _cache = cache;
     }
 
     /// <summary>Mismas reglas que el detalle para un visitante anónimo (sin contar la vista: un robot no es una persona).</summary>
@@ -44,15 +53,32 @@ public sealed class VistaPreviaService : IVistaPreviaService
     public async Task<byte[]?> ImagenAsync(Guid id, CancellationToken ct = default)
     {
         if (await VisibleAsync(id) is not { } p || FotoPrincipal(p) is not { } url) return null;
-        if (await _almacen.LeerFotoPublicadaAsync(url, ct) is not { } bytes) return null;
+        var clave = $"tarjeta:{url}";
+        if (_cache.TryGetValue(clave, out byte[]? hecha)) return hecha;
+
+        await Generando.WaitAsync(ct);
         try
         {
-            using var flujo = new MemoryStream(bytes);
-            return await ProcesadorImagenes.TarjetaAsync(flujo, ct);
+            if (_cache.TryGetValue(clave, out hecha)) return hecha; // otra petición la generó mientras esperaba
+            byte[]? tarjeta = null;
+            if (await _almacen.LeerFotoPublicadaAsync(url, ct) is { } bytes)
+            {
+                try
+                {
+                    using var flujo = new MemoryStream(bytes);
+                    tarjeta = await ProcesadorImagenes.TarjetaAsync(flujo, ct);
+                }
+                catch (ReglaDeNegocioException)
+                {
+                    // foto dañada: se usa la imagen general de la plataforma (y se recuerda, para no reintentar en cada petición)
+                }
+            }
+            _cache.Set(clave, tarjeta, VidaTarjeta);
+            return tarjeta;
         }
-        catch (ReglaDeNegocioException)
+        finally
         {
-            return null; // foto dañada: se usa la imagen general de la plataforma
+            Generando.Release();
         }
     }
 

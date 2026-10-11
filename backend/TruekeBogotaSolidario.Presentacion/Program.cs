@@ -44,6 +44,9 @@ if (esProduccion)
         throw new InvalidOperationException("Correo:Proveedor=Simulado no está permitido en Producción (configura Correo:Smtp).");
     if (!Uri.TryCreate(config["Urls:Frontend"], UriKind.Absolute, out var front) || front.Scheme != Uri.UriSchemeHttps)
         throw new InvalidOperationException("Urls:Frontend debe ser la URL https del front (los enlaces de los correos apuntan ahí).");
+    // Sin ella, las páginas para compartir (en caché pública) armarían sus enlaces con la cabecera Host de la petición.
+    if (!Uri.TryCreate(config["Urls:Api"], UriKind.Absolute, out var api) || api.Scheme != Uri.UriSchemeHttps)
+        throw new InvalidOperationException("Urls:Api debe ser la URL https pública de la API.");
     if (string.Equals(config["Facturacion:Modo"], "Simulado", StringComparison.OrdinalIgnoreCase))
         throw new InvalidOperationException("Facturacion:Modo=Simulado no está permitido en Producción (usa Manual: el equipo registra número y CUFE de la DIAN).");
 }
