@@ -124,6 +124,29 @@ public class DosFactoresTests : IClassFixture<FabricaApi>
         Assert.Equal(HttpStatusCode.OK, (await Api.ConToken(f, refrescada.Token).GetAsync("/api/v1/admin/verificaciones")).StatusCode);
     }
 
+    [Fact]
+    public async Task Con_la_exigencia_activa_un_admin_sin_2FA_no_ve_lo_oculto_en_las_rutas_publicas()
+    {
+        await using var f = new FabricaApiDosFactores();
+        var superSinMfa = Api.ConToken(f, await Api.LoginAsync(f, FabricaApi.CorreoSuper, FabricaApi.ClaveSuper));
+        var (_, _, tokenMfa, _) = await ActivarAsync(superSinMfa, FabricaApi.ClaveSuper);
+        var super = Api.ConToken(f, tokenMfa);
+
+        var autor = await Api.RegistrarAsync(f, "ocultable");
+        var pub = await Api.CrearPublicacionAsync(autor);
+        (await super.PostAsJsonAsync($"/api/v1/admin/publicaciones/{pub}/ocultar", new { motivo = "Contenido prohibido" })).EnsureSuccessStatusCode();
+
+        // Un Administrador que inició sesión SIN 2FA: para las rutas públicas es un usuario más
+        var ses = await Api.RegistrarSesionAsync(f, "adminSinMfa");
+        (await super.PatchAsJsonAsync($"/api/v1/admin/usuarios/{ses.Usuario.Id}/rol", new { rol = "Administrador" })).EnsureSuccessStatusCode();
+        var admin = Api.ConToken(f, await Api.LoginAsync(f, ses.Usuario.Correo, Api.ClaveValida));
+        Assert.Equal(HttpStatusCode.NotFound, (await admin.GetAsync($"/api/v1/publicaciones/{pub}")).StatusCode);
+
+        // Con sesión 2FA sí la ve (con el motivo de moderación)
+        var vista = await super.GetAsync($"/api/v1/publicaciones/{pub}");
+        Assert.Equal(HttpStatusCode.OK, vista.StatusCode);
+    }
+
     private const string DosFactoresCodigo = "2fa_requerido_admin";
 
     private sealed class FabricaApiDosFactores : FabricaApi

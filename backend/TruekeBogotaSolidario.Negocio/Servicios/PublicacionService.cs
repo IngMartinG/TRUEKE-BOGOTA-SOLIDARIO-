@@ -59,8 +59,9 @@ public sealed class PublicacionService : IPublicacionService
     public PublicacionService(IPublicacionRepository pubs, IUsuarioRepository usuarios, ICategoriaRepository categorias,
         ISolicitudRepository solicitudes, IFavoritoRepository favoritos, IEstadisticaRepository estadisticas, IUnidadDeTrabajo uow,
         IOptions<UrlsOpciones> urls, TimeProvider reloj, INotificador notificador, IAlmacenArchivos almacen, IRegistroVistas vistas,
-        ICalificacionRepository calificaciones, IPresencia presencia, ISolicitudService truekes)
+        ICalificacionRepository calificaciones, IPresencia presencia, ISolicitudService truekes, ISesionModeracion sesionModeracion)
     {
+        _sesionModeracion = sesionModeracion;
         _pubs = pubs; _usuarios = usuarios; _categorias = categorias; _solicitudes = solicitudes; _favoritos = favoritos;
         _estadisticas = estadisticas; _uow = uow; _urls = urls.Value; _reloj = reloj; _notificador = notificador; _almacen = almacen;
         _vistas = vistas; _calificaciones = calificaciones; _presencia = presencia; _truekes = truekes;
@@ -68,6 +69,7 @@ public sealed class PublicacionService : IPublicacionService
 
     private readonly ICalificacionRepository _calificaciones;
     private readonly IPresencia _presencia;
+    private readonly ISesionModeracion _sesionModeracion;
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
@@ -225,7 +227,8 @@ public sealed class PublicacionService : IPublicacionService
         var ahora = Ahora;
 
         var esDueno = actor is not null && p.PropietarioId == actor.Id;
-        var esModerador = actor is not null && actor.Rol >= RolUsuarioEnum.Administrador;
+        // Ver lo oculto, los motivos y las coordenadas exactas exige el rol Y una sesión con 2FA (como las rutas de administración)
+        var esModerador = actor is not null && actor.Rol >= RolUsuarioEnum.Administrador && _sesionModeracion.ConDosFactores;
         var aceptada = actor is not null && !esDueno && await _solicitudes.ExisteAceptadaAsync(p.Id, actor.Id);
         var visiblePublicamente = p.Estado == EstadoPublicacionEnum.Disponible && !p.EstaOculta && !SuspendidoOEliminado(p.Propietario!, ahora);
         // A quien le ofrecieron este objeto en un trueke puede verlo aunque ya esté reservado (es lo que va a recibir).
