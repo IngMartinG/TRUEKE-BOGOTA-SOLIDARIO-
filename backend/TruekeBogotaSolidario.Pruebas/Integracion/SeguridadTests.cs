@@ -137,7 +137,7 @@ public class SeguridadTests : IClassFixture<FabricaApi>
             ("Pagos:Wompi:SecretoIntegridad", "i"), ("Pagos:Wompi:SecretoEventos", "e"), ("Database:Provider", "SqlServer"),
             ("Almacenamiento:CadenaConexion", "UseDevelopmentStorage=true"), ("Seguridad:ClaveCifrado", FabricaApi.ClaveCifradoPruebas),
             ("Captcha:ClaveSecreta", "x"), ("Captcha:ClaveSitio", "x"), ("Correo:Proveedor", "Smtp"),
-            ("Urls:Frontend", "https://front.trueke.test"), ("Facturacion:Modo", "Manual"),
+            ("Urls:Frontend", "https://front.trueke.test"), ("Urls:Api", "https://api.trueke.test"), ("Facturacion:Modo", "Manual"),
             ("Seguridad:ExigirDosFactoresModeradores", "false"));
         var ex = Assert.ThrowsAny<Exception>(() => f.CreateClient());
         Assert.Contains("ExigirDosFactoresModeradores", ex.ToString());
