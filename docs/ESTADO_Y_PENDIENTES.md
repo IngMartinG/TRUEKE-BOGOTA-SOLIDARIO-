@@ -158,6 +158,18 @@
   - Si el almacenamiento rechazara ese parámetro (400/403), reintenta una vez sin él. **Verificar en producción** subiendo una foto después del despliegue.
 - Las E2E locales usan 1 navegador a la vez: con Docker en el mismo equipo, 2 navegadores agotaban la memoria (`ERR_BLOB_OUT_OF_MEMORY`). En GitHub siguen siendo 2.
 
+## Hecho el 2026-10-11 — documentación de staging y analítica (sin código)
+- `docs/STAGING.md`:
+  - Para qué sirve y cuándo vale la pena.
+  - Arquitectura: front en Render Static Site, API en otro workspace de Render, base `TruekeDbStaging` (otra base gratis de Azure SQL), Storage propio y Wompi siempre en sandbox.
+  - Costos: $0 si va en otro workspace, porque las 750 h gratis de Render son por workspace y al agotarse suspenden todo.
+  - Reglas: nunca datos reales, secretos propios, `noindex`. Pasos para crearlo y retirarlo.
+- `docs/ANALITICA.md`:
+  - Medir sin rastrear personas: los indicadores del negocio salen de la base. Las consultas SQL se validaron contra SQL Server con el esquema real.
+  - Comparación de herramientas para visitas: Cloudflare Web Analytics recomendada; GA4 y grabación de sesiones descartadas.
+  - Pasos para activarla (CSP y política de datos) y qué no hacer.
+- **Con esto se completan las 9 mejoras de la hoja de ruta del 2026-10-10.**
+
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
 - **Dependabot:** `gh auth login` y cerrar los PR de .NET 10, EF Core 9, TypeScript 7 y Node 26 (los demás, fusionar si el CI pasa).
