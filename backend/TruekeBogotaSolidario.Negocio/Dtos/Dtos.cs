@@ -60,9 +60,18 @@ public sealed class LoginRequest
 
 public sealed class CambiarClaveRequest
 {
-    /// <summary>Obligatoria si la cuenta ya tiene contraseña; las cuentas creadas solo con Google pueden omitirla para crear una.</summary>
+    /// <summary>Obligatoria si la cuenta ya tiene contraseña.</summary>
     [MaxLength(128)] public string? ClaveActual { get; init; }
+    /// <summary>Cuentas solo de Google (crean su primera contraseña): ID token de Google recién obtenido.</summary>
+    [StringLength(4096)] public string? GoogleIdToken { get; init; }
     [Required, StringLength(128, MinimumLength = 8)] public string ClaveNueva { get; init; } = "";
+}
+
+/// <summary>Volver a demostrar identidad: la contraseña, o (cuentas solo de Google) un ID token de Google recién obtenido.</summary>
+public sealed class ConfirmarIdentidadRequest
+{
+    [MaxLength(128)] public string? Clave { get; init; }
+    [StringLength(4096)] public string? GoogleIdToken { get; init; }
 }
 
 public sealed class TokenRequest

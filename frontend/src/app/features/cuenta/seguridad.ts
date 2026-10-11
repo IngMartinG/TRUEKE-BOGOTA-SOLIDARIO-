@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { AuthApi } from '../../core/api/auth.api';
 import { AvisosService } from '../../core/avisos.service';
+import { BotonGoogle } from '../auth/boton-google';
 import { erroresDeCampos, mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
 import { descargar } from '../../shared/descargar';
@@ -16,7 +17,7 @@ import { claveSegura, coinciden } from '../../shared/validadores';
 type Paso2fa = 'inicio' | 'escanear' | 'codigos';
 
 @Component({
-  imports: [ReactiveFormsModule, FormsModule, CampoClave, Icono, Modal],
+  imports: [ReactiveFormsModule, FormsModule, CampoClave, Icono, Modal, BotonGoogle],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="text-2xl font-extrabold">Seguridad</h1>
@@ -37,8 +38,20 @@ type Paso2fa = 'inicio' | 'escanear' | 'codigos';
         <app-campo-clave [control]="formClave.controls.claveNueva" etiqueta="Nueva contraseña" idCampo="clave-nueva" autocompletar="new-password" [mostrarRequisitos]="true" />
         <app-campo-clave [control]="formClave.controls.confirmacion" etiqueta="Repite la nueva" idCampo="clave-confirmacion" autocompletar="new-password" />
       </div>
+      @if (!tieneClave()) {
+        <div class="space-y-2">
+          <p class="text-sm text-tenue">Por seguridad, confirma que eres tú con tu cuenta de Google.</p>
+          @if (googleToken()) {
+            <p class="insignia-trueke"><app-icono nombre="check" [tamano]="12" />Identidad confirmada con Google</p>
+          } @else {
+            <app-boton-google texto="continue_with" (token)="googleToken.set($event)" />
+          }
+        </div>
+      }
       <div class="flex justify-end">
-        <button type="submit" class="btn btn-primario" [disabled]="guardandoClave()">{{ guardandoClave() ? 'Guardando…' : 'Guardar contraseña' }}</button>
+        <button type="submit" class="btn btn-primario" [disabled]="guardandoClave() || (!tieneClave() && !googleToken())">
+          {{ guardandoClave() ? 'Guardando…' : 'Guardar contraseña' }}
+        </button>
       </div>
     </form>
 
@@ -63,7 +76,7 @@ type Paso2fa = 'inicio' | 'escanear' | 'codigos';
           </div>
         </div>
         @if (!dosFactores() && paso2fa() === 'inicio') {
-          <button type="button" class="btn btn-primario" (click)="configurar2fa()" [disabled]="trabajando()">Activar</button>
+          <button type="button" class="btn btn-primario" (click)="abrirConfirmar2fa()" [disabled]="trabajando()">Activar</button>
         }
       </div>
 
@@ -143,6 +156,33 @@ type Paso2fa = 'inicio' | 'escanear' | 'codigos';
       </div>
     </app-modal>
 
+    <!-- Confirmar identidad antes de activar 2FA -->
+    <app-modal [(abierto)]="confirmarAbierto" titulo="Confirma que eres tú" subtitulo="Antes de activar la verificación en dos pasos.">
+      <form id="form-confirmar" (ngSubmit)="configurar2fa()" class="space-y-3">
+        @if (tieneClave()) {
+          <div class="campo">
+            <label for="clave-confirmar" class="etiqueta">Tu contraseña</label>
+            <input id="clave-confirmar" name="clave" type="password" class="entrada" autocomplete="current-password" [(ngModel)]="claveConfirmar" />
+          </div>
+        } @else {
+          <p class="text-sm text-tenue">Tu cuenta usa Google: confirma tu identidad con el botón.</p>
+          @if (googleToken()) {
+            <p class="insignia-trueke"><app-icono nombre="check" [tamano]="12" />Identidad confirmada con Google</p>
+          } @else {
+            <app-boton-google texto="continue_with" (token)="googleToken.set($event)" />
+          }
+        }
+        @if (error2fa()) {
+          <p class="error-campo" role="alert">{{ error2fa() }}</p>
+        }
+      </form>
+      <div pie class="flex justify-end gap-2 border-t border-borde p-4">
+        <button type="button" class="btn btn-fantasma" (click)="confirmarAbierto.set(false)">Cancelar</button>
+        <button type="submit" form="form-confirmar" class="btn btn-primario"
+          [disabled]="trabajando() || (tieneClave() ? !claveConfirmar() : !googleToken())">Continuar</button>
+      </div>
+    </app-modal>
+
     <app-modal [(abierto)]="cerrarAbierto" titulo="¿Cerrar sesión en todos los dispositivos?" subtitulo="Tendrás que volver a ingresar, también en este.">
       <div pie class="flex justify-end gap-2 border-t border-borde p-4">
         <button type="button" class="btn btn-fantasma" (click)="cerrarAbierto.set(false)">Cancelar</button>
@@ -178,6 +218,10 @@ export default class Seguridad {
   protected readonly pedirCodigoAbierto = signal(false);
   protected readonly accionCodigo = signal<'desactivar' | 'regenerar'>('desactivar');
   protected readonly cerrarAbierto = signal(false);
+  protected readonly confirmarAbierto = signal(false);
+  protected readonly claveConfirmar = signal('');
+  /** ID token de Google para confirmar identidad (cuentas sin contraseña). El servidor lo acepta solo unos minutos. */
+  protected readonly googleToken = signal<string | null>(null);
 
   protected async cambiarClave(): Promise<void> {
     const c = this.formClave.controls;
@@ -188,15 +232,25 @@ export default class Seguridad {
     this.guardandoClave.set(true);
     try {
       const v = this.formClave.getRawValue();
-      const sesion = await firstValueFrom(this.api.cambiarClave({ claveActual: v.claveActual || null, claveNueva: v.claveNueva }));
+      const sesion = await firstValueFrom(
+        this.api.cambiarClave({ claveActual: v.claveActual || null, claveNueva: v.claveNueva, googleIdToken: this.tieneClave() ? null : this.googleToken() }),
+      );
       this.sesion.establecer(sesion);
       this.formClave.reset();
+      this.googleToken.set(null);
       this.avisos.exito('Contraseña actualizada', 'Cerramos tus sesiones en otros dispositivos.');
     } catch (e) {
+      if (!this.tieneClave()) this.googleToken.set(null); // el token de Google pudo vencer: se vuelve a pedir
       if (!aplicarErroresServidor(c, erroresDeCampos(e))) this.avisos.error(mensajeDe(e));
     } finally {
       this.guardandoClave.set(false);
     }
+  }
+
+  protected abrirConfirmar2fa(): void {
+    this.claveConfirmar.set('');
+    this.error2fa.set(null);
+    this.confirmarAbierto.set(true);
   }
 
   protected async configurar2fa(): Promise<void> {
@@ -204,13 +258,19 @@ export default class Seguridad {
     this.error2fa.set(null);
     this.codigo.set('');
     try {
-      const conf = await firstValueFrom(this.api.configurar2fa());
+      const conf = await firstValueFrom(
+        this.api.configurar2fa(this.tieneClave() ? { clave: this.claveConfirmar() } : { googleIdToken: this.googleToken() }),
+      );
+      this.confirmarAbierto.set(false);
+      this.claveConfirmar.set('');
+      this.googleToken.set(null);
       this.secreto.set(conf.secretoBase32 ?? '');
       this.paso2fa.set('escanear');
       const QRCode = (await import('qrcode')).default;
       this.qr.set(await QRCode.toDataURL(conf.uriOtpauth ?? '', { width: 200, margin: 1, color: { dark: '#123d27', light: '#ffffff' } }));
-    } catch {
-      // El interceptor ya mostró el error.
+    } catch (e) {
+      if (!this.tieneClave()) this.googleToken.set(null);
+      this.error2fa.set(mensajeDe(e));
     } finally {
       this.trabajando.set(false);
     }
