@@ -1,7 +1,7 @@
 #!/bin/sh
 # Se "sourcea" desde el entrypoint de nginx ANTES de 20-envsubst-on-templates.sh:
 # 1) escribe la configuración pública del front (config.json) desde variables de entorno;
-# 2) exporta CSP_CONNECT para que la plantilla de nginx arme la Content-Security-Policy.
+# 2) exporta CSP_CONNECT y CSP_SCRIPT_HASHES para que la plantilla de nginx arme la Content-Security-Policy.
 
 # Origen de la API (solo si vive en otro dominio) y su variante WebSocket para SignalR.
 trueke_api_origen=""
@@ -9,6 +9,9 @@ if [ -n "${API_URL:-}" ]; then
   trueke_api_origen="$API_URL $(printf '%s' "$API_URL" | sed -e 's#^https://#wss://#' -e 's#^http://#ws://#')"
 fi
 export CSP_CONNECT="'self' ${trueke_api_origen} https://accounts.google.com/gsi/ https://www.google.com/recaptcha/ ${CSP_CONNECT_EXTRA:-}"
+# Calculados al compilar: permiten SOLO el importmap de Angular, sin abrir 'unsafe-inline'.
+CSP_SCRIPT_HASHES="$(cat /etc/trueke/csp-script-hashes 2>/dev/null || true)"
+export CSP_SCRIPT_HASHES
 
 envsubst '${API_URL} ${MAPA_TESELAS} ${MAPA_ATRIBUCION}' \
   < /etc/trueke/config.json.template > /tmp/trueke-config.json
