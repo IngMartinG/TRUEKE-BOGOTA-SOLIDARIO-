@@ -66,10 +66,11 @@ public class EntregaTests
         var p = await e.EnScopeAsync<IPublicacionService, PublicacionDto>(s => s.ObtenerAsync(null, pub));
         Assert.Equal("Disponible", p.Estado);
 
-        // con una confirmación ya no se puede "deshacer"
+        // quien ya confirmó no puede "deshacer"; la otra parte sí puede indicar que no se concretó
         var (d2, s2, sol2, _) = await AcordarAsync(e);
         await e.EnScopeAsync<ISolicitudService, SolicitudDto>(s => s.ConfirmarEntregaAsync(d2, sol2));
-        await Assert.ThrowsAsync<ReglaDeNegocioException>(() => e.EnScopeAsync<ISolicitudService, SolicitudDto>(s => s.MarcarNoConcretadaAsync(s2, sol2, "Me arrepentí")));
+        await Assert.ThrowsAsync<ReglaDeNegocioException>(() => e.EnScopeAsync<ISolicitudService, SolicitudDto>(s => s.MarcarNoConcretadaAsync(d2, sol2, "Me arrepentí")));
+        Assert.Equal("NoConcretada", (await e.EnScopeAsync<ISolicitudService, SolicitudDto>(s => s.MarcarNoConcretadaAsync(s2, sol2, "Nunca llegó"))).Estado);
     }
 
     [Fact]

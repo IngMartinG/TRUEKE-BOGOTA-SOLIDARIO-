@@ -38,7 +38,23 @@ public class ImagenesTests : IClassFixture<FabricaApi>
 
         var r = await PublicarAsync(c, s.UrlArchivo);
         Assert.Equal(HttpStatusCode.Created, r.StatusCode);
-        Assert.Equal(s.UrlArchivo, (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("imagenes")[0].GetString());
+        var publicada = (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("imagenes")[0].GetString()!;
+        // Se publica una copia del servidor con otro nombre en el contenedor público y la subida se borra:
+        // la SAS (aún vigente) ya no puede tocar lo publicado.
+        Assert.NotEqual(s.UrlArchivo, publicada);
+        Assert.Contains("/imagenes/", publicada);
+        Assert.True(_almacen.Existe(publicada));
+        Assert.False(_almacen.Existe(s.UrlArchivo));
+    }
+
+    [Fact]
+    public async Task Una_subida_ya_usada_no_se_puede_usar_otra_vez()
+    {
+        var c = await Api.RegistrarAsync(_f, "reuso");
+        var s = await SubidaAsync(c);
+        _almacen.Subir(s.UrlArchivo, "image/png", AlmacenFalso.Png());
+        Assert.Equal(HttpStatusCode.Created, (await PublicarAsync(c, s.UrlArchivo)).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await PublicarAsync(c, s.UrlArchivo)).StatusCode);
     }
 
     [Fact]
@@ -50,20 +66,22 @@ public class ImagenesTests : IClassFixture<FabricaApi>
         _almacen.Subir(s1.UrlArchivo, "image/png", AlmacenFalso.Png());
         var r = await c.PutAsJsonAsync("/api/v1/usuarios/yo/foto", new { url = s1.UrlArchivo });
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
-        Assert.Equal(s1.UrlArchivo, (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("fotoUrl").GetString());
+        var foto1 = (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("fotoUrl").GetString()!;
+        Assert.Contains("/imagenes/", foto1);
 
         // Un tercero (incluso anónimo) la ve en el perfil público
         var perfil = await _f.CreateClient().GetFromJsonAsync<JsonElement>($"/api/v1/usuarios/{ses.Usuario.Id}/perfil");
-        Assert.Equal(s1.UrlArchivo, perfil.GetProperty("fotoUrl").GetString());
+        Assert.Equal(foto1, perfil.GetProperty("fotoUrl").GetString());
 
         // Cambiarla borra la anterior del almacenamiento; quitarla vuelve a las iniciales
         var s2 = await SubidaAsync(c);
         _almacen.Subir(s2.UrlArchivo, "image/png", AlmacenFalso.Png());
-        (await c.PutAsJsonAsync("/api/v1/usuarios/yo/foto", new { url = s2.UrlArchivo })).EnsureSuccessStatusCode();
-        Assert.False(_almacen.Existe(s1.UrlArchivo));
+        var foto2 = (await (await c.PutAsJsonAsync("/api/v1/usuarios/yo/foto", new { url = s2.UrlArchivo })).Content
+            .ReadFromJsonAsync<JsonElement>()).GetProperty("fotoUrl").GetString()!;
+        Assert.False(_almacen.Existe(foto1));
         var sinFoto = await (await c.DeleteAsync("/api/v1/usuarios/yo/foto")).Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal(JsonValueKind.Null, sinFoto.GetProperty("fotoUrl").ValueKind);
-        Assert.False(_almacen.Existe(s2.UrlArchivo));
+        Assert.False(_almacen.Existe(foto2));
 
         // No se puede usar la imagen de otra persona ni una URL externa
         var ajeno = await Api.RegistrarAsync(_f, "ajenoFoto");
@@ -119,7 +137,7 @@ public class ImagenesTests : IClassFixture<FabricaApi>
         var ses = await Api.RegistrarSesionAsync(_f, "verificame");
         var c = Api.ConToken(_f, ses.Token);
         var s = await SubidaAsync(c, "application/pdf", 2000, "Documento");
-        Assert.Contains("/documentos/", s.UrlArchivo);
+        Assert.Contains("/subidas/", s.UrlArchivo);
         _almacen.Subir(s.UrlArchivo, "application/pdf", "%PDF-1.7 cedula"u8.ToArray());
 
         var pago = await c.PostAsJsonAsync("/api/v1/pagos/iniciar", new { concepto = "Verificar", documentoUrl = s.UrlArchivo, facturaANombre = false, aceptoConsumidorFinal = true });
@@ -130,10 +148,14 @@ public class ImagenesTests : IClassFixture<FabricaApi>
         var super = Api.ConToken(_f, await Api.LoginAsync(_f, FabricaApi.CorreoSuper, FabricaApi.ClaveSuper));
         var pendientes = await super.GetFromJsonAsync<JsonElement>("/api/v1/admin/verificaciones");
         var mia = pendientes.EnumerateArray().Single(v => v.GetProperty("usuarioId").GetGuid() == ses.Usuario.Id);
-        Assert.EndsWith("?sas=lectura", mia.GetProperty("documentoUrl").GetString());   // enlace temporal, no la URL directa
+        var enlace = mia.GetProperty("documentoUrl").GetString()!;
+        Assert.EndsWith("?sas=lectura", enlace);                                         // enlace temporal, no la URL directa
+        var documento = enlace[..^"?sas=lectura".Length];
+        Assert.Contains("/documentos/", documento);                                      // copia del servidor, fuera del alcance de la SAS
+        Assert.False(_almacen.Existe(s.UrlArchivo));
 
         Assert.Equal(HttpStatusCode.NoContent, (await super.PostAsync($"/api/v1/admin/verificaciones/{ses.Usuario.Id}/aprobar", null)).StatusCode);
-        Assert.False(_almacen.Existe(s.UrlArchivo));                                     // minimización: el documento ya no se guarda
+        Assert.False(_almacen.Existe(documento));                                        // minimización: el documento ya no se guarda
     }
 
     [Fact]

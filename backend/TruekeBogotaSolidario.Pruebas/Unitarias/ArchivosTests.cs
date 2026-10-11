@@ -84,7 +84,7 @@ public class ArchivosTests
 
     /// <summary>Firma real del SDK de Azure con la llave pública del emulador (no hace llamadas de red).</summary>
     [Fact]
-    public async Task La_SAS_es_de_un_solo_blob_solo_crear_y_escribir_y_dura_5_minutos()
+    public async Task La_SAS_es_de_un_solo_blob_nuevo_en_el_contenedor_privado_de_subidas_y_dura_5_minutos()
     {
         var opciones = Options.Create(new AlmacenamientoOpciones { CadenaConexion = "UseDevelopmentStorage=true" });
         var almacen = new AlmacenBlobAzure(opciones, TimeProvider.System, NullLogger<AlmacenBlobAzure>.Instance);
@@ -93,11 +93,11 @@ public class ArchivosTests
         var url = new Uri(s.UrlSubida);
         var q = HttpUtility.ParseQueryString(url.Query);
 
-        Assert.Equal("cw", q["sp"]);   // create + write: no puede leer, listar ni borrar
+        Assert.Equal("c", q["sp"]);    // solo crear: no puede sobrescribir lo ya subido, ni leer, listar ni borrar
         Assert.Equal("b", q["sr"]);    // un solo blob
         var duracion = DateTimeOffset.Parse(q["se"]!) - DateTimeOffset.Parse(q["st"]!);
         Assert.InRange(duracion.TotalMinutes, 5, 6.1);
-        Assert.Contains($"/imagenes/{Yo:N}/", s.UrlArchivo);
+        Assert.Contains($"/subidas/{Yo:N}/", s.UrlArchivo); // privado: lo publicado es siempre una copia del servidor
         Assert.StartsWith(s.UrlArchivo, s.UrlSubida);
         Assert.Equal("PUT", s.Metodo);
         Assert.Equal("BlockBlob", s.Cabeceras["x-ms-blob-type"]);
