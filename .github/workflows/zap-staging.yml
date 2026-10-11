@@ -21,7 +21,7 @@ jobs:
       contents: read
       issues: write # ZAP abre un issue con el resumen de alertas
     steps:
-      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Validar la URL (nunca producción)
         env:
           URL_OBJETIVO: ${{ inputs.url }}
@@ -42,7 +42,7 @@ jobs:
             fi
           done
       - name: Escaneo baseline de ZAP
-        uses: zaproxy/action-baseline@66042c8e7e24680119199a017e5b0e8603bf4dae # v0.12.0 (Dependabot propone las versiones nuevas)
+        uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25 # v0.15.0 (Dependabot propone las versiones nuevas)
         with:
           target: ${{ inputs.url }}
           allow_issue_writing: true

@@ -12,7 +12,7 @@ services:
   # CA de un solo uso: emite el certificado de Mailpit y publica su lista de revocación (CRL) por HTTP, como una CA
   # real. La API valida la cadena Y la revocación (MailKit lo exige): no se desactiva ninguna verificación.
   certificados:
-    image: alpine:3.22
+    image: alpine:3.24@sha256:294b683cb724975bec92580e1e685676bd4b50bda910ddb8c51d4cabeaec77e6
     command:
       - sh
       - -ec
@@ -45,7 +45,7 @@ services:
       - certs:/certs
 
   mailpit:
-    image: axllent/mailpit:v1.27
+    image: axllent/mailpit:v1.30@sha256:d5ecbb067db3705fa953d79e1b7f81ef84038df67aba6c52825d8c02a1ea748a
     environment:
       MP_SMTP_TLS_CERT: /certs/mailpit.crt
       MP_SMTP_TLS_KEY: /certs/mailpit.key
@@ -60,7 +60,7 @@ services:
         condition: service_healthy
 
   azurite:
-    image: mcr.microsoft.com/azure-storage/azurite:3.35.0
+    image: mcr.microsoft.com/azure-storage/azurite:3.37.0@sha256:830430c1da1a2d537e08f3e6764dd1f5ae00cf0346bcaf625b968ec3f0971fd5
     command: ["azurite-blob", "--blobHost", "0.0.0.0", "--blobPort", "10000", "--inMemoryPersistence", "--skipApiVersionCheck", "--loose"]
     network_mode: "service:api"
 
