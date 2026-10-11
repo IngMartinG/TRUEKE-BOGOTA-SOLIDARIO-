@@ -1,17 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ETIQUETA_ESTADO_SOLICITUD, INFO_MODO, type ModoDto, type SolicitudDto } from '../../api/tipos';
+import { ETIQUETA_ESTADO_SOLICITUD, infoCondicion, INFO_MODO, type ModoDto, type SolicitudDto } from '../../api/tipos';
 import { FechaPipe, HacePipe } from '../../shared/pipes';
 import { Avatar } from '../../shared/ui/avatar';
 import { Estrellas } from '../../shared/ui/estrellas';
 import { Icono } from '../../shared/ui/icono';
+import { ImagenPublicacion } from '../../shared/ui/imagen-publicacion';
 import { InsigniaModo } from '../../shared/ui/insignia-modo';
 
 export type AccionSolicitud = 'aceptar' | 'rechazar' | 'cancelar' | 'confirmar' | 'noConcretada' | 'calificar';
 
 @Component({
   selector: 'app-tarjeta-solicitud',
-  imports: [RouterLink, Avatar, Icono, InsigniaModo, Estrellas, HacePipe, FechaPipe],
+  imports: [RouterLink, Avatar, Icono, ImagenPublicacion, InsigniaModo, Estrellas, HacePipe, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let s = solicitud();
@@ -37,6 +38,18 @@ export type AccionSolicitud = 'aceptar' | 'rechazar' | 'cancelar' | 'confirmar' 
             </span>
           </a>
           <blockquote class="mt-4 rounded-2xl rounded-tl-sm bg-superficie-2 p-3 text-sm break-words whitespace-pre-line">{{ s.mensaje }}</blockquote>
+          @if (s.ofrecida; as o) {
+            <a [routerLink]="['/publicacion', o.id]" class="mt-3 flex items-center gap-3 rounded-2xl border-2 border-bosque-200 p-2 transition hover:border-bosque-400 dark:border-bosque-800"
+              [attr.aria-label]="(s.soyDuenio ? 'Te ofrece: ' : 'Ofreces: ') + o.titulo">
+              <app-imagen-publicacion class="size-14 shrink-0 rounded-xl" [src]="o.foto" [miniatura]="true" modo="Trueke" />
+              <span class="min-w-0">
+                <span class="block text-xs font-semibold text-bosque-700 dark:text-bosque-200">{{ s.soyDuenio ? 'Te ofrece a cambio' : 'Ofreces a cambio' }}</span>
+                <span class="block truncate font-semibold">{{ o.titulo }}</span>
+                <span class="block text-xs text-tenue">{{ condicion(o.condicion) }}</span>
+              </span>
+              <app-icono nombre="derecha" [tamano]="16" class="ml-auto shrink-0 text-tenue" />
+            </a>
+          }
           <p class="mt-2 text-xs text-tenue">Enviada {{ s.fechaSolicitud | hace }}</p>
           @if (s.motivoRechazo) {
             <p class="mt-3 text-sm"><span class="font-semibold">Motivo:</span> {{ s.motivoRechazo }}</p>
@@ -107,6 +120,7 @@ export class TarjetaSolicitud {
   readonly solicitud = input.required<SolicitudDto>();
   readonly ocupado = input(false);
   readonly accion = output<AccionSolicitud>();
+  protected readonly condicion = (c: string | null | undefined) => infoCondicion(c).etiqueta;
 
   protected readonly otra = computed(() => (this.solicitud().soyDuenio ? this.solicitud().solicitante : this.solicitud().propietario));
   protected readonly estado = computed(() =>

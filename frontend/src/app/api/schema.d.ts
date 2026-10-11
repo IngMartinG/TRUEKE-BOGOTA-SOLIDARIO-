@@ -4639,6 +4639,8 @@ export interface components {
             /** Format: uuid */
             publicacionId?: string;
             mensaje: string;
+            /** Format: uuid */
+            publicacionOfrecidaId?: string | null;
         };
         DatosFacturacionDto: {
             completos?: boolean;
@@ -5306,6 +5308,14 @@ export interface components {
             /** Format: int32 */
             tamano?: number;
         };
+        PublicacionResumenDto: {
+            /** Format: uuid */
+            id?: string;
+            titulo?: string;
+            foto?: string | null;
+            condicion?: string;
+            estado?: string;
+        };
         PuntoSerieDto: {
             /** Format: date-time */
             fecha?: string;
@@ -5398,6 +5408,7 @@ export interface components {
             cierreAutomaticoUtc?: string | null;
             puedoCalificar?: boolean;
             enEspera?: boolean;
+            ofrecida?: components["schemas"]["PublicacionResumenDto"];
         };
         SubidaArchivoDto: {
             urlSubida?: string;
@@ -5618,6 +5629,7 @@ export type PreferenciasAvisosDto = components['schemas']['PreferenciasAvisosDto
 export type PublicacionCercanaDto = components['schemas']['PublicacionCercanaDto'];
 export type PublicacionDto = components['schemas']['PublicacionDto'];
 export type PublicacionDtoPaginaDto = components['schemas']['PublicacionDtoPaginaDto'];
+export type PublicacionResumenDto = components['schemas']['PublicacionResumenDto'];
 export type PuntoSerieDto = components['schemas']['PuntoSerieDto'];
 export type RechazarSolicitudRequest = components['schemas']['RechazarSolicitudRequest'];
 export type ReembolsoRequest = components['schemas']['ReembolsoRequest'];

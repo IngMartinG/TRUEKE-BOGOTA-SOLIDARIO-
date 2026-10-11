@@ -75,3 +75,49 @@ test('trueke completo: solicitar, aceptar, chatear en tiempo real, confirmar la 
     await expect(beto.page.getByText('¡Este objeto ya encontró un nuevo hogar!')).toBeVisible();
   });
 });
+
+test('trueke con objeto: ofrecer uno propio, verlo, aceptarlo y que ambos objetos cambien de manos', async ({ browser, contextOptions, viewport, userAgent, isMobile, hasTouch }) => {
+  const dispositivo = { ...contextOptions, viewport, userAgent, isMobile, hasTouch };
+  const sufijo = randomBytes(3).toString('hex');
+  const pedida = `Guitarra E2E ${sufijo}`;
+  const ofrecida = `Patineta E2E ${sufijo}`;
+  const ana = await persona(browser, 'Ana', dispositivo);
+  const beto = await persona(browser, 'Beto', dispositivo);
+  const idPedida = await publicar(ana.page.request, ana.cuenta, pedida);
+  const idOfrecida = await publicar(beto.page.request, beto.cuenta, ofrecida);
+  const estado = async (quien: { page: Page; cuenta: Cuenta }, id: string) => {
+    const r = await quien.page.request.get('/api/v1/publicaciones/mias', { headers: { Authorization: `Bearer ${quien.cuenta.token}` } });
+    return ((await r.json()) as { id: string; estado: string }[]).find((p) => p.id === id)?.estado;
+  };
+
+  await test.step('Beto propone el trueke ofreciendo su patineta', async () => {
+    await beto.page.goto(`/publicacion/${idPedida}`);
+    await beto.page.getByRole('button', { name: 'Proponer trueke' }).click();
+    await beto.page.getByLabel('Tu mensaje').fill('Te la cambio por mi patineta.');
+    await beto.page.getByRole('radio', { name: `Ofrecer ${ofrecida}` }).check({ force: true });
+    await beto.page.getByRole('button', { name: 'Enviar solicitud' }).click();
+    await expect(beto.page.locator('app-tarjeta-solicitud', { hasText: pedida }).getByText('Ofreces a cambio')).toBeVisible();
+  });
+
+  await test.step('Ana ve lo que le ofrecen, lo revisa y acepta: los dos objetos quedan reservados', async () => {
+    await ana.page.goto('/intercambios');
+    const tarjeta = ana.page.locator('app-tarjeta-solicitud', { hasText: pedida });
+    await expect(tarjeta.getByRole('link', { name: `Te ofrece: ${ofrecida}` })).toBeVisible();
+    await tarjeta.getByRole('button', { name: 'Aceptar y reservar' }).click();
+    await expect(tarjeta.getByRole('link', { name: 'Abrir chat' })).toBeVisible();
+    await expect.poll(() => estado(beto, idOfrecida)).toBe('EnNegociacion');
+    // Aunque ya salió del catálogo, Ana puede ver lo que va a recibir
+    await tarjeta.getByRole('link', { name: `Te ofrece: ${ofrecida}` }).click();
+    await expect(ana.page.getByRole('heading', { name: ofrecida })).toBeVisible();
+  });
+
+  await test.step('ambos confirman y los dos objetos quedan intercambiados', async () => {
+    await ana.page.goto('/intercambios');
+    await ana.page.locator('app-tarjeta-solicitud', { hasText: pedida }).getByRole('button', { name: 'Confirmar entrega' }).click();
+    await expect(ana.page.getByRole('status').filter({ hasText: 'Entrega confirmada' })).toBeVisible();
+    await beto.page.goto('/intercambios?tab=enviadas');
+    await beto.page.locator('app-tarjeta-solicitud', { hasText: pedida }).getByRole('button', { name: 'Confirmar entrega' }).click();
+    await expect.poll(() => estado(beto, idOfrecida)).toBe('Intercambiada');
+    await expect.poll(() => estado(ana, idPedida)).toBe('Intercambiada');
+  });
+});
