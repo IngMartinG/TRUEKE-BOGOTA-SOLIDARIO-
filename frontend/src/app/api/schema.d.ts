@@ -3355,6 +3355,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/push/suscripciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SuscripcionPushRequest"];
+                    "text/json": components["schemas"]["SuscripcionPushRequest"];
+                    "application/*+json": components["schemas"]["SuscripcionPushRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/push/suscripciones/baja": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["BajaPushRequest"];
+                    "text/json": components["schemas"]["BajaPushRequest"];
+                    "application/*+json": components["schemas"]["BajaPushRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/solicitudes": {
         parameters: {
             query?: never;
@@ -4358,6 +4436,9 @@ export interface components {
             /** Format: date-time */
             fechaRespuestaUtc?: string | null;
         };
+        BajaPushRequest: {
+            endpoint: string;
+        };
         BloqueadoDto: {
             perfil?: components["schemas"]["PerfilPublicoDto"];
             /** Format: date-time */
@@ -4479,6 +4560,7 @@ export interface components {
             pagosDePrueba?: boolean;
             imagenesOrigenUrl?: string | null;
             imagenesCdnUrl?: string | null;
+            pushClavePublica?: string | null;
         };
         ConversacionDto: {
             /** Format: uuid */
@@ -5327,6 +5409,11 @@ export interface components {
             /** Format: date-time */
             expiraUtc?: string;
         };
+        SuscripcionPushRequest: {
+            endpoint: string;
+            p256dh: string;
+            auth: string;
+        };
         SuspenderUsuarioRequest: {
             motivo: string;
             /** Format: int32 */
@@ -5445,6 +5532,7 @@ export type ActualizarPerfilRequest = components['schemas']['ActualizarPerfilReq
 export type ActualizarPreferenciasAvisosRequest = components['schemas']['ActualizarPreferenciasAvisosRequest'];
 export type ApelacionAdminDto = components['schemas']['ApelacionAdminDto'];
 export type ApelacionDto = components['schemas']['ApelacionDto'];
+export type BajaPushRequest = components['schemas']['BajaPushRequest'];
 export type BloqueadoDto = components['schemas']['BloqueadoDto'];
 export type CalificacionDto = components['schemas']['CalificacionDto'];
 export type CalificacionDtoPaginaDto = components['schemas']['CalificacionDtoPaginaDto'];
@@ -5544,6 +5632,7 @@ export type SesionDto = components['schemas']['SesionDto'];
 export type SolicitarSubidaRequest = components['schemas']['SolicitarSubidaRequest'];
 export type SolicitudDto = components['schemas']['SolicitudDto'];
 export type SubidaArchivoDto = components['schemas']['SubidaArchivoDto'];
+export type SuscripcionPushRequest = components['schemas']['SuscripcionPushRequest'];
 export type SuspenderUsuarioRequest = components['schemas']['SuspenderUsuarioRequest'];
 export type TipoArchivoDto = components['schemas']['TipoArchivoDto'];
 export type TipoDenunciaDto = components['schemas']['TipoDenunciaDto'];

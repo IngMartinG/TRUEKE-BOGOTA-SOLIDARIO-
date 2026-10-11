@@ -86,7 +86,12 @@ src/app/
 
 - **Sesión:** el JWT vive **solo en memoria**. El refresco va en una cookie HttpOnly (`Path=/api/v1/auth`) con la cabecera anti-CSRF `X-Trueke-Csrf: 1`. Ante un 401 se hace **un único** refresco compartido entre todas las peticiones (el backend detecta reuso de la cookie) y se reintenta. El token se renueva solo un minuto antes de vencer.
 - **Errores:** todas las respuestas de error son ProblemDetails; `title` se muestra tal cual y `errors` se marca en cada campo del formulario. `codigo: "2fa_requerido"` pide el código en el login y `"2fa_requerido_admin"` lleva a activar la verificación en dos pasos.
-- **Tiempo real:** SignalR en `/hubs/notificaciones` (eventos `notificacion` y `mensaje`). Al reconectar se recuperan los contadores y las pantallas abiertas recargan sus datos.
+- **Tiempo real:** SignalR en `/hubs/notificaciones` (eventos `notificacion` y `mensaje`). Al conectar (la primera vez y al reconectar) se recuperan los contadores y las pantallas abiertas recargan sus datos.
+- **PWA:** service worker de Angular solo en el build de producción (`ngsw-config.json`):
+  - De entrada guarda lo básico (`index.html`, `main`, `polyfills`, `styles`); el resto se guarda a medida que se usa. Así nunca frena las peticiones de la primera visita.
+  - Nunca guarda la API ni `config.json`.
+  - Las versiones nuevas se usan al volver a abrir la app.
+  - `PwaService` ofrece instalarla y `NotificacionesPushService` activa las notificaciones push por dispositivo; al cerrar sesión, ese dispositivo se da de baja.
 - **Fotos:** se reducen en el navegador (≤1600 px, WebP) y se **elimina el EXIF** (ubicación GPS) antes de subirlas directo a Blob con la URL SAS que entrega la API.
 - **Privacidad:** el mapa público muestra solo una zona aproximada; los textos de usuarios se pintan siempre con interpolación de Angular (nunca `innerHTML`) y los enlaces de correo borran el token de la URL con `history.replaceState`.
 

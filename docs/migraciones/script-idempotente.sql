@@ -1745,3 +1745,55 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010234048_SuscripcionesPush'
+)
+BEGIN
+    CREATE TABLE [SuscripcionesPush] (
+        [Id] uniqueidentifier NOT NULL,
+        [UsuarioId] uniqueidentifier NOT NULL,
+        [Endpoint] varchar(1000) NOT NULL,
+        [P256dh] varchar(200) NOT NULL,
+        [Auth] varchar(100) NOT NULL,
+        [FechaUtc] datetime2 NOT NULL,
+        CONSTRAINT [PK_SuscripcionesPush] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_SuscripcionesPush_Usuarios_UsuarioId] FOREIGN KEY ([UsuarioId]) REFERENCES [Usuarios] ([Id]) ON DELETE CASCADE
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010234048_SuscripcionesPush'
+)
+BEGIN
+    CREATE UNIQUE INDEX [IX_SuscripcionesPush_Endpoint] ON [SuscripcionesPush] ([Endpoint]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010234048_SuscripcionesPush'
+)
+BEGIN
+    CREATE INDEX [IX_SuscripcionesPush_UsuarioId] ON [SuscripcionesPush] ([UsuarioId]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261010234048_SuscripcionesPush'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261010234048_SuscripcionesPush', N'8.0.31');
+END;
+GO
+
+COMMIT;
+GO
+

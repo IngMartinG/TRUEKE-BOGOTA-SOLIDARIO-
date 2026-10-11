@@ -85,13 +85,15 @@ public sealed class NotificadorPersistente : INotificador
     private readonly IUnidadDeTrabajo _uow;
     private readonly IEmisorTiempoReal _emisor;
     private readonly IAvisosCorreo _avisosCorreo;
+    private readonly Push.IAvisosPush _avisosPush;
     private readonly TimeProvider _reloj;
     private readonly ILogger<NotificadorPersistente> _log;
 
     public NotificadorPersistente(INotificacionRepository repo, IUnidadDeTrabajo uow, IEmisorTiempoReal emisor, IAvisosCorreo avisosCorreo,
+        Push.IAvisosPush avisosPush,
         TimeProvider reloj, ILogger<NotificadorPersistente> log)
     {
-        _repo = repo; _uow = uow; _emisor = emisor; _avisosCorreo = avisosCorreo; _reloj = reloj; _log = log;
+        _repo = repo; _uow = uow; _emisor = emisor; _avisosCorreo = avisosCorreo; _avisosPush = avisosPush; _reloj = reloj; _log = log;
     }
 
     public async Task NotificarAsync(Guid usuarioId, string tipo, string mensaje, Guid? recursoId = null)
@@ -114,8 +116,9 @@ public sealed class NotificadorPersistente : INotificador
         {
             _log.LogWarning(ex, "No se pudo enviar en tiempo real la notificación {Tipo} al usuario {UsuarioId}", tipo, usuarioId);
         }
-        // Si no tiene la app abierta y lo permite en sus preferencias, también por correo (nunca falla la operación)
+        // Si no tiene la app abierta: también por correo (según sus preferencias) y push a sus dispositivos (nunca falla la operación)
         await _avisosCorreo.NotificacionAsync(usuarioId, tipo, n.Mensaje);
+        await _avisosPush.NotificacionAsync(usuarioId, tipo, n.Mensaje);
     }
 
     public static NotificacionDto ADto(Notificacion n) => new(n.Id, n.Tipo, n.Mensaje, n.RecursoId, n.FechaUtc, n.LeidaUtc is not null);

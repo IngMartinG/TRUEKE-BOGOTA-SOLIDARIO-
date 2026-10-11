@@ -6,6 +6,9 @@ import { apiBase } from '../entorno';
 /** Marca peticiones que no deben mostrar el toast de error genérico (el componente lo maneja). */
 export const ERROR_SILENCIOSO = new HttpContextToken<boolean>(() => false);
 
+/** Parámetro que el service worker de Angular reconoce para no intervenir en una petición. */
+export const SIN_SERVICE_WORKER = 'ngsw-bypass';
+
 export type Parametros = Record<string, string | number | boolean | null | undefined>;
 
 export interface OpcionesApi {
@@ -44,7 +47,9 @@ export class HttpApi {
   }
 
   private opciones(op: OpcionesApi) {
-    let params = new HttpParams();
+    // La API nunca pasa por el service worker (PWA): no se guarda en caché y así ninguna petición espera a que el
+    // service worker termine de instalarse. Va en la query (no en una cabecera) para no exigir cambios de CORS.
+    let params = new HttpParams().set(SIN_SERVICE_WORKER, 'true');
     for (const [clave, valor] of Object.entries(op.params ?? {})) {
       if (valor !== null && valor !== undefined && valor !== '') params = params.set(clave, String(valor));
     }

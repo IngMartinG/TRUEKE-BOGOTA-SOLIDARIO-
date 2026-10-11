@@ -17,7 +17,7 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env['CI'],
   retries: process.env['CI'] ? 1 : 0,
-  workers: process.env['CI'] ? 2 : 3,
+  workers: 2, // Chromium completo es pesado: más navegadores a la vez vuelven lentas (e inestables) las pruebas
   reporter: process.env['CI'] ? [['github'], ['html', { open: 'never', outputFolder: 'e2e/.reporte' }]] : [['list'], ['html', { open: 'never', outputFolder: 'e2e/.reporte' }]],
   use: {
     baseURL: URL_FRONT,
@@ -28,7 +28,8 @@ export default defineConfig({
     video: 'retain-on-failure',
   },
   projects: [
-    { name: 'pc', use: { ...devices['Desktop Chrome'] } },
-    { name: 'celular', use: { ...devices['Pixel 7'] } },
+    // channel "chromium": Chromium completo en modo sin ventana (el "headless shell" reporta mal los permisos de notificaciones)
+    { name: 'pc', use: { ...devices['Desktop Chrome'], channel: 'chromium' } },
+    { name: 'celular', use: { ...devices['Pixel 7'], channel: 'chromium' } },
   ],
 });

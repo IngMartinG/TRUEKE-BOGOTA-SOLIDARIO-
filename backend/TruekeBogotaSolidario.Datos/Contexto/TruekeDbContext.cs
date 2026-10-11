@@ -24,6 +24,7 @@ public class TruekeDbContext : DbContext
     public DbSet<Apelacion> Apelaciones => Set<Apelacion>();
     public DbSet<Bloqueo> Bloqueos => Set<Bloqueo>();
     public DbSet<Favorito> Favoritos => Set<Favorito>();
+    public DbSet<SuscripcionPush> SuscripcionesPush => Set<SuscripcionPush>();
     public DbSet<Calificacion> Calificaciones => Set<Calificacion>();
     public DbSet<Factura> Facturas => Set<Factura>();
     public DbSet<Pqr> Pqrs => Set<Pqr>();
@@ -266,6 +267,19 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => new { x.Estado, x.FechaUtc });
             e.HasIndex(x => x.UsuarioId);
             if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+        });
+
+        mb.Entity<SuscripcionPush>(e =>
+        {
+            e.ToTable("SuscripcionesPush");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Endpoint).HasMaxLength(1000).IsUnicode(false).IsRequired(); // ASCII: el índice único cabe en 1.000 bytes
+            e.Property(x => x.P256dh).HasMaxLength(200).IsUnicode(false).IsRequired();
+            e.Property(x => x.Auth).HasMaxLength(100).IsUnicode(false).IsRequired();
+            e.HasIndex(x => x.Endpoint).IsUnique();
+            e.HasIndex(x => x.UsuarioId);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Cascade);
         });
 
         mb.Entity<Favorito>(e =>

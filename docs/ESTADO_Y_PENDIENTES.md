@@ -129,6 +129,15 @@
   - nginx reenviaba `Host` sin el puerto. La protección CSRF rechazaba el refresco de sesión y cerraba la sesión al recargar si el front corría en un puerto no estándar (p. ej. el `docker-compose` local en :8081).
   - El front no resincronizaba después de la PRIMERA conexión de tiempo real. Lo que llegaba entre la carga de la pantalla y la conexión (un mensaje del chat, una solicitud) no aparecía hasta recargar.
 
+## Hecho el 2026-10-10 — PWA instalable y notificaciones push
+- Service worker de Angular (`ngsw-config.json`): app instalable, abre sin conexión una vez cargada, nunca guarda respuestas de la API ni `config.json`. nginx sirve el service worker sin caché. Botón "Instalar la app" e instrucciones para iPhone en *Cuenta → Avisos*.
+- Push con Web Push + VAPID (`Lib.Net.Http.WebPush` 3.3.1): tabla `SuscripcionesPush` (migración `SuscripcionesPush`, endpoint único `varchar(1000)`), `PUT /api/v1/push/suscripciones` y `POST …/baja`, cola + worker como el correo. Solo servicios de push reconocidos (sin SSRF). Mismo criterio que los correos (solo si no está en línea, nunca el texto del mensaje). Baja al salir, al cerrar todas las sesiones y al eliminar la cuenta; si otra cuenta usa el navegador, la suscripción pasa a ella.
+- Llaves en Render (`Push__ClavePublica`/`Push__ClavePrivada`, §6.2 de DESPLIEGUE). Costo $0.
+- **Encontrado por las E2E y corregido:** el service worker de Angular hace esperar TODAS las peticiones mientras se instala. Una petición a la API en ese momento (p. ej. crear la cuenta) quedaba colgada. Ahora:
+  - Toda llamada a la API y al hub lleva `?ngsw-bypass` (en la query para no tocar CORS) y nunca pasa por el service worker.
+  - De entrada solo se guarda lo básico (grupo `base`); el resto se guarda a medida que se usa.
+- 306 pruebas del backend y 31 del front; E2E con Chromium completo (el "headless shell" reporta mal el permiso de notificaciones) y pruebas de PWA (service worker, sin conexión, sección de avisos).
+
 ## Pendiente (fuera del código)
 - **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
 - **Dependabot:** `gh auth login` y cerrar los PR de .NET 10, EF Core 9, TypeScript 7 y Node 26 (los demás, fusionar si el CI pasa).

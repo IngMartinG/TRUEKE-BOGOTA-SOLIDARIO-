@@ -73,6 +73,10 @@ services:
         sync: false
       - key: Correo__Azure__CadenaConexion # Communication Services → Claves → Cadena de conexión (docs/DESPLIEGUE.md §5)
         sync: false
+      - key: Push__ClavePublica # notificaciones push: llaves VAPID (docs/DESPLIEGUE.md §6.2). Vacías = apagadas
+        sync: false
+      - key: Push__ClavePrivada
+        sync: false
       - key: APPLICATIONINSIGHTS_CONNECTION_STRING # Application Insights → Información general → Cadena de conexión (docs/DESPLIEGUE.md §7.1). Vacía = sin monitoreo
         sync: false
       - key: Correo__Remitente # con Azure: la dirección MailFrom del dominio conectado, p. ej. DoNotReply@xxxx.azurecomm.net
