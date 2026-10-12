@@ -88,67 +88,8 @@ import { Volver } from '../../shared/ui/volver';
         }
 
         <div class="grid grid-cols-1 gap-8 lg:grid-cols-[1.3fr_1fr]">
-          <!-- Galería -->
-          <div>
-            <div class="relative overflow-hidden rounded-tarjeta bg-superficie-2 shadow-suave">
-              @if (imagenes().length) {
-                <button type="button" class="block w-full cursor-zoom-in" (click)="visorAbierto.set(true)" aria-label="Ver las fotos en grande">
-                  <app-imagen-publicacion class="aspect-[4/3] w-full" [src]="imagenes()[indice()]" [alt]="p.titulo ?? ''" [modo]="p.modo" [categoriaId]="p.categoria?.id" />
-                </button>
-                <button type="button" class="absolute top-3 right-3 grid size-10 place-items-center rounded-full bg-black/55 text-white shadow-lg hover:bg-black/70"
-                  (click)="visorAbierto.set(true)" aria-label="Ampliar foto"><app-icono nombre="mira" /></button>
-              } @else {
-                <app-imagen-publicacion class="aspect-[4/3] w-full" [src]="imagenes()[indice()]" [alt]="p.titulo ?? ''" [modo]="p.modo" [categoriaId]="p.categoria?.id" />
-              }
-              @if (imagenes().length > 1) {
-                <button type="button" class="absolute top-1/2 left-3 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-bosque-900 shadow-lg hover:bg-white" (click)="mover(-1)" aria-label="Foto anterior">
-                  <app-icono nombre="izquierda" />
-                </button>
-                <button type="button" class="absolute top-1/2 right-3 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-bosque-900 shadow-lg hover:bg-white" (click)="mover(1)" aria-label="Foto siguiente">
-                  <app-icono nombre="derecha" />
-                </button>
-                <span class="absolute right-3 bottom-3 insignia bg-black/60 text-white">{{ indice() + 1 }} / {{ imagenes().length }}</span>
-              }
-            </div>
-            @if (imagenes().length > 1) {
-              <div class="mt-3 flex gap-2 overflow-x-auto pb-1">
-                @for (img of imagenes(); track img; let i = $index) {
-                  <button type="button" class="size-20 shrink-0 overflow-hidden rounded-xl border-2 transition"
-                    [class]="i === indice() ? 'border-bosque-500' : 'border-transparent opacity-70 hover:opacity-100'"
-                    (click)="indice.set(i)" [attr.aria-label]="'Ver foto ' + (i + 1)">
-                    <img [src]="urlPublica(miniatura(img))" alt="" class="size-full object-cover" loading="lazy" referrerpolicy="no-referrer" (error)="usarOriginal($event, img)" />
-                  </button>
-                }
-              </div>
-            }
-
-            <section class="mt-8" aria-labelledby="titulo-descripcion">
-              <h2 id="titulo-descripcion" class="text-lg font-bold">Descripción</h2>
-              <p class="mt-3 leading-relaxed break-words whitespace-pre-line text-tinta/90">{{ p.descripcion }}</p>
-            </section>
-
-            @if (p.latitud !== null && p.latitud !== undefined && p.longitud !== null && p.longitud !== undefined) {
-              <section class="mt-8" aria-labelledby="titulo-ubicacion">
-                <h2 id="titulo-ubicacion" class="text-lg font-bold">Ubicación</h2>
-                <p class="mt-1 text-sm text-tenue">
-                  {{ p.coordenadasAproximadas ? 'Zona aproximada en ' + p.localidad + '. La ubicación exacta se comparte al aceptar la solicitud.' : 'Ubicación exacta de entrega.' }}
-                </p>
-                <app-mapa class="mt-3 h-72 rounded-tarjeta border border-borde"
-                  [area]="p.coordenadasAproximadas ? { lat: p.latitud, lon: p.longitud, radioM: 700 } : null"
-                  [puntos]="p.coordenadasAproximadas ? [] : [{ id: p.id!, lat: p.latitud, lon: p.longitud, titulo: p.titulo ?? '', modo: p.modo }]"
-                  [centro]="[p.latitud, p.longitud]" [zoom]="14" etiqueta="Ubicación de la publicación" />
-              </section>
-            }
-
-            @if (escritorio()) {
-              <div class="mt-8">
-                <app-comentarios [publicacionId]="p.id!" [propietarioId]="p.propietario?.id" />
-              </div>
-            }
-          </div>
-
           <!-- Panel de acción -->
-          <aside class="space-y-5 lg:sticky lg:top-24 lg:self-start">
+          <aside class="space-y-5 max-lg:contents lg:sticky lg:top-24 lg:col-start-2 lg:row-start-1 lg:self-start">
             <div class="tarjeta p-6">
               <div class="flex flex-wrap items-center gap-2">
                 <app-insignia-modo [modo]="p.modo" />
@@ -205,15 +146,6 @@ import { Volver } from '../../shared/ui/volver';
                     <app-icono nombre="apreton" [tamano]="20" /> Ver solicitudes recibidas
                   </a>
                   @if (p.estado === 'Disponible') {
-                    <div class="grid gap-2" [class.grid-cols-2]="!p.interesados">
-                      @if (!p.interesados) {
-                        <a [routerLink]="['/publicacion', p.id, 'editar']" class="btn btn-secundario"><app-icono nombre="editar" [tamano]="16" />Editar</a>
-                      }
-                      <button type="button" class="btn btn-secundario" (click)="cancelarAbierto.set(true)"><app-icono nombre="basura" [tamano]="16" />Retirar</button>
-                    </div>
-                    @if (p.interesados) {
-                      <p class="text-center text-xs text-tenue">Ya hay personas interesadas: no se puede editar para que nadie reciba algo distinto de lo que pidió.</p>
-                    }
                     @if (!p.destacada) {
                       @if ((sesion.usuario()?.destacadosGratisRestantes ?? 0) > 0) {
                         <button type="button" class="btn btn-sol w-full" (click)="destacarGratis()" [disabled]="trabajando()">
@@ -224,16 +156,31 @@ import { Volver } from '../../shared/ui/volver';
                           <app-icono nombre="destello" [tamano]="16" /> Destacar para llegar a más personas
                         </a>
                       }
+                      <p class="text-center text-xs text-tenue">Destacar: aparece primero en el catálogo durante 7 días.</p>
                     }
-                    <div class="grid grid-cols-2 gap-2">
-                      <button type="button" class="btn btn-secundario" (click)="impulsar()" [disabled]="trabajando() || !puedeImpulsar()"
-                        [title]="puedeImpulsar() ? 'Sube tu publicación al primer lugar de «Más recientes»' : 'Podrás impulsarla de nuevo ' + (p.proximoImpulsoUtc | hace)">
-                        <app-icono nombre="cohete" [tamano]="16" />Impulsar ({{ puntosImpulsar() }} pts)
-                      </button>
-                      <a routerLink="/mis-publicaciones" [queryParams]="{ estadisticas: p.id }" class="btn btn-secundario">
-                        <app-icono nombre="grafica" [tamano]="16" />{{ p.vistas ?? 0 }} vistas
-                      </a>
-                    </div>
+                    <details class="group rounded-2xl border border-borde">
+                      <summary class="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden">
+                        Más acciones
+                        <app-icono nombre="abajo" [tamano]="16" class="text-tenue transition-transform group-open:rotate-180" />
+                      </summary>
+                      <div class="grid gap-2 border-t border-borde p-3">
+                        <button type="button" class="btn btn-secundario justify-start" (click)="impulsar()" [disabled]="trabajando() || !puedeImpulsar()">
+                          <app-icono nombre="cohete" [tamano]="16" />Impulsar ({{ puntosImpulsar() }} Eco-Puntos)
+                        </button>
+                        <p class="-mt-1 px-1 text-xs text-tenue">
+                          {{ puedeImpulsar() ? 'Vuelve al primer lugar de «Más recientes». Una vez cada 24 horas.' : 'Podrás impulsarla de nuevo ' + (p.proximoImpulsoUtc | hace) + '.' }}
+                        </p>
+                        <a routerLink="/mis-publicaciones" [queryParams]="{ estadisticas: p.id }" class="btn btn-secundario justify-start">
+                          <app-icono nombre="grafica" [tamano]="16" />Estadísticas · {{ p.vistas ?? 0 }} vistas
+                        </a>
+                        @if (!p.interesados) {
+                          <a [routerLink]="['/publicacion', p.id, 'editar']" class="btn btn-secundario justify-start"><app-icono nombre="editar" [tamano]="16" />Editar</a>
+                        } @else {
+                          <p class="px-1 text-xs text-tenue">Ya hay personas interesadas: no se puede editar para que nadie reciba algo distinto de lo que pidió.</p>
+                        }
+                        <button type="button" class="btn btn-fantasma justify-start text-tierra-600 dark:text-tierra-500" (click)="cancelarAbierto.set(true)"><app-icono nombre="basura" [tamano]="16" />Retirar publicación</button>
+                      </div>
+                    </details>
                   }
                 } @else if (p.estado === 'Disponible' && p.yaSolicite) {
                   <div class="rounded-xl bg-bosque-50 p-4 text-center text-sm dark:bg-bosque-900/40">
@@ -274,16 +221,18 @@ import { Volver } from '../../shared/ui/volver';
             </div>
 
             <!-- Propietario -->
-            <a [routerLink]="['/usuarios', p.propietario?.id]" class="tarjeta-interactiva flex items-center gap-4 p-5">
+            <a [routerLink]="['/usuarios', p.propietario?.id]" class="tarjeta-interactiva flex items-center gap-4 p-5 max-lg:order-2">
               <app-avatar [nombre]="p.propietario?.nombre" [foto]="p.propietario?.fotoUrl" [tamano]="56" [verificado]="!!p.propietario?.verificado" />
               <div class="min-w-0 flex-1">
                 <p class="text-xs text-tenue">Publicado por</p>
                 <p class="truncate font-display font-bold">{{ p.propietario?.nombre }}</p>
                 <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-tenue">
                   @if (p.propietario?.calificacionPromedio) {
-                    <span class="flex items-center gap-1"><app-estrellas [valor]="p.propietario!.calificacionPromedio!" [tamano]="12" />({{ p.propietario!.totalCalificaciones }})</span>
+                    <span class="flex items-center gap-1"><app-estrellas [valor]="p.propietario!.calificacionPromedio!" [tamano]="12" />
+                      {{ p.propietario!.calificacionPromedio!.toFixed(1) }} ({{ p.propietario!.totalCalificaciones }} {{ p.propietario!.totalCalificaciones === 1 ? 'calificación' : 'calificaciones' }})</span>
+                  } @else {
+                    <span class="insignia-neutra">Nuevo en Trueke</span>
                   }
-                  <span class="flex items-center gap-1"><app-icono nombre="hoja" [tamano]="12" class="text-bosque-500" />Reputación {{ p.propietario?.reputacion?.toFixed(1) }}</span>
                   @if (p.propietario?.tipoCuenta && p.propietario.tipoCuenta !== 'Individual') {
                     <span class="insignia-sol">{{ p.propietario.tipoCuenta }}</span>
                   }
@@ -292,7 +241,7 @@ import { Volver } from '../../shared/ui/volver';
               <app-icono nombre="derecha" class="text-tenue" />
             </a>
 
-            <div class="rounded-tarjeta border border-bosque-200 bg-bosque-50 p-5 text-sm dark:border-bosque-800 dark:bg-bosque-950/50">
+            <div class="rounded-tarjeta border border-bosque-200 bg-bosque-50 p-5 text-sm max-lg:order-2 dark:border-bosque-800 dark:bg-bosque-950/50">
               <p class="flex items-center gap-2 font-bold text-bosque-800 dark:text-bosque-200"><app-icono nombre="escudo" [tamano]="18" />Intercambia con confianza</p>
               <ul class="mt-2 space-y-1.5 text-bosque-900/80 dark:text-bosque-100/80">
                 <li>• Coordina todo por el chat de Trueke; nunca compartas tus contraseñas.</li>
@@ -301,7 +250,7 @@ import { Volver } from '../../shared/ui/volver';
               </ul>
             </div>
 
-            <div class="flex flex-wrap justify-center gap-4 text-xs">
+            <div class="flex flex-wrap justify-center gap-4 text-xs max-lg:order-2">
               @if (sesion.autenticado() && !p.esMia) {
                 <button type="button" class="flex items-center gap-1 text-tenue hover:text-tierra-600 dark:hover:text-tierra-500" (click)="denunciaAbierta.set(true)">
                   <app-icono nombre="bandera" [tamano]="14" /> Reportar publicación
@@ -314,6 +263,69 @@ import { Volver } from '../../shared/ui/volver';
               }
             </div>
           </aside>
+
+          <!-- Galería y descripción (en celular: fotos arriba, descripción después del panel) -->
+          <div class="max-lg:contents lg:col-start-1 lg:row-start-1">
+            <div class="max-lg:-order-1">
+            <div class="relative overflow-hidden rounded-tarjeta bg-superficie-2 shadow-suave">
+              @if (imagenes().length) {
+                <button type="button" class="block w-full cursor-zoom-in" (click)="visorAbierto.set(true)" aria-label="Ver las fotos en grande">
+                  <app-imagen-publicacion class="aspect-[4/3] w-full" [src]="imagenes()[indice()]" [alt]="p.titulo ?? ''" [modo]="p.modo" [categoriaId]="p.categoria?.id" [prioridad]="true" />
+                </button>
+                <button type="button" class="absolute top-3 right-3 grid size-10 place-items-center rounded-full bg-black/55 text-white shadow-lg hover:bg-black/70"
+                  (click)="visorAbierto.set(true)" aria-label="Ampliar foto"><app-icono nombre="mira" /></button>
+              } @else {
+                <app-imagen-publicacion class="aspect-[4/3] w-full" [src]="imagenes()[indice()]" [alt]="p.titulo ?? ''" [modo]="p.modo" [categoriaId]="p.categoria?.id" />
+              }
+              @if (imagenes().length > 1) {
+                <button type="button" class="absolute top-1/2 left-3 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-bosque-900 shadow-lg hover:bg-white" (click)="mover(-1)" aria-label="Foto anterior">
+                  <app-icono nombre="izquierda" />
+                </button>
+                <button type="button" class="absolute top-1/2 right-3 grid size-10 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-bosque-900 shadow-lg hover:bg-white" (click)="mover(1)" aria-label="Foto siguiente">
+                  <app-icono nombre="derecha" />
+                </button>
+                <span class="absolute right-3 bottom-3 insignia bg-black/60 text-white">{{ indice() + 1 }} / {{ imagenes().length }}</span>
+              }
+            </div>
+            @if (imagenes().length > 1) {
+              <div class="mt-3 flex gap-2 overflow-x-auto pb-1">
+                @for (img of imagenes(); track img; let i = $index) {
+                  <button type="button" class="size-20 shrink-0 overflow-hidden rounded-xl border-2 transition"
+                    [class]="i === indice() ? 'border-bosque-500' : 'border-transparent opacity-70 hover:opacity-100'"
+                    (click)="indice.set(i)" [attr.aria-label]="'Ver foto ' + (i + 1)">
+                    <img [src]="urlPublica(miniatura(img))" alt="" class="size-full object-cover" loading="lazy" referrerpolicy="no-referrer" (error)="usarOriginal($event, img)" />
+                  </button>
+                }
+              </div>
+            }
+
+            </div>
+
+            <section class="max-lg:order-1 lg:mt-8" aria-labelledby="titulo-descripcion">
+              <h2 id="titulo-descripcion" class="text-lg font-bold">Descripción</h2>
+              <p class="mt-3 leading-relaxed break-words whitespace-pre-line text-tinta/90">{{ p.descripcion }}</p>
+            </section>
+
+            @if (p.latitud !== null && p.latitud !== undefined && p.longitud !== null && p.longitud !== undefined) {
+              <section class="max-lg:order-1 lg:mt-8" aria-labelledby="titulo-ubicacion">
+                <h2 id="titulo-ubicacion" class="text-lg font-bold">Ubicación</h2>
+                <p class="mt-1 text-sm text-tenue">
+                  {{ p.coordenadasAproximadas ? 'Zona aproximada en ' + p.localidad + '. La ubicación exacta se comparte al aceptar la solicitud.' : 'Ubicación exacta de entrega.' }}
+                </p>
+                <app-mapa class="mt-3 h-72 rounded-tarjeta border border-borde"
+                  [area]="p.coordenadasAproximadas ? { lat: p.latitud, lon: p.longitud, radioM: 700 } : null"
+                  [puntos]="p.coordenadasAproximadas ? [] : [{ id: p.id!, lat: p.latitud, lon: p.longitud, titulo: p.titulo ?? '', modo: p.modo }]"
+                  [centro]="[p.latitud, p.longitud]" [zoom]="14" etiqueta="Ubicación de la publicación" />
+              </section>
+            }
+
+            @if (escritorio()) {
+              <div class="mt-8">
+                <app-comentarios [publicacionId]="p.id!" [propietarioId]="p.propietario?.id" />
+              </div>
+            }
+          </div>
+
         </div>
 
         @if (!escritorio()) {
