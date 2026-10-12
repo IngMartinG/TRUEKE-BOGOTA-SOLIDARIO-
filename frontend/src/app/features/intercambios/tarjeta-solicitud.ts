@@ -56,24 +56,27 @@ export type AccionSolicitud = 'aceptar' | 'rechazar' | 'cancelar' | 'confirmar' 
           }
         </div>
 
-        <!-- Línea de tiempo -->
-        <ol class="flex gap-4 text-xs md:w-56 md:flex-col md:gap-3" aria-label="Progreso del intercambio">
-          @for (h of hitos(); track h.texto) {
-            <li class="flex items-center gap-2" [class]="h.hecho ? 'text-tinta' : 'text-tenue'">
-              <span class="grid size-6 shrink-0 place-items-center rounded-full" [class]="h.hecho ? 'bg-bosque-600 text-white' : 'border-2 border-borde'">
-                @if (h.hecho) {
-                  <app-icono nombre="check" [tamano]="12" [grosor]="3" />
-                }
-              </span>
-              <span class="hidden font-medium sm:inline">{{ h.texto }}</span>
-            </li>
-          }
-        </ol>
+        <!-- Línea de tiempo: en celular, los círculos y el texto de la etapa actual; desde sm, cada etapa con su texto -->
+        <div class="md:w-56">
+          <ol class="flex gap-4 text-xs md:flex-col md:gap-3" aria-label="Progreso del intercambio">
+            @for (h of hitos(); track h.texto) {
+              <li class="flex items-center gap-2" [class]="h.hecho ? 'text-tinta' : 'text-tenue'">
+                <span class="grid size-6 shrink-0 place-items-center rounded-full" [class]="h.hecho ? 'bg-bosque-600 text-white' : 'border-2 border-borde'">
+                  @if (h.hecho) {
+                    <app-icono nombre="check" [tamano]="12" [grosor]="3" />
+                  }
+                </span>
+                <span class="sr-only font-medium sm:not-sr-only">{{ h.texto }}{{ h.hecho ? '' : ' (pendiente)' }}</span>
+              </li>
+            }
+          </ol>
+          <p class="mt-2 text-xs font-medium sm:hidden" aria-hidden="true">Paso {{ pasoActual().numero }} de {{ hitos().length }} · {{ pasoActual().texto }}</p>
+        </div>
       </div>
 
       @if (s.enEspera) {
         <div class="mx-5 mb-4 flex gap-2 rounded-2xl bg-sol-50 p-4 text-sm dark:bg-sol-500/10">
-          <app-icono nombre="reloj" [tamano]="18" class="mt-0.5 shrink-0 text-sol-600" />
+          <app-icono nombre="reloj" [tamano]="18" class="mt-0.5 shrink-0 text-sol-600 dark:text-sol-300" />
           <p>
             @if (s.soyDuenio) {
               Estás concretando esta publicación con otra persona. Si no se concreta, volverá al catálogo y podrás elegir a {{ otra()?.nombre }}.
@@ -144,6 +147,13 @@ export class TarjetaSolicitud {
       { texto: 'Entrega confirmada', hecho: e === 'Completada' || (aceptada && this.miConfirmacion() && this.suConfirmacion()) },
       { texto: `+${INFO_MODO[this.solicitud().modo as ModoDto]?.puntos ?? 0} Eco-Puntos`, hecho: e === 'Completada' },
     ];
+  });
+
+  /** La última etapa cumplida, para el resumen corto del celular. */
+  protected readonly pasoActual = computed(() => {
+    const h = this.hitos();
+    const n = h.filter((x) => x.hecho).length;
+    return { numero: n, texto: h[n - 1]?.texto ?? '' };
   });
 
   protected readonly acciones = computed(() => {

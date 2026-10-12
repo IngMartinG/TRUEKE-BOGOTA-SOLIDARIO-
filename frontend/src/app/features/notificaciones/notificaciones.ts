@@ -32,6 +32,7 @@ function destino(n: NotificacionDto): { icono: string; color: string; ruta: unkn
     return { icono: 'buscar', color: 'bg-bosque-100 text-bosque-700', ruta: ['/cuenta/busquedas'], ...(n.recursoId ? { query: { ver: n.recursoId } } : {}) };
   if (t === 'PlanPorVencer') return { icono: 'corona', color: 'bg-sol-100 text-sol-600', ruta: ['/eco-puntos'] };
   if (t.startsWith('Pago')) return { icono: 'billetera', color: 'bg-cielo-100 text-cielo-700', ruta: ['/eco-puntos'] };
+  if (t === 'ComentarioNuevo' && n.recursoId) return { icono: 'mensaje', color: 'bg-bosque-100 text-bosque-700', ruta: ['/publicacion', n.recursoId] };
   if (t.startsWith('Publicacion') && n.recursoId) return { icono: 'escudo', color: 'bg-agua-100 text-agua-700', ruta: ['/publicacion', n.recursoId] };
   if (t.startsWith('Verificacion')) return { icono: 'verificado', color: 'bg-agua-100 text-agua-700', ruta: ['/cuenta/perfil'] };
   if (t.startsWith('Mensaje')) return { icono: 'mensaje', color: 'bg-agua-100 text-agua-700', ruta: ['/mensajes'] };
@@ -60,6 +61,7 @@ function destino(n: NotificacionDto): { icono: string; color: string; ruta: unkn
         </div>
       </div>
 
+      @if ((recurso.isLoading() && !recurso.value()) || recurso.value()?.items?.length) {
       <ul class="mt-6 tarjeta divide-y divide-borde overflow-hidden">
         @if (recurso.isLoading() && !recurso.value()) {
           @for (i of [1, 2, 3, 4]; track i) {
@@ -82,8 +84,13 @@ function destino(n: NotificacionDto): { icono: string; color: string; ruta: unkn
           </li>
         }
       </ul>
+      }
 
-      @if (!recurso.isLoading() && !recurso.value()?.items?.length) {
+      @if (recurso.error() && !recurso.isLoading()) {
+        <app-estado-vacio icono="alerta" titulo="No pudimos cargar tus notificaciones" descripcion="Revisa tu conexión e inténtalo de nuevo.">
+          <button type="button" class="btn btn-primario" (click)="recurso.reload()">Reintentar</button>
+        </app-estado-vacio>
+      } @else if (!recurso.isLoading() && !recurso.value()?.items?.length) {
         <app-estado-vacio icono="campana" [titulo]="soloNoLeidas() ? 'Estás al día' : 'Aún no tienes notificaciones'"
           descripcion="Te avisaremos aquí cuando alguien solicite tus objetos, acepte tus solicitudes o ganes Eco-Puntos." />
       }

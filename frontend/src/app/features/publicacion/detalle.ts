@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { BreakpointObserver } from '@angular/cdk/layout';
+import { HttpErrorResponse } from '@angular/common/http';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Title } from '@angular/platform-browser';
@@ -61,6 +62,10 @@ import { Volver } from '../../shared/ui/volver';
           <div class="esqueleto h-14 w-full rounded-full"></div>
         </div>
       </div>
+    } @else if (recurso.error() && !noExiste()) {
+      <app-estado-vacio icono="alerta" titulo="No pudimos cargar la publicación" descripcion="Revisa tu conexión e inténtalo de nuevo.">
+        <button type="button" class="btn btn-primario" (click)="recurso.reload()">Reintentar</button>
+      </app-estado-vacio>
     } @else if (recurso.error()) {
       <app-estado-vacio icono="buscar" titulo="Esta publicación no está disponible" descripcion="Puede que se haya retirado o que el enlace no sea correcto.">
         <a routerLink="/explorar" class="btn btn-primario">Ver el catálogo</a>
@@ -77,7 +82,7 @@ import { Volver } from '../../shared/ui/volver';
 
         @if (p.oculta) {
           <div class="mb-5 flex items-start gap-3 rounded-2xl border border-tierra-500/30 bg-tierra-50 p-4 text-sm dark:bg-tierra-700/20" role="alert">
-            <app-icono nombre="ojoNo" class="text-tierra-600" />
+            <app-icono nombre="ojoNo" class="text-tierra-600 dark:text-tierra-500" />
             <div><strong>Publicación oculta por moderación.</strong> {{ p.motivoOcultamiento }}</div>
           </div>
         }
@@ -298,7 +303,7 @@ import { Volver } from '../../shared/ui/volver';
 
             <div class="flex flex-wrap justify-center gap-4 text-xs">
               @if (sesion.autenticado() && !p.esMia) {
-                <button type="button" class="flex items-center gap-1 text-tenue hover:text-tierra-600" (click)="denunciaAbierta.set(true)">
+                <button type="button" class="flex items-center gap-1 text-tenue hover:text-tierra-600 dark:hover:text-tierra-500" (click)="denunciaAbierta.set(true)">
                   <app-icono nombre="bandera" [tamano]="14" /> Reportar publicación
                 </button>
               }
@@ -431,6 +436,13 @@ export default class Detalle {
     params: () => ({ id: this.id(), sesion: this.sesion.autenticado() }),
     stream: ({ params }) => this.api.obtener(params.id),
   });
+  /** 404 (o sin permiso para verla): la publicación no existe para esta persona. Otro error es de conexión. */
+  protected readonly noExiste = computed(() => {
+    // resource() envuelve lo que no es un Error (como HttpErrorResponse) y lo deja en "cause"
+    const error = this.recurso.error();
+    const e = error instanceof HttpErrorResponse ? error : (error as { cause?: unknown } | undefined)?.cause;
+    return e instanceof HttpErrorResponse && (e.status === 404 || e.status === 403);
+  });
   protected readonly p = computed(() => this.recurso.value());
   protected readonly imagenes = computed(() => this.p()?.imagenes ?? []);
   protected readonly urlPublica = urlPublica;
@@ -495,6 +507,12 @@ export default class Detalle {
     }
     if (!this.sesion.correoVerificado()) {
       void this.router.navigate(['/verifica-tu-correo']);
+      return;
+    }
+    // La foto se pide antes de escribir el mensaje (si no, el servidor lo rechaza y se pierde lo escrito)
+    if (!this.sesion.tieneFoto()) {
+      this.avisos.info('Agrega tu foto de perfil', 'Es necesaria para solicitar. Cuando la subas, volverás a esta publicación.');
+      void this.router.navigate(['/cuenta/perfil'], { fragment: 'foto', queryParams: { volver: this.router.url } });
       return;
     }
     this.errorSolicitud.set(null);

@@ -77,7 +77,7 @@ const TAMANO = 10;
               }
               <div class="mt-1.5 flex gap-3 text-xs">
                 @if (sesion.autenticado() && !c.esMio) {
-                  <button type="button" class="text-tenue hover:text-tierra-600" (click)="denunciar(c)">Reportar</button>
+                  <button type="button" class="text-tenue hover:text-tierra-600 dark:hover:text-tierra-500" (click)="denunciar(c)">Reportar</button>
                 }
                 @if (sesion.esModerador()) {
                   <button type="button" class="font-semibold text-agua-700 hover:underline dark:text-agua-100" (click)="moderar(c)">

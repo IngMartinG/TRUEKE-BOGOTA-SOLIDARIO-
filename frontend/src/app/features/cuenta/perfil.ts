@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { CODIGO_BOGOTA, LOCALIDADES } from '../../api/tipos';
 import { CuentaApi } from '../../core/api/cuenta.api';
@@ -9,6 +9,7 @@ import { AvisosService } from '../../core/avisos.service';
 import { erroresDeCampos, mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
 import { SubidasService } from '../../core/subidas.service';
+import { destinoSeguro } from '../auth/redireccion';
 import { comprimirImagen } from '../../shared/imagenes';
 import { FechaPipe, NumeroPipe } from '../../shared/pipes';
 import { Avatar } from '../../shared/ui/avatar';
@@ -33,6 +34,9 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
         </div>
         <div class="min-w-0 flex-1">
           <h2 id="titulo-foto" class="font-bold">Foto de perfil</h2>
+          @if (volver() && !u.fotoUrl) {
+            <p class="my-2 rounded-xl bg-sol-50 p-3 text-sm font-medium dark:bg-sol-500/10">Sube tu foto para continuar. Al terminar te llevamos de vuelta a donde estabas.</p>
+          }
           <p class="text-sm text-tenue">Es obligatoria para publicar, solicitar, chatear y pagar: usa una foto donde se vea tu cara, así la comunidad sabe con quién intercambia. Le quitamos la ubicación y los datos ocultos antes de publicarla.</p>
           <div class="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
             <label class="btn btn-primario btn-sm cursor-pointer" [class.pointer-events-none]="subiendoFoto()" [class.opacity-60]="subiendoFoto()">
@@ -170,6 +174,9 @@ export default class Perfil {
   protected readonly guardando = signal(false);
   protected readonly subiendoFoto = signal(false);
   private readonly subidas = inject(SubidasService);
+  private readonly router = inject(Router);
+  /** A dónde volver después de subir la foto, cuando se llegó aquí porque hacía falta (?volver=...). */
+  readonly volver = input<string>();
   protected readonly form = this.fb.group({
     nombreCompleto: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120)]],
     municipioCodigo: [CODIGO_BOGOTA, [Validators.required, Validators.pattern(/^\d{5}$/)]],
@@ -241,7 +248,13 @@ export default class Perfil {
       // Una foto de perfil se ve pequeña: 800 px bastan y la subida es rápida incluso con datos móviles.
       const url = await this.subidas.subirTodo(await comprimirImagen(archivo, 800), 'Imagen');
       this.sesion.actualizarUsuario(await firstValueFrom(this.api.cambiarFoto(url)));
-      this.avisos.exito('Foto actualizada');
+      const volver = this.volver();
+      if (volver) {
+        this.avisos.exito('¡Foto lista!', 'Ya puedes continuar donde estabas.');
+        await this.router.navigateByUrl(destinoSeguro(volver, '/cuenta/perfil'));
+      } else {
+        this.avisos.exito('Foto actualizada');
+      }
     } catch (err) {
       this.avisos.error(mensajeDe(err));
     } finally {
