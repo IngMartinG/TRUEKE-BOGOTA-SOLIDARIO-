@@ -181,10 +181,10 @@ public sealed class PagoService : IPagoService
             throw new ReglaDeNegocioException("Indica si quieres la factura a tu nombre o a consumidor final.");
 
         var puntos = cotizacion?.PuntosACanjear ?? 0;
-        if (puntos > 0) u.DebitarEcoPuntos(puntos); // se reservan ya; si el pago falla o expira se devuelven
-
         var referencia = "TRK-" + Guid.NewGuid().ToString("N");
         var pago = new Pago(actorId, concepto, monto, referencia, puntos, publicacionId, documento, ahora);
+        // Se reservan ya; si el pago falla o expira se devuelven
+        if (puntos > 0) u.DebitarEcoPuntos(puntos, ConceptoEcoPuntos.CanjeDescuento, pago.Id, NombreConcepto(concepto));
         pago.RegistrarEleccionFactura(aNombre, ahora); // evidencia: qué eligió, cuándo y con qué datos
         _pagos.Agregar(pago);
         await _uow.GuardarCambiosAsync();
@@ -371,7 +371,7 @@ public sealed class PagoService : IPagoService
                 u.ActivarEmpresa(ahora);
                 break;
             case ConceptoPago.Recarga:
-                u.AcreditarEcoPuntos(pago.MontoCop / PoliticaEcoPuntos.CopPorEcoPunto);
+                u.AcreditarEcoPuntos(pago.MontoCop / PoliticaEcoPuntos.CopPorEcoPunto, ConceptoEcoPuntos.Recarga, pago.Id, pago.Referencia);
                 break;
             default:
                 throw new ReglaDeNegocioException("Concepto de pago no válido.");
@@ -380,8 +380,18 @@ public sealed class PagoService : IPagoService
 
     private static void DevolverPuntos(Pago pago, Usuario u)
     {
-        if (pago.PuntosCanjeados > 0) u.AcreditarEcoPuntos(pago.PuntosCanjeados);
+        if (pago.PuntosCanjeados > 0) u.AcreditarEcoPuntos(pago.PuntosCanjeados, ConceptoEcoPuntos.DevolucionCanje, pago.Id, NombreConcepto(pago.Concepto));
     }
+
+    /// <summary>Para el historial de Eco-Puntos: en qué se usó el descuento.</summary>
+    private static string NombreConcepto(ConceptoPago c) => c switch
+    {
+        ConceptoPago.Destacar => "Destacar publicación",
+        ConceptoPago.Verificar => "Verificar cuenta",
+        ConceptoPago.Premium => "Plan Premium",
+        ConceptoPago.Empresa => "Plan Empresa",
+        _ => "Recarga",
+    };
 
     private static PagoEstadoDto ADto(Pago p)
         => new(p.Referencia, p.Concepto.ToString(), p.MontoCop, p.Estado.ToString(), p.FechaUtc, p.FechaResolucionUtc);

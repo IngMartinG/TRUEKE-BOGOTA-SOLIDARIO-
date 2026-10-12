@@ -2438,6 +2438,57 @@
         }
       }
     },
+    "/api/v1/eco-puntos/movimientos": {
+      "get": {
+        "tags": [
+          "EcoPuntos"
+        ],
+        "parameters": [
+          {
+            "name": "Pagina",
+            "in": "query",
+            "schema": {
+              "maximum": 10000,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          },
+          {
+            "name": "Tamano",
+            "in": "query",
+            "schema": {
+              "maximum": 50,
+              "minimum": 1,
+              "type": "integer",
+              "format": "int32"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovimientoEcoPuntosDtoPaginaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovimientoEcoPuntosDtoPaginaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MovimientoEcoPuntosDtoPaginaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/eco-puntos/cotizacion": {
       "get": {
         "tags": [
@@ -6111,6 +6162,13 @@
               "$ref": "#/components/schemas/BusquedaGuardadaDto"
             },
             "nullable": true
+          },
+          "movimientosEcoPuntos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MovimientoEcoPuntosDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7076,6 +7134,64 @@
             "maxLength": 300,
             "minLength": 3,
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MovimientoEcoPuntosDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "concepto": {
+            "type": "string"
+          },
+          "puntos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "detalle": {
+            "type": "string",
+            "nullable": true
+          },
+          "referenciaId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "saldoResultante": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MovimientoEcoPuntosDtoPaginaDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MovimientoEcoPuntosDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pagina": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "tamano": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false

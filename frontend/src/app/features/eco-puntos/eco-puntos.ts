@@ -15,6 +15,7 @@ import { CopPipe, FechaPipe, NumeroPipe } from '../../shared/pipes';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
 import { abrirCheckoutWompi, esOrigenLocal, urlCheckoutWompi, urlRetornoPago } from './wompi';
+import { HistorialEcoPuntos } from './historial-eco-puntos';
 
 interface Servicio {
   concepto: Exclude<ConceptoPagoDto, 'Recarga'>;
@@ -28,7 +29,7 @@ interface Servicio {
 }
 
 @Component({
-  imports: [FormsModule, RouterLink, Icono, Modal, CopPipe, NumeroPipe, FechaPipe],
+  imports: [FormsModule, RouterLink, Icono, Modal, CopPipe, NumeroPipe, FechaPipe, HistorialEcoPuntos],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Encabezado con saldo -->
@@ -68,6 +69,10 @@ interface Servicio {
         }
       </div>
     </section>
+
+    @if (sesion.autenticado() && sesion.correoVerificado()) {
+      <app-historial-eco-puntos [saldo]="resumen.value()?.saldo ?? null" />
+    }
 
     <!-- Cómo ganar -->
     <section class="contenedor mt-14" aria-labelledby="titulo-ganar">

@@ -271,7 +271,7 @@ public class Usuario
         FechaVerificacionCorreo = ahoraUtc;
         if (!BonoBienvenidaOtorgado && !EstaEliminado)
         {
-            AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosBienvenida);
+            AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosBienvenida, ConceptoEcoPuntos.Bienvenida);
             BonoBienvenidaOtorgado = true;
         }
     }
@@ -455,21 +455,27 @@ public class Usuario
     }
 
     // ---------------- Eco-Puntos ----------------
-    public void AcreditarEcoPuntos(int puntos)
+    // Cada cambio del saldo deja un MovimientoEcoPuntos (historial): no hay otra forma de tocar SaldoEcoPuntos.
+    private readonly List<MovimientoEcoPuntos> _movimientosEcoPuntos = new();
+    public IReadOnlyList<MovimientoEcoPuntos> MovimientosEcoPuntos => _movimientosEcoPuntos;
+
+    public void AcreditarEcoPuntos(int puntos, ConceptoEcoPuntos concepto, Guid? referenciaId = null, string? detalle = null)
     {
         if (puntos <= 0) throw new ReglaDeNegocioException("Los puntos a acreditar deben ser positivos.");
         SaldoEcoPuntos = checked(SaldoEcoPuntos + puntos);
+        _movimientosEcoPuntos.Add(new MovimientoEcoPuntos(Id, puntos, concepto, referenciaId, detalle, SaldoEcoPuntos));
     }
 
-    public void DebitarEcoPuntos(int puntos)
+    public void DebitarEcoPuntos(int puntos, ConceptoEcoPuntos concepto, Guid? referenciaId = null, string? detalle = null)
     {
         if (puntos <= 0) throw new ReglaDeNegocioException("Los puntos a debitar deben ser positivos.");
         if (puntos > SaldoEcoPuntos) throw new ReglaDeNegocioException("Saldo de Eco-Puntos insuficiente.");
         SaldoEcoPuntos -= puntos;
+        _movimientosEcoPuntos.Add(new MovimientoEcoPuntos(Id, -puntos, concepto, referenciaId, detalle, SaldoEcoPuntos));
     }
 
     /// <summary>El contador siempre sube; los puntos y la reputación solo si <paramref name="otorgarPuntos"/> (tope anti-farmeo).</summary>
-    public void RegistrarTransaccionCompletada(ModoTransaccion modo, bool otorgarPuntos = true)
+    public void RegistrarTransaccionCompletada(ModoTransaccion modo, bool otorgarPuntos = true, Guid? solicitudId = null, string? detalle = null)
     {
         switch (modo)
         {
@@ -479,7 +485,7 @@ public class Usuario
             default: throw new ReglaDeNegocioException("Modo de transacción no válido.");
         }
         if (!otorgarPuntos) return;
-        AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosPorModo(modo));
+        AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosPorModo(modo), ConceptoEcoPuntos.Intercambio, solicitudId, detalle);
         Reputacion = Math.Min(PoliticaEcoPuntos.ReputacionMaxima, Reputacion + PoliticaEcoPuntos.ReputacionPorModo(modo));
     }
 
@@ -514,10 +520,10 @@ public class Usuario
     }
 
     /// <summary>Reembolso de una recarga: se retiran los puntos acreditados que aún queden (el saldo nunca queda negativo).</summary>
-    public int RetirarEcoPuntosHasta(int puntos)
+    public int RetirarEcoPuntosHasta(int puntos, Guid? pagoId = null)
     {
         var retirados = Math.Clamp(puntos, 0, SaldoEcoPuntos);
-        SaldoEcoPuntos -= retirados;
+        if (retirados > 0) DebitarEcoPuntos(retirados, ConceptoEcoPuntos.ReembolsoRecarga, pagoId);
         return retirados;
     }
 

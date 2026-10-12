@@ -345,7 +345,7 @@ public sealed class PublicacionService : IPublicacionService
         p.ValidarPuedeImpulsarse(ahora); // validar ANTES de cobrar los puntos
         if (actor.SaldoEcoPuntos < PoliticaEcoPuntos.PuntosImpulsar)
             throw new ReglaDeNegocioException($"Necesitas {PoliticaEcoPuntos.PuntosImpulsar} Eco-Puntos para impulsar. Gánalos con intercambios o recárgalos.");
-        actor.DebitarEcoPuntos(PoliticaEcoPuntos.PuntosImpulsar);
+        actor.DebitarEcoPuntos(PoliticaEcoPuntos.PuntosImpulsar, ConceptoEcoPuntos.Impulsar, p.Id, p.Titulo);
         p.Impulsar(ahora);
         await _uow.GuardarCambiosAsync(); // RowVersion en usuario y publicación: un doble clic no cobra dos veces
         var vistas = (await _estadisticas.TotalesAsync(new[] { p.Id })).GetValueOrDefault(p.Id);

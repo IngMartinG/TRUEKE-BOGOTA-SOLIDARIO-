@@ -356,8 +356,8 @@ public sealed class SolicitudService : ISolicitudService
         // Trueke con objeto: el objeto ofrecido también cambió de manos (es un solo intercambio: los puntos se suman una vez).
         var ofrecida = s.PublicacionOfrecida;
         if (ofrecida is { Estado: EstadoPublicacionEnum.EnNegociacion }) ofrecida.ConfirmarIntercambio();
-        oferente.RegistrarTransaccionCompletada(pub.Modo, puntosOferente);
-        receptor.RegistrarTransaccionCompletada(pub.Modo, puntosReceptor);
+        oferente.RegistrarTransaccionCompletada(pub.Modo, puntosOferente, s.Id, pub.Titulo);
+        receptor.RegistrarTransaccionCompletada(pub.Modo, puntosReceptor, s.Id, pub.Titulo);
         _transacciones.Agregar(new Transaccion(pub.Id, s.Id, oferente.Id, receptor.Id, pub.Modo, puntosOferente, puntosReceptor, ahora));
         // Los objetos ya se entregaron: sus listas de espera se cierran (en el mismo guardado, todo o nada).
         var avisos = new AvisosDiferidos();

@@ -36,3 +36,20 @@ public enum EstadoFactura { Pendiente = 1, Emitida = 2, Anulada = 3, Reemplazada
 public enum TipoPqr { Peticion = 1, Queja = 2, Reclamo = 3, Sugerencia = 4, Retracto = 5, ReversionPago = 6 }
 
 public enum EstadoPqr { Abierta = 1, Respondida = 2 }
+
+/// <summary>Por qué cambió el saldo de Eco-Puntos (historial de la persona).</summary>
+public enum ConceptoEcoPuntos
+{
+    /// <summary>Saldo que ya tenía la persona cuando empezó a guardarse el historial.</summary>
+    SaldoInicial = 0,
+    Bienvenida = 1,
+    Intercambio = 2,
+    Recarga = 3,
+    /// <summary>Puntos canjeados como descuento en un pago (se reservan al iniciarlo).</summary>
+    CanjeDescuento = 4,
+    /// <summary>Devolución de los puntos canjeados cuando el pago no se aprobó.</summary>
+    DevolucionCanje = 5,
+    Impulsar = 6,
+    /// <summary>Puntos de una recarga retirados porque se reembolsó.</summary>
+    ReembolsoRecarga = 7,
+}
