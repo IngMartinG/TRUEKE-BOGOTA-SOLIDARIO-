@@ -1,6 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, model, output, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { FormsModule } from '@angular/forms';
 import { catchError, debounceTime, distinctUntilChanged, map, of, switchMap } from 'rxjs';
 import { CatalogoApi } from '../../core/api/catalogo.api';
 import { Icono } from './icono';
@@ -13,17 +12,18 @@ let siguienteId = 0;
  */
 @Component({
   selector: 'app-buscador',
-  imports: [FormsModule, Icono],
+  // Sin FormsModule: es el único campo del encabezado y así @angular/forms no entra en el paquete inicial
+  imports: [Icono],
   changeDetection: ChangeDetectionStrategy.OnPush,
   // sin clase de display propia: quien lo usa decide (p. ej. "hidden md:block" en el encabezado)
   template: `
-    <form class="relative" role="search" (ngSubmit)="enviar(texto())">
+    <form class="relative" role="search" (submit)="$event.preventDefault(); enviar(texto())">
       <app-icono nombre="buscar" [tamano]="grande() ? 20 : 18" class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-tenue" />
       <input
         type="search"
         name="texto"
-        [ngModel]="texto()"
-        (ngModelChange)="escribir($event)"
+        [value]="texto()"
+        (input)="escribir($any($event.target).value)"
         maxlength="100"
         autocomplete="off"
         role="combobox"
