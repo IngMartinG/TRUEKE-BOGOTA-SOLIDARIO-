@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
@@ -379,6 +379,9 @@ export default class Catalogo {
       const texto = this.filtros().texto ?? '';
       untracked(() => this.textoBusqueda.set(texto));
     });
+    const q = this.ruta.snapshot.queryParamMap;
+    if (q.get('vista') === 'mapa') this.vista.set('mapa');
+    if (q.get('cerca') === '1') afterNextRender(() => this.alternarCercania());
   }
 
   protected aplicar(cambios: Record<string, string | number | boolean | null>): void {

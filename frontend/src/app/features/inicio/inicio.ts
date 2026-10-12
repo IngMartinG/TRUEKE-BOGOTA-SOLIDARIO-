@@ -3,7 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
-import { iconoCategoria, INFO_MODO, MODOS } from '../../api/tipos';
+import { iconoCategoria, INFO_MODO, MODOS, type PublicacionCercanaDto } from '../../api/tipos';
 import { CatalogoApi } from '../../core/api/catalogo.api';
 import { CuentaApi } from '../../core/api/cuenta.api';
 import { SesionService } from '../../core/sesion.service';
@@ -165,6 +165,57 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
       </div>
     </section>
 
+    <!-- ============ CERCA DE TI ============ -->
+    <!-- La ubicación se pide solo al tocar el botón (nunca al cargar) y no se guarda: sirve para esta búsqueda -->
+    <section class="contenedor mt-20" aria-labelledby="titulo-cerca">
+      <div class="tarjeta overflow-hidden">
+        <div class="flex flex-col gap-4 p-6 sm:flex-row sm:items-center sm:justify-between sm:p-8">
+          <div class="flex items-start gap-4">
+            <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-agua-100 text-agua-700 dark:bg-agua-700/30 dark:text-agua-100">
+              <app-icono nombre="pin" [tamano]="24" />
+            </span>
+            <div>
+              <h2 id="titulo-cerca" class="titulo-seccion">Cerca de ti</h2>
+              <p class="mt-1 max-w-xl text-tenue">Lo que tus vecinos ofrecen a menos de {{ radioCerca }} km. Usamos tu ubicación solo para esta búsqueda y no la guardamos.</p>
+            </div>
+          </div>
+          @if (cercanas() === null) {
+            <button type="button" class="btn btn-primario shrink-0" (click)="buscarCerca()" [disabled]="ubicando()">
+              <app-icono nombre="mira" [tamano]="18" />{{ ubicando() ? 'Buscando…' : 'Ver lo que hay cerca' }}
+            </button>
+          } @else {
+            <a routerLink="/explorar" [queryParams]="{ cerca: 1, vista: 'mapa' }" class="btn btn-secundario shrink-0">
+              <app-icono nombre="mapa" [tamano]="18" />Ver en el mapa
+            </a>
+          }
+        </div>
+        @if (errorCerca(); as e) {
+          <p class="border-t border-borde px-6 py-4 text-sm text-tenue sm:px-8" role="status">
+            {{ e }} También puedes <a routerLink="/explorar" class="enlace">explorar por localidad o municipio</a>.
+          </p>
+        }
+        @if (cercanas(); as lista) {
+          <div class="border-t border-borde p-6 sm:p-8">
+            @if (lista.length) {
+              <div class="grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4" aria-live="polite">
+                @for (c of lista; track c.publicacion?.id) {
+                  <div>
+                    <app-tarjeta-publicacion [publicacion]="c.publicacion!" />
+                    <p class="mt-2 flex items-center gap-1 px-1 text-xs font-semibold text-agua-700 dark:text-agua-100"><app-icono nombre="pin" [tamano]="12" />a {{ distancia(c.distanciaKm) }} de ti</p>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="text-center text-sm text-tenue" aria-live="polite">
+                Todavía no hay publicaciones a menos de {{ radioCerca }} km. ¡Sé la primera persona de tu barrio en publicar!
+                <a routerLink="/publicar" class="enlace mt-2 block">Publicar algo</a>
+              </p>
+            }
+          </div>
+        }
+      </div>
+    </section>
+
     <!-- ============ CATEGORÍAS ============ -->
     <section class="contenedor mt-20" aria-labelledby="titulo-categorias">
       <h2 id="titulo-categorias" class="titulo-seccion">Explora por categoría</h2>
@@ -258,6 +309,43 @@ export default class Inicio {
     this.catalogo.listar({ orden: 'Recientes', tamano: 8 }).pipe(catchError(() => of({ items: [], total: 0 }))),
   );
   protected readonly recientes = () => this.pagina()?.items;
+
+  protected readonly radioCerca = 5;
+  protected readonly ubicando = signal(false);
+  protected readonly cercanas = signal<PublicacionCercanaDto[] | null>(null);
+  protected readonly errorCerca = signal<string | null>(null);
+
+  protected buscarCerca(): void {
+    this.errorCerca.set(null);
+    if (!('geolocation' in navigator)) {
+      this.errorCerca.set('Tu navegador no permite obtener la ubicación.');
+      return;
+    }
+    this.ubicando.set(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) =>
+        this.catalogo.cercanas(pos.coords.latitude, pos.coords.longitude, this.radioCerca).subscribe({
+          next: (lista) => {
+            this.cercanas.set(lista.slice(0, 8));
+            this.ubicando.set(false);
+          },
+          error: () => {
+            this.errorCerca.set('No pudimos buscar publicaciones cercanas. Inténtalo de nuevo en un momento.');
+            this.ubicando.set(false);
+          },
+        }),
+      () => {
+        this.ubicando.set(false);
+        this.errorCerca.set('No pudimos obtener tu ubicación: revisa el permiso de ubicación del navegador.');
+      },
+      { enableHighAccuracy: false, timeout: 10_000, maximumAge: 300_000 },
+    );
+  }
+
+  protected distancia(km: number | undefined): string {
+    const d = km ?? 0;
+    return d < 1 ? `${Math.max(100, Math.round((d * 1000) / 100) * 100)} m` : `${d.toLocaleString('es-CO', { maximumFractionDigits: 1 })} km`;
+  }
   protected readonly totalPublicaciones = () => this.pagina()?.total ?? 0;
   protected readonly categorias = toSignal(this.catalogo.categorias$.pipe(catchError(() => of([]))), { initialValue: [] });
   protected readonly politica = toSignal(this.cuenta.politica$.pipe(catchError(() => of(null))));
