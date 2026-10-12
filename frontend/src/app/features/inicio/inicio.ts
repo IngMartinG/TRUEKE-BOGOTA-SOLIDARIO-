@@ -28,7 +28,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
       <div class="contenedor grid grid-cols-1 items-center gap-12 pt-14 pb-24 lg:grid-cols-[1.1fr_1fr] lg:pt-20 lg:pb-32">
         <div class="animate-aparecer">
           <p class="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-1.5 text-xs font-semibold tracking-wide text-bosque-200 backdrop-blur">
-            <app-icono nombre="reciclar" [tamano]="14" class="text-bosque-300" /> Economía circular en los 1.122 municipios de Colombia
+            <app-icono nombre="reciclar" [tamano]="14" class="text-bosque-300" /> Nacida en Bogotá, abierta a toda Colombia
           </p>
           <h1 class="mt-6 font-display text-4xl leading-[1.05] font-extrabold text-white sm:text-5xl lg:text-6xl">
             Dale una <span class="relative whitespace-nowrap text-sol-300">segunda vida<svg class="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 12" aria-hidden="true"><path d="M2 9c50-6 140-8 196-3" stroke="#f2b632" stroke-width="3" fill="none" stroke-linecap="round" /></svg></span>
@@ -65,15 +65,14 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
             </a>
           </div>
 
-          <dl class="mt-12 grid max-w-lg grid-cols-3 gap-6 border-t border-white/10 pt-8">
-            <div>
-              <dt class="text-xs text-bosque-200/70">Publicaciones activas</dt>
-              <dd class="font-display text-3xl font-extrabold">{{ totalPublicaciones() | numero }}</dd>
-            </div>
-            <div>
-              <dt class="text-xs text-bosque-200/70">Localidades</dt>
-              <dd class="font-display text-3xl font-extrabold">20</dd>
-            </div>
+          <!-- Solo cifras reales: el total aparece cuando ya cargó y hay publicaciones (un "0" mientras carga resta confianza) -->
+          <dl class="mt-12 flex max-w-lg flex-wrap gap-x-10 gap-y-6 border-t border-white/10 pt-8">
+            @if (totalPublicaciones() > 0) {
+              <div>
+                <dt class="text-xs text-bosque-200/70">Publicaciones activas</dt>
+                <dd class="font-display text-3xl font-extrabold">{{ totalPublicaciones() | numero }}</dd>
+              </div>
+            }
             <div>
               <dt class="text-xs text-bosque-200/70">Eco-Puntos de bienvenida</dt>
               <dd class="font-display text-3xl font-extrabold text-sol-300">+{{ politica()?.puntosBienvenida ?? 10 }}</dd>
@@ -144,7 +143,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
       <div class="flex items-end justify-between gap-4">
         <div>
           <p class="text-sm font-bold tracking-wide text-bosque-600 uppercase dark:text-bosque-400">Recién publicado</p>
-          <h2 id="titulo-recientes" class="titulo-seccion mt-1">Lo nuevo cerca de ti</h2>
+          <h2 id="titulo-recientes" class="titulo-seccion mt-1">Lo más nuevo de la comunidad</h2>
         </div>
         <a routerLink="/explorar" class="btn btn-secundario hidden sm:inline-flex">Ver todo <app-icono nombre="flechaDerecha" [tamano]="16" /></a>
       </div>
