@@ -276,6 +276,7 @@ public sealed class AvisosPush : IAvisosPush
         {
             if (!await DebeAvisarAsync(usuarioId)) return;
             var (titulo, ruta) = tipo == TiposNotificacion.BusquedaGuardada ? ("Novedades en tus búsquedas", "cuenta/busquedas")
+                : tipo == TiposNotificacion.ComentarioNuevo ? ("Nuevo comentario en tu publicación", "notificaciones")
                 : TiposIntercambio.Contains(tipo) ? ("Novedades en tu intercambio", "intercambios")
                 : ("Trueke Bogotá Solidario", "notificaciones");
             _cola.Encolar(new AvisoPush(usuarioId, titulo, mensaje, ruta, $"aviso-{tipo}"));

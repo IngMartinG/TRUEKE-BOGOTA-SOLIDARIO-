@@ -141,7 +141,7 @@ const TAMANO = 12;
 
         @if (!cercaDeMi() && (filtros().pagina ?? 1) === 1 && (destacadas.value()?.length ?? 0) > 0) {
           <div class="mb-6 rounded-tarjeta border border-sol-200 bg-sol-50/60 p-4 dark:border-sol-500/30 dark:bg-sol-500/10">
-            <p class="mb-3 flex items-center gap-2 text-sm font-bold"><app-icono nombre="destello" [tamano]="16" class="text-sol-600" />Destacadas</p>
+            <p class="mb-3 flex items-center gap-2 text-sm font-bold"><app-icono nombre="destello" [tamano]="16" class="text-sol-600 dark:text-sol-300" />Destacadas</p>
             <div class="grid grid-cols-2 gap-3 sm:grid-cols-4">
               @for (p of destacadas.value(); track p.id) {
                 <app-tarjeta-publicacion [publicacion]="p" />

@@ -166,11 +166,11 @@ import { Volver } from '../../shared/ui/volver';
           }
           @if (sesion.autenticado() && sesion.usuario()?.id !== id()) {
             <div class="mt-6 flex flex-wrap items-center gap-x-4 gap-y-2">
-              <button type="button" class="flex items-center gap-1 text-xs text-tenue hover:text-tierra-600" (click)="denunciaAbierta.set(true)">
+              <button type="button" class="flex items-center gap-1 text-xs text-tenue hover:text-tierra-600 dark:hover:text-tierra-500" (click)="denunciaAbierta.set(true)">
                 <app-icono nombre="bandera" [tamano]="14" />Reportar este perfil
               </button>
               <app-bloquear [usuarioId]="id()" [nombre]="perfil.value()?.nombre ?? 'esta persona'" [(bloqueado)]="bloqueado"
-                clase="flex items-center gap-1 text-xs text-tenue hover:text-tierra-600" />
+                clase="flex items-center gap-1 text-xs text-tenue hover:text-tierra-600 dark:hover:text-tierra-500" />
             </div>
             <app-denunciar [(abierto)]="denunciaAbierta" tipo="Usuario" [objetivoId]="id()" />
           }
