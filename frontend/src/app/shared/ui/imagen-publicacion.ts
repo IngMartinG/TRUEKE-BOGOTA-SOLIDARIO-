@@ -17,7 +17,8 @@ import { Icono } from './icono';
       <img
         [src]="u"
         [alt]="alt()"
-        loading="lazy"
+        [attr.loading]="prioridad() ? 'eager' : 'lazy'"
+        [attr.fetchpriority]="prioridad() ? 'high' : null"
         decoding="async"
         referrerpolicy="no-referrer"
         class="size-full object-cover transition duration-500"
@@ -41,6 +42,8 @@ export class ImagenPublicacion {
   readonly categoriaId = input<number | null | undefined>(null);
   readonly claseImagen = input('');
   readonly miniatura = input(false);
+  /** La foto principal de una página (lo primero que se ve): sin carga diferida y con prioridad alta. */
+  readonly prioridad = input(false);
   /** URLs a probar en orden; cada error de carga pasa a la siguiente y, al agotarlas, se muestra la ilustración. */
   private readonly candidatas = computed(() => {
     const src = this.src();

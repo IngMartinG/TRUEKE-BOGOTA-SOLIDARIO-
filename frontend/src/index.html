@@ -42,7 +42,10 @@
   <body>
     <app-root>
       <div class="carga">
-        <img src="logo-completo.png" width="168" height="140" alt="Cargando Trueke Bogotá Solidario" />
+        <picture>
+          <source srcset="logo-carga.webp" type="image/webp" />
+          <img src="logo-completo.png" width="168" height="140" alt="Cargando Trueke Bogotá Solidario" fetchpriority="high" />
+        </picture>
 
       </div>
     </app-root>

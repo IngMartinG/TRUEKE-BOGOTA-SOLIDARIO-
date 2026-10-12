@@ -48,7 +48,30 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
           <a routerLink="/eco-puntos" class="btn btn-secundario btn-sm mt-2">Ver beneficios y planes</a>
         </div>
       } @else {
-        <div class="tarjeta mt-3 overflow-x-auto">
+        <ul class="mt-3 space-y-3 sm:hidden">
+          @for (f of facturas.value() ?? []; track f.id) {
+            <li class="tarjeta p-4">
+              <div class="flex items-start justify-between gap-3">
+                <div class="min-w-0">
+                  <p class="font-semibold">{{ etiquetaConcepto[f.concepto ?? ''] ?? f.concepto }}</p>
+                  <p class="text-xs text-tenue">{{ f.fechaUtc | fecha }} · <span class="font-mono">{{ f.referencia }}</span></p>
+                </div>
+                <p class="shrink-0 font-display font-bold">{{ f.totalCop | cop }}</p>
+              </div>
+              <div class="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-tenue">
+                <span>IVA incluido: {{ f.ivaCop | cop }}</span>
+                @switch (f.estado) {
+                  @case ('Emitida') { <span class="insignia-trueke">Emitida · {{ f.numeroDian }}</span> }
+                  @case ('Anulada') { <span class="insignia-neutra">Anulada (reembolsado)</span> }
+                  @default { <span class="insignia-sol">En emisión</span> }
+                }
+              </div>
+            </li>
+          } @empty {
+            <li class="tarjeta p-6 text-center text-sm text-tenue">Cargando…</li>
+          }
+        </ul>
+        <div class="tarjeta mt-3 hidden overflow-x-auto sm:block" tabindex="0" role="region" aria-label="Tus facturas">
           <table class="w-full min-w-[40rem] text-left text-sm">
             <thead class="border-b border-borde text-xs text-tenue uppercase">
               <tr><th class="px-4 py-3">Fecha</th><th class="px-4 py-3">Concepto</th><th class="px-4 py-3">Total</th><th class="px-4 py-3">IVA incluido</th><th class="px-4 py-3">Estado</th></tr>
@@ -57,7 +80,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
               @for (f of facturas.value() ?? []; track f.id) {
                 <tr>
                   <td class="px-4 py-3 text-xs">{{ f.fechaUtc | fecha }}</td>
-                  <td class="px-4 py-3">{{ etiquetaConcepto[f.concepto ?? ''] ?? f.concepto }}<span class="block font-mono text-[11px] text-tenue">{{ f.referencia }}</span></td>
+                  <td class="px-4 py-3">{{ etiquetaConcepto[f.concepto ?? ''] ?? f.concepto }}<span class="block font-mono text-xs text-tenue">{{ f.referencia }}</span></td>
                   <td class="px-4 py-3 font-semibold">{{ f.totalCop | cop }}</td>
                   <td class="px-4 py-3">{{ f.ivaCop | cop }}</td>
                   <td class="px-4 py-3">

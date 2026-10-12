@@ -18,7 +18,7 @@ import { Icono } from '../shared/ui/icono';
         @for (e of izquierda(); track e.ruta) {
           <li>
             <a [routerLink]="e.ruta" routerLinkActive="!text-bosque-700 dark:!text-bosque-300" [routerLinkActiveOptions]="{ exact: e.ruta === '/' }"
-              class="relative flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold text-tenue">
+              class="relative flex flex-col items-center gap-0.5 py-2 text-xs font-semibold text-tenue max-[359px]:text-[11px] max-[359px]:tracking-tight">
               <app-icono [nombre]="e.icono" [tamano]="22" />{{ e.texto }}
             </a>
           </li>
@@ -31,7 +31,7 @@ import { Icono } from '../shared/ui/icono';
         @for (e of derecha(); track e.ruta) {
           <li>
             <a [routerLink]="e.ruta" routerLinkActive="!text-bosque-700 dark:!text-bosque-300"
-              class="relative flex flex-col items-center gap-0.5 py-2 text-[11px] font-semibold text-tenue">
+              class="relative flex flex-col items-center gap-0.5 py-2 text-xs font-semibold text-tenue max-[359px]:text-[11px] max-[359px]:tracking-tight">
               <app-icono [nombre]="e.icono" [tamano]="22" />{{ e.texto }}
               @if (e.contador && e.contador() > 0) {
                 <span class="absolute top-1 left-1/2 ml-2 size-2.5 rounded-full bg-tierra-600 ring-2 ring-superficie"></span>
@@ -57,7 +57,7 @@ export class BarraMovil {
     return this.completa()
       ? [
           { ruta: '/explorar', texto: 'Explorar', icono: 'brujula' },
-          { ruta: '/intercambios', texto: 'Trueques', icono: 'apreton' },
+          { ruta: '/intercambios', texto: 'Intercambios', icono: 'apreton' },
         ]
       : [
           { ruta: '/', texto: 'Inicio', icono: 'inicio' },
