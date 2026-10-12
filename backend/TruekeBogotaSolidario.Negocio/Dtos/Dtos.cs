@@ -599,7 +599,7 @@ public sealed record DatosPersonalesDto(DateTime GeneradoUtc, UsuarioDto Perfil,
     IReadOnlyList<CalificacionExportDto> CalificacionesRealizadas, IReadOnlyList<Guid> Favoritos,
     DatosFacturacionDto DatosFacturacion, IReadOnlyList<FacturaDto> Facturas, IReadOnlyList<PqrDto> Pqrs,
     IReadOnlyList<ApelacionDto> Apelaciones, PreferenciasAvisosDto? PreferenciasAvisos = null, IReadOnlyList<BloqueadoDto>? Bloqueados = null,
-    IReadOnlyList<BusquedaGuardadaDto>? BusquedasGuardadas = null);
+    IReadOnlyList<BusquedaGuardadaDto>? BusquedasGuardadas = null, IReadOnlyList<MovimientoEcoPuntosDto>? MovimientosEcoPuntos = null);
 
 public sealed record CalificacionExportDto(Guid Id, Guid SolicitudId, int Estrellas, string? Comentario, DateTime FechaUtc);
 
@@ -633,6 +633,9 @@ public sealed class CalificarRequest
 public sealed record CalificacionDto(Guid Id, PerfilPublicoDto Autor, int Estrellas, string? Comentario, DateTime FechaUtc);
 
 public sealed record VerificacionPendienteDto(Guid UsuarioId, string NombreCompleto, string Correo, string DocumentoUrl, DateTime FechaRegistro);
+
+/// <summary>Un movimiento del historial de Eco-Puntos: Puntos es positivo si se ganaron y negativo si se gastaron.</summary>
+public sealed record MovimientoEcoPuntosDto(Guid Id, string Concepto, int Puntos, string? Detalle, Guid? ReferenciaId, int SaldoResultante, DateTime FechaUtc);
 
 public sealed record EcoPuntosResumenDto(int Saldo, decimal Reputacion, int TransaccionesConPuntosEnUltimas24h, int TransaccionesConPuntosRestantes,
     string TipoCuenta, DateTime? PlanVigenteHasta, int DestacadosGratisRestantes, int MaxPublicacionesActivas, int DescuentoPlanPorcentaje);

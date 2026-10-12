@@ -335,6 +335,21 @@ public sealed class SolicitudRepository : ISolicitudRepository
     public void Agregar(Solicitud solicitud) => _db.Solicitudes.Add(solicitud);
 }
 
+public sealed class MovimientoEcoPuntosRepository : IMovimientoEcoPuntosRepository
+{
+    private readonly TruekeDbContext _db;
+    public MovimientoEcoPuntosRepository(TruekeDbContext db) => _db = db;
+
+    public async Task<(IReadOnlyList<MovimientoEcoPuntos> Items, int Total)> ListarPorUsuarioAsync(Guid usuarioId, int pagina, int tamano)
+    {
+        var q = _db.MovimientosEcoPuntos.AsNoTracking().Where(m => m.UsuarioId == usuarioId);
+        var total = await q.CountAsync();
+        var items = await q.OrderByDescending(m => m.FechaUtc).ThenByDescending(m => m.Id)
+            .Skip((pagina - 1) * tamano).Take(tamano).ToListAsync();
+        return (items, total);
+    }
+}
+
 public sealed class TransaccionRepository : ITransaccionRepository
 {
     private readonly TruekeDbContext _db;

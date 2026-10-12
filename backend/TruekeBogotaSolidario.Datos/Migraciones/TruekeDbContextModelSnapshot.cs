@@ -17,7 +17,7 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "8.0.31")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -689,6 +689,42 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.HasIndex("ConversacionId", "AutorId", "LeidoUtc");
 
                     b.ToTable("Mensajes");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.MovimientoEcoPuntos", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Concepto")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("nvarchar(30)");
+
+                    b.Property<string>("Detalle")
+                        .HasMaxLength(160)
+                        .HasColumnType("nvarchar(160)");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("Puntos")
+                        .HasColumnType("int");
+
+                    b.Property<Guid?>("ReferenciaId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("SaldoResultante")
+                        .HasColumnType("int");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId", "FechaUtc");
+
+                    b.ToTable("MovimientosEcoPuntos", (string)null);
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Notificacion", b =>
@@ -1671,6 +1707,15 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Navigation("RespuestaA");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.MovimientoEcoPuntos", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
+                        .WithMany("MovimientosEcoPuntos")
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Notificacion", b =>
                 {
                     b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
@@ -1814,6 +1859,11 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasForeignKey("ReceptorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Usuario", b =>
+                {
+                    b.Navigation("MovimientosEcoPuntos");
                 });
 #pragma warning restore 612, 618
         }

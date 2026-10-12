@@ -46,6 +46,7 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
     private readonly ISuscripcionPushRepository _suscripcionesPush;
     private readonly IBusquedaGuardadaService _busquedas;
     private readonly IBusquedaGuardadaRepository _busquedasRepo;
+    private readonly IMovimientoEcoPuntosRepository _movimientos;
     private readonly ILogger<DatosPersonalesService> _log;
 
     public DatosPersonalesService(IUsuarioRepository usuarios, IPublicacionRepository pubs, ISolicitudRepository solicitudes,
@@ -55,8 +56,9 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         IAlmacenArchivos almacen, ISesionService sesiones, INotificador notificador, TimeProvider reloj,
         ICalificacionRepository calificaciones, IFavoritoRepository favoritos, IFacturaRepository facturas, IPqrRepository pqrs,
         IBloqueoService bloqueos, ILogger<DatosPersonalesService> log, ISuscripcionPushRepository suscripcionesPush,
-        IBusquedaGuardadaService busquedas, IBusquedaGuardadaRepository busquedasRepo)
+        IBusquedaGuardadaService busquedas, IBusquedaGuardadaRepository busquedasRepo, IMovimientoEcoPuntosRepository movimientos)
     {
+        _movimientos = movimientos;
         _bloqueos = bloqueos; _suscripcionesPush = suscripcionesPush; _busquedas = busquedas; _busquedasRepo = busquedasRepo;
         _calificaciones = calificaciones; _favoritos = favoritos; _facturas = facturas; _pqrs = pqrs;
         _usuarios = usuarios; _pubs = pubs; _solicitudes = solicitudes; _comentarios = comentarios; _conversaciones = conversaciones;
@@ -104,7 +106,9 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
             Mapeos.ADatosFacturacion(u), (await _facturas.ListarPorUsuarioAsync(actorId, 500)).Select(Mapeos.AFacturaDto).ToList(),
             (await _pqrs.ListarPorUsuarioAsync(actorId, 200)).Select(Mapeos.APqrDto).ToList(),
             (await _denuncias.ListarApelacionesDelUsuarioAsync(actorId, Maximo)).Select(DenunciaService.AApelacionDto).ToList(),
-            await _bloqueos.PreferenciasAsync(actorId), await _bloqueos.ListarAsync(actorId), await _busquedas.ListarAsync(actorId));
+            await _bloqueos.PreferenciasAsync(actorId), await _bloqueos.ListarAsync(actorId), await _busquedas.ListarAsync(actorId),
+            (await _movimientos.ListarPorUsuarioAsync(actorId, 1, Maximo)).Items
+                .Select(m => new MovimientoEcoPuntosDto(m.Id, m.Concepto.ToString(), m.Puntos, m.Detalle, m.ReferenciaId, m.SaldoResultante, m.FechaUtc)).ToList());
     }
 
 

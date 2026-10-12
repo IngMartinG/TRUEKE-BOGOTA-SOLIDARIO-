@@ -2248,6 +2248,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/eco-puntos/movimientos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    Pagina?: number;
+                    Tamano?: number;
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MovimientoEcoPuntosDtoPaginaDto"];
+                        "application/json": components["schemas"]["MovimientoEcoPuntosDtoPaginaDto"];
+                        "text/json": components["schemas"]["MovimientoEcoPuntosDtoPaginaDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/eco-puntos/cotizacion": {
         parameters: {
             query?: never;
@@ -4864,6 +4904,7 @@ export interface components {
             preferenciasAvisos?: components["schemas"]["PreferenciasAvisosDto"];
             bloqueados?: components["schemas"]["BloqueadoDto"][] | null;
             busquedasGuardadas?: components["schemas"]["BusquedaGuardadaDto"][] | null;
+            movimientosEcoPuntos?: components["schemas"]["MovimientoEcoPuntosDto"][] | null;
         };
         DenunciaAgrupadaDto: {
             /** Format: uuid */
@@ -5198,6 +5239,29 @@ export interface components {
         MotivoDenunciaDto: "Spam" | "Fraude" | "ContenidoInapropiado" | "ArticuloProhibido" | "Acoso" | "Otro";
         MotivoRequest: {
             motivo: string;
+        };
+        MovimientoEcoPuntosDto: {
+            /** Format: uuid */
+            id?: string;
+            concepto?: string;
+            /** Format: int32 */
+            puntos?: number;
+            detalle?: string | null;
+            /** Format: uuid */
+            referenciaId?: string | null;
+            /** Format: int32 */
+            saldoResultante?: number;
+            /** Format: date-time */
+            fechaUtc?: string;
+        };
+        MovimientoEcoPuntosDtoPaginaDto: {
+            items?: components["schemas"]["MovimientoEcoPuntosDto"][];
+            /** Format: int32 */
+            total?: number;
+            /** Format: int32 */
+            pagina?: number;
+            /** Format: int32 */
+            tamano?: number;
         };
         MunicipioDto: {
             codigo?: string;
@@ -5808,6 +5872,8 @@ export type MensajeExportDto = components['schemas']['MensajeExportDto'];
 export type ModoDto = components['schemas']['ModoDto'];
 export type MotivoDenunciaDto = components['schemas']['MotivoDenunciaDto'];
 export type MotivoRequest = components['schemas']['MotivoRequest'];
+export type MovimientoEcoPuntosDto = components['schemas']['MovimientoEcoPuntosDto'];
+export type MovimientoEcoPuntosDtoPaginaDto = components['schemas']['MovimientoEcoPuntosDtoPaginaDto'];
 export type MunicipioDto = components['schemas']['MunicipioDto'];
 export type NoConcretadaRequest = components['schemas']['NoConcretadaRequest'];
 export type NotificacionDto = components['schemas']['NotificacionDto'];

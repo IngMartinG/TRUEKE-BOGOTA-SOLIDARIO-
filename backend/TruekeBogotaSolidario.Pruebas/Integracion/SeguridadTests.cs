@@ -283,6 +283,7 @@ public class SeguridadTests : IClassFixture<FabricaApi>
     {
         public Task<EcoPuntosResumenDto> ResumenAsync(Guid actorId) => throw new InvalidOperationException("SECRETO: cadena de conexión Server=prod;Password=123");
         public PoliticaEcoPuntosDto ObtenerPolitica() => throw new InvalidOperationException("SECRETO: cadena de conexión Server=prod;Password=123");
+        public Task<PaginaDto<MovimientoEcoPuntosDto>> MovimientosAsync(Guid actorId, int pagina, int tamano) => throw new InvalidOperationException("SECRETO");
     }
 
     [Fact]

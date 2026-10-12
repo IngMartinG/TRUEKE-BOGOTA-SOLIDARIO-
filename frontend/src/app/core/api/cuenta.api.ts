@@ -22,6 +22,7 @@ import type {
   DenunciaCreadaDto,
   DenunciaRecibidaDto,
   EcoPuntosResumenDto,
+  MovimientoEcoPuntosDtoPaginaDto,
   EliminarCuentaRequest,
   IniciarPagoRequest,
   NotificacionDtoPaginaDto,
@@ -75,6 +76,8 @@ export class CuentaApi {
 
   readonly politica$ = this.api.get<PoliticaEcoPuntosDto>('/eco-puntos/politica').pipe(shareReplay(1));
   resumenPuntos = () => this.api.get<EcoPuntosResumenDto>('/eco-puntos/resumen');
+  movimientosPuntos = (pagina = 1, tamano = 10) =>
+    this.api.get<MovimientoEcoPuntosDtoPaginaDto>('/eco-puntos/movimientos', { params: { pagina, tamano } });
   cotizacion = (concepto: ConceptoPagoDto) =>
     this.api.get<CotizacionDto>('/eco-puntos/cotizacion', { params: { concepto } });
 

@@ -10,6 +10,8 @@ namespace TruekeBogotaSolidario.Negocio.Servicios;
 public interface IEcoPuntosService
 {
     Task<EcoPuntosResumenDto> ResumenAsync(Guid actorId);
+    /// <summary>Historial propio, del más reciente al más antiguo.</summary>
+    Task<PaginaDto<MovimientoEcoPuntosDto>> MovimientosAsync(Guid actorId, int pagina, int tamano);
     PoliticaEcoPuntosDto ObtenerPolitica();
 }
 
@@ -17,12 +19,14 @@ public sealed class EcoPuntosService : IEcoPuntosService
 {
     private readonly IUsuarioRepository _usuarios;
     private readonly ITransaccionRepository _transacciones;
+    private readonly IMovimientoEcoPuntosRepository _movimientos;
     private readonly TimeProvider _reloj;
     private readonly FacturacionOpciones _facturacion;
 
-    public EcoPuntosService(IUsuarioRepository usuarios, ITransaccionRepository transacciones, TimeProvider reloj, IOptions<FacturacionOpciones> facturacion)
+    public EcoPuntosService(IUsuarioRepository usuarios, ITransaccionRepository transacciones, IMovimientoEcoPuntosRepository movimientos,
+        TimeProvider reloj, IOptions<FacturacionOpciones> facturacion)
     {
-        _usuarios = usuarios; _transacciones = transacciones; _reloj = reloj; _facturacion = facturacion.Value;
+        _usuarios = usuarios; _transacciones = transacciones; _movimientos = movimientos; _reloj = reloj; _facturacion = facturacion.Value;
     }
 
     public async Task<EcoPuntosResumenDto> ResumenAsync(Guid actorId)
@@ -36,6 +40,16 @@ public sealed class EcoPuntosService : IEcoPuntosService
             Math.Max(0, PoliticaEcoPuntos.MaxTransaccionesConPuntosPorDia - hoy), plan.ToString(),
             planVigente ? u.FechaVencimientoSuscripcion : null, planVigente ? u.DestacadosGratisRestantes : 0,
             PoliticaEcoPuntos.MaxPublicacionesActivas(plan), PoliticaEcoPuntos.DescuentoPlan(plan));
+    }
+
+    public async Task<PaginaDto<MovimientoEcoPuntosDto>> MovimientosAsync(Guid actorId, int pagina, int tamano)
+    {
+        pagina = Math.Max(pagina, 1);
+        tamano = Math.Clamp(tamano, 1, 50);
+        var (items, total) = await _movimientos.ListarPorUsuarioAsync(actorId, pagina, tamano);
+        return new PaginaDto<MovimientoEcoPuntosDto>(
+            items.Select(m => new MovimientoEcoPuntosDto(m.Id, m.Concepto.ToString(), m.Puntos, m.Detalle, m.ReferenciaId, m.SaldoResultante, m.FechaUtc)).ToList(),
+            total, pagina, tamano);
     }
 
     /// <summary>Leída en vivo de PoliticaEcoPuntos (única fuente de verdad); nada se hardcodea aquí.</summary>

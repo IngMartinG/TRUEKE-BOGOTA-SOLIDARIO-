@@ -171,7 +171,7 @@ public sealed class AdministracionService : IAdministracionService
             case ConceptoPago.Premium: u.RevertirMesDePlan(TipoCuenta.Premium, ahora); break;
             case ConceptoPago.Empresa: u.RevertirMesDePlan(TipoCuenta.Empresa, ahora); break;
             case ConceptoPago.Recarga:
-                var retirados = u.RetirarEcoPuntosHasta(p.MontoCop / PoliticaEcoPuntos.CopPorEcoPunto);
+                var retirados = u.RetirarEcoPuntosHasta(p.MontoCop / PoliticaEcoPuntos.CopPorEcoPunto, p.Id);
                 _log.LogInformation("Reembolso {Referencia}: {Puntos} Eco-Puntos retirados", p.Referencia, retirados);
                 break;
             case ConceptoPago.Destacar:

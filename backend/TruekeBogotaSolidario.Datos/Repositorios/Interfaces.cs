@@ -131,6 +131,12 @@ public interface ISolicitudRepository
     void Agregar(Solicitud solicitud);
 }
 
+/// <summary>Historial de Eco-Puntos (los movimientos los crea Usuario; aquí solo se leen).</summary>
+public interface IMovimientoEcoPuntosRepository
+{
+    Task<(IReadOnlyList<MovimientoEcoPuntos> Items, int Total)> ListarPorUsuarioAsync(Guid usuarioId, int pagina, int tamano);
+}
+
 public interface ITransaccionRepository
 {
     /// <summary>Transacciones desde <paramref name="desdeUtc"/> en las que ESTE usuario recibió puntos (tope anti-farmeo).</summary>

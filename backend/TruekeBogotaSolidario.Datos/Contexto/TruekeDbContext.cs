@@ -12,6 +12,7 @@ public class TruekeDbContext : DbContext
     public DbSet<Publicacion> Publicaciones => Set<Publicacion>();
     public DbSet<Solicitud> Solicitudes => Set<Solicitud>();
     public DbSet<Transaccion> Transacciones => Set<Transaccion>();
+    public DbSet<MovimientoEcoPuntos> MovimientosEcoPuntos => Set<MovimientoEcoPuntos>();
     public DbSet<Pago> Pagos => Set<Pago>();
     public DbSet<AuditoriaEvento> Auditoria => Set<AuditoriaEvento>();
     public DbSet<Comentario> Comentarios => Set<Comentario>();
@@ -324,6 +325,19 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => new { x.CalificadoId, x.FechaUtc });
             e.HasIndex(x => new { x.AutorId, x.CalificadoId, x.FechaUtc }); // anti-inflado: una calificación que cuenta por pareja y mes
         });
+
+        mb.Entity<MovimientoEcoPuntos>(e =>
+        {
+            e.ToTable("MovimientosEcoPuntos");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Concepto).HasConversion<string>().HasMaxLength(30);
+            e.Property(x => x.Detalle).HasMaxLength(160);
+            e.HasIndex(x => new { x.UsuarioId, x.FechaUtc });
+        });
+        mb.Entity<Usuario>()
+            .HasMany(x => x.MovimientosEcoPuntos).WithOne().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+        mb.Entity<Usuario>().Navigation(x => x.MovimientosEcoPuntos).UsePropertyAccessMode(PropertyAccessMode.Field);
 
         mb.Entity<Transaccion>(e =>
         {
