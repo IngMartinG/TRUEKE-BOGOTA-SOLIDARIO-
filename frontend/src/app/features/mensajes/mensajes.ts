@@ -1,4 +1,5 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
@@ -34,7 +35,7 @@ const TAMANO = 40;
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor py-4 sm:py-8">
-      <div class="tarjeta grid h-[calc(100dvh-10rem)] min-h-[28rem] grid-cols-1 overflow-hidden md:grid-cols-[18rem_1fr] lg:h-[calc(100dvh-9rem)] xl:grid-cols-[20rem_1fr]">
+      <div #tarjeta [style.height.px]="alto()" class="tarjeta grid h-[calc(100dvh-10rem)] min-h-[28rem] grid-cols-1 overflow-hidden md:grid-cols-[18rem_1fr] lg:h-[calc(100dvh-9rem)] xl:grid-cols-[20rem_1fr]">
         <!-- Lista de conversaciones -->
         <aside class="min-h-0 flex-col border-r border-borde" [class]="id() ? 'hidden md:flex' : 'flex'" aria-label="Conversaciones">
           <header class="flex items-center justify-between border-b border-borde px-5 py-4">
@@ -114,7 +115,7 @@ const TAMANO = 40;
                     }
                   </div>
                 </a>
-                <a [routerLink]="['/publicacion', c.publicacionId]" class="btn btn-secundario btn-sm hidden sm:inline-flex">Ver publicación</a>
+                <a [routerLink]="['/publicacion', c.publicacionId]" class="btn btn-secundario btn-sm hidden sm:inline-flex md:hidden lg:inline-flex">Ver publicación</a>
                 <a routerLink="/intercambios" [queryParams]="{ tab: c.soyDuenio ? 'recibidas' : 'enviadas' }" class="btn btn-primario btn-sm hidden sm:inline-flex">Intercambio</a>
                 @if (c.contraparte?.id; as contraparteId) {
                   <app-bloquear [usuarioId]="contraparteId" [nombre]="c.contraparte.nombre ?? 'esta persona'" [bloqueado]="!!c.yoBloquee"
@@ -149,8 +150,8 @@ const TAMANO = 40;
                     </span>
                   }
                   @if (m.esMio && puedeResponder(m)) {
-                    <button type="button" class="mr-1 hidden self-center rounded-full p-1.5 text-tenue opacity-0 transition group-hover:opacity-100 focus:opacity-100 hover:bg-superficie-2 hover:text-bosque-600 sm:block"
-                      (click)="responder(m)" aria-label="Responder este mensaje" title="Responder"><app-icono nombre="responder" [tamano]="15" /></button>
+                    <button type="button" class="mr-1 shrink-0 self-center rounded-full p-2 text-tenue opacity-0 transition group-hover:opacity-100 focus:opacity-100 hover:bg-superficie-2 hover:text-bosque-600"
+                      [class.opacity-100]="accionesDe() === m.id" (click)="responder(m)" aria-label="Responder este mensaje" title="Responder"><app-icono nombre="responder" [tamano]="15" /></button>
                   }
                   <div class="max-w-[80%] rounded-2xl px-3.5 py-2 text-sm shadow-sm"
                     [class]="m.esMio ? 'rounded-br-md bg-bosque-600 text-white' : 'rounded-bl-md bg-superficie text-tinta'"
@@ -169,22 +170,23 @@ const TAMANO = 40;
                     } @else {
                       <p class="break-words whitespace-pre-line">{{ m.texto }}</p>
                     }
-                    <p class="mt-0.5 flex items-center justify-end gap-1 text-[10px]" [class]="m.esMio ? 'text-white/70' : 'text-tenue'">
+                    <p class="mt-0.5 flex items-center justify-end gap-1 text-[11px]" [class]="m.esMio ? 'text-white/85' : 'text-tenue'">
                       {{ m.fechaUtc | hora }}
                       @if (m.esMio) {
                         <!-- ✓ enviado · ✓✓ entregado · ✓✓ celeste leído (como en WhatsApp) -->
                         <app-icono [nombre]="m.estado === 'Enviado' ? 'check' : 'checkDoble'" [tamano]="15"
-                          [class]="m.estado === 'Leido' ? 'text-sky-300' : ''"
+                          [class]="m.estado === 'Leido' ? 'text-sol-300' : ''"
                           [etiqueta]="m.estado === 'Leido' ? 'Leído' : m.estado === 'Entregado' ? 'Entregado' : 'Enviado'" />
                       }
                     </p>
                   </div>
                   @if (!m.esMio && !m.oculto) {
                     @if (puedeResponder(m)) {
-                      <button type="button" class="ml-1 hidden self-center rounded-full p-1.5 text-tenue opacity-0 transition group-hover:opacity-100 focus:opacity-100 hover:bg-superficie-2 hover:text-bosque-600 sm:block"
-                        (click)="responder(m)" aria-label="Responder este mensaje" title="Responder"><app-icono nombre="responder" [tamano]="15" /></button>
+                      <button type="button" class="ml-1 shrink-0 self-center rounded-full p-2 text-tenue opacity-0 transition group-hover:opacity-100 focus:opacity-100 hover:bg-superficie-2 hover:text-bosque-600"
+                        [class.opacity-100]="accionesDe() === m.id" (click)="responder(m)" aria-label="Responder este mensaje" title="Responder"><app-icono nombre="responder" [tamano]="15" /></button>
                     }
-                    <button type="button" class="ml-1 self-center text-[11px] text-tenue opacity-0 transition group-hover:opacity-100 focus:opacity-100 hover:text-tierra-600 dark:hover:text-tierra-500" (click)="denunciar(m)">Reportar</button>
+                    <button type="button" class="shrink-0 self-center rounded-full p-2 text-tenue opacity-0 transition group-hover:opacity-100 focus:opacity-100 hover:bg-superficie-2 hover:text-tierra-600 dark:hover:text-tierra-500"
+                      [class.opacity-100]="accionesDe() === m.id" (click)="denunciar(m)" aria-label="Reportar este mensaje" title="Reportar"><app-icono nombre="bandera" [tamano]="15" /></button>
                   }
                 </div>
               } @empty {
@@ -266,6 +268,11 @@ export default class Mensajes {
   protected readonly respondiendoA = signal<MensajeChatDto | null>(null);
   protected readonly deslizamiento = signal<{ id: string; dx: number } | null>(null);
   protected readonly resaltado = signal<string | null>(null);
+  /** Mensaje tocado en pantalla táctil: muestra sus acciones (con mouse aparecen al pasar por encima). */
+  protected readonly accionesDe = signal<string | null>(null);
+  /** Alto de la tarjeta del chat: lo que queda bajo el encabezado y las franjas, sin la barra inferior del celular. */
+  protected readonly alto = signal<number | null>(null);
+  private readonly tarjeta = viewChild<ElementRef<HTMLElement>>('tarjeta');
   private gesto: { mensaje: MensajeChatDto; x: number; y: number; horizontal: boolean | null; vibro: boolean } | null = null;
 
   constructor() {
@@ -300,7 +307,29 @@ export default class Mensajes {
           .catch(() => undefined);
     };
     document.addEventListener('visibilitychange', alVolver);
-    inject(DestroyRef).onDestroy(() => document.removeEventListener('visibilitychange', alVolver));
+    const destroy = inject(DestroyRef);
+    destroy.onDestroy(() => document.removeEventListener('visibilitychange', alVolver));
+
+    // La tarjeta ocupa justo el espacio visible: así la caja para escribir nunca queda bajo la barra inferior del
+    // celular ni depende de cuántas franjas de aviso haya arriba. Se recalcula si cambia la ventana o el contenido de arriba.
+    afterNextRender(() => {
+      const ajustar = () => {
+        const el = this.tarjeta()?.nativeElement;
+        if (!el?.parentElement) return;
+        const barra = document.querySelector('app-barra-movil nav')?.getBoundingClientRect().height ?? 0;
+        const margen = parseFloat(getComputedStyle(el.parentElement).paddingBottom) || 0;
+        const arriba = el.getBoundingClientRect().top + window.scrollY;
+        this.alto.set(Math.max(320, Math.floor(window.innerHeight - arriba - barra - margen)));
+      };
+      ajustar();
+      const observador = new ResizeObserver(ajustar);
+      observador.observe(document.body);
+      window.addEventListener('resize', ajustar);
+      destroy.onDestroy(() => {
+        observador.disconnect();
+        window.removeEventListener('resize', ajustar);
+      });
+    });
 
     // ✓✓ y ✓✓ de color en mis mensajes, en vivo
     this.tiempoReal.estadoMensajes$.pipe(takeUntilDestroyed()).subscribe((e) => {
@@ -433,8 +462,9 @@ export default class Mensajes {
   }
 
   // Gesto táctil: solo dedo o lápiz (con mouse se usa el botón, para no estorbar la selección de texto).
+  // Un toque muestra las acciones del mensaje (responder, reportar); deslizar a la derecha responde.
   protected alTocar(e: PointerEvent, m: MensajeChatDto): void {
-    if (e.pointerType === 'mouse' || !m.id || !this.puedeResponder(m)) return;
+    if (e.pointerType === 'mouse' || !m.id || (e.target as Element | null)?.closest('button')) return;
     this.gesto = { mensaje: m, x: e.clientX, y: e.clientY, horizontal: null, vibro: false };
   }
 
@@ -444,7 +474,7 @@ export default class Mensajes {
     const dx = e.clientX - g.x;
     const dy = e.clientY - g.y;
     if (g.horizontal === null && Math.hypot(dx, dy) > 8) {
-      g.horizontal = Math.abs(dx) > Math.abs(dy) && dx > 0;
+      g.horizontal = Math.abs(dx) > Math.abs(dy) && dx > 0 && this.puedeResponder(g.mensaje);
       // El gesto sigue aunque el dedo salga de la fila
       if (g.horizontal) (e.currentTarget as Element | null)?.setPointerCapture?.(e.pointerId);
     }
@@ -465,6 +495,7 @@ export default class Mensajes {
     const dx = this.deslizamiento()?.dx ?? 0;
     this.cancelarDeslizamiento();
     if (g && dx >= this.UMBRAL) this.responder(g.mensaje);
+    else if (g && g.horizontal === null) this.accionesDe.update((a) => (a === g.mensaje.id ? null : g.mensaje.id!));
   }
 
   protected cancelarDeslizamiento(): void {
