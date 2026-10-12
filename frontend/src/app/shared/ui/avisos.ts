@@ -23,10 +23,10 @@ import { Icono } from './icono';
           <span
             class="grid size-9 shrink-0 place-items-center rounded-full"
             [class]="{
-              'bg-bosque-100 text-bosque-700': a.tipo === 'exito',
-              'bg-tierra-100 text-tierra-700': a.tipo === 'error',
-              'bg-agua-100 text-agua-700': a.tipo === 'info',
-              'bg-sol-100 text-sol-600': a.tipo === 'puntos',
+              'bg-bosque-100 text-bosque-700 dark:bg-bosque-900 dark:text-bosque-200': a.tipo === 'exito',
+              'bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100': a.tipo === 'error',
+              'bg-agua-100 text-agua-700 dark:bg-agua-700/30 dark:text-agua-100': a.tipo === 'info',
+              'bg-sol-100 text-sol-600 dark:bg-sol-500/20 dark:text-sol-300': a.tipo === 'puntos',
             }"
           >
             <app-icono

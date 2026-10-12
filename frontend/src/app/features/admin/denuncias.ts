@@ -36,7 +36,7 @@ import { Modal } from '../../shared/ui/modal';
             <div>
               <div class="flex flex-wrap items-center gap-2">
                 <span class="insignia-neutra">{{ tipos[d.tipo ?? ''] ?? d.tipo }}</span>
-                <span class="insignia bg-tierra-100 text-tierra-700">{{ d.total }} {{ d.total === 1 ? 'reporte' : 'reportes' }}</span>
+                <span class="insignia bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100">{{ d.total }} {{ d.total === 1 ? 'reporte' : 'reportes' }}</span>
                 @if (!d.objetivoExiste) {
                   <span class="insignia-neutra">El contenido ya no existe</span>
                 }

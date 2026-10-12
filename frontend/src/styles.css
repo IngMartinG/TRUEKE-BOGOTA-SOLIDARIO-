@@ -164,8 +164,14 @@
     *::after {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
+      transition-property: color, background-color, border-color, opacity, box-shadow !important;
       scroll-behavior: auto !important;
+    }
+    /* Transiciones entre páginas (withViewTransitions): * no alcanza estos pseudoelementos */
+    ::view-transition-group(*),
+    ::view-transition-old(*),
+    ::view-transition-new(*) {
+      animation: none !important;
     }
   }
 }
@@ -174,7 +180,7 @@
   /* ---------- Botones ---------- */
   .btn {
     @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold
-      transition-all duration-200 select-none active:scale-[0.97]
+      transition-[color,background-color,border-color,box-shadow,opacity,transform] duration-200 select-none active:scale-[0.97]
       disabled:pointer-events-none disabled:opacity-50;
   }
   .btn-sm {
@@ -222,7 +228,7 @@
     @apply rounded-tarjeta border border-borde bg-superficie shadow-suave;
   }
   .tarjeta-interactiva {
-    @apply rounded-tarjeta border border-borde bg-superficie shadow-suave transition duration-300 hover:-translate-y-1 hover:shadow-elevada;
+    @apply rounded-tarjeta border border-borde bg-superficie shadow-suave transition duration-200 ease-[cubic-bezier(0.23,1,0.32,1)] hover:-translate-y-1 hover:shadow-elevada;
   }
 
   /* ---------- Formularios ---------- */
