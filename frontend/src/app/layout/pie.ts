@@ -70,6 +70,7 @@ export class Pie {
       enlaces: [
         { ruta: '/privacidad', texto: 'Tratamiento de datos' },
         { ruta: '/terminos', texto: 'Términos de uso' },
+        { ruta: '/accesibilidad', texto: 'Accesibilidad' },
         { ruta: '/cuenta/privacidad', texto: 'Exportar o eliminar mis datos' },
       ],
     },
