@@ -369,6 +369,23 @@ public sealed class TransaccionRepository : ITransaccionRepository
             .OrderByDescending(t => t.FechaUtc).Take(200).ToListAsync();
 
     public void Agregar(Transaccion transaccion) => _db.Transacciones.Add(transaccion);
+
+    public async Task<ResumenImpacto> ResumenImpactoAsync(DateTime desdeMesUtc, int minimoPorLocalidad, int maxLocalidades)
+    {
+        var t = _db.Transacciones.AsNoTracking();
+        var porModo = await t.GroupBy(x => x.Modo).Select(g => new { Modo = g.Key, Total = g.Count() }).ToListAsync();
+        int Modo(ModoTransaccion m) => porModo.FirstOrDefault(x => x.Modo == m)?.Total ?? 0;
+        var personas = await t.Select(x => x.OferenteId).Union(t.Select(x => x.ReceptorId)).CountAsync();
+        var esteMes = await t.CountAsync(x => x.FechaUtc >= desdeMesUtc);
+        var localidades = await (from x in t
+                                 join p in _db.Publicaciones.AsNoTracking() on x.PublicacionId equals p.Id
+                                 group x by new { p.MunicipioCodigo, p.Localidad } into g
+                                 where g.Count() >= minimoPorLocalidad
+                                 orderby g.Count() descending
+                                 select new ImpactoLocalidad(g.Key.MunicipioCodigo, g.Key.Localidad, g.Count()))
+            .Take(maxLocalidades).ToListAsync();
+        return new ResumenImpacto(Modo(ModoTransaccion.Trueke), Modo(ModoTransaccion.Compra), Modo(ModoTransaccion.Donacion), personas, esteMes, localidades);
+    }
 }
 
 public sealed class PagoRepository : IPagoRepository

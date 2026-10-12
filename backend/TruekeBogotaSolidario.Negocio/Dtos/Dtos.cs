@@ -637,6 +637,11 @@ public sealed record VerificacionPendienteDto(Guid UsuarioId, string NombreCompl
 /// <summary>Un movimiento del historial de Eco-Puntos: Puntos es positivo si se ganaron y negativo si se gastaron.</summary>
 public sealed record MovimientoEcoPuntosDto(Guid Id, string Concepto, int Puntos, string? Detalle, Guid? ReferenciaId, int SaldoResultante, DateTime FechaUtc);
 
+/// <summary>Página de impacto (pública): intercambios completados en la comunidad. Sin datos de personas.</summary>
+public sealed record ImpactoDto(int ObjetosConNuevoHogar, int Truekes, int Compras, int Donaciones, int PersonasQueIntercambiaron,
+    int EsteMes, IReadOnlyList<ImpactoLocalidadDto> LocalidadesMasActivas, DateTime CalculadoUtc);
+public sealed record ImpactoLocalidadDto(string Localidad, string Municipio, int Intercambios);
+
 public sealed record EcoPuntosResumenDto(int Saldo, decimal Reputacion, int TransaccionesConPuntosEnUltimas24h, int TransaccionesConPuntosRestantes,
     string TipoCuenta, DateTime? PlanVigenteHasta, int DestacadosGratisRestantes, int MaxPublicacionesActivas, int DescuentoPlanPorcentaje);
 

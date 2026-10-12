@@ -2445,6 +2445,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/impacto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ImpactoDto"];
+                        "application/json": components["schemas"]["ImpactoDto"];
+                        "text/json": components["schemas"]["ImpactoDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notificaciones": {
         parameters: {
             query?: never;
@@ -5139,6 +5176,29 @@ export interface components {
             soloVerificados?: boolean;
             alertas?: boolean;
         };
+        ImpactoDto: {
+            /** Format: int32 */
+            objetosConNuevoHogar?: number;
+            /** Format: int32 */
+            truekes?: number;
+            /** Format: int32 */
+            compras?: number;
+            /** Format: int32 */
+            donaciones?: number;
+            /** Format: int32 */
+            personasQueIntercambiaron?: number;
+            /** Format: int32 */
+            esteMes?: number;
+            localidadesMasActivas?: components["schemas"]["ImpactoLocalidadDto"][];
+            /** Format: date-time */
+            calculadoUtc?: string;
+        };
+        ImpactoLocalidadDto: {
+            localidad?: string;
+            municipio?: string;
+            /** Format: int32 */
+            intercambios?: number;
+        };
         IngresoConceptoDto: {
             concepto?: string;
             /** Format: int64 */
@@ -5861,6 +5921,8 @@ export type FacturaDto = components['schemas']['FacturaDto'];
 export type GananciaDto = components['schemas']['GananciaDto'];
 export type GoogleLoginRequest = components['schemas']['GoogleLoginRequest'];
 export type GuardarBusquedaRequest = components['schemas']['GuardarBusquedaRequest'];
+export type ImpactoDto = components['schemas']['ImpactoDto'];
+export type ImpactoLocalidadDto = components['schemas']['ImpactoLocalidadDto'];
 export type IngresoConceptoDto = components['schemas']['IngresoConceptoDto'];
 export type IngresoMesDto = components['schemas']['IngresoMesDto'];
 export type IngresosDto = components['schemas']['IngresosDto'];

@@ -137,8 +137,15 @@ public interface IMovimientoEcoPuntosRepository
     Task<(IReadOnlyList<MovimientoEcoPuntos> Items, int Total)> ListarPorUsuarioAsync(Guid usuarioId, int pagina, int tamano);
 }
 
+/// <summary>Totales de intercambios completados para la página de impacto. Nunca incluye datos de personas.</summary>
+public sealed record ResumenImpacto(int Truekes, int Compras, int Donaciones, int Personas, int EsteMes,
+    IReadOnlyList<ImpactoLocalidad> Localidades);
+public sealed record ImpactoLocalidad(string MunicipioCodigo, string Localidad, int Intercambios);
+
 public interface ITransaccionRepository
 {
+    /// <summary>Totales desde siempre y desde <paramref name="desdeMesUtc"/>; localidades con al menos <paramref name="minimoPorLocalidad"/> intercambios.</summary>
+    Task<ResumenImpacto> ResumenImpactoAsync(DateTime desdeMesUtc, int minimoPorLocalidad, int maxLocalidades);
     /// <summary>Transacciones desde <paramref name="desdeUtc"/> en las que ESTE usuario recibió puntos (tope anti-farmeo).</summary>
     Task<int> ContarDesdeAsync(Guid usuarioId, DateTime desdeUtc);
     /// <summary>¿Estas dos personas ya completaron, desde la fecha, un intercambio que otorgó puntos (en cualquier sentido)?</summary>
