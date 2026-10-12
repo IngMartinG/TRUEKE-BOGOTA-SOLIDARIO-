@@ -52,6 +52,10 @@ const TIPOS_SOLICITUD = /^(Solicitud|Entrega|Intercambio|Calificacion)/;
           @for (i of [1, 2]; track i) {
             <div class="esqueleto h-56 rounded-tarjeta"></div>
           }
+        } @else if (lista.error()) {
+          <app-estado-vacio icono="alerta" titulo="No pudimos cargar tus intercambios" descripcion="Revisa tu conexión e inténtalo de nuevo. Tus solicitudes siguen guardadas.">
+            <button type="button" class="btn btn-primario" (click)="lista.reload()">Reintentar</button>
+          </app-estado-vacio>
         } @else {
           @for (s of visibles(); track s.id) {
             <app-tarjeta-solicitud class="block animate-aparecer" [solicitud]="s" [ocupado]="ocupado() === s.id" (accion)="ejecutar(s, $event)" />
@@ -85,6 +89,15 @@ const TIPOS_SOLICITUD = /^(Solicitud|Entrega|Intercambio|Calificacion)/;
       <div pie class="flex justify-end gap-2 border-t border-borde p-4">
         <button type="button" class="btn btn-fantasma" (click)="motivoAbierto.set(false)">Volver</button>
         <button type="submit" form="form-motivo" class="btn btn-peligro" [disabled]="accionMotivo() === 'noConcretada' && motivo().trim().length < 3">Confirmar</button>
+      </div>
+    </app-modal>
+
+    <!-- Confirmar antes de lo que no se puede deshacer o afecta a otras personas -->
+    <app-modal [(abierto)]="confirmarAbierto" [titulo]="textoConfirmacion().titulo" [subtitulo]="textoConfirmacion().subtitulo">
+      <p class="text-sm">{{ textoConfirmacion().cuerpo }}</p>
+      <div pie class="flex justify-end gap-2 border-t border-borde p-4">
+        <button type="button" class="btn btn-fantasma" (click)="confirmarAbierto.set(false)">Todavía no</button>
+        <button type="button" class="btn btn-primario" (click)="confirmarAccion()">{{ textoConfirmacion().boton }}</button>
       </div>
     </app-modal>
 
@@ -159,6 +172,27 @@ export default class Intercambios {
   protected readonly estrellas = signal(0);
   protected readonly comentario = signal('');
   protected readonly textoEstrellas = ['Toca una estrella', 'Mala experiencia', 'Regular', 'Buena', 'Muy buena', '¡Excelente!'];
+  protected readonly confirmarAbierto = signal(false);
+  protected readonly accionConfirmar = signal<'aceptar' | 'confirmar'>('confirmar');
+  private readonly solicitudConfirmar = signal<SolicitudDto | null>(null);
+  protected readonly textoConfirmacion = computed(() => {
+    const s = this.solicitudConfirmar();
+    const objeto = s?.publicacionTitulo ?? 'el objeto';
+    const otra = (s?.soyDuenio ? s.solicitante?.nombre : s?.propietario?.nombre) ?? 'la otra persona';
+    if (this.accionConfirmar() === 'aceptar')
+      return {
+        titulo: `¿Aceptar a ${otra}?`,
+        subtitulo: objeto,
+        cuerpo: 'La publicación se reserva para esta persona y sale del catálogo. Si hay más interesados, quedan en lista de espera por si no se concreta.',
+        boton: 'Aceptar y reservar',
+      };
+    return {
+      titulo: s?.soyDuenio ? '¿Ya entregaste el objeto?' : '¿Ya tienes el objeto en tus manos?',
+      subtitulo: `${objeto} · con ${otra}`,
+      cuerpo: 'Confirma solo cuando el intercambio ya haya ocurrido: esto no se puede deshacer. Cuando ambas partes confirmen, los dos reciben sus Eco-Puntos.',
+      boton: 'Sí, confirmar entrega',
+    };
+  });
   private seleccionada: SolicitudDto | null = null;
 
   constructor() {
@@ -178,15 +212,15 @@ export default class Intercambios {
 
   protected ejecutar(s: SolicitudDto, accion: AccionSolicitud): void {
     this.seleccionada = s;
+    this.solicitudConfirmar.set(s);
     switch (accion) {
       case 'aceptar':
-        void this.correr(s, () => this.api.aceptar(s.id!), '¡Solicitud aceptada!', 'La publicación quedó reservada. Coordinen la entrega por el chat; si hay más interesados, quedan en lista de espera.');
+      case 'confirmar':
+        this.accionConfirmar.set(accion);
+        this.confirmarAbierto.set(true);
         break;
       case 'cancelar':
         void this.correr(s, () => this.api.cancelar(s.id!), 'Solicitud retirada');
-        break;
-      case 'confirmar':
-        void this.correr(s, () => this.api.confirmarEntrega(s.id!), 'Entrega confirmada', 'Cuando la otra persona también confirme, ambos recibirán Eco-Puntos.');
         break;
       case 'rechazar':
       case 'noConcretada':
@@ -200,6 +234,15 @@ export default class Intercambios {
         this.calificarAbierto.set(true);
         break;
     }
+  }
+
+  protected async confirmarAccion(): Promise<void> {
+    const s = this.seleccionada;
+    this.confirmarAbierto.set(false);
+    if (!s?.id) return;
+    if (this.accionConfirmar() === 'aceptar')
+      await this.correr(s, () => this.api.aceptar(s.id!), '¡Solicitud aceptada!', 'La publicación quedó reservada. Coordinen la entrega por el chat; si hay más interesados, quedan en lista de espera.');
+    else await this.correr(s, () => this.api.confirmarEntrega(s.id!), 'Entrega confirmada', 'Cuando la otra persona también confirme, ambos recibirán Eco-Puntos.');
   }
 
   protected async confirmarMotivo(): Promise<void> {

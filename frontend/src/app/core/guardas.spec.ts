@@ -49,7 +49,7 @@ describe('exigirModerador', () => {
 
 describe('exigirCuentaCompleta (publicar y editar)', () => {
   it('sin foto de perfil lleva a subirla', () => {
-    expect(ejecutar(exigirCuentaCompleta, { autenticado: true, verificado: true, foto: false })).toBe('/cuenta/perfil#foto');
+    expect(ejecutar(exigirCuentaCompleta, { autenticado: true, verificado: true, foto: false })).toBe('/cuenta/perfil?volver=%2Fcuenta%2Fperfil#foto');
   });
 
   it('primero exige el correo verificado', () => {

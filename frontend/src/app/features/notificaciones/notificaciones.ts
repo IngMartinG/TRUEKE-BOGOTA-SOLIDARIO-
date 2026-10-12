@@ -61,6 +61,7 @@ function destino(n: NotificacionDto): { icono: string; color: string; ruta: unkn
         </div>
       </div>
 
+      @if ((recurso.isLoading() && !recurso.value()) || recurso.value()?.items?.length) {
       <ul class="mt-6 tarjeta divide-y divide-borde overflow-hidden">
         @if (recurso.isLoading() && !recurso.value()) {
           @for (i of [1, 2, 3, 4]; track i) {
@@ -83,8 +84,13 @@ function destino(n: NotificacionDto): { icono: string; color: string; ruta: unkn
           </li>
         }
       </ul>
+      }
 
-      @if (!recurso.isLoading() && !recurso.value()?.items?.length) {
+      @if (recurso.error() && !recurso.isLoading()) {
+        <app-estado-vacio icono="alerta" titulo="No pudimos cargar tus notificaciones" descripcion="Revisa tu conexión e inténtalo de nuevo.">
+          <button type="button" class="btn btn-primario" (click)="recurso.reload()">Reintentar</button>
+        </app-estado-vacio>
+      } @else if (!recurso.isLoading() && !recurso.value()?.items?.length) {
         <app-estado-vacio icono="campana" [titulo]="soloNoLeidas() ? 'Estás al día' : 'Aún no tienes notificaciones'"
           descripcion="Te avisaremos aquí cuando alguien solicite tus objetos, acepte tus solicitudes o ganes Eco-Puntos." />
       }
