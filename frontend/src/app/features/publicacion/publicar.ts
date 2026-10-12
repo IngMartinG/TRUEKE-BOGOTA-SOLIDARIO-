@@ -349,7 +349,7 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
           }
 
           <!-- Navegación -->
-          <div class="sticky bottom-16 z-10 mt-10 flex items-center justify-between gap-3 border-t border-borde bg-fondo/90 py-4 backdrop-blur lg:bottom-0">
+          <div class="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 mt-10 flex items-center justify-between gap-3 border-t border-borde bg-fondo/90 py-4 backdrop-blur lg:bottom-0">
             @if (paso() > 0) {
               <button type="button" class="btn btn-secundario" (click)="anterior()"><app-icono nombre="izquierda" [tamano]="16" />Atrás</button>
             } @else {

@@ -7,14 +7,18 @@ import { Icono } from './icono';
   imports: [Icono],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <!-- Arriba, bajo el encabezado: en el celular no tapa la barra inferior ni la caja del chat -->
     <div
-      class="pointer-events-none fixed inset-x-0 bottom-20 z-[100] flex flex-col items-center gap-2 px-4 sm:bottom-auto sm:top-20 sm:right-4 sm:left-auto sm:items-end"
+      class="pointer-events-none fixed inset-x-0 top-20 z-[100] flex flex-col items-center gap-2 px-4 sm:right-4 sm:left-auto sm:items-end"
       aria-live="polite"
       role="status"
     >
       @for (a of avisos.avisos(); track a.id) {
         <div
           class="pointer-events-auto flex w-full max-w-sm animate-aparecer items-start gap-3 rounded-2xl border border-borde bg-superficie p-4 shadow-elevada"
+          [attr.role]="a.tipo === 'error' ? 'alert' : null"
+          (mouseenter)="avisos.pausar(a.id)" (mouseleave)="avisos.reanudar(a.id)"
+          (focusin)="avisos.pausar(a.id)" (focusout)="avisos.reanudar(a.id)"
         >
           <span
             class="grid size-9 shrink-0 place-items-center rounded-full"
@@ -36,7 +40,7 @@ import { Icono } from './icono';
               <p class="mt-0.5 text-sm break-words text-tenue">{{ a.detalle }}</p>
             }
           </div>
-          <button type="button" class="btn-icono -m-1 size-8" (click)="avisos.cerrar(a.id)" aria-label="Cerrar aviso">
+          <button type="button" class="btn-icono -m-2" (click)="avisos.cerrar(a.id)" aria-label="Cerrar aviso">
             <app-icono nombre="x" [tamano]="16" />
           </button>
         </div>
