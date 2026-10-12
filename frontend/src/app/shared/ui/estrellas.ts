@@ -16,10 +16,12 @@ import { Icono } from './icono';
             role="radio"
             [attr.aria-checked]="valor() === n"
             [attr.aria-label]="n + (n === 1 ? ' estrella' : ' estrellas')"
+            [attr.tabindex]="n === (valor() || 1) ? 0 : -1"
             class="rounded-md p-0.5 transition hover:scale-110"
             [class]="(hover() || valor()) >= n ? 'text-sol-400' : 'text-borde'"
             (mouseenter)="hover.set(n)"
             (click)="valor.set(n)"
+            (keydown)="teclado($event, n)"
           >
             <app-icono nombre="estrella" [tamano]="tamano()" [relleno]="(hover() || valor()) >= n" />
           </button>
@@ -43,4 +45,15 @@ export class Estrellas {
   readonly editable = input(false);
   readonly tamano = input(16);
   protected readonly hover = signal(0);
+
+  /** Como un grupo de radios: una sola parada de Tab y las flechas cambian la calificación. */
+  protected teclado(e: KeyboardEvent, n: number): void {
+    const paso = e.key === 'ArrowRight' || e.key === 'ArrowUp' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowDown' ? -1 : 0;
+    const destino = e.key === 'Home' ? 1 : e.key === 'End' ? 5 : paso ? Math.min(5, Math.max(1, n + paso)) : 0;
+    if (!destino) return;
+    e.preventDefault();
+    this.valor.set(destino);
+    const grupo = (e.currentTarget as HTMLElement).parentElement;
+    (grupo?.children[destino - 1] as HTMLElement | undefined)?.focus();
+  }
 }

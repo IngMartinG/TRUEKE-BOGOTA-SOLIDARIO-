@@ -35,7 +35,8 @@ test('cuenta nueva: registro, correo de verificación, foto obligatoria y primer
 
   await test.step('publica con foto en 5 pasos', async () => {
     await page.goto('/publicar');
-    await page.getByRole('radio', { name: 'Trueke', exact: true }).check({ force: true });
+    // El nombre accesible de cada opción incluye su descripción ("Trueke Cambia lo que ya no usas…")
+    await page.getByRole('radio', { name: /^Trueke\b/ }).check({ force: true });
     await page.getByRole('button', { name: 'Continuar' }).click();
 
     await page.getByLabel('Título').fill(titulo);

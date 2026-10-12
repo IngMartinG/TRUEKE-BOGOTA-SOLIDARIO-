@@ -1,5 +1,9 @@
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { RouterLink, RouterOutlet } from '@angular/router';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Title } from '@angular/platform-browser';
+import { NavigationEnd, Router, RouterLink, RouterOutlet } from '@angular/router';
+import { filter } from 'rxjs';
 import { ConfigService } from './core/config.service';
 import { SesionService } from './core/sesion.service';
 import { TemaService } from './core/tema.service';
@@ -65,4 +69,27 @@ export class App {
   // Se inyectan aquí para que arranquen con la app (tema y conexión en tiempo real).
   private readonly _tema = inject(TemaService);
   private readonly _tiempoReal = inject(TiempoRealService);
+
+  constructor() {
+    // Al cambiar de página (no al cambiar solo filtros o el #fragmento), el foco va al contenido y el lector de
+    // pantalla anuncia el título nuevo; si no, la persona queda en un enlace que ya no existe sin saber qué pasó.
+    const anunciador = inject(LiveAnnouncer);
+    const titulo = inject(Title);
+    let anterior: string | null = null;
+    inject(Router)
+      .events.pipe(
+        filter((e): e is NavigationEnd => e instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe((e) => {
+        const ruta = e.urlAfterRedirects.split(/[?#]/)[0];
+        if (anterior !== null && ruta !== anterior) {
+          setTimeout(() => {
+            document.getElementById('contenido')?.focus({ preventScroll: true });
+            void anunciador.announce(titulo.getTitle());
+          });
+        }
+        anterior = ruta;
+      });
+  }
 }

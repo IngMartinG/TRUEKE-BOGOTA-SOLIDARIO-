@@ -65,18 +65,20 @@ import { Logo } from '../shared/ui/logo';
             <a routerLink="/publicar" class="btn btn-primario hidden lg:inline-flex">
               <app-icono nombre="mas" [tamano]="18" />Publicar
             </a>
-            <a routerLink="/mensajes" class="btn-icono relative hidden lg:inline-flex" aria-label="Mensajes">
+            <a routerLink="/mensajes" class="btn-icono relative hidden lg:inline-flex"
+              [attr.aria-label]="tiempoReal.mensajesNoLeidos() ? 'Mensajes, ' + tiempoReal.mensajesNoLeidos() + ' sin leer' : 'Mensajes'">
               <app-icono nombre="mensaje" />
               @if (tiempoReal.mensajesNoLeidos() > 0) {
-                <span class="absolute top-1 right-1 grid min-w-4.5 place-items-center rounded-full bg-tierra-600 px-1 text-[10px] font-bold text-white">
+                <span class="absolute top-1 right-1 grid min-w-4.5 place-items-center rounded-full bg-tierra-600 px-1 text-[10px] font-bold text-white" aria-hidden="true">
                   {{ tiempoReal.mensajesNoLeidos() > 9 ? '9+' : tiempoReal.mensajesNoLeidos() }}
                 </span>
               }
             </a>
-            <a routerLink="/notificaciones" class="btn-icono relative" aria-label="Notificaciones">
+            <a routerLink="/notificaciones" class="btn-icono relative"
+              [attr.aria-label]="tiempoReal.notificacionesNoLeidas() ? 'Notificaciones, ' + tiempoReal.notificacionesNoLeidas() + ' sin leer' : 'Notificaciones'">
               <app-icono nombre="campana" />
               @if (tiempoReal.notificacionesNoLeidas() > 0) {
-                <span class="absolute top-1 right-1 grid min-w-4.5 place-items-center rounded-full bg-tierra-600 px-1 text-[10px] font-bold text-white">
+                <span class="absolute top-1 right-1 grid min-w-4.5 place-items-center rounded-full bg-tierra-600 px-1 text-[10px] font-bold text-white" aria-hidden="true">
                   {{ tiempoReal.notificacionesNoLeidas() > 9 ? '9+' : tiempoReal.notificacionesNoLeidas() }}
                 </span>
               }

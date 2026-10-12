@@ -51,9 +51,9 @@ function destino(n: NotificacionDto): { icono: string; color: string; ruta: unkn
           <p class="mt-1 text-tenue">Todo lo que pasa con tus publicaciones e intercambios.</p>
         </div>
         <div class="flex gap-2">
-          <div class="pestanas">
-            <button type="button" class="pestana" [class.pestana-activa]="!soloNoLeidas()" (click)="filtrar(false)">Todas</button>
-            <button type="button" class="pestana" [class.pestana-activa]="soloNoLeidas()" (click)="filtrar(true)">Sin leer</button>
+          <div class="pestanas" role="group" aria-label="Mostrar">
+            <button type="button" class="pestana" [class.pestana-activa]="!soloNoLeidas()" [attr.aria-pressed]="!soloNoLeidas()" (click)="filtrar(false)">Todas</button>
+            <button type="button" class="pestana" [class.pestana-activa]="soloNoLeidas()" [attr.aria-pressed]="soloNoLeidas()" (click)="filtrar(true)">Sin leer</button>
           </div>
           @if (tiempoReal.notificacionesNoLeidas() > 0) {
             <button type="button" class="btn btn-secundario btn-sm" (click)="leerTodas()"><app-icono nombre="check" [tamano]="14" />Marcar todo</button>
@@ -78,7 +78,7 @@ function destino(n: NotificacionDto): { icono: string; color: string; ruta: unkn
                 <span class="mt-0.5 block text-xs text-tenue">{{ n.fechaUtc | hace }}</span>
               </span>
               @if (!n.leida) {
-                <span class="mt-1.5 size-2.5 shrink-0 rounded-full bg-bosque-600" aria-label="Sin leer"></span>
+                <span class="mt-1.5 size-2.5 shrink-0 rounded-full bg-bosque-600" aria-hidden="true"></span><span class="sr-only">Sin leer</span>
               }
             </button>
           </li>

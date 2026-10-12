@@ -293,7 +293,7 @@ interface Servicio {
             </label>
           }
         </fieldset>
-        <p class="text-xs text-tenue">Al pagar aceptas los <a routerLink="/terminos" class="enlace" target="_blank">términos</a>.</p>
+        <p class="text-xs text-tenue">Al pagar aceptas los <a routerLink="/terminos" class="enlace" target="_blank">términos<span class="sr-only"> (abre otra pestaña)</span></a>.</p>
         @if (errorCompra()) {
           <p class="error-campo" role="alert">{{ errorCompra() }}</p>
         }

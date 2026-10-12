@@ -2,15 +2,15 @@ import { ChangeDetectionStrategy, Component, computed, effect, input, signal } f
 import { AbstractControl } from '@angular/forms';
 
 /**
- * Mensaje de error de un control reactivo. Se muestra cuando el control fue tocado
- * (o el formulario se envió) e incluye los errores que devuelve la API (`servidor`).
+ * Mensaje de error de un control reactivo. Se muestra cuando la persona sale del campo (touched) o al enviar el
+ * formulario (markAllAsTouched), no mientras escribe, e incluye los errores que devuelve la API (`servidor`).
+ * La región existe siempre y se anuncia de forma amable (polite); `idError` debe ser `<id del campo>-error`
+ * para que `CampoAccesible` la asocie al campo.
  */
 @Component({
   selector: 'app-error-campo',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `@if (mensaje(); as m) {
-    <p class="error-campo" [id]="idError()" role="alert">{{ m }}</p>
-  }`,
+  template: `<p class="error-campo empty:hidden" [id]="idError()" aria-live="polite">{{ mensaje() }}</p>`,
 })
 export class ErrorCampo {
   readonly control = input.required<AbstractControl>();
@@ -28,7 +28,7 @@ export class ErrorCampo {
   protected readonly mensaje = computed(() => {
     this.cambio();
     const c = this.control();
-    if (!c.errors || !(c.touched || c.dirty)) return null;
+    if (!c.errors || !c.touched) return null;
     const e = c.errors;
     if (e['servidor']) return e['servidor'] as string;
     if (e['required']) return `${this.etiqueta()} es obligatorio.`;

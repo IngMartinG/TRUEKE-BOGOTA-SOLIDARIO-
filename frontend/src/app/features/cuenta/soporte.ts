@@ -9,10 +9,11 @@ import { AvisosService } from '../../core/avisos.service';
 import { erroresDeCampos, mensajeDe } from '../../core/http/problema';
 import { FechaPipe } from '../../shared/pipes';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
+import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { Icono } from '../../shared/ui/icono';
 
 @Component({
-  imports: [ReactiveFormsModule, ErrorCampo, Icono, FechaPipe],
+  imports: [ReactiveFormsModule, ErrorCampo, CampoAccesible, Icono, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="text-2xl font-extrabold">Soporte y PQR</h1>
@@ -27,7 +28,7 @@ import { Icono } from '../../shared/ui/icono';
           @for (t of tipos; track t.valor) {
             <label class="flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-3 transition"
               [class]="tipo() === t.valor ? 'border-bosque-500 bg-bosque-50 dark:bg-bosque-900/50' : 'border-borde hover:border-bosque-200'">
-              <input type="radio" class="sr-only" formControlName="tipo" [value]="t.valor" [attr.aria-label]="t.etiqueta" />
+              <input type="radio" class="sr-only" formControlName="tipo" [value]="t.valor" />
               <span>
                 <span class="block text-sm font-semibold">{{ t.etiqueta }}</span>
                 <span class="block text-xs text-tenue">{{ t.descripcion }}</span>
@@ -42,19 +43,19 @@ import { Icono } from '../../shared/ui/icono';
           <label for="pago-ref" class="etiqueta">Referencia del pago</label>
           <input id="pago-ref" class="entrada font-mono" formControlName="pagoReferencia" maxlength="100" placeholder="TRK-…" />
           <p class="ayuda">La encuentras en Cuenta → Facturación o en el correo de confirmación del pago.</p>
-          <app-error-campo [control]="form.controls.pagoReferencia" etiqueta="La referencia" />
+          <app-error-campo [control]="form.controls.pagoReferencia" etiqueta="La referencia" idError="pago-ref-error" />
         </div>
       }
       <div class="campo">
         <label for="asunto" class="etiqueta">Asunto</label>
         <input id="asunto" class="entrada" formControlName="asunto" maxlength="120" />
-        <app-error-campo [control]="form.controls.asunto" etiqueta="El asunto" />
+        <app-error-campo [control]="form.controls.asunto" etiqueta="El asunto" idError="asunto-error" />
       </div>
       <div class="campo">
         <label for="descripcion-pqr" class="etiqueta">Cuéntanos qué pasó</label>
         <textarea id="descripcion-pqr" class="entrada min-h-32" formControlName="descripcion" maxlength="2000"></textarea>
         <div class="flex justify-between">
-          <app-error-campo [control]="form.controls.descripcion" etiqueta="La descripción" />
+          <app-error-campo [control]="form.controls.descripcion" etiqueta="La descripción" idError="descripcion-pqr-error" />
           <span class="ml-auto ayuda">{{ form.controls.descripcion.value.length }}/2000</span>
         </div>
       </div>
