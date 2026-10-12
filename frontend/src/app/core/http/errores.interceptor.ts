@@ -31,7 +31,7 @@ export const erroresInterceptor: HttpInterceptorFn = (req, next) => {
 
       if (problema.codigo === 'foto_requerida') {
         avisos.info('Agrega tu foto de perfil', 'Es necesaria para publicar, solicitar, chatear y pagar: así la comunidad sabe con quién intercambia.');
-        void router.navigate(['/cuenta/perfil'], { fragment: 'foto' });
+        void router.navigate(['/cuenta/perfil'], { fragment: 'foto', queryParams: { volver: router.url } });
         return throwError(() => error);
       }
 
