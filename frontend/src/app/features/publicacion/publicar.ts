@@ -46,6 +46,7 @@ import { InsigniaModo } from '../../shared/ui/insignia-modo';
 import { Mapa } from '../../shared/ui/mapa';
 import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
 import { Volver } from '../../shared/ui/volver';
+import { desplazamiento } from '../../shared/movimiento';
 
 /** Lo que se guarda del formulario de publicar para retomarlo después (en este navegador). */
 interface Borrador {
@@ -658,7 +659,7 @@ export default class Publicar {
     this.paso.set(nuevo);
     this.pasoMaximo.update((m) => Math.max(m, nuevo));
     this.enfocarPaso();
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: desplazamiento() });
   }
 
   private pasoValido(paso: number): boolean {

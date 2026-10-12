@@ -31,10 +31,17 @@
     <link rel="alternate icon" href="favicon.ico" />
     <link rel="apple-touch-icon" href="icono-180.png" />
     <link rel="manifest" href="manifest.webmanifest" />
+    <!-- Aplica el modo oscuro antes de pintar (evita el destello claro); luego TemaService toma el control -->
+    <script>try{var t=localStorage.getItem('trueke.tema');if(t==='oscuro'||(t!=='claro'&&matchMedia('(prefers-color-scheme: dark)').matches))document.documentElement.classList.add('dark')}catch(e){}</script>
+    <style>
+      .carga{min-height:100vh;display:grid;place-items:center;background:#f6f4ec}
+      html.dark .carga{background:#0b1611}
+      html.dark .carga img{background:#f6f4ec;border-radius:1.5rem;padding:.75rem}
+    </style>
   </head>
   <body>
     <app-root>
-      <div style="min-height: 100vh; display: grid; place-items: center; background: #f6f4ec">
+      <div class="carga">
         <picture>
           <source srcset="logo-carga.webp" type="image/webp" />
           <img src="logo-completo.png" width="168" height="140" alt="Cargando Trueke Bogotá Solidario" fetchpriority="high" />

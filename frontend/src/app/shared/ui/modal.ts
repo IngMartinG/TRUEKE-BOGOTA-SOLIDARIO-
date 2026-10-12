@@ -18,17 +18,44 @@ import { Icono } from './icono';
   imports: [Icono],
   changeDetection: ChangeDetectionStrategy.OnPush,
   styles: `
+    /* Entra en 280 ms y sale en 180 ms (salir siempre más rápido). Con transiciones (no keyframes) también anima
+       al cerrar; donde no hay soporte para allow-discrete simplemente aparece y desaparece. */
+    dialog {
+      opacity: 0;
+      transform: translateY(16px);
+      transition:
+        opacity 180ms ease-in,
+        transform 180ms ease-in,
+        overlay 180ms allow-discrete,
+        display 180ms allow-discrete;
+    }
+    dialog[open] {
+      opacity: 1;
+      transform: none;
+      transition-duration: 280ms;
+      transition-timing-function: cubic-bezier(0.23, 1, 0.32, 1);
+    }
+    @starting-style {
+      dialog[open] {
+        opacity: 0;
+        transform: translateY(24px);
+      }
+    }
     dialog::backdrop {
       background: rgb(10 36 23 / 0.55);
       backdrop-filter: blur(3px);
+      opacity: 0;
+      transition:
+        opacity 180ms,
+        overlay 180ms allow-discrete,
+        display 180ms allow-discrete;
     }
-    dialog[open] {
-      animation: subir 0.28s cubic-bezier(0.2, 0.7, 0.2, 1);
+    dialog[open]::backdrop {
+      opacity: 1;
     }
-    @keyframes subir {
-      from {
+    @starting-style {
+      dialog[open]::backdrop {
         opacity: 0;
-        transform: translateY(24px);
       }
     }
   `,

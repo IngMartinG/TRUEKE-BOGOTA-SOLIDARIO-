@@ -4,11 +4,11 @@ import { iniciales } from '../pipes';
 import { Icono } from './icono';
 
 const FONDOS = [
-  'bg-bosque-100 text-bosque-800',
-  'bg-agua-100 text-agua-700',
-  'bg-sol-100 text-sol-600',
-  'bg-tierra-100 text-tierra-700',
-  'bg-cielo-100 text-cielo-700',
+  'bg-bosque-100 text-bosque-800 dark:bg-bosque-900 dark:text-bosque-200',
+  'bg-agua-100 text-agua-700 dark:bg-agua-700/30 dark:text-agua-100',
+  'bg-sol-100 text-sol-600 dark:bg-sol-500/20 dark:text-sol-300',
+  'bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100',
+  'bg-cielo-100 text-cielo-700 dark:bg-cielo-700/30 dark:text-cielo-100',
 ];
 
 /** Foto de perfil redonda; sin foto (o si no carga) muestra las iniciales con un color estable según el nombre. */

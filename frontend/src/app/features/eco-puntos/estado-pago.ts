@@ -22,7 +22,7 @@ const MAX_INTENTOS = 40; // ~2 minutos
         <span class="size-14 animate-spin rounded-full border-4 border-sol-100 border-t-sol-500" aria-hidden="true"></span>
         <h1 class="mt-6 text-2xl font-bold">Consultando tu pago…</h1>
       } @else if (error()) {
-        <span class="grid size-20 place-items-center rounded-full bg-tierra-100 text-tierra-600"><app-icono nombre="alerta" [tamano]="36" /></span>
+        <span class="grid size-20 place-items-center rounded-full bg-tierra-100 text-tierra-600 dark:bg-tierra-700/30 dark:text-tierra-100"><app-icono nombre="alerta" [tamano]="36" /></span>
         <h1 class="mt-6 text-2xl font-bold">No encontramos este pago</h1>
         <p class="mt-2 text-tenue">{{ error() }}</p>
         <a routerLink="/eco-puntos" class="btn btn-primario mt-8">Volver a Eco-Puntos</a>

@@ -49,7 +49,8 @@ import { Logo } from '../shared/ui/logo';
         <div class="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
           <button
             type="button"
-            class="btn-icono hidden sm:inline-flex"
+            class="btn-icono sm:inline-flex"
+            [class.hidden]="sesion.autenticado()"
             (click)="tema.alternar()"
             [attr.aria-label]="tema.oscuroActivo() ? 'Activar modo claro' : 'Activar modo oscuro'"
           >

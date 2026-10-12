@@ -28,6 +28,7 @@ import { Bloquear } from '../../shared/ui/bloquear';
 import { Denunciar } from '../../shared/ui/denunciar';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Icono } from '../../shared/ui/icono';
+import { desplazamiento } from '../../shared/movimiento';
 
 const TAMANO = 40;
 
@@ -460,7 +461,7 @@ export default class Mensajes {
       this.avisos.info('El mensaje original es más antiguo', 'Carga los mensajes anteriores para verlo.');
       return;
     }
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.scrollIntoView({ behavior: desplazamiento(), block: 'center' });
     this.resaltado.set(id!);
     setTimeout(() => this.resaltado.update((r) => (r === id ? null : r)), 1500);
   }
