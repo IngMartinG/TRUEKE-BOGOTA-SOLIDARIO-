@@ -67,7 +67,7 @@ import { Volver } from '../../shared/ui/volver';
               @for (d of datos(); track d.texto) {
                 <div class="min-w-0 rounded-2xl bg-superficie p-3 shadow-suave sm:min-w-20">
                   <dd class="font-display text-2xl font-extrabold">{{ d.valor }}</dd>
-                  <dt class="text-[11px] leading-tight text-tenue">{{ d.texto }}</dt>
+                  <dt class="text-xs leading-tight text-tenue">{{ d.texto }}</dt>
                 </div>
               }
             </dl>
@@ -116,11 +116,11 @@ import { Volver } from '../../shared/ui/volver';
               <dl class="mt-4 grid grid-cols-2 gap-2 text-center">
                 <div class="rounded-xl bg-superficie-2 p-3">
                   <dd class="font-display text-xl font-extrabold">{{ c.tasaConcrecion !== null && c.tasaConcrecion !== undefined ? c.tasaConcrecion + ' %' : '—' }}</dd>
-                  <dt class="text-[11px] leading-tight text-tenue">Intercambios que concretó (último año)</dt>
+                  <dt class="text-xs leading-tight text-tenue">Intercambios que concretó (último año)</dt>
                 </div>
                 <div class="rounded-xl bg-superficie-2 p-3">
                   <dd class="font-display text-xl font-extrabold">{{ respuesta(c.respuestaHoras) }}</dd>
-                  <dt class="text-[11px] leading-tight text-tenue">Tiempo típico en responder</dt>
+                  <dt class="text-xs leading-tight text-tenue">Tiempo típico en responder</dt>
                 </div>
               </dl>
               @if ((perfil.value()?.totalCalificaciones ?? 0) > 0) {

@@ -53,7 +53,7 @@ const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'o
                 <div class="flex flex-1 flex-col items-center gap-1">
                   <div class="w-full rounded-t bg-bosque-500/80" [style.height.%]="altura((m.aprobadoCop ?? 0) - (m.reembolsadoCop ?? 0))"
                     [title]="mes(m.mes, m.anio) + ': ' + ((m.aprobadoCop ?? 0) - (m.reembolsadoCop ?? 0) | cop)"></div>
-                  <span class="text-[10px] text-tenue">{{ mes(m.mes, m.anio) }}</span>
+                  <span class="text-xs text-tenue">{{ mes(m.mes, m.anio) }}</span>
                 </div>
               }
             </div>

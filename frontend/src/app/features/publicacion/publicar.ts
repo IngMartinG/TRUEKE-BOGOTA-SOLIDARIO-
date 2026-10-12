@@ -248,17 +248,17 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
                           </div>
                         }
                         @if (f.error) {
-                          <div class="absolute inset-0 grid place-items-center bg-tierra-700/80 p-2 text-center text-[11px] font-semibold text-white">{{ f.error }}</div>
+                          <div class="absolute inset-0 grid place-items-center bg-tierra-700/80 p-2 text-center text-xs font-semibold text-white">{{ f.error }}</div>
                         }
                         <div class="absolute inset-x-1.5 bottom-1.5 flex justify-between opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100 sm:group-focus-within:opacity-100">
                           @if (i > 0 && !f.error) {
-                            <button type="button" class="grid size-8 place-items-center rounded-full bg-white/90 text-bosque-900 shadow" (click)="hacerPortada(i)" aria-label="Usar como portada">
+                            <button type="button" class="grid size-8 place-items-center rounded-full bg-white/90 text-bosque-900 shadow pointer-coarse:size-11" (click)="hacerPortada(i)" aria-label="Usar como portada">
                               <app-icono nombre="estrella" [tamano]="14" />
                             </button>
                           } @else {
                             <span></span>
                           }
-                          <button type="button" class="grid size-8 place-items-center rounded-full bg-white/90 text-tierra-600 shadow" (click)="quitar(i)" aria-label="Quitar foto">
+                          <button type="button" class="grid size-8 place-items-center rounded-full bg-white/90 text-tierra-600 shadow pointer-coarse:size-11" (click)="quitar(i)" aria-label="Quitar foto">
                             <app-icono nombre="basura" [tamano]="14" />
                           </button>
                         </div>
