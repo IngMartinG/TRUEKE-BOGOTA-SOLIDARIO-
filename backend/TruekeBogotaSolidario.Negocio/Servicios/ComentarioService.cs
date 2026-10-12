@@ -78,6 +78,12 @@ public sealed class ComentarioService : IComentarioService
         var comentario = new Comentario(pub.Id, actorId, r.Texto, ahora);
         _comentarios.Agregar(comentario);
         await _uow.GuardarCambiosAsync();
+
+        // Al dueño, salvo que comente su propia publicación (p. ej. para responder una pregunta). Sin nombre ni texto
+        // de quien comentó: la bandeja (y la exportación de datos) del dueño no guarda datos de terceros.
+        if (pub.PropietarioId != actorId)
+            await _notificador.NotificarAsync(pub.PropietarioId, TiposNotificacion.ComentarioNuevo,
+                $"Nuevo comentario en \"{pub.Titulo}\".", pub.Id);
         return ADto(comentario, actor, actorId, esModerador: false, ahora);
     }
 

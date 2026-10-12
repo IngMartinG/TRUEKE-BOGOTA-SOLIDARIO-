@@ -32,6 +32,7 @@ function destino(n: NotificacionDto): { icono: string; color: string; ruta: unkn
     return { icono: 'buscar', color: 'bg-bosque-100 text-bosque-700', ruta: ['/cuenta/busquedas'], ...(n.recursoId ? { query: { ver: n.recursoId } } : {}) };
   if (t === 'PlanPorVencer') return { icono: 'corona', color: 'bg-sol-100 text-sol-600', ruta: ['/eco-puntos'] };
   if (t.startsWith('Pago')) return { icono: 'billetera', color: 'bg-cielo-100 text-cielo-700', ruta: ['/eco-puntos'] };
+  if (t === 'ComentarioNuevo' && n.recursoId) return { icono: 'mensaje', color: 'bg-bosque-100 text-bosque-700', ruta: ['/publicacion', n.recursoId] };
   if (t.startsWith('Publicacion') && n.recursoId) return { icono: 'escudo', color: 'bg-agua-100 text-agua-700', ruta: ['/publicacion', n.recursoId] };
   if (t.startsWith('Verificacion')) return { icono: 'verificado', color: 'bg-agua-100 text-agua-700', ruta: ['/cuenta/perfil'] };
   if (t.startsWith('Mensaje')) return { icono: 'mensaje', color: 'bg-agua-100 text-agua-700', ruta: ['/mensajes'] };

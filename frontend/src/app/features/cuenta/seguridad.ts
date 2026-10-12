@@ -111,7 +111,7 @@ type Paso2fa = 'inicio' | 'escanear' | 'codigos';
       @if (dosFactores() && paso2fa() === 'inicio') {
         <div class="mt-5 flex flex-wrap gap-2 border-t border-borde pt-5">
           <button type="button" class="btn btn-secundario btn-sm" (click)="abrirCodigo('regenerar')"><app-icono nombre="llave" [tamano]="14" />Nuevos códigos de recuperación</button>
-          <button type="button" class="btn btn-fantasma btn-sm text-tierra-600" (click)="abrirCodigo('desactivar')">Desactivar</button>
+          <button type="button" class="btn btn-fantasma btn-sm text-tierra-600 dark:text-tierra-500" (click)="abrirCodigo('desactivar')">Desactivar</button>
         </div>
       }
     </section>

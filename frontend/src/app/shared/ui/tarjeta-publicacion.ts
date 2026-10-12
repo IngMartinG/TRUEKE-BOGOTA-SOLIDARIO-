@@ -36,7 +36,7 @@ import { InsigniaModo } from './insignia-modo';
           <button
             type="button"
             class="absolute top-2.5 right-2.5 z-20 grid size-9 place-items-center rounded-full bg-white/90 shadow-md backdrop-blur transition hover:scale-110 dark:bg-bosque-950/80"
-            [class]="favorita() ? 'text-tierra-600' : 'text-tenue'"
+            [class]="favorita() ? 'text-tierra-600 dark:text-tierra-500' : 'text-tenue'"
             [attr.aria-pressed]="favorita()"
             [attr.aria-label]="favorita() ? 'Quitar de favoritos' : 'Guardar en favoritos'"
             (click)="favoritos.alternar(p.id!, favorita())"

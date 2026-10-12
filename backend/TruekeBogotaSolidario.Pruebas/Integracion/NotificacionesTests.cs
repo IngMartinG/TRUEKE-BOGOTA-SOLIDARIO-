@@ -85,6 +85,26 @@ public class NotificacionesTests : IClassFixture<FabricaApi>
     }
 
     [Fact]
+    public async Task Duenio_recibe_aviso_cuando_otra_persona_comenta_y_no_cuando_comenta_el_mismo()
+    {
+        var sesDuenio = await Api.RegistrarSesionAsync(_fabrica, "duenia");
+        var duenio = Api.ConToken(_fabrica, sesDuenio.Token);
+        var otro = await Api.RegistrarAsync(_fabrica, "curioso");
+        var (con, recibidas) = await ConectarAsync(sesDuenio.Token);
+        await using var _ = con;
+
+        var pub = await Api.CrearPublicacionAsync(duenio);
+        (await otro.PostAsJsonAsync($"/api/v1/publicaciones/{pub}/comentarios", new { texto = "¿Sigue disponible?" })).EnsureSuccessStatusCode();
+        Assert.True(await EsperarAsync(() => recibidas.Any(n => n.Tipo == TiposNotificacion.ComentarioNuevo && n.RecursoId == pub)));
+        Assert.DoesNotContain(recibidas, n => n.Mensaje.Contains("¿Sigue disponible?")); // sin texto de terceros
+
+        // Responder en su propia publicación no le genera un aviso
+        (await duenio.PostAsJsonAsync($"/api/v1/publicaciones/{pub}/comentarios", new { texto = "Sí, aún la tengo." })).EnsureSuccessStatusCode();
+        await Task.Delay(300);
+        Assert.Single(recibidas, n => n.Tipo == TiposNotificacion.ComentarioNuevo);
+    }
+
+    [Fact]
     public async Task Las_notificaciones_quedan_en_la_bandeja_aunque_el_usuario_este_desconectado()
     {
         var duenio = await Api.RegistrarAsync(_fabrica, "desconectada");   // sin conexión al hub

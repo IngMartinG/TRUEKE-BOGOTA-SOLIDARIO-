@@ -21,6 +21,8 @@ public static class TiposNotificacion
     public const string PagoEnRevision = "PagoEnRevision";
     public const string PublicacionOcultada = "PublicacionOcultada";
     public const string PublicacionRestaurada = "PublicacionRestaurada";
+    /// <summary>Al dueño, cuando otra persona comenta su publicación (RecursoId = PublicacionId).</summary>
+    public const string ComentarioNuevo = "ComentarioNuevo";
     public const string ComentarioOcultado = "ComentarioOcultado";
     public const string MensajeOcultado = "MensajeOcultado";
     public const string VerificacionAprobada = "VerificacionAprobada";

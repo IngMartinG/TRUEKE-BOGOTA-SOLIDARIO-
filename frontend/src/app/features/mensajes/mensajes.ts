@@ -185,7 +185,7 @@ const TAMANO = 40;
                       <button type="button" class="ml-1 hidden self-center rounded-full p-1.5 text-tenue opacity-0 transition group-hover:opacity-100 focus:opacity-100 hover:bg-superficie-2 hover:text-bosque-600 sm:block"
                         (click)="responder(m)" aria-label="Responder este mensaje" title="Responder"><app-icono nombre="responder" [tamano]="15" /></button>
                     }
-                    <button type="button" class="ml-1 self-center text-[11px] text-tenue opacity-0 transition group-hover:opacity-100 focus:opacity-100 hover:text-tierra-600" (click)="denunciar(m)">Reportar</button>
+                    <button type="button" class="ml-1 self-center text-[11px] text-tenue opacity-0 transition group-hover:opacity-100 focus:opacity-100 hover:text-tierra-600 dark:hover:text-tierra-500" (click)="denunciar(m)">Reportar</button>
                   }
                 </div>
               } @empty {
