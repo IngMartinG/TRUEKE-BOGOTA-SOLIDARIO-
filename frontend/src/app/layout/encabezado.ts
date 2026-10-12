@@ -1,6 +1,5 @@
 import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { SesionService } from '../core/sesion.service';
 import { TemaService } from '../core/tema.service';
@@ -13,7 +12,7 @@ import { Logo } from '../shared/ui/logo';
 
 @Component({
   selector: 'app-encabezado',
-  imports: [RouterLink, RouterLinkActive, FormsModule, CdkMenuTrigger, CdkMenu, CdkMenuItem, Logo, Icono, Avatar, Buscador, NumeroPipe],
+  imports: [RouterLink, RouterLinkActive, CdkMenuTrigger, CdkMenu, CdkMenuItem, Logo, Icono, Avatar, Buscador, NumeroPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="sticky top-0 z-50 border-b border-borde bg-fondo/85 backdrop-blur-xl">
