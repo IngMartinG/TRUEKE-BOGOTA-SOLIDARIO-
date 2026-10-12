@@ -118,26 +118,26 @@ import { Logo } from '../shared/ui/logo';
         </div>
         @if (sesion.correoVerificado()) {
           @for (item of menu; track item.ruta) {
-            <a cdkMenuItem [routerLink]="item.ruta" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium outline-none hover:bg-superficie-2 focus:bg-superficie-2">
+            <a cdkMenuItem [routerLink]="item.ruta" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-superficie-2 focus:bg-superficie-2 focus-visible:-outline-offset-2">
               <app-icono [nombre]="item.icono" [tamano]="18" class="text-tenue" />{{ item.texto }}
             </a>
           }
         } @else {
-          <a cdkMenuItem routerLink="/verifica-tu-correo" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium outline-none hover:bg-superficie-2 focus:bg-superficie-2">
-            <app-icono nombre="correo" [tamano]="18" class="text-sol-600" />Confirma tu correo para usar tu cuenta
+          <a cdkMenuItem routerLink="/verifica-tu-correo" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-superficie-2 focus:bg-superficie-2 focus-visible:-outline-offset-2">
+            <app-icono nombre="correo" [tamano]="18" class="text-sol-600 dark:text-sol-300" />Confirma tu correo para usar tu cuenta
           </a>
         }
         @if (sesion.esModerador() && sesion.correoVerificado()) {
-          <a cdkMenuItem routerLink="/admin" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-agua-700 outline-none hover:bg-superficie-2 focus:bg-superficie-2 dark:text-agua-100">
+          <a cdkMenuItem routerLink="/admin" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-agua-700 hover:bg-superficie-2 focus:bg-superficie-2 focus-visible:-outline-offset-2 dark:text-agua-100">
             <app-icono nombre="escudo" [tamano]="18" />Moderación
           </a>
         }
-        <button cdkMenuItem type="button" (click)="tema.alternar()" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium outline-none hover:bg-superficie-2 focus:bg-superficie-2 sm:hidden">
+        <button cdkMenuItem type="button" (click)="tema.alternar()" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-superficie-2 focus:bg-superficie-2 focus-visible:-outline-offset-2 sm:hidden">
           <app-icono [nombre]="tema.oscuroActivo() ? 'sol' : 'luna'" [tamano]="18" class="text-tenue" />
           {{ tema.oscuroActivo() ? 'Modo claro' : 'Modo oscuro' }}
         </button>
         <div class="my-1 border-t border-borde"></div>
-        <button cdkMenuItem type="button" (click)="sesion.salir()" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-tierra-600 outline-none hover:bg-tierra-50 focus:bg-tierra-50 dark:hover:bg-tierra-700/20">
+        <button cdkMenuItem type="button" (click)="sesion.salir()" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-tierra-600 dark:text-tierra-500 hover:bg-tierra-50 focus:bg-tierra-50 focus-visible:-outline-offset-2 dark:text-tierra-500 dark:hover:bg-tierra-700/20">
           <app-icono nombre="salir" [tamano]="18" />Cerrar sesión
         </button>
       </div>

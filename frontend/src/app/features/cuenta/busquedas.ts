@@ -58,7 +58,7 @@ export function parametrosDe(b: BusquedaGuardadaDto): Record<string, string> {
               <span class="relative block h-6 w-11 rounded-full bg-borde transition peer-checked:bg-bosque-600 peer-focus-visible:ring-2 peer-focus-visible:ring-bosque-400 peer-disabled:opacity-60
                 after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5" aria-hidden="true"></span>
             </label>
-            <button type="button" class="btn-icono text-tierra-600" (click)="eliminar(b)" [disabled]="ocupada() === b.id" [attr.aria-label]="'Borrar la búsqueda ' + b.nombre">
+            <button type="button" class="btn-icono text-tierra-600 dark:text-tierra-500" (click)="eliminar(b)" [disabled]="ocupada() === b.id" [attr.aria-label]="'Borrar la búsqueda ' + b.nombre">
               <app-icono nombre="basura" [tamano]="18" />
             </button>
           </li>

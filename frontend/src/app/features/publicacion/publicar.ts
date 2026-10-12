@@ -214,7 +214,7 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
 
                 @if (!config.subidasHabilitadas()) {
                   <div class="mt-5 flex items-start gap-3 rounded-2xl bg-sol-50 p-4 text-sm dark:bg-sol-500/10">
-                    <app-icono nombre="info" class="shrink-0 text-sol-600" />
+                    <app-icono nombre="info" class="shrink-0 text-sol-600 dark:text-sol-300" />
                     <p>La subida de fotos no está disponible en este momento. Puedes publicar sin fotos y agregarlas después editando la publicación.</p>
                   </div>
                 } @else {

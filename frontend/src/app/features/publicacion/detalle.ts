@@ -77,7 +77,7 @@ import { Volver } from '../../shared/ui/volver';
 
         @if (p.oculta) {
           <div class="mb-5 flex items-start gap-3 rounded-2xl border border-tierra-500/30 bg-tierra-50 p-4 text-sm dark:bg-tierra-700/20" role="alert">
-            <app-icono nombre="ojoNo" class="text-tierra-600" />
+            <app-icono nombre="ojoNo" class="text-tierra-600 dark:text-tierra-500" />
             <div><strong>Publicación oculta por moderación.</strong> {{ p.motivoOcultamiento }}</div>
           </div>
         }
@@ -298,7 +298,7 @@ import { Volver } from '../../shared/ui/volver';
 
             <div class="flex flex-wrap justify-center gap-4 text-xs">
               @if (sesion.autenticado() && !p.esMia) {
-                <button type="button" class="flex items-center gap-1 text-tenue hover:text-tierra-600" (click)="denunciaAbierta.set(true)">
+                <button type="button" class="flex items-center gap-1 text-tenue hover:text-tierra-600 dark:hover:text-tierra-500" (click)="denunciaAbierta.set(true)">
                   <app-icono nombre="bandera" [tamano]="14" /> Reportar publicación
                 </button>
               }
