@@ -39,7 +39,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
             <strong class="text-sol-300">Eco-Puntos</strong>.
           </p>
 
-          <form class="mt-8 flex max-w-xl gap-2 rounded-full bg-white p-1.5 shadow-elevada" role="search" (ngSubmit)="buscar()">
+          <form class="mt-8 flex max-w-xl gap-2 rounded-full bg-white p-1.5 shadow-elevada focus-within:ring-4 focus-within:ring-sol-300" role="search" (ngSubmit)="buscar()">
             <label for="buscar-hero" class="sr-only">¿Qué estás buscando?</label>
             <div class="flex flex-1 items-center gap-2 pl-4 text-bosque-900">
               <app-icono nombre="buscar" [tamano]="20" class="text-bosque-600" />
@@ -50,7 +50,7 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
                 [(ngModel)]="texto"
                 maxlength="100"
                 placeholder="Bicicleta, libros del colegio, coche de bebé..."
-                class="w-full bg-transparent py-2 text-base text-bosque-950 outline-none placeholder:text-bosque-900/40"
+                class="w-full bg-transparent py-2 text-base text-bosque-950 outline-none placeholder:text-bosque-900/70"
               />
             </div>
             <button type="submit" class="btn btn-primario btn-lg">Buscar</button>
