@@ -13,10 +13,11 @@ import { Encabezado } from './layout/encabezado';
 import { Pie } from './layout/pie';
 import { Avisos } from './shared/ui/avisos';
 import { Icono } from './shared/ui/icono';
+import { LogroIntercambio } from './shared/ui/logro-intercambio';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, Encabezado, Pie, BarraMovil, Avisos, Icono],
+  imports: [RouterOutlet, RouterLink, Encabezado, Pie, BarraMovil, Avisos, Icono, LogroIntercambio],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <a href="#contenido" class="sr-only z-[200] rounded-full bg-bosque-700 px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3">
@@ -61,6 +62,7 @@ import { Icono } from './shared/ui/icono';
     <app-pie />
     <app-barra-movil />
     <app-avisos />
+    <app-logro-intercambio />
   `,
 })
 export class App {

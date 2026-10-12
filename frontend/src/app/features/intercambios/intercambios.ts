@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, input, signal, untracked } from '@angular/core';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -127,6 +127,7 @@ export default class Intercambios {
   private readonly sesion = inject(SesionService);
 
   readonly tab = input<string>();
+  readonly calificar = input<string>();
   protected readonly pestana = computed<Pestana>(() => (this.tab() === 'enviadas' ? 'enviadas' : 'recibidas'));
   protected readonly filtroEstado = signal<'activas' | 'todas' | 'cerradas'>('activas');
   protected readonly filtros = [
@@ -204,6 +205,26 @@ export default class Intercambios {
       )
       .subscribe(() => this.recargar());
     tiempoReal.resincronizar$.pipe(takeUntilDestroyed()).subscribe(() => this.recargar());
+
+    // ?calificar=<id> (desde la pantalla de logro): abre la calificación de ese intercambio. Si no está en esta
+    // pestaña (la persona era quien solicitó o quien publicó), se busca una vez en la otra.
+    let buscadoEnOtra = false;
+    effect(() => {
+      const id = this.calificar();
+      const lista = this.lista.value();
+      if (!id || !lista || this.lista.isLoading()) return;
+      untracked(() => {
+        const s = lista.find((x) => x.id === id);
+        if (s?.puedoCalificar) {
+          this.filtroEstado.set('todas');
+          void this.router.navigate([], { queryParams: { calificar: null }, queryParamsHandling: 'merge', replaceUrl: true });
+          this.ejecutar(s, 'calificar');
+        } else if (!s && !buscadoEnOtra) {
+          buscadoEnOtra = true;
+          void this.router.navigate([], { queryParams: { tab: this.pestana() === 'enviadas' ? 'recibidas' : 'enviadas' }, queryParamsHandling: 'merge', replaceUrl: true });
+        }
+      });
+    });
   }
 
   protected cambiar(p: Pestana): void {
