@@ -25,10 +25,12 @@ test('cuenta nueva: registro, correo de verificación, foto obligatoria y primer
 
   await test.step('sin foto de perfil, publicar la lleva a subirla', async () => {
     await page.goto('/publicar');
-    await expect(page).toHaveURL(/\/cuenta\/perfil#foto/);
+    // Llega a subir la foto con ?volver=, y al subirla regresa sola a publicar
+    await expect(page).toHaveURL(/\/cuenta\/perfil\?volver=%2Fpublicar#foto/);
     await expect(page.getByRole('button', { name: 'Subir foto' })).toBeVisible(); // la pantalla terminó de cargar
     await page.locator('input[type=file]').first().setInputFiles({ name: 'yo.png', mimeType: 'image/png', buffer: fotoPng(500, 500, [200, 120, 60]) });
-    await expect(page.getByText('Foto actualizada')).toBeVisible();
+    await expect(page.getByText('¡Foto lista!')).toBeVisible();
+    await expect(page).toHaveURL(/\/publicar$/);
   });
 
   await test.step('publica con foto en 5 pasos', async () => {

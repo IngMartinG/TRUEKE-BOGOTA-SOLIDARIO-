@@ -38,6 +38,8 @@ test('trueke completo: solicitar, aceptar, chatear en tiempo real, confirmar la 
     await ana.page.goto('/intercambios');
     const tarjeta = ana.page.locator('app-tarjeta-solicitud', { hasText: titulo });
     await tarjeta.getByRole('button', { name: 'Aceptar y reservar' }).click();
+    // Pide confirmación antes de reservar (afecta a quienes quedan en lista de espera)
+    await ana.page.getByRole('dialog').getByRole('button', { name: 'Aceptar y reservar' }).click();
     await expect(tarjeta.getByRole('link', { name: 'Abrir chat' })).toBeVisible();
     await tarjeta.getByRole('link', { name: 'Abrir chat' }).click();
     await expect(ana.page).toHaveURL(/\/mensajes\/.+/);
@@ -60,10 +62,12 @@ test('trueke completo: solicitar, aceptar, chatear en tiempo real, confirmar la 
   await test.step('ambos confirman la entrega y se otorgan los Eco-Puntos', async () => {
     await ana.page.goto('/intercambios');
     await ana.page.locator('app-tarjeta-solicitud', { hasText: titulo }).getByRole('button', { name: 'Confirmar entrega' }).click();
+    await ana.page.getByRole('dialog').getByRole('button', { name: 'Sí, confirmar entrega' }).click();
     await expect(ana.page.getByRole('status').filter({ hasText: 'Entrega confirmada' })).toBeVisible();
 
     await beto.page.goto('/intercambios?tab=enviadas');
     await beto.page.locator('app-tarjeta-solicitud', { hasText: titulo }).getByRole('button', { name: 'Confirmar entrega' }).click();
+    await beto.page.getByRole('dialog').getByRole('button', { name: 'Sí, confirmar entrega' }).click();
     await expect(beto.page.locator('app-tarjeta-solicitud', { hasText: titulo }).getByRole('button', { name: 'Calificar' })).toBeVisible();
 
     // Trueke = 10 Eco-Puntos para cada persona (PoliticaEcoPuntos), solo al completarse.
@@ -104,6 +108,8 @@ test('trueke con objeto: ofrecer uno propio, verlo, aceptarlo y que ambos objeto
     const tarjeta = ana.page.locator('app-tarjeta-solicitud', { hasText: pedida });
     await expect(tarjeta.getByRole('link', { name: `Te ofrece: ${ofrecida}` })).toBeVisible();
     await tarjeta.getByRole('button', { name: 'Aceptar y reservar' }).click();
+    // Pide confirmación antes de reservar (afecta a quienes quedan en lista de espera)
+    await ana.page.getByRole('dialog').getByRole('button', { name: 'Aceptar y reservar' }).click();
     await expect(tarjeta.getByRole('link', { name: 'Abrir chat' })).toBeVisible();
     await expect.poll(() => estado(beto, idOfrecida)).toBe('EnNegociacion');
     // Aunque ya salió del catálogo, Ana puede ver lo que va a recibir
@@ -114,9 +120,11 @@ test('trueke con objeto: ofrecer uno propio, verlo, aceptarlo y que ambos objeto
   await test.step('ambos confirman y los dos objetos quedan intercambiados', async () => {
     await ana.page.goto('/intercambios');
     await ana.page.locator('app-tarjeta-solicitud', { hasText: pedida }).getByRole('button', { name: 'Confirmar entrega' }).click();
+    await ana.page.getByRole('dialog').getByRole('button', { name: 'Sí, confirmar entrega' }).click();
     await expect(ana.page.getByRole('status').filter({ hasText: 'Entrega confirmada' })).toBeVisible();
     await beto.page.goto('/intercambios?tab=enviadas');
     await beto.page.locator('app-tarjeta-solicitud', { hasText: pedida }).getByRole('button', { name: 'Confirmar entrega' }).click();
+    await beto.page.getByRole('dialog').getByRole('button', { name: 'Sí, confirmar entrega' }).click();
     await expect.poll(() => estado(beto, idOfrecida)).toBe('Intercambiada');
     await expect.poll(() => estado(ana, idPedida)).toBe('Intercambiada');
   });
