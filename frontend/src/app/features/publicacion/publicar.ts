@@ -1,18 +1,21 @@
 import {
+  afterNextRender,
   ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
   effect,
+  ElementRef,
   inject,
   input,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { catchError, firstValueFrom, of } from 'rxjs';
+import { catchError, debounceTime, firstValueFrom, of } from 'rxjs';
 import {
   CENTRO_LOCALIDAD,
   CODIGO_BOGOTA,
@@ -34,7 +37,7 @@ import { erroresDeCampos, mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
 import { SubidasService } from '../../core/subidas.service';
 import { comprimirImagen, urlPublica } from '../../shared/imagenes';
-import { CopPipe } from '../../shared/pipes';
+import { CopPipe, HacePipe } from '../../shared/pipes';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
 import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { Icono } from '../../shared/ui/icono';
@@ -44,6 +47,16 @@ import { Mapa } from '../../shared/ui/mapa';
 import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
 import { Volver } from '../../shared/ui/volver';
 import { desplazamiento } from '../../shared/movimiento';
+
+/** Lo que se guarda del formulario de publicar para retomarlo después (en este navegador). */
+interface Borrador {
+  v: 1;
+  fecha: string;
+  valores: Partial<Record<string, unknown>> & { titulo?: string; descripcion?: string; municipioCodigo?: string };
+  fotos: string[];
+  ubicacion: [number, number] | null;
+  pasoMaximo: number;
+}
 
 interface Foto {
   clave: string;
@@ -57,7 +70,7 @@ interface Foto {
 const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
 
 @Component({
-  imports: [Volver, ReactiveFormsModule, RouterLink, Icono, ErrorCampo, CampoAccesible, Mapa, InsigniaModo, ImagenPublicacion, CopPipe, SelectorMunicipio],
+  imports: [Volver, ReactiveFormsModule, RouterLink, Icono, ErrorCampo, CampoAccesible, Mapa, InsigniaModo, ImagenPublicacion, CopPipe, HacePipe, SelectorMunicipio],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor max-w-3xl py-6 sm:py-10">
@@ -81,15 +94,27 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
       </ol>
       <p class="mt-2 text-sm font-semibold sm:hidden">Paso {{ paso() + 1 }} de {{ pasos.length }}: {{ pasos[paso()] }}</p>
 
+      @if (borradorPendiente(); as b) {
+        <div class="mt-6 flex flex-col gap-3 rounded-2xl border border-bosque-200 bg-bosque-50 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-bosque-800 dark:bg-bosque-950/50" role="status">
+          <p class="text-sm">
+            <strong>Tienes un borrador sin publicar</strong>{{ b.valores.titulo ? ': «' + b.valores.titulo + '»' : '' }}, guardado {{ b.fecha | hace }}.
+          </p>
+          <div class="flex shrink-0 gap-2">
+            <button type="button" class="btn btn-fantasma btn-sm" (click)="descartarBorrador()">Empezar de cero</button>
+            <button type="button" class="btn btn-primario btn-sm" (click)="retomarBorrador(b)">Retomar</button>
+          </div>
+        </div>
+      }
+
       @if (cargandoEdicion()) {
         <div class="mt-8 space-y-4"><div class="esqueleto h-40"></div><div class="esqueleto h-12"></div></div>
       } @else {
-        <form [formGroup]="form" (ngSubmit)="publicar()" class="mt-8" novalidate>
+        <form #formulario [formGroup]="form" (ngSubmit)="publicar()" class="mt-8" novalidate>
           @switch (paso()) {
             <!-- ========== 1. MODO ========== -->
             @case (0) {
               <fieldset class="animate-aparecer">
-                <legend class="text-xl font-bold">¿Qué quieres hacer con tu objeto?</legend>
+                <legend class="text-xl font-bold" data-titulo-paso>¿Qué quieres hacer con tu objeto?</legend>
                 <div class="mt-5 grid gap-3">
                   @for (m of modos; track m) {
                     <label class="group flex cursor-pointer items-center gap-4 rounded-tarjeta border-2 bg-superficie p-5 transition"
@@ -117,6 +142,7 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
             <!-- ========== 2. DETALLES ========== -->
             @case (1) {
               <div class="animate-aparecer space-y-6">
+                <h2 class="sr-only" data-titulo-paso>Paso 2: detalles del objeto</h2>
                 <div class="campo">
                   <label class="etiqueta" for="titulo">Título</label>
                   <input id="titulo" class="entrada text-base" formControlName="titulo" maxlength="120" placeholder="Ej: Bicicleta de ruta talla M, poco uso" aria-describedby="titulo-error" />
@@ -208,7 +234,7 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
             <!-- ========== 3. FOTOS ========== -->
             @case (2) {
               <div class="animate-aparecer">
-                <h2 class="text-xl font-bold">Agrega fotos</h2>
+                <h2 class="text-xl font-bold" data-titulo-paso>Agrega fotos</h2>
                 <p class="mt-1 text-sm text-tenue">Hasta {{ config.maxImagenes() }} fotos. La primera será la portada. Las publicaciones con fotos reciben muchas más solicitudes.</p>
 
                 @if (!config.subidasHabilitadas()) {
@@ -271,6 +297,7 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
             <!-- ========== 4. UBICACIÓN ========== -->
             @case (3) {
               <div class="animate-aparecer space-y-5">
+                <h2 class="sr-only" data-titulo-paso>Paso 4: ubicación</h2>
                 <div>
                   <app-selector-municipio id="pub-ubicacion" formControlName="municipioCodigo" (cambio)="municipio.set($event)"
                     [invalido]="form.controls.municipioCodigo.invalid && form.controls.municipioCodigo.touched" />
@@ -311,7 +338,7 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
             <!-- ========== 5. REVISAR ========== -->
             @case (4) {
               <div class="animate-aparecer">
-                <h2 class="text-xl font-bold">Así se verá tu publicación</h2>
+                <h2 class="text-xl font-bold" data-titulo-paso>Así se verá tu publicación</h2>
                 <div class="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-[16rem_1fr]">
                   <div class="tarjeta overflow-hidden">
                     <app-imagen-publicacion class="aspect-[4/3]" [src]="fotosListas()[0]" [miniatura]="true" [modo]="modoActual()" [categoriaId]="categoriaActual()" />
@@ -439,6 +466,15 @@ export default class Publicar {
   protected readonly fotosListas = computed(() => this.fotos().filter((f) => f.url && !f.error).map((f) => f.url!));
 
   private readonly vistasLocales = new Set<string>();
+  private readonly formulario = viewChild<ElementRef<HTMLFormElement>>('formulario');
+
+  /** Borrador guardado en este navegador (por cuenta), pendiente de que la persona decida si lo retoma. */
+  protected readonly borradorPendiente = signal<Borrador | null>(null);
+  /** No se guarda nada mientras se decide qué hacer con un borrador anterior (para no pisarlo). */
+  private guardarBorrador = false;
+  private get claveBorrador(): string {
+    return 'trueke.borrador-publicacion.' + (this.sesion.usuario()?.id ?? 'anonimo');
+  }
 
   constructor() {
     inject(DestroyRef).onDestroy(() => this.vistasLocales.forEach((u) => URL.revokeObjectURL(u)));
@@ -482,6 +518,91 @@ export default class Publicar {
       const id = this.id();
       if (id) untracked(() => void this.cargarParaEditar(id));
     });
+
+    // Borrador: solo al publicar algo nuevo. Se guarda (sin bloquear) cada vez que cambia algo.
+    afterNextRender(() => {
+      if (this.id()) return;
+      const b = this.leerBorrador();
+      if (b) this.borradorPendiente.set(b);
+      else this.guardarBorrador = true;
+    });
+    this.form.valueChanges.pipe(debounceTime(600), takeUntilDestroyed()).subscribe(() => this.escribirBorrador());
+    effect(() => {
+      this.fotosListas();
+      this.ubicacion();
+      this.pasoMaximo();
+      untracked(() => this.escribirBorrador());
+    });
+  }
+
+  private leerBorrador(): Borrador | null {
+    try {
+      const b = JSON.parse(localStorage.getItem(this.claveBorrador) ?? 'null') as Borrador | null;
+      // Un borrador vacío (sin título, descripción ni fotos) no vale la pena ofrecerlo
+      return b?.v === 1 && (b.valores.titulo?.trim() || b.valores.descripcion?.trim() || b.fotos.length) ? b : null;
+    } catch {
+      return null;
+    }
+  }
+
+  private escribirBorrador(): void {
+    if (!this.guardarBorrador || this.id()) return;
+    const b: Borrador = {
+      v: 1,
+      fecha: new Date().toISOString(),
+      valores: this.form.getRawValue(),
+      fotos: this.fotosListas(),
+      ubicacion: this.ubicacion(),
+      pasoMaximo: this.pasoMaximo(),
+    };
+    try {
+      localStorage.setItem(this.claveBorrador, JSON.stringify(b));
+    } catch {
+      // Almacenamiento lleno o bloqueado: se sigue sin borrador.
+    }
+  }
+
+  private borrarBorrador(): void {
+    try {
+      localStorage.removeItem(this.claveBorrador);
+    } catch {
+      // Sin acceso al almacenamiento: no hay nada que borrar.
+    }
+  }
+
+  protected retomarBorrador(b: Borrador): void {
+    this.municipioPrevio = b.valores.municipioCodigo ?? this.municipioPrevio;
+    this.form.patchValue(b.valores);
+    this.fotos.set(b.fotos.map((url) => ({ clave: url, vista: urlPublica(url), url, progreso: 100 })));
+    this.ubicacion.set(b.ubicacion);
+    this.pasoMaximo.set(b.pasoMaximo);
+    this.borradorPendiente.set(null);
+    this.guardarBorrador = true;
+    this.paso.set(b.pasoMaximo);
+    this.enfocarPaso();
+  }
+
+  protected descartarBorrador(): void {
+    this.borrarBorrador();
+    this.borradorPendiente.set(null);
+    this.guardarBorrador = true;
+  }
+
+  /** Lleva el foco al título del paso nuevo (sin desplazar): el lector de pantalla anuncia dónde está la persona. */
+  private enfocarPaso(): void {
+    requestAnimationFrame(() => {
+      const t = this.formulario()?.nativeElement.querySelector<HTMLElement>('[data-titulo-paso]');
+      if (!t) return;
+      t.setAttribute('tabindex', '-1');
+      t.focus({ preventScroll: true });
+    });
+  }
+
+  /** Si un paso no es válido, el foco va al primer campo con error. */
+  private enfocarError(): void {
+    requestAnimationFrame(() =>
+      this.formulario()?.nativeElement.querySelector<HTMLElement>('input.ng-invalid, textarea.ng-invalid, select.ng-invalid, [aria-invalid="true"]')?.focus(),
+    );
   }
 
   private async cargarParaEditar(id: string): Promise<void> {
@@ -518,18 +639,26 @@ export default class Publicar {
   }
 
   protected irA(i: number): void {
-    if (i <= this.pasoMaximo()) this.paso.set(i);
+    if (i <= this.pasoMaximo()) {
+      this.paso.set(i);
+      this.enfocarPaso();
+    }
   }
 
   protected anterior(): void {
     this.paso.update((p) => Math.max(0, p - 1));
+    this.enfocarPaso();
   }
 
   protected siguiente(): void {
-    if (!this.pasoValido(this.paso())) return;
+    if (!this.pasoValido(this.paso())) {
+      this.enfocarError();
+      return;
+    }
     const nuevo = Math.min(PASOS.length - 1, this.paso() + 1);
     this.paso.set(nuevo);
     this.pasoMaximo.update((m) => Math.max(m, nuevo));
+    this.enfocarPaso();
     window.scrollTo({ top: 0, behavior: desplazamiento() });
   }
 
@@ -631,6 +760,10 @@ export default class Publicar {
     try {
       const id = this.id();
       const p = await firstValueFrom(id ? this.api.editar(id, cuerpo) : this.api.crear(cuerpo));
+      if (!id) {
+        this.guardarBorrador = false;
+        this.borrarBorrador();
+      }
       this.avisos.exito(id ? 'Cambios guardados' : '¡Tu publicación ya está visible!', id ? undefined : 'Te avisaremos cuando alguien la solicite.');
       await this.router.navigate(['/publicacion', p.id]);
     } catch (e) {
