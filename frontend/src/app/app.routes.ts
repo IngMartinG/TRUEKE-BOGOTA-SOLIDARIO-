@@ -50,6 +50,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/mensajes/mensajes'),
   },
   {
+    path: 'bienvenida',
+    title: 'Bienvenida',
+    canActivate: [exigirCorreoVerificado],
+    loadComponent: () => import('./features/inicio/bienvenida'),
+  },
+  {
     path: 'notificaciones',
     title: 'Notificaciones',
     canActivate: [exigirCorreoVerificado],
