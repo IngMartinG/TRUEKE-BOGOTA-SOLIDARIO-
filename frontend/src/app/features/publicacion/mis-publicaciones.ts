@@ -59,7 +59,7 @@ type Filtro = 'activas' | 'negociacion' | 'cerradas';
                       <span class="insignia-sol"><app-icono nombre="destello" [tamano]="12" />Destacada</span>
                     }
                     @if (p.oculta) {
-                      <span class="insignia bg-tierra-100 text-tierra-700"><app-icono nombre="ojoNo" [tamano]="12" />Oculta</span>
+                      <span class="insignia bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100"><app-icono nombre="ojoNo" [tamano]="12" />Oculta</span>
                     }
                   </div>
                   <p class="mt-1.5 truncate font-display font-bold">{{ p.titulo }}</p>

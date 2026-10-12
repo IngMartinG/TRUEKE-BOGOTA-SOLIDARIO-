@@ -62,7 +62,7 @@ const TAMANO = 20;
               </td>
               <td class="px-4 py-3">
                 @if (u.suspendido) {
-                  <span class="insignia bg-tierra-100 text-tierra-700">Suspendido</span>
+                  <span class="insignia bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100">Suspendido</span>
                   <p class="mt-1 text-xs text-tenue">{{ u.suspendidoHasta ? 'Hasta ' + (u.suspendidoHasta | fecha) : 'Indefinidamente' }}</p>
                   @if (u.motivoSuspension) {
                     <p class="text-xs text-tenue">{{ u.motivoSuspension }}</p>

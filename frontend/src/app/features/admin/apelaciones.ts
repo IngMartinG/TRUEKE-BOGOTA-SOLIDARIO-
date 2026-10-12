@@ -39,7 +39,7 @@ import { Modal } from '../../shared/ui/modal';
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="flex flex-wrap items-center gap-2">
               <span class="insignia-neutra">{{ tipos[a.tipo ?? ''] ?? a.tipo }}</span>
-              <span class="insignia bg-tierra-100 text-tierra-700">{{ a.accionOriginal === 'OcultarContenido' ? 'Se ocultó' : 'Marcada procedente' }}</span>
+              <span class="insignia bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100">{{ a.accionOriginal === 'OcultarContenido' ? 'Se ocultó' : 'Marcada procedente' }}</span>
               <span class="text-xs text-tenue">Apeló {{ a.fechaUtc | hace }}</span>
             </div>
             @if (enlace(a); as ruta) {

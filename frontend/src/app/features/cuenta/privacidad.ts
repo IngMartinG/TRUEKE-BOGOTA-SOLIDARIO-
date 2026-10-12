@@ -23,7 +23,7 @@ import { descargar } from '../../shared/descargar';
 
     <section class="tarjeta mt-6 flex flex-wrap items-center justify-between gap-4 p-6">
       <div class="flex gap-4">
-        <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-agua-100 text-agua-700"><app-icono nombre="descargar" [tamano]="24" /></span>
+        <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-agua-100 text-agua-700 dark:bg-agua-700/30 dark:text-agua-100"><app-icono nombre="descargar" [tamano]="24" /></span>
         <div>
           <h2 class="text-lg font-bold">Descargar mis datos</h2>
           <p class="mt-1 max-w-lg text-sm text-tenue">Un archivo JSON con tu perfil, publicaciones, solicitudes, mensajes, pagos, notificaciones y calificaciones.</p>
@@ -58,7 +58,7 @@ import { descargar } from '../../shared/descargar';
 
     <section class="mt-6 rounded-tarjeta border-2 border-tierra-500/40 bg-tierra-50/50 p-6 dark:bg-tierra-700/10">
       <div class="flex gap-4">
-        <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-tierra-100 text-tierra-600"><app-icono nombre="basura" [tamano]="24" /></span>
+        <span class="grid size-12 shrink-0 place-items-center rounded-2xl bg-tierra-100 text-tierra-600 dark:bg-tierra-700/30 dark:text-tierra-100"><app-icono nombre="basura" [tamano]="24" /></span>
         <div>
           <h2 class="text-lg font-bold text-tierra-700 dark:text-tierra-100">Eliminar mi cuenta</h2>
           <p class="mt-1 max-w-lg text-sm text-tenue">

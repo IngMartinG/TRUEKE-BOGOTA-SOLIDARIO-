@@ -27,7 +27,7 @@ import { Icono } from '../../shared/ui/icono';
           </div>
         }
         @default {
-          <span class="grid size-20 place-items-center rounded-full bg-tierra-100 text-tierra-600"><app-icono nombre="alerta" [tamano]="36" /></span>
+          <span class="grid size-20 place-items-center rounded-full bg-tierra-100 text-tierra-600 dark:bg-tierra-700/30 dark:text-tierra-100"><app-icono nombre="alerta" [tamano]="36" /></span>
           <h1 class="mt-6 text-2xl font-bold">No pudimos confirmar tu correo</h1>
           <p class="mt-2 text-tenue">{{ error() }}</p>
           <a [routerLink]="sesion.autenticado() ? '/verifica-tu-correo' : '/ingresar'" class="btn btn-primario mt-8">

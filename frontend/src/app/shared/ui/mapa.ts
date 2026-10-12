@@ -16,6 +16,7 @@ import { Router } from '@angular/router';
 import type * as L from 'leaflet';
 import { CENTRO_BOGOTA } from '../../api/tipos';
 import { mapaTeselas } from '../../core/entorno';
+import { reducirMovimiento } from '../movimiento';
 
 export interface PuntoMapa {
   id: string;
@@ -83,7 +84,7 @@ export class Mapa {
     });
     effect(() => {
       const c = this.centro();
-      if (this.listo() && c) this.mapa?.setView(c, this.zoom(), { animate: true });
+      if (this.listo() && c) this.mapa?.setView(c, this.zoom(), { animate: !reducirMovimiento() });
     });
   }
 

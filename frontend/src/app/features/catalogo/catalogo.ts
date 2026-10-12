@@ -29,6 +29,7 @@ import { Modal } from '../../shared/ui/modal';
 import { Paginador } from '../../shared/ui/paginador';
 import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
 import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-publicacion';
+import { desplazamiento } from '../../shared/movimiento';
 
 const TAMANO = 12;
 
@@ -400,7 +401,7 @@ export default class Catalogo {
 
   protected irAPagina(pagina: number): void {
     void this.router.navigate([], { relativeTo: this.ruta, queryParams: { pagina }, queryParamsHandling: 'merge' });
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: desplazamiento() });
   }
 
   protected readonly guardandoBusqueda = signal(false);

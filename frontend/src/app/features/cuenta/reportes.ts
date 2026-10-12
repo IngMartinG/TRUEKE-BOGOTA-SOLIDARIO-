@@ -35,7 +35,7 @@ const MINIMO = 20;
           <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex flex-wrap items-center gap-2">
               <span class="insignia-neutra">{{ tipos[d.tipo ?? ''] ?? d.tipo }}</span>
-              <span [class]="d.accion === 'OcultarContenido' ? 'insignia bg-tierra-100 text-tierra-700' : 'insignia-sol'">
+              <span [class]="d.accion === 'OcultarContenido' ? 'insignia bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100' : 'insignia-sol'">
                 {{ d.accion === 'OcultarContenido' ? 'Contenido ocultado' : 'Reporte confirmado' }}
               </span>
             </div>
