@@ -48,11 +48,11 @@ const TAMANO = 20;
         <tbody class="divide-y divide-borde">
           @for (f of recurso.value()?.items ?? []; track f.id) {
             <tr>
-              <td class="px-4 py-3 text-xs">{{ f.fechaUtc | fecha: true }}<span class="block font-mono text-[11px] text-tenue">{{ f.referencia }}</span></td>
+              <td class="px-4 py-3 text-xs">{{ f.fechaUtc | fecha: true }}<span class="block font-mono text-xs text-tenue">{{ f.referencia }}</span></td>
               <td class="px-4 py-3">
                 {{ f.compradorNombre }}<span class="block text-xs text-tenue">{{ f.compradorTipoDocumento ?? 'Consumidor final' }} {{ f.compradorDocumento }} · {{ f.compradorCorreo }}</span>
                 <!-- Evidencia de lo que eligió la persona al pagar -->
-                <span class="mt-1 block text-[11px] text-tenue">
+                <span class="mt-1 block text-xs text-tenue">
                   @if (f.elegidaANombre === true) {
                     Eligió factura a su nombre el {{ f.fechaEleccionUtc | fecha: true }}
                   } @else if (f.elegidaANombre === false) {
@@ -62,7 +62,7 @@ const TAMANO = 20;
                   }
                 </span>
                 @if (f.motivoCorreccion) {
-                  <span class="mt-1 block text-[11px] text-agua-700 dark:text-agua-100">Corregida el {{ f.fechaCorreccionUtc | fecha: true }}: {{ f.motivoCorreccion }}</span>
+                  <span class="mt-1 block text-xs text-agua-700 dark:text-agua-100">Corregida el {{ f.fechaCorreccionUtc | fecha: true }}: {{ f.motivoCorreccion }}</span>
                 }
               </td>
               <td class="px-4 py-3">{{ etiquetaConcepto[f.concepto ?? ''] ?? f.concepto }}</td>

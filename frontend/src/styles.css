@@ -204,6 +204,18 @@
     @apply inline-flex size-10 items-center justify-center rounded-full text-tenue transition
       hover:bg-superficie-2 hover:text-tinta;
   }
+  /* Con el dedo, 44 px como mínimo (WCAG 2.5.5); con mouse se conserva el tamaño compacto */
+  @media (pointer: coarse) {
+    .btn-sm {
+      @apply min-h-11;
+    }
+    .btn-icono {
+      @apply size-11;
+    }
+    .pestana {
+      @apply min-h-10;
+    }
+  }
 
   /* ---------- Tarjetas ---------- */
   .tarjeta {

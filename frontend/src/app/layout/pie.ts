@@ -25,9 +25,9 @@ import { Logo } from '../shared/ui/logo';
         @for (col of columnas; track col.titulo) {
           <nav [attr.aria-label]="col.titulo">
             <h2 class="mb-4 text-sm font-bold tracking-wide text-white">{{ col.titulo }}</h2>
-            <ul class="space-y-2.5 text-sm">
+            <ul class="space-y-1 text-sm">
               @for (e of col.enlaces; track e.ruta) {
-                <li><a [routerLink]="e.ruta" class="text-bosque-200/80 transition hover:text-white">{{ e.texto }}</a></li>
+                <li><a [routerLink]="e.ruta" class="inline-block py-1.5 text-bosque-200/80 transition hover:text-white">{{ e.texto }}</a></li>
               }
             </ul>
           </nav>
