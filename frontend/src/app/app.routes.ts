@@ -5,6 +5,7 @@ export const routes: Routes = [
   { path: '', title: '', loadComponent: () => import('./features/inicio/inicio') },
   { path: 'explorar', title: 'Explorar', loadComponent: () => import('./features/catalogo/catalogo') },
   { path: 'como-funciona', title: 'Cómo funciona', loadComponent: () => import('./features/info/como-funciona') },
+  { path: 'impacto', title: 'Impacto de la comunidad', loadComponent: () => import('./features/info/impacto') },
   { path: 'ayuda', title: 'Centro de ayuda', loadComponent: () => import('./features/info/ayuda') },
   { path: 'publicacion/:id', title: 'Publicación', loadComponent: () => import('./features/publicacion/detalle') },
   {

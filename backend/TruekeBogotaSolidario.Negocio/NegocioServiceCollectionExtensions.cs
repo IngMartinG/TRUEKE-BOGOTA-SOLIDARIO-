@@ -132,6 +132,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<IPublicacionService, PublicacionService>();
         services.AddScoped<ISolicitudService, SolicitudService>();
         services.AddScoped<IEcoPuntosService, EcoPuntosService>();
+        services.AddScoped<IImpactoService, ImpactoService>();
         services.AddScoped<IPagoService, PagoService>();
         services.AddScoped<IAdministracionService, AdministracionService>();
         services.AddScoped<IComentarioService, ComentarioService>();

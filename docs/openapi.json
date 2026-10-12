@@ -2650,6 +2650,35 @@
         }
       }
     },
+    "/api/v1/impacto": {
+      "get": {
+        "tags": [
+          "Impacto"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImpactoDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/notificaciones": {
       "get": {
         "tags": [
@@ -6850,6 +6879,62 @@
           },
           "alertas": {
             "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImpactoDto": {
+        "type": "object",
+        "properties": {
+          "objetosConNuevoHogar": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "truekes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "compras": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "donaciones": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "personasQueIntercambiaron": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "esteMes": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "localidadesMasActivas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ImpactoLocalidadDto"
+            }
+          },
+          "calculadoUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImpactoLocalidadDto": {
+        "type": "object",
+        "properties": {
+          "localidad": {
+            "type": "string"
+          },
+          "municipio": {
+            "type": "string"
+          },
+          "intercambios": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
