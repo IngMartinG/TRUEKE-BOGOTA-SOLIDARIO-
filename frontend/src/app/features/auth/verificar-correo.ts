@@ -22,7 +22,7 @@ import { Icono } from '../../shared/ui/icono';
           <h1 class="mt-6 text-2xl font-bold">¡Correo confirmado!</h1>
           <p class="mt-2 text-tenue">Ya puedes publicar, solicitar intercambios y chatear con la comunidad.</p>
           <div class="mt-8 flex flex-wrap justify-center gap-3">
-            <a routerLink="/publicar" class="btn btn-primario">Publicar algo</a>
+            <a routerLink="/bienvenida" class="btn btn-primario">Empezar</a>
             <a routerLink="/explorar" class="btn btn-secundario">Explorar</a>
           </div>
         }

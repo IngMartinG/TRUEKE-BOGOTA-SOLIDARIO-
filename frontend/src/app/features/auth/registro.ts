@@ -177,6 +177,6 @@ export default class Registro {
     // Los Eco-Puntos de bienvenida se otorgan al verificar el correo (con Google ya llega verificado).
     if (falta) this.avisos.info(`¡Te damos la bienvenida, ${this.sesion.primerNombre()}!`, 'Confirma tu correo para activar tu cuenta y recibir tus Eco-Puntos de bienvenida.');
     else this.avisos.puntos(`¡Te damos la bienvenida, ${this.sesion.primerNombre()}!`, 'Ya tienes tus Eco-Puntos de bienvenida.');
-    await this.router.navigateByUrl(falta ? '/verifica-tu-correo' : destinoSeguro(this.volver()));
+    await this.router.navigateByUrl(falta ? '/verifica-tu-correo' : destinoSeguro(this.volver(), '/bienvenida'));
   }
 }
