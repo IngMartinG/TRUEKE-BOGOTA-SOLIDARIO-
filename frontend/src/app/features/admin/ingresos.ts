@@ -39,7 +39,7 @@ const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'o
     @if (recurso.value(); as i) {
       <div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div class="tarjeta p-5"><p class="text-xs text-tenue">Neto del periodo</p><p class="mt-1 font-display text-2xl font-extrabold">{{ i.netoCop | cop }}</p><p class="text-xs text-tenue">{{ i.pagos | numero }} pagos</p></div>
-        <div class="tarjeta p-5"><p class="text-xs text-tenue">Cobrado</p><p class="mt-1 font-display text-2xl font-extrabold">{{ i.aprobadoCop | cop }}</p><p class="text-xs text-tierra-600">−{{ i.reembolsadoCop | cop }} reembolsado</p></div>
+        <div class="tarjeta p-5"><p class="text-xs text-tenue">Cobrado</p><p class="mt-1 font-display text-2xl font-extrabold">{{ i.aprobadoCop | cop }}</p><p class="text-xs text-tierra-600 dark:text-tierra-500">−{{ i.reembolsadoCop | cop }} reembolsado</p></div>
         <div class="tarjeta p-5"><p class="text-xs text-tenue">Ingreso recurrente mensual</p><p class="mt-1 font-display text-2xl font-extrabold">{{ i.ingresoRecurrenteMensualCop | cop }}</p><p class="text-xs text-tenue">{{ i.premiumVigentes }} Premium · {{ i.empresaVigentes }} Empresa</p></div>
         <div class="tarjeta p-5"><p class="text-xs text-tenue">Pendientes</p><p class="mt-1 font-display text-2xl font-extrabold">{{ i.facturasPendientes }}</p><p class="text-xs text-tenue">facturas por emitir · {{ i.pqrAbiertas }} PQR abiertas</p></div>
       </div>
@@ -78,7 +78,7 @@ const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'o
     } @else if (recurso.isLoading()) {
       <div class="esqueleto mt-6 h-64"></div>
     } @else if (recurso.error()) {
-      <p class="mt-6 text-sm text-tierra-600">No se pudo cargar el tablero (requiere rol SuperUsuario con sesión 2FA).</p>
+      <p class="mt-6 text-sm text-tierra-600 dark:text-tierra-500">No se pudo cargar el tablero (requiere rol SuperUsuario con sesión 2FA).</p>
     }
   `,
 })

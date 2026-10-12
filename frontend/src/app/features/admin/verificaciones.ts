@@ -32,7 +32,7 @@ import { Modal } from '../../shared/ui/modal';
             <app-icono nombre="externo" [tamano]="14" />Ver documento
           </a>
           <div class="mt-3 grid grid-cols-2 gap-2">
-            <button type="button" class="btn btn-fantasma btn-sm text-tierra-600" (click)="abrirRechazo(v)">Rechazar</button>
+            <button type="button" class="btn btn-fantasma btn-sm text-tierra-600 dark:text-tierra-500" (click)="abrirRechazo(v)">Rechazar</button>
             <button type="button" class="btn btn-primario btn-sm" (click)="aprobar(v)"><app-icono nombre="check" [tamano]="14" />Aprobar</button>
           </div>
         </li>

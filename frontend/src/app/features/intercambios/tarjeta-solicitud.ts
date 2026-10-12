@@ -73,7 +73,7 @@ export type AccionSolicitud = 'aceptar' | 'rechazar' | 'cancelar' | 'confirmar' 
 
       @if (s.enEspera) {
         <div class="mx-5 mb-4 flex gap-2 rounded-2xl bg-sol-50 p-4 text-sm dark:bg-sol-500/10">
-          <app-icono nombre="reloj" [tamano]="18" class="mt-0.5 shrink-0 text-sol-600" />
+          <app-icono nombre="reloj" [tamano]="18" class="mt-0.5 shrink-0 text-sol-600 dark:text-sol-300" />
           <p>
             @if (s.soyDuenio) {
               Estás concretando esta publicación con otra persona. Si no se concreta, volverá al catálogo y podrás elegir a {{ otra()?.nombre }}.
