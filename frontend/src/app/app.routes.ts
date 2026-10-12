@@ -101,6 +101,7 @@ export const routes: Routes = [
   // Legales
   { path: 'privacidad', title: 'Política de tratamiento de datos', loadComponent: () => import('./features/info/privacidad') },
   { path: 'terminos', title: 'Términos de uso', loadComponent: () => import('./features/info/terminos') },
+  { path: 'accesibilidad', title: 'Declaración de accesibilidad', loadComponent: () => import('./features/info/accesibilidad') },
 
   { path: '**', title: 'Página no encontrada', loadComponent: () => import('./features/info/no-encontrada') },
 ];
