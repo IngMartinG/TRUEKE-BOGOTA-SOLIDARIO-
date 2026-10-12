@@ -35,6 +35,7 @@ import { Icono } from '../shared/ui/icono';
               <app-icono [nombre]="e.icono" [tamano]="22" />{{ e.texto }}
               @if (e.contador && e.contador() > 0) {
                 <span class="absolute top-1 left-1/2 ml-2 size-2.5 rounded-full bg-tierra-600 ring-2 ring-superficie"></span>
+                <span class="sr-only">(hay novedades sin leer)</span>
               }
             </a>
           </li>

@@ -27,20 +27,20 @@ const TIPOS_SOLICITUD = /^(Solicitud|Entrega|Intercambio|Calificacion)/;
       <p class="mt-1 text-tenue">Responde solicitudes, coordina entregas y califica a tu comunidad.</p>
 
       <div class="mt-6 flex flex-wrap items-center justify-between gap-3">
-        <div class="pestanas" role="tablist">
-          <button type="button" role="tab" class="pestana" [class.pestana-activa]="pestana() === 'recibidas'" [attr.aria-selected]="pestana() === 'recibidas'" (click)="cambiar('recibidas')">
+        <div class="pestanas" role="group" aria-label="Solicitudes">
+          <button type="button" class="pestana" [class.pestana-activa]="pestana() === 'recibidas'" [attr.aria-pressed]="pestana() === 'recibidas'" (click)="cambiar('recibidas')">
             Recibidas
             @if (pendientesRecibidas() > 0) {
               <span class="ml-1 rounded-full bg-tierra-600 px-1.5 text-[10px] text-white">{{ pendientesRecibidas() }}</span>
             }
           </button>
-          <button type="button" role="tab" class="pestana" [class.pestana-activa]="pestana() === 'enviadas'" [attr.aria-selected]="pestana() === 'enviadas'" (click)="cambiar('enviadas')">
+          <button type="button" class="pestana" [class.pestana-activa]="pestana() === 'enviadas'" [attr.aria-pressed]="pestana() === 'enviadas'" (click)="cambiar('enviadas')">
             Enviadas
           </button>
         </div>
         <div class="flex gap-1 text-sm" role="group" aria-label="Filtrar por estado">
           @for (f of filtros; track f.valor) {
-            <button type="button" class="rounded-full px-3 py-1 font-medium transition" [class]="filtroEstado() === f.valor ? 'bg-superficie-2 text-tinta' : 'text-tenue hover:text-tinta'" (click)="filtroEstado.set(f.valor)">
+            <button type="button" class="rounded-full px-3 py-1 font-medium transition" [class]="filtroEstado() === f.valor ? 'bg-superficie-2 text-tinta' : 'text-tenue hover:text-tinta'" [attr.aria-pressed]="filtroEstado() === f.valor" (click)="filtroEstado.set(f.valor)">
               {{ f.texto }}
             </button>
           }

@@ -11,6 +11,7 @@ import {
   untracked,
   viewChild,
 } from '@angular/core';
+import { LiveAnnouncer } from '@angular/cdk/a11y';
 import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -90,7 +91,7 @@ const TAMANO = 40;
         </aside>
 
         <!-- Conversación -->
-        <section class="min-h-0 min-w-0 flex-col" [class]="id() ? 'flex' : 'hidden md:flex'" aria-live="polite">
+        <section class="min-h-0 min-w-0 flex-col" [class]="id() ? 'flex' : 'hidden md:flex'" aria-label="Conversación">
           @if (!id()) {
             <div class="grid flex-1 place-items-center">
               <app-estado-vacio icono="mensaje" titulo="Elige una conversación" descripcion="Aquí coordinas la entrega sin compartir tu número ni tu correo." />
@@ -241,6 +242,7 @@ export default class Mensajes {
   private readonly api = inject(IntercambiosApi);
   private readonly avisos = inject(AvisosService);
   protected readonly tiempoReal = inject(TiempoRealService);
+  private readonly anunciador = inject(LiveAnnouncer);
 
   readonly id = input<string>();
   private readonly lista = viewChild<ElementRef<HTMLElement>>('lista');
@@ -283,6 +285,8 @@ export default class Mensajes {
         if (!this.mensajes().some((x) => x.id === m.id)) {
           this.mensajes.update((l) => [...l, m]);
           this.bajar();
+          // Al lector de pantalla solo se le anuncian los mensajes que llegan, no el historial al abrir el chat
+          if (!m.esMio) void this.anunciador.announce(`Mensaje de ${this.actual()?.contraparte?.nombre ?? 'la otra persona'}: ${m.texto}`);
         }
         // Primero se marca como leída y luego se recarga la lista, para no mostrar un "no leído" falso.
         // Solo si la pantalla se ve: con la pestaña oculta el autor ve ✓✓ (entregado), no "leído".

@@ -64,7 +64,7 @@ const TAMANO = 12;
             (buscar)="aplicar({ texto: $event || null })"
           />
           <div class="flex gap-2 overflow-x-auto pb-1 lg:pb-0" role="group" aria-label="Filtrar por modo">
-            <button type="button" class="btn shrink-0" [class]="!filtros().modo ? 'btn-primario' : 'btn-secundario'" (click)="aplicar({ modo: null })">
+            <button type="button" class="btn shrink-0" [class]="!filtros().modo ? 'btn-primario' : 'btn-secundario'" [attr.aria-pressed]="!filtros().modo" (click)="aplicar({ modo: null })">
               Todos
             </button>
             @for (m of modos; track m) {
@@ -91,9 +91,10 @@ const TAMANO = 12;
         </div>
       </aside>
 
-      <section aria-live="polite">
+      <section aria-labelledby="titulo-resultados">
+        <h2 id="titulo-resultados" class="sr-only">Resultados</h2>
         <div class="mb-5 flex flex-wrap items-center justify-between gap-3">
-          <p class="text-sm text-tenue">
+          <p class="text-sm text-tenue" aria-live="polite">
             @if (cercaDeMi()) {
               <strong class="text-tinta">{{ cercanas.value()?.length ?? 0 }}</strong> {{ (cercanas.value()?.length ?? 0) === 1 ? 'publicación' : 'publicaciones' }} a menos de {{ radioKm() }} km
             } @else {
@@ -134,7 +135,7 @@ const TAMANO = 12;
             <app-icono nombre="pin" [tamano]="16" class="text-agua-700" />
             <span>Radio de búsqueda:</span>
             @for (r of radios; track r) {
-              <button type="button" class="btn btn-sm" [class]="radioKm() === r ? 'btn-primario' : 'btn-secundario'" (click)="radioKm.set(r)">{{ r }} km</button>
+              <button type="button" class="btn btn-sm" [class]="radioKm() === r ? 'btn-primario' : 'btn-secundario'" [attr.aria-pressed]="radioKm() === r" (click)="radioKm.set(r)">{{ r }} km</button>
             }
           </div>
         }
@@ -170,11 +171,11 @@ const TAMANO = 12;
 
           @if (!cargando() && lista().length === 0) {
             @if (errorCarga()) {
-              <app-estado-vacio icono="alerta" titulo="No pudimos cargar el catálogo" descripcion="Revisa tu conexión e inténtalo de nuevo.">
+              <app-estado-vacio [nivel]="3" icono="alerta" titulo="No pudimos cargar el catálogo" descripcion="Revisa tu conexión e inténtalo de nuevo.">
                 <button type="button" class="btn btn-primario" (click)="resultados.reload()">Reintentar</button>
               </app-estado-vacio>
             } @else {
-              <app-estado-vacio icono="buscar" titulo="No encontramos publicaciones" descripcion="Prueba con otras palabras, quita algunos filtros o amplía el radio de búsqueda.">
+              <app-estado-vacio [nivel]="3" icono="buscar" titulo="No encontramos publicaciones" descripcion="Prueba con otras palabras, quita algunos filtros o amplía el radio de búsqueda.">
                 @if (filtrosActivos() > 0) {
                   <button type="button" class="btn btn-secundario" (click)="limpiar()">Limpiar filtros</button>
                 }
@@ -234,9 +235,9 @@ const TAMANO = 12;
         <div class="campo">
           <span class="etiqueta">Precio de referencia (COP)</span>
           <div class="grid grid-cols-2 gap-2">
-            <input type="number" min="0" step="1000" class="entrada" placeholder="Mínimo" aria-label="Precio mínimo"
+            <input type="number" min="0" step="1000" inputmode="numeric" class="entrada" placeholder="Mínimo" aria-label="Precio mínimo"
               [ngModel]="filtros().precioMin" (change)="aplicar({ precioMin: valorNumero($event) })" />
-            <input type="number" min="0" step="1000" class="entrada" placeholder="Máximo" aria-label="Precio máximo"
+            <input type="number" min="0" step="1000" inputmode="numeric" class="entrada" placeholder="Máximo" aria-label="Precio máximo"
               [ngModel]="filtros().precioMax" (change)="aplicar({ precioMax: valorNumero($event) })" />
           </div>
         </div>

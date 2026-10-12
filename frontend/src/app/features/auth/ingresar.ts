@@ -10,6 +10,7 @@ import { SesionService } from '../../core/sesion.service';
 import { CaptchaService } from '../../core/terceros/captcha.service';
 import { CampoClave } from '../../shared/ui/campo-clave';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
+import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
 import { BotonGoogle } from './boton-google';
@@ -17,7 +18,7 @@ import { MarcoAuth } from './marco-auth';
 import { destinoSeguro } from './redireccion';
 
 @Component({
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, Icono, BotonGoogle, Modal],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, CampoAccesible, Icono, BotonGoogle, Modal],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-marco-auth [conCaptcha]="true"
@@ -28,8 +29,7 @@ import { destinoSeguro } from './redireccion';
         @if (!pedirCodigo()) {
           <div class="campo">
             <label class="etiqueta" for="correo">Correo electrónico</label>
-            <input id="correo" type="email" class="entrada" formControlName="correo" autocomplete="email" inputmode="email"
-              [attr.aria-invalid]="form.controls.correo.invalid && form.controls.correo.touched" aria-describedby="correo-error" />
+            <input id="correo" type="email" class="entrada" formControlName="correo" autocomplete="email" inputmode="email" aria-describedby="correo-error" />
             <app-error-campo [control]="form.controls.correo" etiqueta="El correo" idError="correo-error" />
           </div>
           <app-campo-clave [control]="form.controls.clave">

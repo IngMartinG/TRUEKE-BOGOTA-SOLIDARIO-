@@ -32,9 +32,9 @@ type Filtro = 'activas' | 'negociacion' | 'cerradas';
         <a routerLink="/publicar" class="btn btn-primario"><app-icono nombre="mas" [tamano]="18" />Nueva publicación</a>
       </div>
 
-      <div class="mt-6 pestanas" role="tablist" aria-label="Filtrar publicaciones">
+      <div class="mt-6 pestanas" role="group" aria-label="Filtrar publicaciones">
         @for (f of filtros; track f.valor) {
-          <button type="button" role="tab" class="pestana" [class.pestana-activa]="filtro() === f.valor" [attr.aria-selected]="filtro() === f.valor" (click)="filtro.set(f.valor)">
+          <button type="button" class="pestana" [class.pestana-activa]="filtro() === f.valor" [attr.aria-pressed]="filtro() === f.valor" (click)="filtro.set(f.valor)">
             {{ f.texto }} <span class="ml-1 opacity-70">{{ conteo()[f.valor] }}</span>
           </button>
         }

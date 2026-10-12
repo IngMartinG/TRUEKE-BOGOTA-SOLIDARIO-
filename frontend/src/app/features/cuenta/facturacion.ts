@@ -10,11 +10,12 @@ import { erroresDeCampos, mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
 import { CopPipe, FechaPipe } from '../../shared/pipes';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
+import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { Icono } from '../../shared/ui/icono';
 import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, ErrorCampo, Icono, CopPipe, FechaPipe, SelectorMunicipio],
+  imports: [ReactiveFormsModule, RouterLink, ErrorCampo, CampoAccesible, Icono, CopPipe, FechaPipe, SelectorMunicipio],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="text-2xl font-extrabold">Pagos y facturas</h1>
@@ -116,24 +117,24 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
           <label for="documento" class="etiqueta">Número de documento</label>
           <input id="documento" class="entrada" formControlName="documento" maxlength="20" autocomplete="off"
             [placeholder]="form.controls.tipoDocumento.value === 'NIT' ? '900123456 (calculamos el dígito de verificación)' : ''" />
-          <app-error-campo [control]="form.controls.documento" etiqueta="El documento" />
+          <app-error-campo [control]="form.controls.documento" etiqueta="El documento" idError="documento-error" />
         </div>
       </div>
       <div class="campo">
         <label for="nombre-fact" class="etiqueta">{{ form.controls.tipoDocumento.value === 'NIT' ? 'Razón social' : 'Nombre completo' }}</label>
         <input id="nombre-fact" class="entrada" formControlName="nombre" maxlength="150" autocomplete="name" />
-        <app-error-campo [control]="form.controls.nombre" etiqueta="El nombre" />
+        <app-error-campo [control]="form.controls.nombre" etiqueta="El nombre" idError="nombre-fact-error" />
       </div>
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div class="campo">
           <label for="correo-fact" class="etiqueta">Correo para recibir la factura</label>
           <input id="correo-fact" type="email" class="entrada" formControlName="correo" maxlength="160" autocomplete="email" />
-          <app-error-campo [control]="form.controls.correo" etiqueta="El correo" />
+          <app-error-campo [control]="form.controls.correo" etiqueta="El correo" idError="correo-fact-error" />
         </div>
         <div class="campo">
           <label for="direccion-fact" class="etiqueta">Dirección</label>
           <input id="direccion-fact" class="entrada" formControlName="direccion" maxlength="150" autocomplete="street-address" required />
-          <app-error-campo [control]="form.controls.direccion" etiqueta="La dirección" />
+          <app-error-campo [control]="form.controls.direccion" etiqueta="La dirección" idError="direccion-fact-error" />
         </div>
       </div>
       <app-selector-municipio id="fact-ubicacion" formControlName="municipioCodigo" />

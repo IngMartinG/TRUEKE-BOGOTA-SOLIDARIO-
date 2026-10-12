@@ -6,11 +6,12 @@ import { AuthApi } from '../../core/api/auth.api';
 import { mensajeDe } from '../../core/http/problema';
 import { CaptchaService } from '../../core/terceros/captcha.service';
 import { ErrorCampo } from '../../shared/ui/error-campo';
+import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { Icono } from '../../shared/ui/icono';
 import { MarcoAuth } from './marco-auth';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, ErrorCampo, Icono],
+  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, ErrorCampo, CampoAccesible, Icono],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-marco-auth [conCaptcha]="true" titulo="¿Olvidaste tu contraseña?" subtitulo="Te enviaremos un enlace para crear una nueva.">

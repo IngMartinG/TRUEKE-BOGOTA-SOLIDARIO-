@@ -36,6 +36,7 @@ import { SubidasService } from '../../core/subidas.service';
 import { comprimirImagen, urlPublica } from '../../shared/imagenes';
 import { CopPipe } from '../../shared/pipes';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
+import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { Icono } from '../../shared/ui/icono';
 import { ImagenPublicacion } from '../../shared/ui/imagen-publicacion';
 import { InsigniaModo } from '../../shared/ui/insignia-modo';
@@ -55,7 +56,7 @@ interface Foto {
 const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
 
 @Component({
-  imports: [Volver, ReactiveFormsModule, RouterLink, Icono, ErrorCampo, Mapa, InsigniaModo, ImagenPublicacion, CopPipe, SelectorMunicipio],
+  imports: [Volver, ReactiveFormsModule, RouterLink, Icono, ErrorCampo, CampoAccesible, Mapa, InsigniaModo, ImagenPublicacion, CopPipe, SelectorMunicipio],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor max-w-3xl py-6 sm:py-10">
@@ -92,7 +93,7 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
                   @for (m of modos; track m) {
                     <label class="group flex cursor-pointer items-center gap-4 rounded-tarjeta border-2 bg-superficie p-5 transition"
                       [class]="modoActual() === m ? bordeModo[m] : 'border-borde hover:border-bosque-200'">
-                      <input type="radio" class="sr-only" formControlName="modo" [value]="m" [attr.aria-label]="info[m].etiqueta" />
+                      <input type="radio" class="sr-only" formControlName="modo" [value]="m" />
                       <span class="grid size-14 shrink-0 place-items-center rounded-2xl text-white shadow-lg transition group-hover:scale-105" [class]="solidoModo[m]">
                         <app-icono [nombre]="info[m].icono" [tamano]="26" />
                       </span>
@@ -117,36 +118,35 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
               <div class="animate-aparecer space-y-6">
                 <div class="campo">
                   <label class="etiqueta" for="titulo">Título</label>
-                  <input id="titulo" class="entrada text-base" formControlName="titulo" maxlength="120" placeholder="Ej: Bicicleta de ruta talla M, poco uso"
-                    [attr.aria-invalid]="form.controls.titulo.invalid && form.controls.titulo.touched" aria-describedby="titulo-error" />
+                  <input id="titulo" class="entrada text-base" formControlName="titulo" maxlength="120" placeholder="Ej: Bicicleta de ruta talla M, poco uso" aria-describedby="titulo-error" />
                   <div class="flex justify-between">
                     <app-error-campo [control]="form.controls.titulo" etiqueta="El título" idError="titulo-error" />
                     <span class="ml-auto ayuda">{{ form.controls.titulo.value.length }}/120</span>
                   </div>
                 </div>
 
-                <fieldset>
+                <fieldset aria-describedby="categoria-error">
                   <legend class="etiqueta mb-2">Categoría</legend>
                   <div class="grid grid-cols-2 gap-2 sm:grid-cols-4">
                     @for (c of categorias(); track c.id) {
                       <label class="flex cursor-pointer flex-col items-center gap-2 rounded-2xl border-2 p-3 text-center text-xs font-semibold transition"
                         [class]="categoriaActual() === c.id ? 'border-bosque-500 bg-bosque-50 text-bosque-800 dark:bg-bosque-900/50 dark:text-bosque-100' : 'border-borde hover:border-bosque-200'">
-                        <input type="radio" class="sr-only" formControlName="categoriaId" [value]="c.id" [attr.aria-label]="c.nombre" />
+                        <input type="radio" class="sr-only" formControlName="categoriaId" [value]="c.id" />
                         <app-icono [nombre]="iconoCategoria(c.id)" [tamano]="24" [grosor]="1.7" />{{ c.nombre }}
                       </label>
                     }
                   </div>
-                  <app-error-campo [control]="form.controls.categoriaId" etiqueta="La categoría" />
+                  <app-error-campo [control]="form.controls.categoriaId" etiqueta="La categoría" idError="categoria-error" />
                 </fieldset>
 
-                <fieldset>
+                <fieldset aria-describedby="condicion-ayuda condicion-error">
                   <legend class="etiqueta mb-1">¿En qué estado está?</legend>
-                  <p class="ayuda mb-2">Sé honesto: un estado claro evita reclamos y genera confianza.</p>
+                  <p id="condicion-ayuda" class="ayuda mb-2">Sé honesto: un estado claro evita reclamos y genera confianza.</p>
                   <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     @for (c of condiciones; track c.valor) {
                       <label class="flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-3 transition"
                         [class]="condicionActual() === c.valor ? 'border-bosque-500 bg-bosque-50 dark:bg-bosque-900/50' : 'border-borde hover:border-bosque-200'">
-                        <input type="radio" class="sr-only" formControlName="condicion" [value]="c.valor" [attr.aria-label]="c.etiqueta" />
+                        <input type="radio" class="sr-only" formControlName="condicion" [value]="c.valor" />
                         <span class="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-2 transition"
                           [class]="condicionActual() === c.valor ? 'border-bosque-600 bg-bosque-600 text-white' : 'border-borde'">
                           @if (condicionActual() === c.valor) {
@@ -160,7 +160,7 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
                       </label>
                     }
                   </div>
-                  <app-error-campo [control]="form.controls.condicion" etiqueta="El estado del producto" />
+                  <app-error-campo [control]="form.controls.condicion" etiqueta="El estado del producto" idError="condicion-error" />
                 </fieldset>
 
                 @if (requiereDetalle()) {
@@ -169,10 +169,9 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
                       {{ condicionActual() === 'Reparado' ? '¿Qué se reparó y quién lo hizo?' : condicionActual() === 'ParaRepuestos' ? '¿Qué falla y qué piezas sirven?' : '¿Qué detalles tiene?' }}
                     </label>
                     <textarea id="detalle-condicion" class="entrada min-h-24" formControlName="detalleCondicion" maxlength="300"
-                      placeholder="Ej: rayón en la tapa trasera; batería cambiada en servicio técnico en 2025; no enciende pero la pantalla sirve."
-                      [attr.aria-invalid]="form.controls.detalleCondicion.invalid && form.controls.detalleCondicion.touched" aria-describedby="detalle-error"></textarea>
+                      placeholder="Ej: rayón en la tapa trasera; batería cambiada en servicio técnico en 2025; no enciende pero la pantalla sirve." aria-describedby="detalle-condicion-error"></textarea>
                     <div class="flex justify-between">
-                      <app-error-campo [control]="form.controls.detalleCondicion" etiqueta="La descripción del estado" idError="detalle-error" />
+                      <app-error-campo [control]="form.controls.detalleCondicion" etiqueta="La descripción del estado" idError="detalle-condicion-error" />
                       <span class="ml-auto ayuda">{{ form.controls.detalleCondicion.value.length }}/300</span>
                     </div>
                   </div>
@@ -181,8 +180,7 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
                 <div class="campo">
                   <label class="etiqueta" for="descripcion">Descripción</label>
                   <textarea id="descripcion" class="entrada min-h-36" formControlName="descripcion" maxlength="2000"
-                    placeholder="Cuenta el estado, medidas, tiempo de uso y cualquier detalle útil. Mientras más claro, más rápido encuentra dueño."
-                    [attr.aria-invalid]="form.controls.descripcion.invalid && form.controls.descripcion.touched" aria-describedby="descripcion-error"></textarea>
+                    placeholder="Cuenta el estado, medidas, tiempo de uso y cualquier detalle útil. Mientras más claro, más rápido encuentra dueño." aria-describedby="descripcion-error"></textarea>
                   <div class="flex justify-between">
                     <app-error-campo [control]="form.controls.descripcion" etiqueta="La descripción" idError="descripcion-error" />
                     <span class="ml-auto ayuda">{{ form.controls.descripcion.value.length }}/2000</span>
@@ -195,7 +193,7 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
                     <div class="relative">
                       <span class="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 font-semibold text-tenue">$</span>
                       <input id="precio" type="number" inputmode="numeric" min="0" step="1000" class="entrada pl-8 text-base" formControlName="precioReferenciaCop"
-                        placeholder="0" aria-describedby="precio-ayuda precio-error" [attr.aria-invalid]="form.controls.precioReferenciaCop.invalid && form.controls.precioReferenciaCop.touched" />
+                        placeholder="0" aria-describedby="precio-ayuda precio-error" />
                     </div>
                     <p id="precio-ayuda" class="ayuda">
                       {{ modoActual() === 'Compra' ? 'En pesos colombianos. El pago se acuerda directamente entre ustedes.' : 'Ayuda a valorar el trueke; no es obligatorio.' }}

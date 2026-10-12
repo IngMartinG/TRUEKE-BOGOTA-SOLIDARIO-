@@ -12,6 +12,7 @@ import { SesionService } from '../../core/sesion.service';
 import { CaptchaService } from '../../core/terceros/captcha.service';
 import { CampoClave } from '../../shared/ui/campo-clave';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
+import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { Icono } from '../../shared/ui/icono';
 import { claveSegura } from '../../shared/validadores';
 import { BotonGoogle } from './boton-google';
@@ -19,16 +20,15 @@ import { MarcoAuth } from './marco-auth';
 import { destinoSeguro } from './redireccion';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, Icono, BotonGoogle, SelectorMunicipio],
+  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, CampoAccesible, Icono, BotonGoogle, SelectorMunicipio],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-marco-auth [conCaptcha]="true" titulo="Crea tu cuenta" subtitulo="Únete gratis y recibe Eco-Puntos de bienvenida." lema="Cada objeto que circula es un residuo menos en los rellenos sanitarios.">
       <form [formGroup]="form" (ngSubmit)="registrar()" class="space-y-5" novalidate>
         <div class="campo">
           <label class="etiqueta" for="nombre">Nombre completo</label>
-          <input id="nombre" class="entrada" formControlName="nombreCompleto" autocomplete="name" maxlength="120"
-            [attr.aria-invalid]="form.controls.nombreCompleto.invalid && form.controls.nombreCompleto.touched" aria-describedby="nombre-error" />
-          <p class="ayuda">En público se muestra abreviado (por ejemplo, "María R.").</p>
+          <input id="nombre" class="entrada" formControlName="nombreCompleto" autocomplete="name" maxlength="120" aria-describedby="nombre-ayuda" />
+          <p id="nombre-ayuda" class="ayuda">En público se muestra abreviado (por ejemplo, "María R.").</p>
           <app-error-campo [control]="form.controls.nombreCompleto" etiqueta="El nombre" idError="nombre-error" />
         </div>
         <div>
@@ -53,8 +53,7 @@ import { destinoSeguro } from './redireccion';
         </div>
         <div class="campo">
           <label class="etiqueta" for="correo">Correo electrónico</label>
-          <input id="correo" type="email" class="entrada" formControlName="correo" autocomplete="email" inputmode="email" maxlength="254"
-            [attr.aria-invalid]="form.controls.correo.invalid && form.controls.correo.touched" aria-describedby="correo-error" />
+          <input id="correo" type="email" class="entrada" formControlName="correo" autocomplete="email" inputmode="email" maxlength="254" aria-describedby="correo-error" />
           <app-error-campo [control]="form.controls.correo" etiqueta="El correo" idError="correo-error" />
         </div>
         <app-campo-clave [control]="form.controls.clave" autocompletar="new-password" [mostrarRequisitos]="true" />
@@ -64,8 +63,8 @@ import { destinoSeguro } from './redireccion';
           <input type="checkbox" class="casilla mt-0.5" formControlName="aceptoPoliticaDatos" aria-describedby="politica-error" />
           <span class="text-sm">
             Autorizo el tratamiento de mis datos personales según la
-            <a routerLink="/privacidad" target="_blank" class="enlace">política de tratamiento de datos</a> y acepto los
-            <a routerLink="/terminos" target="_blank" class="enlace">términos de uso</a>.
+            <a routerLink="/privacidad" target="_blank" class="enlace">política de tratamiento de datos<span class="sr-only"> (abre otra pestaña)</span></a> y acepto los
+            <a routerLink="/terminos" target="_blank" class="enlace">términos de uso<span class="sr-only"> (abre otra pestaña)</span></a>.
           </span>
         </label>
         <app-error-campo [control]="form.controls.aceptoPoliticaDatos" idError="politica-error" />

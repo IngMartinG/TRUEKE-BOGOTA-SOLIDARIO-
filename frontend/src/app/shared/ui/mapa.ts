@@ -39,7 +39,7 @@ const COLOR_MODO: Record<string, string> = { Trueke: '#1f7a4d', Compra: '#2f6fa3
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'relative block overflow-hidden' },
   template: `
-    <div #contenedor class="size-full min-h-64 bg-superficie-2" role="application" [attr.aria-label]="etiqueta()"></div>
+    <div #contenedor class="size-full min-h-64 bg-superficie-2" role="region" [attr.aria-label]="etiqueta() + '. Mapa interactivo: la lista de publicaciones tiene la misma información.'"></div>
     @if (!listo()) {
       <div class="absolute inset-0 esqueleto rounded-none"></div>
     }

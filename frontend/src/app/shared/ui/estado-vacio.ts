@@ -17,7 +17,7 @@ import { Icono } from './icono';
           <app-icono [nombre]="icono()" [tamano]="36" [grosor]="1.6" />
         </div>
       </div>
-      <h3 class="text-lg font-bold">{{ titulo() }}</h3>
+      <div class="text-lg font-bold" role="heading" [attr.aria-level]="nivel()">{{ titulo() }}</div>
       @if (descripcion()) {
         <p class="mt-2 text-sm text-tenue">{{ descripcion() }}</p>
       }
@@ -29,4 +29,6 @@ export class EstadoVacio {
   readonly icono = input('hoja');
   readonly titulo = input.required<string>();
   readonly descripcion = input<string>('');
+  /** Nivel del encabezado según la página (2 bajo un h1 sin otras secciones, 3 dentro de una sección). */
+  readonly nivel = input(2);
 }

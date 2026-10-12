@@ -13,11 +13,12 @@ import { comprimirImagen } from '../../shared/imagenes';
 import { FechaPipe, NumeroPipe } from '../../shared/pipes';
 import { Avatar } from '../../shared/ui/avatar';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
+import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { Icono } from '../../shared/ui/icono';
 import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, ErrorCampo, Icono, NumeroPipe, FechaPipe, SelectorMunicipio, Avatar],
+  imports: [ReactiveFormsModule, RouterLink, ErrorCampo, CampoAccesible, Icono, NumeroPipe, FechaPipe, SelectorMunicipio, Avatar],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="text-2xl font-extrabold">Mi cuenta</h1>
@@ -87,7 +88,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
                 <label for="localidad" class="etiqueta">Barrio o sector</label>
                 <input id="localidad" class="entrada" formControlName="localidad" maxlength="60" />
               }
-              <app-error-campo [control]="form.controls.localidad" etiqueta="La localidad" />
+              <app-error-campo [control]="form.controls.localidad" etiqueta="La localidad" idError="localidad-error" />
               <p class="ayuda">Tus publicaciones nuevas usan esta ubicación por defecto.</p>
             </div>
             <div class="campo">
@@ -116,13 +117,13 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
               <div class="campo">
                 <label for="nombre-comercial" class="etiqueta">Nombre comercial</label>
                 <input id="nombre-comercial" class="entrada" formControlName="nombreComercial" maxlength="120" autocomplete="organization" />
-                <app-error-campo [control]="empresa.controls.nombreComercial" etiqueta="El nombre comercial" />
+                <app-error-campo [control]="empresa.controls.nombreComercial" etiqueta="El nombre comercial" idError="nombre-comercial-error" />
               </div>
               <div class="campo">
                 <label for="nit" class="etiqueta">NIT</label>
                 <input id="nit" class="entrada" formControlName="nit" maxlength="20" inputmode="numeric" placeholder="900123456 o 900.123.456-8" />
                 <p class="ayuda">Si no escribes el dígito de verificación, lo calculamos.</p>
-                <app-error-campo [control]="empresa.controls.nit" etiqueta="El NIT" />
+                <app-error-campo [control]="empresa.controls.nit" etiqueta="El NIT" idError="nit-error" />
               </div>
               <div class="flex justify-end">
                 <button type="submit" class="btn btn-primario" [disabled]="empresa.pristine || guardando()">Guardar perfil de empresa</button>
