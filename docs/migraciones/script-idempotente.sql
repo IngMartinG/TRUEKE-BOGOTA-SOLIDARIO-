@@ -1898,6 +1898,54 @@ BEGIN
 END;
 GO
 
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261012024502_HistorialEcoPuntos'
+)
+BEGIN
+    CREATE TABLE [MovimientosEcoPuntos] (
+        [Id] uniqueidentifier NOT NULL,
+        [UsuarioId] uniqueidentifier NOT NULL,
+        [Puntos] int NOT NULL,
+        [Concepto] nvarchar(30) NOT NULL,
+        [ReferenciaId] uniqueidentifier NULL,
+        [Detalle] nvarchar(160) NULL,
+        [SaldoResultante] int NOT NULL,
+        [FechaUtc] datetime2 NOT NULL,
+        CONSTRAINT [PK_MovimientosEcoPuntos] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_MovimientosEcoPuntos_Usuarios_UsuarioId] FOREIGN KEY ([UsuarioId]) REFERENCES [Usuarios] ([Id]) ON DELETE NO ACTION
+    );
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261012024502_HistorialEcoPuntos'
+)
+BEGIN
+    CREATE INDEX [IX_MovimientosEcoPuntos_UsuarioId_FechaUtc] ON [MovimientosEcoPuntos] ([UsuarioId], [FechaUtc]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261012024502_HistorialEcoPuntos'
+)
+BEGIN
+    INSERT INTO [MovimientosEcoPuntos] ([Id], [UsuarioId], [Puntos], [Concepto], [ReferenciaId], [Detalle], [SaldoResultante], [FechaUtc]) SELECT NEWID(), [Id], [SaldoEcoPuntos], 'SaldoInicial', NULL, NULL, [SaldoEcoPuntos], SYSUTCDATETIME() FROM [Usuarios] WHERE [SaldoEcoPuntos] > 0;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261012024502_HistorialEcoPuntos'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261012024502_HistorialEcoPuntos', N'10.0.12');
+END;
+GO
+
 COMMIT;
 GO
 
