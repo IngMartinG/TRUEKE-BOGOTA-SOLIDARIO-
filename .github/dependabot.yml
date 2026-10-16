@@ -27,6 +27,10 @@ updates:
       # MessagePack lo usa el backplane Redis de SignalR, compilado contra la 2.x: la 3.x se adopta cuando SignalR la pida.
       - dependency-name: "MessagePack"
         update-types: ["version-update:semver-major"]
+      # Swashbuckle solo se usa en Development y genera docs/openapi.json, el contrato del que salen los tipos del front:
+      # una versión mayor cambia ese archivo, así que se adopta a propósito, junto con la regeneración de los tipos.
+      - dependency-name: "Swashbuckle.AspNetCore"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /frontend
