@@ -4854,6 +4854,14 @@ export interface components {
             totalCop?: number;
             /** Format: double */
             ivaIncluidoCop?: number;
+            /** Format: int32 */
+            precioConPlanCop?: number;
+            /** Format: int32 */
+            puntosMaximos?: number;
+            /** Format: int32 */
+            puntosParaCubrirTodo?: number;
+            /** Format: int32 */
+            saldoEcoPuntos?: number;
         };
         CrearApelacionRequest: {
             texto: string;
@@ -5035,12 +5043,6 @@ export interface components {
             texto: string;
             /** Format: uuid */
             respuestaAId?: string | null;
-        };
-        EscalonDto: {
-            /** Format: int32 */
-            puntosMinimos?: number;
-            /** Format: int32 */
-            descuentoPorcentaje?: number;
         };
         EstadisticasPublicacionDto: {
             /** Format: uuid */
@@ -5258,6 +5260,8 @@ export interface components {
             montoRecargaCop?: number | null;
             facturaANombre: boolean;
             aceptoConsumidorFinal?: boolean;
+            /** Format: int32 */
+            puntosAUsar?: number;
         };
         LoginRequest: {
             /** Format: email */
@@ -5417,6 +5421,7 @@ export interface components {
             cotizacion?: components["schemas"]["CotizacionDto"];
             /** Format: date-time */
             expiraUtc?: string;
+            aplicadoConPuntos?: boolean;
         };
         PerfilEmpresaRequest: {
             nombreComercial: string;
@@ -5483,10 +5488,12 @@ export interface components {
             precioDestacarCop?: number;
             /** Format: int32 */
             duracionDestacadoDias?: number;
-            escalonesDestacar?: components["schemas"]["EscalonDto"][];
+            /** Format: int32 */
+            puntosDestacar?: number;
             /** Format: int32 */
             precioVerificarCop?: number;
-            escalonesVerificar?: components["schemas"]["EscalonDto"][];
+            /** Format: int32 */
+            puntosVerificar?: number;
             /** Format: int32 */
             precioPremiumCop?: number;
             /** Format: int32 */
@@ -5528,6 +5535,8 @@ export interface components {
             diasRecordatorioVencimiento?: number;
             /** Format: int32 */
             diasCicloDestacadosGratis?: number;
+            /** Format: int32 */
+            minimoCobroCop?: number;
         };
         PqrAdminDto: {
             /** Format: uuid */
@@ -5919,7 +5928,6 @@ export type EcoPuntosResumenDto = components['schemas']['EcoPuntosResumenDto'];
 export type EliminarCuentaRequest = components['schemas']['EliminarCuentaRequest'];
 export type EmitirFacturaRequest = components['schemas']['EmitirFacturaRequest'];
 export type EnviarMensajeRequest = components['schemas']['EnviarMensajeRequest'];
-export type EscalonDto = components['schemas']['EscalonDto'];
 export type EstadisticasPublicacionDto = components['schemas']['EstadisticasPublicacionDto'];
 export type EstadoApelacionDto = components['schemas']['EstadoApelacionDto'];
 export type EstadoDenunciaDto = components['schemas']['EstadoDenunciaDto'];

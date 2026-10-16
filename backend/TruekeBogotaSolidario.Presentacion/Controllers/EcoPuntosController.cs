@@ -27,7 +27,7 @@ public sealed class EcoPuntosController : ControllerBase
     public async Task<ActionResult<PaginaDto<MovimientoEcoPuntosDto>>> Movimientos([FromQuery] PaginacionRequest p)
         => Ok(await _eco.MovimientosAsync(User.IdActual(), p.Pagina, p.Tamano));
 
-    /// <summary>Precio con descuento por Eco-Puntos para Destacar o Verificar (nunca llega a gratis).</summary>
+    /// <summary>Precio de Destacar o Verificar con el descuento del plan y cuántos Eco-Puntos se pueden usar (la persona elige).</summary>
     [HttpGet("cotizacion")]
     public async Task<ActionResult<CotizacionDto>> Cotizar([FromQuery] ConceptoPagoDto concepto)
     {

@@ -2,15 +2,18 @@ using TruekeBogotaSolidario.Datos.Entidades;
 
 namespace TruekeBogotaSolidario.Datos.Common;
 
-public sealed record EscalonDescuento(int PuntosMinimos, int DescuentoPorcentaje);
-
-public sealed record CotizacionBeneficio(int PrecioBaseCop, int DescuentoPorcentaje, int PuntosACanjear, int TotalCop);
+/// <summary>
+/// Precio de Destacar o Verificar: <paramref name="DescuentoPorcentaje"/> es el del plan; <paramref name="PuntosACanjear"/> los que la
+/// persona eligió usar (1 punto = <see cref="PoliticaEcoPuntos.CopPorEcoPunto"/> COP); <paramref name="PuntosMaximos"/> los que puede usar.
+/// </summary>
+public sealed record CotizacionBeneficio(int PrecioBaseCop, int DescuentoPorcentaje, int PuntosACanjear, int TotalCop,
+    int PrecioConPlanCop, int PuntosMaximos, int PuntosParaCubrirTodo);
 
 /// <summary>
 /// ÚNICA fuente de verdad de la economía de Eco-Puntos y de los planes. El endpoint público
 /// GET /api/v1/eco-puntos/politica lee de aquí (nada se hardcodea en los DTOs).
-/// Reglas de oro: los Eco-Puntos nunca se convierten a pesos y nunca pagan al 100 % un beneficio con precio en pesos
-/// (Destacar, Verificar, planes). El único uso "solo con puntos" es Impulsar, que no tiene precio en pesos.
+/// Reglas de oro: los Eco-Puntos nunca se convierten a pesos ni salen de la plataforma. Valen lo mismo que en la recarga
+/// (1 punto = 100 COP) y la persona ELIGE cuántos usar en Destacar y Verificar (pueden cubrirlo todo). Los planes se pagan en pesos.
 /// </summary>
 public static class PoliticaEcoPuntos
 {
@@ -91,27 +94,34 @@ public static class PoliticaEcoPuntos
         _ => 0
     };
 
-    public static readonly IReadOnlyList<EscalonDescuento> EscalonesDestacar =
-        new[] { new EscalonDescuento(500, 40), new EscalonDescuento(200, 25) };
-
-    public static readonly IReadOnlyList<EscalonDescuento> EscalonesVerificar =
-        new[] { new EscalonDescuento(500, 35), new EscalonDescuento(200, 20) };
-
     // ---- Recarga con dinero real (entra a la plataforma vía Wompi; nunca sale) ----
     public const int CopPorEcoPunto = 100;
     public const int RecargaMinimaCop = 2_000;
     public const int RecargaMaximaCop = 500_000;
+    /// <summary>Lo mínimo que se cobra con la pasarela: con puntos, el resto por pagar es 0 (todo con puntos) o al menos esto.</summary>
+    public const int MinimoCobroCop = 2_000;
+
+    /// <summary>Puntos que cubren todo el precio de Destacar o Verificar sin plan (60 y 200).</summary>
+    public static int PuntosParaCubrir(int precioCop) => (int)Math.Ceiling(precioCop / (decimal)CopPorEcoPunto);
 
     /// <summary>
-    /// Calcula el precio final. Se canjean los puntos del escalón alcanzado (200 o 500) a cambio del descuento;
-    /// el plan vigente suma su descuento (Premium 15 %, Empresa 20 %). El descuento tiene tope de 90 %: siempre se paga algo.
+    /// Precio final: primero el descuento del plan vigente (Premium 15 %, Empresa 20 %); después, los puntos que la persona
+    /// ELIGE usar (nunca se canjean solos). O cubren todo, o dejan al menos <see cref="MinimoCobroCop"/> para la pasarela.
     /// </summary>
-    public static CotizacionBeneficio Cotizar(int precioBaseCop, IReadOnlyList<EscalonDescuento> escalones, int saldoPuntos, int descuentoPlanPorcentaje)
+    public static CotizacionBeneficio Cotizar(int precioBaseCop, int saldoPuntos, int descuentoPlanPorcentaje, int puntosAUsar)
     {
-        var escalon = escalones.OrderByDescending(e => e.PuntosMinimos).FirstOrDefault(e => saldoPuntos >= e.PuntosMinimos);
-        var descuento = Math.Min(90, (escalon?.DescuentoPorcentaje ?? 0) + Math.Max(0, descuentoPlanPorcentaje));
-        var puntos = escalon?.PuntosMinimos ?? 0;
-        var total = (int)Math.Round(precioBaseCop * (100 - descuento) / 100m, MidpointRounding.AwayFromZero);
-        return new CotizacionBeneficio(precioBaseCop, descuento, puntos, Math.Max(total, 1));
+        var descuento = Math.Clamp(descuentoPlanPorcentaje, 0, 90);
+        var conPlan = (int)Math.Round(precioBaseCop * (100 - descuento) / 100m, MidpointRounding.AwayFromZero);
+        var cubrirTodo = PuntosParaCubrir(conPlan);
+        var maxParcial = Math.Max(0, (conPlan - MinimoCobroCop) / CopPorEcoPunto);
+        var maximos = saldoPuntos >= cubrirTodo ? cubrirTodo : Math.Min(saldoPuntos, maxParcial);
+        if (puntosAUsar < 0 || puntosAUsar > Math.Max(0, saldoPuntos))
+            throw new ReglaDeNegocioException("No tienes esos Eco-Puntos.");
+        if (puntosAUsar > maximos || (puntosAUsar > maxParcial && puntosAUsar < cubrirTodo))
+            throw new ReglaDeNegocioException(
+                $"Con Eco-Puntos puedes cubrirlo todo ({cubrirTodo} puntos) o dejar al menos {MinimoCobroCop:N0} COP por pagar (hasta {maxParcial} puntos).");
+        var usar = Math.Min(puntosAUsar, cubrirTodo);
+        var total = Math.Max(0, conPlan - usar * CopPorEcoPunto);
+        return new CotizacionBeneficio(precioBaseCop, descuento, usar, total, conPlan, maximos, cubrirTodo);
     }
 }

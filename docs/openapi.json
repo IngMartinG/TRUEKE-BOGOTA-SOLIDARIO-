@@ -5820,6 +5820,22 @@
           "ivaIncluidoCop": {
             "type": "number",
             "format": "double"
+          },
+          "precioConPlanCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "puntosMaximos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "puntosParaCubrirTodo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "saldoEcoPuntos": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -6477,20 +6493,6 @@
         },
         "additionalProperties": false
       },
-      "EscalonDto": {
-        "type": "object",
-        "properties": {
-          "puntosMinimos": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "descuentoPorcentaje": {
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "additionalProperties": false
-      },
       "EstadisticasPublicacionDto": {
         "type": "object",
         "properties": {
@@ -7091,6 +7093,12 @@
           },
           "aceptoConsumidorFinal": {
             "type": "boolean"
+          },
+          "puntosAUsar": {
+            "maximum": 1000000,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -7546,6 +7554,9 @@
           "expiraUtc": {
             "type": "string",
             "format": "date-time"
+          },
+          "aplicadoConPuntos": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -7727,21 +7738,17 @@
             "type": "integer",
             "format": "int32"
           },
-          "escalonesDestacar": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EscalonDto"
-            }
+          "puntosDestacar": {
+            "type": "integer",
+            "format": "int32"
           },
           "precioVerificarCop": {
             "type": "integer",
             "format": "int32"
           },
-          "escalonesVerificar": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/EscalonDto"
-            }
+          "puntosVerificar": {
+            "type": "integer",
+            "format": "int32"
           },
           "precioPremiumCop": {
             "type": "integer",
@@ -7823,6 +7830,10 @@
             "format": "int32"
           },
           "diasCicloDestacadosGratis": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "minimoCobroCop": {
             "type": "integer",
             "format": "int32"
           }

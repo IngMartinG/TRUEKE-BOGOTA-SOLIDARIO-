@@ -58,10 +58,10 @@ public sealed class EcoPuntosService : IEcoPuntosService
     {
         var ganancias = new[] { ModoTransaccion.Donacion, ModoTransaccion.Trueke, ModoTransaccion.Compra }
             .Select(m => new GananciaDto(m.ToString(), PoliticaEcoPuntos.PuntosPorModo(m), PoliticaEcoPuntos.ReputacionPorModo(m))).ToList();
-        static List<EscalonDto> Mapear(IEnumerable<EscalonDescuento> e) => e.OrderBy(x => x.PuntosMinimos).Select(x => new EscalonDto(x.PuntosMinimos, x.DescuentoPorcentaje)).ToList();
         return new PoliticaEcoPuntosDto(PoliticaEcoPuntos.PuntosBienvenida, ganancias, PoliticaEcoPuntos.MaxTransaccionesConPuntosPorDia,
             PoliticaEcoPuntos.ReputacionMaxima, PoliticaEcoPuntos.PrecioDestacarCop, PoliticaEcoPuntos.DuracionDestacadoDias,
-            Mapear(PoliticaEcoPuntos.EscalonesDestacar), PoliticaEcoPuntos.PrecioVerificarCop, Mapear(PoliticaEcoPuntos.EscalonesVerificar),
+            PoliticaEcoPuntos.PuntosParaCubrir(PoliticaEcoPuntos.PrecioDestacarCop), PoliticaEcoPuntos.PrecioVerificarCop,
+            PoliticaEcoPuntos.PuntosParaCubrir(PoliticaEcoPuntos.PrecioVerificarCop),
             PoliticaEcoPuntos.PrecioPremiumCop, PoliticaEcoPuntos.DestacadosGratisPremium, PoliticaEcoPuntos.DescuentoPremiumPorcentaje,
             PoliticaEcoPuntos.PrecioEmpresaCop, PoliticaEcoPuntos.DuracionSuscripcionDias, PoliticaEcoPuntos.CopPorEcoPunto,
             PoliticaEcoPuntos.RecargaMinimaCop, PoliticaEcoPuntos.RecargaMaximaCop,
@@ -69,6 +69,6 @@ public sealed class EcoPuntosService : IEcoPuntosService
             PoliticaEcoPuntos.DescuentoEmpresaPorcentaje, PoliticaEcoPuntos.MaxPublicacionesIndividual, PoliticaEcoPuntos.MaxPublicacionesPremium,
             PoliticaEcoPuntos.MaxPublicacionesEmpresa, PoliticaEcoPuntos.MaxVentasActivasSinIdentificar,
             PoliticaEcoPuntos.DiasEntreTransaccionesConPuntosMismaPareja, _facturacion.IvaEfectivo > 0, _facturacion.IvaEfectivo,
-            PoliticaEcoPuntos.DiasRecordatorioVencimiento, PoliticaEcoPuntos.DiasCicloDestacadosGratis);
+            PoliticaEcoPuntos.DiasRecordatorioVencimiento, PoliticaEcoPuntos.DiasCicloDestacadosGratis, PoliticaEcoPuntos.MinimoCobroCop);
     }
 }

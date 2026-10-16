@@ -81,8 +81,9 @@ public sealed class PagoService : IPagoService
         return iva <= 0 ? 0 : totalCop - Math.Round(totalCop / (1 + iva / 100m), 2, MidpointRounding.AwayFromZero);
     }
 
-    private CotizacionDto ADto(CotizacionBeneficio c)
-        => new(c.PrecioBaseCop, c.DescuentoPorcentaje, c.PuntosACanjear, c.TotalCop, IvaIncluido(c.TotalCop));
+    private CotizacionDto ADto(CotizacionBeneficio c, int saldo)
+        => new(c.PrecioBaseCop, c.DescuentoPorcentaje, c.PuntosACanjear, c.TotalCop, IvaIncluido(c.TotalCop),
+            c.PrecioConPlanCop, c.PuntosMaximos, c.PuntosParaCubrirTodo, saldo);
 
     private async Task<Usuario> CargarUsuarioAsync(Guid id)
         => await _usuarios.ObtenerPorIdAsync(id) ?? throw new AutenticacionException("Sesión no válida.");
@@ -91,18 +92,18 @@ public sealed class PagoService : IPagoService
     public async Task<CotizacionDto?> CotizarAsync(Guid actorId, ConceptoPagoDto concepto)
     {
         var u = await CargarUsuarioAsync(actorId);
-        var c = CotizarInterno(u, (ConceptoPago)(int)concepto, Ahora);
-        return c is null ? null : ADto(c);
+        var c = CotizarInterno(u, (ConceptoPago)(int)concepto, Ahora, puntosAUsar: 0);
+        return c is null ? null : ADto(c, u.SaldoEcoPuntos);
     }
 
-    /// <summary>Destacar y Verificar admiten descuento por Eco-Puntos y por plan (Premium 15 %, Empresa 20 %).</summary>
-    private static CotizacionBeneficio? CotizarInterno(Usuario u, ConceptoPago concepto, DateTime ahora)
+    /// <summary>Destacar y Verificar: descuento del plan (Premium 15 %, Empresa 20 %) y los Eco-Puntos que la persona elija.</summary>
+    private static CotizacionBeneficio? CotizarInterno(Usuario u, ConceptoPago concepto, DateTime ahora, int puntosAUsar)
     {
         var descuentoPlan = PoliticaEcoPuntos.DescuentoPlan(u.PlanEfectivo(ahora));
         return concepto switch
         {
-            ConceptoPago.Destacar => PoliticaEcoPuntos.Cotizar(PoliticaEcoPuntos.PrecioDestacarCop, PoliticaEcoPuntos.EscalonesDestacar, u.SaldoEcoPuntos, descuentoPlan),
-            ConceptoPago.Verificar => PoliticaEcoPuntos.Cotizar(PoliticaEcoPuntos.PrecioVerificarCop, PoliticaEcoPuntos.EscalonesVerificar, u.SaldoEcoPuntos, descuentoPlan),
+            ConceptoPago.Destacar => PoliticaEcoPuntos.Cotizar(PoliticaEcoPuntos.PrecioDestacarCop, u.SaldoEcoPuntos, descuentoPlan, puntosAUsar),
+            ConceptoPago.Verificar => PoliticaEcoPuntos.Cotizar(PoliticaEcoPuntos.PrecioVerificarCop, u.SaldoEcoPuntos, descuentoPlan, puntosAUsar),
             _ => null
         };
     }
@@ -135,7 +136,7 @@ public sealed class PagoService : IPagoService
                 if (pub is null || pub.PropietarioId != actorId) throw new NoEncontradoException("Publicación no encontrada.");
                 pub.ValidarPuedeDestacarse(ahora);
                 publicacionId = pub.Id;
-                cotizacion = CotizarInterno(u, concepto, ahora)!;
+                cotizacion = CotizarInterno(u, concepto, ahora, r.PuntosAUsar)!;
                 monto = cotizacion.TotalCop;
                 break;
             }
@@ -146,7 +147,7 @@ public sealed class PagoService : IPagoService
                 if (_almacen.Habilitado) documento = await _almacen.ValidarArchivoPropioAsync(r.DocumentoUrl, actorId, TipoArchivoDto.Documento, ct);
                 else ValidadorUrls.ExigirHostPermitido(r.DocumentoUrl, _urls.HostsPermitidosDocumentos, "El documento");
                 u.ValidarPuedeSolicitarVerificacion(documento);
-                cotizacion = CotizarInterno(u, concepto, ahora)!;
+                cotizacion = CotizarInterno(u, concepto, ahora, r.PuntosAUsar)!;
                 monto = cotizacion.TotalCop;
                 break;
             }
@@ -169,6 +170,12 @@ public sealed class PagoService : IPagoService
             default:
                 throw new ReglaDeNegocioException("Concepto de pago no válido.");
         }
+        if (r.PuntosAUsar > 0 && cotizacion is null)
+            throw new ReglaDeNegocioException("Los Eco-Puntos se pueden usar en destacar y en verificar la cuenta.");
+
+        // Cubierto del todo con Eco-Puntos: no hay cobro ni factura (no entra dinero); se aplica ya y queda en el historial.
+        if (cotizacion is { TotalCop: 0 })
+            return await AplicarConPuntosAsync(u, concepto, cotizacion, publicacionId, documento, ahora);
 
         // Factura: la persona elige SIEMPRE antes de pagar (validado antes de reservar puntos o cobrar).
         DatosComprador? aNombre = null;
@@ -192,7 +199,27 @@ public sealed class PagoService : IPagoService
         var expira = ahora.AddMinutes(_opciones.MinutosParaExpirarPendientes);
         return new PagoIniciadoDto(referencia, concepto.ToString(), monto, pago.MontoEnCentavos, Moneda, _proveedor.Nombre,
             _proveedor.LlavePublica, _proveedor.FirmaIntegridad(referencia, pago.MontoEnCentavos, Moneda),
-            cotizacion is null ? null : ADto(cotizacion), expira);
+            cotizacion is null ? null : ADto(cotizacion, u.SaldoEcoPuntos), expira);
+    }
+
+    private async Task<PagoIniciadoDto> AplicarConPuntosAsync(Usuario u, ConceptoPago concepto, CotizacionBeneficio c, Guid? publicacionId,
+        string? documento, DateTime ahora)
+    {
+        var referencia = "PTS-" + Guid.NewGuid().ToString("N");
+        u.DebitarEcoPuntos(c.PuntosACanjear, ConceptoEcoPuntos.CanjeDescuento, publicacionId ?? u.Id, NombreConcepto(concepto));
+        if (concepto == ConceptoPago.Destacar)
+        {
+            var pub = await _pubs.ObtenerPorIdAsync(publicacionId!.Value) ?? throw new NoEncontradoException("Publicación no encontrada.");
+            pub.MarcarDestacada(ahora);
+        }
+        else
+        {
+            u.SolicitarVerificacion(documento ?? "");
+        }
+        await _uow.GuardarCambiosAsync();
+        _log.LogInformation("{Concepto} pagado con {Puntos} Eco-Puntos ({Referencia})", concepto, c.PuntosACanjear, referencia);
+        return new PagoIniciadoDto(referencia, concepto.ToString(), 0, 0, Moneda, "EcoPuntos", null, null, ADto(c, u.SaldoEcoPuntos), ahora,
+            AplicadoConPuntos: true);
     }
 
     // ------------------------------------------------------------------ Estado (solo el dueño; reconcilia con la pasarela si sigue pendiente)

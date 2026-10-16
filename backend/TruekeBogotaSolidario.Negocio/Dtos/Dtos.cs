@@ -182,6 +182,8 @@ public sealed class IniciarPagoRequest
     /// </summary>
     [Required(ErrorMessage = "Indica si quieres la factura a tu nombre o a consumidor final.")] public bool? FacturaANombre { get; init; }
     public bool AceptoConsumidorFinal { get; init; }
+    /// <summary>Destacar y Verificar: cuántos Eco-Puntos usar (1 punto = 100 COP). 0 = no usar puntos; nunca se canjean solos.</summary>
+    [Range(0, 1_000_000)] public int PuntosAUsar { get; init; }
 }
 
 public enum OrdenPublicacionesDto { Recientes = 1, PrecioAsc = 2, PrecioDesc = 3 }
@@ -653,7 +655,9 @@ public sealed record EcoPuntosResumenDto(int Saldo, decimal Reputacion, int Tran
     DateTime? ProximaRecargaDestacadosUtc = null);
 
 /// <summary>Los precios incluyen IVA: IvaIncluidoCop es la parte del total que corresponde al impuesto.</summary>
-public sealed record CotizacionDto(int PrecioBaseCop, int DescuentoPorcentaje, int PuntosACanjear, int TotalCop, decimal IvaIncluidoCop);
+/// <summary>Precio de Destacar o Verificar. DescuentoPorcentaje es el del plan; los puntos los elige la persona.</summary>
+public sealed record CotizacionDto(int PrecioBaseCop, int DescuentoPorcentaje, int PuntosACanjear, int TotalCop, decimal IvaIncluidoCop,
+    int PrecioConPlanCop = 0, int PuntosMaximos = 0, int PuntosParaCubrirTodo = 0, int SaldoEcoPuntos = 0);
 
 public sealed record DatosFacturacionDto(bool Completos, string? TipoDocumento, string? Documento, string? Nombre, string? Correo,
     string? Direccion, string? MunicipioCodigo, string? Municipio);
@@ -696,20 +700,20 @@ public sealed record IngresosDto(DateTime Desde, DateTime Hasta, long AprobadoCo
     IReadOnlyList<IngresoMesDto> PorMes, IReadOnlyList<IngresoConceptoDto> PorConcepto);
 
 public sealed record PagoIniciadoDto(string Referencia, string Concepto, int MontoCop, long MontoEnCentavos, string Moneda,
-    string Proveedor, string? LlavePublica, string? FirmaIntegridad, CotizacionDto? Cotizacion, DateTime ExpiraUtc);
+    string Proveedor, string? LlavePublica, string? FirmaIntegridad, CotizacionDto? Cotizacion, DateTime ExpiraUtc,
+    bool AplicadoConPuntos = false);
 
 public sealed record PagoEstadoDto(string Referencia, string Concepto, int MontoCop, string Estado, DateTime FechaUtc, DateTime? FechaResolucionUtc);
 
-public sealed record EscalonDto(int PuntosMinimos, int DescuentoPorcentaje);
 public sealed record GananciaDto(string Modo, int Puntos, decimal Reputacion);
 public sealed record PoliticaEcoPuntosDto(
     int PuntosBienvenida, IReadOnlyList<GananciaDto> Ganancias, int MaxTransaccionesConPuntosPorDia, decimal ReputacionMaxima,
-    int PrecioDestacarCop, int DuracionDestacadoDias, IReadOnlyList<EscalonDto> EscalonesDestacar,
-    int PrecioVerificarCop, IReadOnlyList<EscalonDto> EscalonesVerificar,
+    int PrecioDestacarCop, int DuracionDestacadoDias, int PuntosDestacar,
+    int PrecioVerificarCop, int PuntosVerificar,
     int PrecioPremiumCop, int DestacadosGratisPremium, int DescuentoPremiumPorcentaje,
     int PrecioEmpresaCop, int DuracionSuscripcionDias,
     int CopPorEcoPunto, int RecargaMinimaCop, int RecargaMaximaCop,
     int PuntosImpulsar, int HorasEntreImpulsos, int DestacadosGratisEmpresa, int DescuentoEmpresaPorcentaje,
     int MaxPublicacionesIndividual, int MaxPublicacionesPremium, int MaxPublicacionesEmpresa, int MaxVentasActivasSinIdentificar,
     int DiasEntreTransaccionesConPuntosMismaPareja, bool PreciosIncluyenIva, decimal IvaPorcentaje,
-    int DiasRecordatorioVencimiento = 0, int DiasCicloDestacadosGratis = 0);
+    int DiasRecordatorioVencimiento = 0, int DiasCicloDestacadosGratis = 0, int MinimoCobroCop = 0);

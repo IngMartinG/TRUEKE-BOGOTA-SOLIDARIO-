@@ -122,7 +122,7 @@ interface Servicio {
       <h2 id="titulo-servicios" class="titulo-seccion">Servicios y planes</h2>
       <p class="mt-1 text-tenue">
         Publicar, intercambiar y donar es gratis: el plan Individual permite {{ politica()?.maxPublicacionesIndividual ?? 50 }} publicaciones activas.
-        Con suficientes Eco-Puntos tienes descuento en destacar y verificar; al pagar con descuento, esos puntos se usan.
+        Tus Eco-Puntos valen {{ politica()?.copPorEcoPunto ?? 100 | cop }} cada uno en destacar y verificar: tú eliges cuántos usar al pagar.
       </p>
       @if (config.pagosDePrueba()) {
         <div id="pagos-de-prueba" class="mt-5 scroll-mt-24 rounded-2xl border border-cielo-100 bg-cielo-50 p-4 text-sm dark:border-cielo-700/40 dark:bg-cielo-700/20" role="note">
@@ -265,27 +265,62 @@ interface Servicio {
           }
         } @else if (usaGratis()) {
         } @else if (cotizacion.value(); as c) {
+          <fieldset class="space-y-3 rounded-2xl border border-borde p-4">
+            <legend class="px-1 text-sm font-semibold">Usar mis Eco-Puntos <span class="font-normal text-tenue">· tienes {{ c.saldoEcoPuntos | numero }} · 1 punto = {{ copPorPunto() | cop }}</span></legend>
+            @if (limiteParcial() > 0 || puedeCubrirTodo()) {
+              @if (!cubreTodo() && limiteParcial() > 0) {
+                <label for="puntos-usar" class="flex items-center justify-between text-sm">
+                  <span>Puntos a usar</span><strong class="tabular-nums">{{ puntosAUsar() | numero }}</strong>
+                </label>
+                <input id="puntos-usar" type="range" class="w-full accent-bosque-600" min="0" [max]="limiteParcial()" step="1"
+                  [value]="puntosAUsar()" (input)="puntosAUsar.set(+$any($event.target).value)"
+                  [attr.aria-valuetext]="puntosAUsar() + ' puntos, pagas ' + (totalConPuntos() | cop)" />
+              }
+              <div class="flex flex-wrap gap-2">
+                @if (puedeCubrirTodo()) {
+                  <button type="button" class="btn btn-sm" [class]="cubreTodo() ? 'btn-sol' : 'btn-secundario'" [attr.aria-pressed]="cubreTodo()"
+                    (click)="puntosAUsar.set(cubreTodo() ? 0 : c.puntosParaCubrirTodo ?? 0)">
+                    <app-icono nombre="moneda" [tamano]="16" />Pagar todo con {{ c.puntosParaCubrirTodo | numero }} Eco-Puntos
+                  </button>
+                }
+                @if (puntosAUsar() > 0) {
+                  <button type="button" class="btn btn-fantasma btn-sm" (click)="puntosAUsar.set(0)">No usar puntos</button>
+                }
+              </div>
+              @if (!puedeCubrirTodo()) {
+                <p class="text-xs text-tenue">Con {{ c.puntosParaCubrirTodo | numero }} Eco-Puntos lo pagas completo. Si usas una parte, quedan al menos {{ politica()?.minimoCobroCop | cop }} por pagar.</p>
+              }
+            } @else {
+              <p class="text-sm text-tenue">Aún no tienes Eco-Puntos suficientes. Los ganas al completar intercambios o con una recarga.</p>
+            }
+          </fieldset>
           <dl class="space-y-2 rounded-2xl bg-superficie-2 p-4 text-sm">
             <div class="flex justify-between"><dt>Precio</dt><dd>{{ c.precioBaseCop | cop }}</dd></div>
             @if (c.descuentoPorcentaje) {
               <div class="flex justify-between text-bosque-700 dark:text-bosque-300">
-                <dt>Descuento ({{ c.descuentoPorcentaje }}%{{ (resumen.value()?.descuentoPlanPorcentaje ?? 0) > 0 ? ', incluye ' + resumen.value()?.descuentoPlanPorcentaje + '% de tu plan' : '' }})</dt>
-                <dd>−{{ (c.precioBaseCop ?? 0) - (c.totalCop ?? 0) | cop }}</dd>
+                <dt>Descuento de tu plan ({{ c.descuentoPorcentaje }}%)</dt>
+                <dd>−{{ (c.precioBaseCop ?? 0) - (c.precioConPlanCop ?? 0) | cop }}</dd>
               </div>
-              @if (c.puntosACanjear) {
-                <div class="flex justify-between text-tenue"><dt>Eco-Puntos que se canjean</dt><dd>{{ c.puntosACanjear | numero }}</dd></div>
-              }
             }
-            @if (c.ivaIncluidoCop) {
-              <div class="flex justify-between text-tenue"><dt>IVA incluido</dt><dd>{{ c.ivaIncluidoCop | cop }}</dd></div>
+            @if (puntosAUsar() > 0) {
+              <div class="flex justify-between text-bosque-700 dark:text-bosque-300">
+                <dt>{{ puntosAUsar() | numero }} Eco-Puntos</dt>
+                <dd>−{{ (c.precioConPlanCop ?? 0) - totalConPuntos() | cop }}</dd>
+              </div>
             }
-            <div class="flex justify-between border-t border-borde pt-2 text-base font-bold"><dt>Total</dt><dd>{{ c.totalCop | cop }}</dd></div>
+            @if (totalConPuntos() > 0 && politica()?.preciosIncluyenIva) {
+              <div class="flex justify-between text-tenue"><dt>IVA incluido</dt><dd>{{ ivaDe(totalConPuntos()) | cop }}</dd></div>
+            }
+            <div class="flex justify-between border-t border-borde pt-2 text-base font-bold"><dt>Total</dt><dd>{{ totalConPuntos() | cop }}</dd></div>
           </dl>
+          @if (cubreTodo()) {
+            <p class="text-sm text-tenue">Se paga del todo con Eco-Puntos: se aplica al instante, sin pasarela ni factura (no hay cobro en pesos).</p>
+          }
         } @else if (cotizacion.isLoading()) {
           <div class="esqueleto h-28"></div>
         }
         <!-- Factura: se elige en cada pago y queda registrado (evidencia ante reclamos) -->
-        <fieldset class="space-y-2" [hidden]="usaGratis()">
+        <fieldset class="space-y-2" [hidden]="usaGratis() || cubreTodo()">
           <legend class="etiqueta">¿A nombre de quién emitimos la factura electrónica?</legend>
           <label class="flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-3 transition"
             [class]="facturaANombre() === true ? 'border-bosque-500 bg-bosque-50/60 dark:bg-bosque-900/30' : 'border-borde hover:border-bosque-300'">
@@ -318,7 +353,7 @@ interface Servicio {
             </label>
           }
         </fieldset>
-        <p class="text-xs text-tenue" [hidden]="usaGratis()">Al pagar aceptas los <a routerLink="/terminos" class="enlace" target="_blank">términos<span class="sr-only"> (abre otra pestaña)</span></a>.</p>
+        <p class="text-xs text-tenue" [hidden]="usaGratis() || cubreTodo()">Al pagar aceptas los <a routerLink="/terminos" class="enlace" target="_blank">términos<span class="sr-only"> (abre otra pestaña)</span></a>.</p>
         @if (errorCompra()) {
           <p class="error-campo" role="alert">{{ errorCompra() }}</p>
         }
@@ -331,7 +366,11 @@ interface Servicio {
           </button>
         } @else {
           <button type="button" class="btn btn-primario" [disabled]="!compraLista() || pagando()" (click)="pagar()">
-            <app-icono nombre="candado" [tamano]="16" />{{ pagando() ? 'Procesando…' : 'Ir a pagar' }}
+            @if (cubreTodo()) {
+              <app-icono nombre="moneda" [tamano]="16" />{{ pagando() ? 'Aplicando…' : 'Usar ' + puntosAUsar() + ' Eco-Puntos' }}
+            } @else {
+              <app-icono nombre="candado" [tamano]="16" />{{ pagando() ? 'Procesando…' : 'Ir a pagar' }}
+            }
           </button>
         }
       </div>
@@ -363,8 +402,7 @@ export default class EcoPuntos {
 
   protected readonly servicios = computed<Servicio[]>(() => {
     const p = this.politica();
-    const escalones = (e?: { puntosMinimos?: number; descuentoPorcentaje?: number }[]) =>
-      (e ?? []).map((x) => `${x.descuentoPorcentaje}% de descuento con ${x.puntosMinimos} puntos`);
+    const enPuntos = (puntos?: number) => `Págalo con ${puntos ?? 0} Eco-Puntos o combínalos con pesos`;
     return [
       {
         concepto: 'Destacar',
@@ -377,7 +415,7 @@ export default class EcoPuntos {
           `Primera en el catálogo durante ${p?.duracionDestacadoDias ?? 7} días, con cualquier orden`,
           'Primera en «Cerca de mí» y en tu perfil, con pin especial en el mapa',
           'En la vitrina de destacadas de tu zona',
-          ...escalones(p?.escalonesDestacar),
+          enPuntos(p?.puntosDestacar),
         ],
       },
       {
@@ -387,7 +425,7 @@ export default class EcoPuntos {
         icono: 'verificado',
         precio: p?.precioVerificarCop ?? 20000,
         extra: ' pago único',
-        beneficios: ['Insignia visible en tu perfil', 'Apareces en el filtro de verificados', ...escalones(p?.escalonesVerificar)],
+        beneficios: ['Insignia visible en tu perfil y en tus publicaciones', 'Apareces en el filtro de verificados', enPuntos(p?.puntosVerificar)],
       },
       {
         concepto: 'Premium',
@@ -435,6 +473,30 @@ export default class EcoPuntos {
   }
   protected readonly destacadosGratis = computed(() => this.resumen.value()?.destacadosGratisRestantes ?? 0);
   protected readonly usaGratis = computed(() => this.conceptoCompra() === 'Destacar' && this.destacadosGratis() > 0);
+
+  /** Eco-Puntos que la persona eligió usar en Destacar o Verificar (nunca se canjean solos). */
+  protected readonly puntosAUsar = signal(0);
+  protected readonly copPorPunto = computed(() => this.politica()?.copPorEcoPunto ?? 100);
+  /** Uso parcial: deja al menos el cobro mínimo de la pasarela. */
+  protected readonly limiteParcial = computed(() => {
+    const c = this.cotizacion.value();
+    if (!c) return 0;
+    const maxParcial = Math.max(0, Math.floor(((c.precioConPlanCop ?? 0) - (this.politica()?.minimoCobroCop ?? 0)) / this.copPorPunto()));
+    return Math.min(c.saldoEcoPuntos ?? 0, maxParcial);
+  });
+  protected readonly puedeCubrirTodo = computed(() => {
+    const c = this.cotizacion.value();
+    return !!c && (c.saldoEcoPuntos ?? 0) >= (c.puntosParaCubrirTodo ?? Infinity);
+  });
+  protected readonly cubreTodo = computed(() => {
+    const c = this.cotizacion.value();
+    return !!c && this.puntosAUsar() > 0 && this.puntosAUsar() === c.puntosParaCubrirTodo;
+  });
+  protected readonly totalConPuntos = computed(() => {
+    const c = this.cotizacion.value();
+    if (!c) return 0;
+    return this.cubreTodo() ? 0 : Math.max(0, (c.precioConPlanCop ?? 0) - this.puntosAUsar() * this.copPorPunto());
+  });
   protected readonly esPlan = computed(() => this.conceptoCompra() === 'Premium' || this.conceptoCompra() === 'Empresa');
   protected readonly precioPlan = computed(() =>
     this.conceptoCompra() === 'Empresa' ? (this.politica()?.precioEmpresaCop ?? 50000) : (this.politica()?.precioPremiumCop ?? 15000),
@@ -485,7 +547,7 @@ export default class EcoPuntos {
     stream: ({ params }) => this.api.cotizacion(params),
   });
   protected readonly compraLista = computed(() => {
-    if (!this.facturaLista()) return false;
+    if (!this.facturaLista() && !this.cubreTodo()) return false;
     switch (this.conceptoCompra()) {
       case 'Destacar':
         return !!this.publicacionId();
@@ -522,6 +584,7 @@ export default class EcoPuntos {
     if (!this.exigirSesion()) return;
     this.conceptoCompra.set(concepto);
     this.errorCompra.set(null);
+    this.puntosAUsar.set(0);
     if (concepto !== 'Destacar') this.publicacionId.set(this.destacar() ?? '');
     this.prepararFactura();
     this.compraAbierta.set(true);
@@ -556,13 +619,14 @@ export default class EcoPuntos {
 
   protected async pagar(): Promise<void> {
     const concepto = this.conceptoCompra();
-    if (!concepto || !this.facturaLista()) return;
+    if (!concepto || !this.compraLista()) return; // con todo en puntos no hay factura que elegir
     await this.iniciar({
       concepto,
       publicacionId: concepto === 'Destacar' ? this.publicacionId() : null,
+      puntosAUsar: concepto === 'Destacar' || concepto === 'Verificar' ? this.puntosAUsar() : 0,
       documentoUrl: concepto === 'Verificar' ? this.documentoUrl() : null,
       montoRecargaCop: concepto === 'Recarga' ? this.montoRecarga() : null,
-      facturaANombre: this.facturaANombre() === true,
+      facturaANombre: this.facturaANombre() === true, // con todo en puntos no hay factura: el backend no la pide
       aceptoConsumidorFinal: this.facturaANombre() === false && this.aceptoConsumidorFinal(),
     });
   }
@@ -603,7 +667,15 @@ export default class EcoPuntos {
     try {
       const pago = await firstValueFrom(this.api.iniciarPago(r));
       this.compraAbierta.set(false);
-      if (pago.proveedor === 'Wompi' && pago.llavePublica) {
+      if (pago.aplicadoConPuntos) {
+        pestana?.close();
+        this.resumen.reload();
+        this.sesion.recargarUsuario();
+        this.avisos.puntos(
+          pago.concepto === 'Destacar' ? '¡Publicación destacada!' : 'Verificación enviada',
+          `Usaste ${r.puntosAUsar} Eco-Puntos. ${pago.concepto === 'Destacar' ? 'Ya aparece primero.' : 'El equipo revisará tu documento.'}`,
+        );
+      } else if (pago.proveedor === 'Wompi' && pago.llavePublica) {
         if (esOrigenLocal()) {
           const url = urlCheckoutWompi(pago, null);
           if (pestana) pestana.location.href = url;

@@ -113,7 +113,7 @@ export default class Ayuda {
       titulo: 'Eco-Puntos, pagos y facturas',
       icono: 'moneda',
       preguntas: [
-        { p: '¿Qué son los Eco-Puntos?', r: 'La moneda interna de la comunidad: los ganas al completar intercambios (más por donar) y sirven para impulsar publicaciones o pagar parte de los beneficios. No se convierten en dinero.' },
+        { p: '¿Qué son los Eco-Puntos?', r: 'La moneda interna de la comunidad: los ganas al completar intercambios (más por donar) y sirven para impulsar publicaciones y para pagar destacar o verificar tu cuenta: cada punto vale $100 y tú eliges cuántos usar (pueden cubrirlo todo). No se convierten en dinero.' },
         { p: '¿Intercambiar o donar cuesta algo?', r: 'No. Usar la plataforma es gratis. Solo pagas si quieres un beneficio opcional: destacar una publicación, verificar tu cuenta o un plan Premium o Empresa.' },
         { p: '¿Por qué me llega una factura?', r: 'La ley colombiana obliga a facturar electrónicamente cada pago a la plataforma. Sin datos, la factura sale a "consumidor final"; si la necesitas a tu nombre o al de tu empresa, agrega tu cédula o NIT en Cuenta → Pagos y facturas.' },
         { p: '¿Puedo arrepentirme de una compra?', r: 'Sí: tienes derecho de retracto dentro de los 5 días hábiles siguientes. Solicítalo desde Soporte.' },
