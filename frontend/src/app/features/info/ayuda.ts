@@ -74,7 +74,7 @@ export default class Ayuda {
 
   protected readonly consejos = [
     'Coordina todo por el chat de Trueke: no compartas tu número ni tu correo.',
-    'Entrega en un lugar público y concurrido, de día (centros comerciales, estaciones, parques).',
+    'Entrega de día en un lugar público y concurrido: una estación de TransMilenio, un centro comercial, una biblioteca pública o frente a un CAI.',
     'Revisa el objeto antes de confirmar la entrega.',
     'Nunca pagues por adelantado a alguien que no conoces.',
     'Si algo no te da confianza, cancela y repórtalo.',

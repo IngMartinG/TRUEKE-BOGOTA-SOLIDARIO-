@@ -28,12 +28,13 @@ import { Bloquear } from '../../shared/ui/bloquear';
 import { Denunciar } from '../../shared/ui/denunciar';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Icono } from '../../shared/ui/icono';
+import { PuntosEncuentro } from '../../shared/ui/puntos-encuentro';
 import { desplazamiento } from '../../shared/movimiento';
 
 const TAMANO = 40;
 
 @Component({
-  imports: [FormsModule, RouterLink, Avatar, Icono, EstadoVacio, Denunciar, Bloquear, HacePipe, HoraPipe, FechaPipe],
+  imports: [FormsModule, RouterLink, Avatar, Icono, EstadoVacio, PuntosEncuentro, Denunciar, Bloquear, HacePipe, HoraPipe, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor py-4 sm:py-8">
@@ -196,6 +197,9 @@ const TAMANO = 40;
                   <div class="py-12 text-center">
                     <p class="font-semibold">¡Rompe el hielo! 👋</p>
                     <p class="mt-1 text-sm text-tenue">Propón un lugar público y un horario para la entrega.</p>
+                    @if (actual()?.escribible !== false && !lugaresAbiertos()) {
+                      <app-puntos-encuentro variante="chat" class="mt-4 [&_ul]:justify-center" (elegir)="proponerLugar($event)" />
+                    }
                   </div>
                 }
               }
@@ -221,7 +225,18 @@ const TAMANO = 40;
                   <button type="button" class="btn-icono" (click)="cancelarRespuesta()" aria-label="Cancelar respuesta"><app-icono nombre="x" [tamano]="16" /></button>
                 </div>
               }
-              <form class="flex items-end gap-2 border-t border-borde p-3" [class.border-t-0]="respondiendoA()" (ngSubmit)="enviar()">
+              @if (lugaresAbiertos()) {
+                <div id="lugares-seguros" class="border-t border-borde bg-superficie-2/60 px-3 pt-2.5">
+                  <p class="mb-2 text-xs text-tenue">Elige un tipo de lugar: se escribe la propuesta y puedes editarla antes de enviar.</p>
+                  <app-puntos-encuentro variante="chat" (elegir)="proponerLugar($event)" />
+                </div>
+              }
+              <form class="flex items-end gap-2 border-t border-borde p-3" [class.border-t-0]="respondiendoA() || lugaresAbiertos()" (ngSubmit)="enviar()">
+                <button type="button" class="btn-icono size-11 shrink-0 aria-expanded:bg-bosque-50 aria-expanded:text-bosque-700 dark:aria-expanded:bg-bosque-900/40 dark:aria-expanded:text-bosque-300"
+                  [attr.aria-expanded]="lugaresAbiertos()" aria-controls="lugares-seguros" aria-label="Proponer un lugar seguro" title="Proponer un lugar seguro"
+                  (click)="lugaresAbiertos.update((v) => !v)">
+                  <app-icono nombre="escudo" [tamano]="20" />
+                </button>
                 <label for="nuevo-mensaje" class="sr-only">Escribe un mensaje</label>
                 <textarea #entrada id="nuevo-mensaje" name="texto" rows="1" class="entrada max-h-32 min-h-11 resize-none rounded-2xl py-2.5" maxlength="1000"
                   [(ngModel)]="texto" (input)="alEscribir()" (keydown.enter)="alPresionarEnter($event)" (keydown.escape)="cancelarRespuesta()" placeholder="Escribe un mensaje…"></textarea>
@@ -269,6 +284,8 @@ export default class Mensajes {
   protected readonly aDenunciar = signal<string | null>(null);
   protected readonly denunciaAbierta = signal(false);
   protected readonly respondiendoA = signal<MensajeChatDto | null>(null);
+  /** Botones de lugares seguros sobre el cuadro de texto. */
+  protected readonly lugaresAbiertos = signal(false);
   protected readonly deslizamiento = signal<{ id: string; dx: number } | null>(null);
   protected readonly resaltado = signal<string | null>(null);
   /** Mensaje tocado en pantalla táctil: muestra sus acciones (con mouse aparecen al pasar por encima). */
@@ -427,6 +444,17 @@ export default class Mensajes {
   protected estaEnLinea(c: ConversacionDto): boolean {
     const id = c.contraparte?.id;
     return (id ? this.tiempoReal.enLinea().get(id) : undefined) ?? !!c.contraparteEnLinea;
+  }
+
+  /** Escribe la propuesta del lugar sin enviarla: la persona la ajusta (día, hora) y la envía ella. */
+  protected proponerLugar(propuesta: string): void {
+    this.texto.set(propuesta);
+    this.lugaresAbiertos.set(false);
+    requestAnimationFrame(() => {
+      const e = this.entrada()?.nativeElement;
+      e?.focus();
+      e?.setSelectionRange(propuesta.length, propuesta.length);
+    });
   }
 
   protected alEscribir(): void {

@@ -27,12 +27,13 @@ import { VisorImagenes } from '../../shared/ui/visor-imagenes';
 import { ImagenPublicacion } from '../../shared/ui/imagen-publicacion';
 import { InsigniaModo } from '../../shared/ui/insignia-modo';
 import { Mapa } from '../../shared/ui/mapa';
+import { PuntosEncuentro } from '../../shared/ui/puntos-encuentro';
 import { Modal } from '../../shared/ui/modal';
 import { Comentarios } from './comentarios';
 import { Volver } from '../../shared/ui/volver';
 
 @Component({
-  imports: [Volver, 
+  imports: [Volver, PuntosEncuentro, 
     RouterLink,
     FormsModule,
     Icono,
@@ -245,9 +246,10 @@ import { Volver } from '../../shared/ui/volver';
               <p class="flex items-center gap-2 font-bold text-bosque-800 dark:text-bosque-200"><app-icono nombre="escudo" [tamano]="18" />Intercambia con confianza</p>
               <ul class="mt-2 space-y-1.5 text-bosque-900/80 dark:text-bosque-100/80">
                 <li>• Coordina todo por el chat de Trueke; nunca compartas tus contraseñas.</li>
-                <li>• Encuéntrate en lugares públicos y concurridos.</li>
                 <li>• Revisa el objeto antes de confirmar la entrega.</li>
               </ul>
+              <h2 class="mt-4 mb-3 font-bold text-bosque-800 dark:text-bosque-200">Puntos seguros de encuentro</h2>
+              <app-puntos-encuentro />
             </div>
 
             <div class="flex flex-wrap justify-center gap-4 text-xs max-lg:order-2">
