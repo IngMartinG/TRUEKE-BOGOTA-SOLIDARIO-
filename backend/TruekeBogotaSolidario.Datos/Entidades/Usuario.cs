@@ -43,6 +43,8 @@ public class Usuario
     // Perfil de empresa (solo se muestra con el plan Empresa vigente)
     public string? NombreComercial { get; private set; }
     public string? Nit { get; private set; }
+    /// <summary>La empresa decide si su NIT se ve en el perfil público (si es persona natural, el NIT es su cédula).</summary>
+    public bool MostrarNit { get; private set; }
 
     // Datos para la factura electrónica (opcionales: sin ellos se factura a "consumidor final")
     public TipoDocumentoFiscal? FacturacionTipoDocumento { get; private set; }
@@ -74,6 +76,8 @@ public class Usuario
     public TipoCuenta TipoCuenta { get; private set; }
     public DateTime? FechaVencimientoSuscripcion { get; private set; }
     public int DestacadosGratisRestantes { get; private set; }
+    /// <summary>Cuándo se repone el cupo de destacados gratis (cada 30 días mientras el plan esté vigente; no se acumula).</summary>
+    public DateTime? ProximaRecargaDestacadosUtc { get; private set; }
 
     // Verificación de identidad
     public EstadoVerificacion EstadoVerificacion { get; private set; }
@@ -180,14 +184,18 @@ public class Usuario
         return anterior;
     }
 
-    /// <summary>Nombre comercial y NIT visibles en el perfil público mientras el plan Empresa esté vigente.</summary>
-    public void ActualizarPerfilEmpresa(string nombreComercial, string nit, DateTime ahoraUtc)
+    /// <summary>
+    /// Nombre comercial (en las publicaciones y el perfil) y NIT registrado mientras el plan Empresa esté vigente.
+    /// El número de NIT solo se muestra en el perfil público si la empresa lo elige.
+    /// </summary>
+    public void ActualizarPerfilEmpresa(string nombreComercial, string nit, bool mostrarNit, DateTime ahoraUtc)
     {
         if (!EmpresaVigente(ahoraUtc)) throw new ReglaDeNegocioException("El perfil de empresa está disponible con el plan Empresa vigente.");
         var nombre = (nombreComercial ?? "").Trim();
         if (nombre.Length is < 2 or > 120 || nombre.Any(char.IsControl)) throw new ReglaDeNegocioException("El nombre comercial debe tener entre 2 y 120 caracteres.");
         NombreComercial = nombre;
         Nit = DocumentosFiscales.NormalizarNit(nit);
+        MostrarNit = mostrarNit;
     }
 
     // ---------------- Facturación electrónica ----------------
@@ -340,12 +348,14 @@ public class Usuario
         GoogleSub = null;
         NombreComercial = null;
         Nit = null;
+        MostrarNit = false;
         BorrarDatosFacturacion();
         DocumentoVerificacionUrl = null;
         MotivoRechazoVerificacion = null;
         FotoUrl = null;
         SaldoEcoPuntos = 0;
         DestacadosGratisRestantes = 0;
+        ProximaRecargaDestacadosUtc = null;
         IntentosFallidosLogin = 0;
         BloqueadoHasta = null;
         CorreoVerificado = false;
@@ -516,6 +526,7 @@ public class Usuario
         {
             FechaVencimientoSuscripcion = ahoraUtc;
             DestacadosGratisRestantes = 0;
+            ProximaRecargaDestacadosUtc = null;
         }
     }
 
@@ -546,29 +557,64 @@ public class Usuario
     {
         ValidarPuedeSuscribirse(TipoCuenta.Premium, ahoraUtc);
         Renovar(TipoCuenta.Premium, ahoraUtc);
-        DestacadosGratisRestantes = PoliticaEcoPuntos.DestacadosGratisPremium; // se resetea en cada renovación pagada
     }
 
     public void ActivarEmpresa(DateTime ahoraUtc)
     {
         ValidarPuedeSuscribirse(TipoCuenta.Empresa, ahoraUtc);
         Renovar(TipoCuenta.Empresa, ahoraUtc);
-        DestacadosGratisRestantes = PoliticaEcoPuntos.DestacadosGratisEmpresa; // se resetea en cada renovación pagada
     }
 
+    /// <summary>
+    /// Renovar con el plan vigente solo suma días: el cupo de destacados y su próxima reposición siguen igual (no se pierde nada).
+    /// Un plan nuevo (o tras vencer) arranca con el cupo completo y lo repone cada 30 días.
+    /// </summary>
     private void Renovar(TipoCuenta plan, DateTime ahoraUtc)
     {
-        var baseFecha = FechaVencimientoSuscripcion.HasValue && FechaVencimientoSuscripcion.Value > ahoraUtc ? FechaVencimientoSuscripcion.Value : ahoraUtc;
+        var vigente = PlanEfectivo(ahoraUtc) == plan;
+        var baseFecha = vigente ? FechaVencimientoSuscripcion!.Value : ahoraUtc;
         TipoCuenta = plan;
         FechaVencimientoSuscripcion = baseFecha.AddDays(PoliticaEcoPuntos.DuracionSuscripcionDias);
+        if (!vigente)
+        {
+            DestacadosGratisRestantes = PoliticaEcoPuntos.DestacadosGratisPorPlan(plan);
+            ProximaRecargaDestacadosUtc = ahoraUtc.AddDays(PoliticaEcoPuntos.DiasCicloDestacadosGratis);
+        }
     }
 
-    public bool PuedeUsarDestacadoGratis(DateTime ahoraUtc) => PlanPagoVigente(ahoraUtc) && DestacadosGratisRestantes > 0;
+    /// <summary>Destacados gratis disponibles hoy: si ya pasó la fecha de reposición, el cupo completo del plan.</summary>
+    public int DestacadosGratisDisponibles(DateTime ahoraUtc)
+    {
+        if (!PlanPagoVigente(ahoraUtc)) return 0;
+        return ProximaRecargaDestacadosUtc is { } proxima && proxima <= ahoraUtc
+            ? PoliticaEcoPuntos.DestacadosGratisPorPlan(PlanEfectivo(ahoraUtc))
+            : DestacadosGratisRestantes;
+    }
+
+    /// <summary>Próxima reposición del cupo vista hoy (si la fecha guardada ya pasó, la del ciclo siguiente).</summary>
+    public DateTime? ProximaRecargaDestacadosVigente(DateTime ahoraUtc)
+    {
+        if (!PlanPagoVigente(ahoraUtc) || ProximaRecargaDestacadosUtc is not { } proxima) return null;
+        while (proxima <= ahoraUtc) proxima = proxima.AddDays(PoliticaEcoPuntos.DiasCicloDestacadosGratis);
+        return proxima;
+    }
+
+    /// <summary>Aplica la reposición pendiente (si toca) y deja la próxima fecha en el siguiente ciclo de 30 días.</summary>
+    private void ReponerDestacadosSiToca(DateTime ahoraUtc)
+    {
+        if (!PlanPagoVigente(ahoraUtc) || ProximaRecargaDestacadosUtc is not { } proxima || proxima > ahoraUtc) return;
+        DestacadosGratisRestantes = PoliticaEcoPuntos.DestacadosGratisPorPlan(PlanEfectivo(ahoraUtc));
+        while (proxima <= ahoraUtc) proxima = proxima.AddDays(PoliticaEcoPuntos.DiasCicloDestacadosGratis);
+        ProximaRecargaDestacadosUtc = proxima;
+    }
+
+    public bool PuedeUsarDestacadoGratis(DateTime ahoraUtc) => DestacadosGratisDisponibles(ahoraUtc) > 0;
 
     public void UsarDestacadoGratis(DateTime ahoraUtc)
     {
         if (!PlanPagoVigente(ahoraUtc)) throw new ReglaDeNegocioException("Los destacados gratis son un beneficio de los planes Premium y Empresa vigentes.");
-        if (DestacadosGratisRestantes <= 0) throw new ReglaDeNegocioException("No te quedan destacados gratis este mes.");
+        ReponerDestacadosSiToca(ahoraUtc);
+        if (DestacadosGratisRestantes <= 0) throw new ReglaDeNegocioException("Ya usaste los destacados gratis de este ciclo: se reponen cada 30 días.");
         DestacadosGratisRestantes--;
     }
 

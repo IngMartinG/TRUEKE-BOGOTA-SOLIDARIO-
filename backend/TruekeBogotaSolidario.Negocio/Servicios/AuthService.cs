@@ -283,7 +283,7 @@ public sealed class AuthService : IAuthService
     public async Task<UsuarioDto> ActualizarPerfilEmpresaAsync(Guid actorId, PerfilEmpresaRequest r)
     {
         var u = await CargarAsync(actorId);
-        u.ActualizarPerfilEmpresa(r.NombreComercial, r.Nit, Ahora);
+        u.ActualizarPerfilEmpresa(r.NombreComercial, r.Nit, r.MostrarNit, Ahora);
         await _uow.GuardarCambiosAsync();
         return Mapeos.AUsuarioDto(u, Ahora);
     }

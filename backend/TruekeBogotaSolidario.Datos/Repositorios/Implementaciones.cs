@@ -144,8 +144,11 @@ public sealed class PublicacionRepository : IPublicacionRepository
         var ordenada = f.Orden switch
         {
             // sin precio (Trueke/Donación) al final en ambos sentidos
-            OrdenPublicaciones.PrecioAsc => q.OrderBy(p => p.PrecioReferenciaCop == null).ThenBy(p => p.PrecioReferenciaCop).ThenByDescending(p => p.FechaPublicacion),
-            OrdenPublicaciones.PrecioDesc => q.OrderBy(p => p.PrecioReferenciaCop == null).ThenByDescending(p => p.PrecioReferenciaCop).ThenByDescending(p => p.FechaPublicacion),
+            // destacadas VIGENTES primero en cualquier orden (es lo que se paga); dentro de cada grupo, el orden elegido
+            OrdenPublicaciones.PrecioAsc => q.OrderByDescending(p => p.DestacadaHasta != null && p.DestacadaHasta > ahoraUtc)
+                .ThenBy(p => p.PrecioReferenciaCop == null).ThenBy(p => p.PrecioReferenciaCop).ThenByDescending(p => p.FechaPublicacion),
+            OrdenPublicaciones.PrecioDesc => q.OrderByDescending(p => p.DestacadaHasta != null && p.DestacadaHasta > ahoraUtc)
+                .ThenBy(p => p.PrecioReferenciaCop == null).ThenByDescending(p => p.PrecioReferenciaCop).ThenByDescending(p => p.FechaPublicacion),
             // con texto: primero las que tienen más términos en el TÍTULO; dentro de cada grupo, el orden de siempre
             _ => (terminos.Count > 0
                     ? q.OrderByDescending(CoincidenciasEnTitulo(terminos)).ThenByDescending(p => p.DestacadaHasta != null && p.DestacadaHasta > ahoraUtc)
@@ -204,7 +207,8 @@ public sealed class PublicacionRepository : IPublicacionRepository
         tamano = Math.Clamp(tamano, 1, 50);
         var q = Visibles(ahoraUtc).Where(p => p.PropietarioId == propietarioId);
         var total = await q.CountAsync();
-        var items = await q.OrderByDescending(p => p.FechaPublicacion).ThenBy(p => p.Id).Skip((pagina - 1) * tamano).Take(tamano).ToListAsync();
+        var items = await q.OrderByDescending(p => p.DestacadaHasta != null && p.DestacadaHasta > ahoraUtc) // destacadas primero
+            .ThenByDescending(p => p.FechaPublicacion).ThenBy(p => p.Id).Skip((pagina - 1) * tamano).Take(tamano).ToListAsync();
         return (items, total);
     }
 

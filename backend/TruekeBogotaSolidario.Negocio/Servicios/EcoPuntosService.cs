@@ -38,8 +38,9 @@ public sealed class EcoPuntosService : IEcoPuntosService
         var planVigente = plan != TipoCuenta.Individual;
         return new EcoPuntosResumenDto(u.SaldoEcoPuntos, u.Reputacion, hoy,
             Math.Max(0, PoliticaEcoPuntos.MaxTransaccionesConPuntosPorDia - hoy), plan.ToString(),
-            planVigente ? u.FechaVencimientoSuscripcion : null, planVigente ? u.DestacadosGratisRestantes : 0,
-            PoliticaEcoPuntos.MaxPublicacionesActivas(plan), PoliticaEcoPuntos.DescuentoPlan(plan));
+            planVigente ? u.FechaVencimientoSuscripcion : null, u.DestacadosGratisDisponibles(ahora),
+            PoliticaEcoPuntos.MaxPublicacionesActivas(plan), PoliticaEcoPuntos.DescuentoPlan(plan),
+            planVigente ? u.ProximaRecargaDestacadosVigente(ahora) : null);
     }
 
     public async Task<PaginaDto<MovimientoEcoPuntosDto>> MovimientosAsync(Guid actorId, int pagina, int tamano)
@@ -67,6 +68,7 @@ public sealed class EcoPuntosService : IEcoPuntosService
             PoliticaEcoPuntos.PuntosImpulsar, PoliticaEcoPuntos.HorasEntreImpulsos, PoliticaEcoPuntos.DestacadosGratisEmpresa,
             PoliticaEcoPuntos.DescuentoEmpresaPorcentaje, PoliticaEcoPuntos.MaxPublicacionesIndividual, PoliticaEcoPuntos.MaxPublicacionesPremium,
             PoliticaEcoPuntos.MaxPublicacionesEmpresa, PoliticaEcoPuntos.MaxVentasActivasSinIdentificar,
-            PoliticaEcoPuntos.DiasEntreTransaccionesConPuntosMismaPareja, _facturacion.IvaEfectivo > 0, _facturacion.IvaEfectivo);
+            PoliticaEcoPuntos.DiasEntreTransaccionesConPuntosMismaPareja, _facturacion.IvaEfectivo > 0, _facturacion.IvaEfectivo,
+            PoliticaEcoPuntos.DiasRecordatorioVencimiento, PoliticaEcoPuntos.DiasCicloDestacadosGratis);
     }
 }

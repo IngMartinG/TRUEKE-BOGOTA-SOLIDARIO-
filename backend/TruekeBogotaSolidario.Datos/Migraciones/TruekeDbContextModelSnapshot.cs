@@ -17,7 +17,7 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.12")
+                .HasAnnotation("ProductVersion", "10.0.13")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
@@ -1424,6 +1424,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(60)
                         .HasColumnType("nvarchar(60)");
 
+                    b.Property<bool>("MostrarNit")
+                        .HasColumnType("bit");
+
                     b.Property<string>("MotivoRechazoVerificacion")
                         .HasMaxLength(300)
                         .HasColumnType("nvarchar(300)");
@@ -1455,6 +1458,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<string>("PoliticaDatosVersion")
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime?>("ProximaRecargaDestacadosUtc")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("RecordatorioVencimientoPara")
                         .HasColumnType("datetime2");

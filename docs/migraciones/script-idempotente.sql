@@ -1946,6 +1946,43 @@ BEGIN
 END;
 GO
 
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261016093707_CupoDestacadosYNit'
+)
+BEGIN
+    ALTER TABLE [Usuarios] ADD [MostrarNit] bit NOT NULL DEFAULT CAST(0 AS bit);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261016093707_CupoDestacadosYNit'
+)
+BEGIN
+    ALTER TABLE [Usuarios] ADD [ProximaRecargaDestacadosUtc] datetime2 NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261016093707_CupoDestacadosYNit'
+)
+BEGIN
+    EXEC(N'UPDATE [Usuarios] SET [ProximaRecargaDestacadosUtc] = [FechaVencimientoSuscripcion] WHERE [TipoCuenta] IN (''Premium'', ''Empresa'') AND [FechaVencimientoSuscripcion] > SYSUTCDATETIME();');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261016093707_CupoDestacadosYNit'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261016093707_CupoDestacadosYNit', N'10.0.13');
+END;
+GO
+
 COMMIT;
 GO
 

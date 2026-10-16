@@ -106,6 +106,8 @@ public sealed class PerfilEmpresaRequest
     [Required, StringLength(120, MinimumLength = 2)] public string NombreComercial { get; init; } = "";
     /// <summary>Con o sin dígito de verificación: "900123456" o "900.123.456-7".</summary>
     [Required, StringLength(20, MinimumLength = 6)] public string Nit { get; init; } = "";
+    /// <summary>Mostrar el número de NIT en el perfil público (si es persona natural, el NIT es su cédula). Por defecto no.</summary>
+    public bool MostrarNit { get; init; }
 }
 
 public sealed class DatosFacturacionRequest
@@ -244,6 +246,8 @@ public sealed class CercanasRequest
     public int? CategoriaId { get; init; }
     public ModoDto? Modo { get; init; }
     public CondicionDto? Condicion { get; init; }
+    /// <summary>Solo publicaciones de cuentas con identidad verificada (el mismo filtro del catálogo).</summary>
+    public bool SoloVerificados { get; init; }
     [Range(1, 50)] public int Max { get; init; } = 20;
 }
 
@@ -430,7 +434,8 @@ public sealed record UsuarioDto(Guid Id, string NombreCompleto, string Localidad
     DateTime? PlanVigenteHasta, bool Verificado, string EstadoVerificacion, int SaldoEcoPuntos, decimal Reputacion,
     int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas, int DestacadosGratisRestantes,
     bool CorreoVerificado, bool TieneClave, bool VinculadoGoogle, bool DosFactoresActivo, int CodigosRecuperacionRestantes,
-    string MunicipioCodigo, string Municipio, string? NombreComercial, string? Nit, bool TieneDatosFacturacion, string? FotoUrl = null);
+    string MunicipioCodigo, string Municipio, string? NombreComercial, string? Nit, bool TieneDatosFacturacion, string? FotoUrl = null,
+    bool MostrarNit = false);
 
 public sealed record SesionDto(string Token, DateTime ExpiraUtc, UsuarioDto Usuario);
 
@@ -464,12 +469,13 @@ public sealed record ResultadoAutenticacion(SesionDto Sesion, string TokenRefres
 /// </summary>
 /// <summary>Municipio = "Medellín, Antioquia". NombreComercial solo para cuentas con plan Empresa vigente.</summary>
 public sealed record PerfilPublicoDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
-    decimal? CalificacionPromedio, int TotalCalificaciones, string Municipio, string? NombreComercial, string? FotoUrl = null);
+    decimal? CalificacionPromedio, int TotalCalificaciones, string Municipio, string? NombreComercial, string? FotoUrl = null,
+    bool NitRegistrado = false);
 
 public sealed record PerfilUsuarioDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
     DateTime MiembroDesde, int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas,
     decimal? CalificacionPromedio, int TotalCalificaciones, int PublicacionesActivas, string Municipio, string? NombreComercial,
-    string? FotoUrl, SenalesConfianzaDto Confianza);
+    string? FotoUrl, SenalesConfianzaDto Confianza, bool NitRegistrado = false, string? Nit = null);
 
 /// <summary>
 /// Lo que ayuda a confiar en alguien antes de intercambiar. Nunca expone datos privados: solo hechos verificables y agregados.
@@ -643,7 +649,8 @@ public sealed record ImpactoDto(int ObjetosConNuevoHogar, int Truekes, int Compr
 public sealed record ImpactoLocalidadDto(string Localidad, string Municipio, int Intercambios);
 
 public sealed record EcoPuntosResumenDto(int Saldo, decimal Reputacion, int TransaccionesConPuntosEnUltimas24h, int TransaccionesConPuntosRestantes,
-    string TipoCuenta, DateTime? PlanVigenteHasta, int DestacadosGratisRestantes, int MaxPublicacionesActivas, int DescuentoPlanPorcentaje);
+    string TipoCuenta, DateTime? PlanVigenteHasta, int DestacadosGratisRestantes, int MaxPublicacionesActivas, int DescuentoPlanPorcentaje,
+    DateTime? ProximaRecargaDestacadosUtc = null);
 
 /// <summary>Los precios incluyen IVA: IvaIncluidoCop es la parte del total que corresponde al impuesto.</summary>
 public sealed record CotizacionDto(int PrecioBaseCop, int DescuentoPorcentaje, int PuntosACanjear, int TotalCop, decimal IvaIncluidoCop);
@@ -704,4 +711,5 @@ public sealed record PoliticaEcoPuntosDto(
     int CopPorEcoPunto, int RecargaMinimaCop, int RecargaMaximaCop,
     int PuntosImpulsar, int HorasEntreImpulsos, int DestacadosGratisEmpresa, int DescuentoEmpresaPorcentaje,
     int MaxPublicacionesIndividual, int MaxPublicacionesPremium, int MaxPublicacionesEmpresa, int MaxVentasActivasSinIdentificar,
-    int DiasEntreTransaccionesConPuntosMismaPareja, bool PreciosIncluyenIva, decimal IvaPorcentaje);
+    int DiasEntreTransaccionesConPuntosMismaPareja, bool PreciosIncluyenIva, decimal IvaPorcentaje,
+    int DiasRecordatorioVencimiento = 0, int DiasCicloDestacadosGratis = 0);

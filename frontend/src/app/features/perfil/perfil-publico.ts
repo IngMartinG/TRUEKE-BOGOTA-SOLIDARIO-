@@ -50,6 +50,9 @@ import { Volver } from '../../shared/ui/volver';
                 @if (p.tipoCuenta && p.tipoCuenta !== 'Individual') {
                   <span class="insignia-sol"><app-icono nombre="corona" [tamano]="12" />{{ p.tipoCuenta }}</span>
                 }
+                @if (p.nitRegistrado) {
+                  <span class="insignia-agua"><app-icono nombre="edificio" [tamano]="12" />{{ p.nit ? 'NIT ' + p.nit : 'Empresa con NIT registrado' }}</span>
+                }
               </div>
               <p class="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-tenue sm:justify-start">
                 <span class="flex items-center gap-1"><app-icono nombre="pin" [tamano]="14" />{{ p.localidad }}@if (p.municipio) {<span>, {{ p.municipio }}</span>}</span>

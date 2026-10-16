@@ -45,9 +45,10 @@ export class CatalogoApi {
     this.api.get<PublicacionDtoPaginaDto>('/publicaciones', {
       params: { ...f, soloVerificados: f.soloVerificados || undefined },
     });
-  cercanas = (lat: number, lon: number, radioKm = 5, modo?: ModoDto | null, categoriaId?: number | null, condicion?: CondicionDto | null) =>
+  cercanas = (lat: number, lon: number, radioKm = 5, modo?: ModoDto | null, categoriaId?: number | null, condicion?: CondicionDto | null,
+    soloVerificados = false) =>
     this.api.get<PublicacionCercanaDto[]>('/publicaciones/cercanas', {
-      params: { lat, lon, radioKm, modo, categoriaId, condicion, max: 50 },
+      params: { lat, lon, radioKm, modo, categoriaId, condicion, soloVerificados: soloVerificados || undefined, max: 50 },
     });
   /** Público: totales de intercambios completados en la comunidad. */
   impacto = () => this.api.get<ImpactoDto>('/impacto', { silencioso: true });

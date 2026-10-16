@@ -269,6 +269,8 @@ public sealed class PublicacionService : IPublicacionService
             r.Modo.HasValue ? (ModoTransaccion)(int)r.Modo.Value : null, MaxCandidatosCercanas, ahora);
         if (r.Condicion.HasValue)
             candidatos = candidatos.Where(p => p.Condicion == (CondicionProducto)(int)r.Condicion.Value).ToList();
+        if (r.SoloVerificados)
+            candidatos = candidatos.Where(p => p.Propietario!.EstadoVerificacion == EstadoVerificacion.Aprobada).ToList();
 
         var cercanas = candidatos
             .Select(p =>
@@ -279,7 +281,8 @@ public sealed class PublicacionService : IPublicacionService
                 return (p, esMia, d: Geo.DistanciaKm(lat, lon, pLat, pLon));
             })
             .Where(x => x.d <= radio)
-            .OrderBy(x => x.d)
+            .OrderByDescending(x => x.p.EstaDestacadaVigente(ahora)) // dentro del radio, las destacadas primero
+            .ThenBy(x => x.d)
             .Take(Math.Clamp(r.Max, 1, 50))
             .ToList();
         var favoritas = await FavoritasAsync(actorId, cercanas.Select(x => x.p));

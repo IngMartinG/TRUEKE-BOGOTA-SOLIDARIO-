@@ -57,6 +57,8 @@ public static class PoliticaEcoPuntos
     public const int DescuentoEmpresaPorcentaje = 20;
     /// <summary>Días antes del vencimiento del plan en que se envía el recordatorio de renovación.</summary>
     public const int DiasRecordatorioVencimiento = 3;
+    /// <summary>Cada cuánto se repone el cupo de destacados gratis de Premium y Empresa (no se acumula).</summary>
+    public const int DiasCicloDestacadosGratis = 30;
 
     // ---- Límites por plan ----
     public const int MaxPublicacionesIndividual = 50;
@@ -102,7 +104,7 @@ public static class PoliticaEcoPuntos
 
     /// <summary>
     /// Calcula el precio final. Se canjean los puntos del escalón alcanzado (200 o 500) a cambio del descuento;
-    /// el plan vigente suma su descuento (Premium 15 %, Empresa 20 %). Con el descuento máximo (60 %) siempre se paga algo.
+    /// el plan vigente suma su descuento (Premium 15 %, Empresa 20 %). El descuento tiene tope de 90 %: siempre se paga algo.
     /// </summary>
     public static CotizacionBeneficio Cotizar(int precioBaseCop, IReadOnlyList<EscalonDescuento> escalones, int saldoPuntos, int descuentoPlanPorcentaje)
     {

@@ -62,6 +62,19 @@ import { InsigniaModo } from './insignia-modo';
         <h3 class="line-clamp-2 font-display text-base leading-snug font-bold group-hover:text-bosque-700 dark:group-hover:text-bosque-300">
           {{ p.titulo }}
         </h3>
+        @if (p.propietario?.nombreComercial; as tienda) {
+          <p class="-mt-1 flex min-w-0 items-center gap-1 text-xs font-semibold text-tenue">
+            <app-icono nombre="edificio" [tamano]="12" class="shrink-0" /><span class="truncate">{{ tienda }}</span>
+            @if (p.propietario.nitRegistrado) {
+              <app-icono nombre="verificado" [tamano]="12" class="shrink-0 text-agua-700 dark:text-agua-100" />
+              <span class="sr-only">Empresa con NIT registrado</span>
+            }
+          </p>
+        } @else if (p.propietario?.verificado) {
+          <p class="-mt-1 flex items-center gap-1 text-xs font-semibold text-agua-700 dark:text-agua-100">
+            <app-icono nombre="verificado" [tamano]="12" />Identidad verificada
+          </p>
+        }
         <div class="mt-auto flex items-end justify-between gap-2 pt-2">
           <div class="min-w-0">
             @if (p.modo === 'Compra' && p.precioReferenciaCop) {
