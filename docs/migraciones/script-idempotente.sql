@@ -1983,6 +1983,34 @@ BEGIN
 END;
 GO
 
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261016222153_PruebaPremium'
+)
+BEGIN
+    ALTER TABLE [Usuarios] ADD [EnPruebaPremium] bit NOT NULL DEFAULT CAST(0 AS bit);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261016222153_PruebaPremium'
+)
+BEGIN
+    ALTER TABLE [Usuarios] ADD [PruebaPremiumUsadaUtc] datetime2 NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261016222153_PruebaPremium'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261016222153_PruebaPremium', N'10.0.13');
+END;
+GO
+
 COMMIT;
 GO
 

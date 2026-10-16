@@ -54,7 +54,8 @@ export class Pie {
         { ruta: '/como-funciona', texto: 'Cómo funciona' },
         { ruta: '/impacto', texto: 'Impacto de la comunidad' },
         { ruta: '/ayuda', texto: 'Centro de ayuda' },
-        { ruta: '/eco-puntos', texto: 'Eco-Puntos y planes' },
+        { ruta: '/eco-puntos', texto: 'Eco-Puntos' },
+        { ruta: '/planes', texto: 'Planes' },
       ],
     },
     {

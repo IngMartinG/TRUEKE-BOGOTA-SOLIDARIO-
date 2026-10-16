@@ -76,6 +76,7 @@ export class CuentaApi {
 
   readonly politica$ = this.api.get<PoliticaEcoPuntosDto>('/eco-puntos/politica').pipe(shareReplay(1));
   resumenPuntos = () => this.api.get<EcoPuntosResumenDto>('/eco-puntos/resumen');
+  activarPruebaPremium = () => this.api.post<EcoPuntosResumenDto>('/planes/prueba-premium', {}, { silencioso: true });
   movimientosPuntos = (pagina = 1, tamano = 10) =>
     this.api.get<MovimientoEcoPuntosDtoPaginaDto>('/eco-puntos/movimientos', { params: { pagina, tamano } });
   cotizacion = (concepto: ConceptoPagoDto) =>

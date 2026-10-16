@@ -139,8 +139,9 @@ interface Servicio {
           </ul>
         </div>
       }
-      <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <div class="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         @for (s of servicios(); track s.concepto) {
+          @if (s.concepto === 'Destacar' || s.concepto === 'Verificar') {
           <article class="tarjeta relative flex flex-col p-6" [class.ring-2]="s.destacado" [class.ring-sol-400]="s.destacado">
             @if (s.destacado) {
               <span class="absolute -top-3 left-6 insignia bg-sol-400 text-bosque-950 shadow">Más popular</span>
@@ -163,7 +164,19 @@ interface Servicio {
               </button>
             }
           </article>
+          }
         }
+        <article class="tarjeta flex flex-col bg-gradient-to-br from-sol-50 to-superficie p-6 dark:from-sol-500/10">
+          <span class="grid size-12 place-items-center rounded-2xl bg-sol-100 text-sol-700 dark:bg-sol-500/20 dark:text-sol-100"><app-icono nombre="corona" [tamano]="24" /></span>
+          <h3 class="mt-4 text-lg font-bold">Premium y Empresa</h3>
+          <p class="mt-1 flex-1 text-sm text-tenue">
+            Destacados gratis cada 30 días, descuentos, más publicaciones y estadísticas.
+            @if (resumen.value()?.pruebaPremiumDisponible) {
+              <strong class="block pt-2 text-tinta">Prueba Premium {{ politica()?.diasPruebaPremium ?? 7 }} días gratis, sin tarjeta.</strong>
+            }
+          </p>
+          <a routerLink="/planes" class="btn btn-sol mt-6 w-full">{{ planActual() ? 'Ver o renovar mi plan' : 'Ver planes' }}</a>
+        </article>
       </div>
       <p class="mt-4 text-xs text-tenue">
         Precios en pesos colombianos{{ politica()?.preciosIncluyenIva ? ', IVA (' + politica()?.ivaPorcentaje + ' %) incluido' : '' }}. Cada pago genera factura electrónica a
@@ -388,6 +401,8 @@ export default class EcoPuntos {
 
   /** `?destacar=<id>` llega desde el detalle de una publicación propia. */
   readonly destacar = input<string>();
+  /** `?plan=Premium|Empresa` llega desde la página de planes: abre la compra de ese plan. */
+  readonly plan = input<string>();
 
   protected readonly politica = toSignal(this.api.politica$.pipe(catchError(() => of(null))));
   protected readonly resumen = rxResource({
@@ -569,6 +584,10 @@ export default class EcoPuntos {
           this.abrirCompra('Destacar');
         });
       }
+    });
+    effect(() => {
+      const plan = this.plan();
+      if ((plan === 'Premium' || plan === 'Empresa') && this.sesion.autenticado()) untracked(() => this.abrirCompra(plan));
     });
   }
 

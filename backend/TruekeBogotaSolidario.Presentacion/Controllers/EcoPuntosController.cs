@@ -22,6 +22,10 @@ public sealed class EcoPuntosController : ControllerBase
     [HttpGet("resumen")]
     public async Task<ActionResult<EcoPuntosResumenDto>> Resumen() => Ok(await _eco.ResumenAsync(User.IdActual()));
 
+    /// <summary>Premium gratis por unos días, una vez por cuenta y sin tarjeta: al terminar no se cobra nada.</summary>
+    [HttpPost("~/api/v1/planes/prueba-premium")]
+    public async Task<ActionResult<EcoPuntosResumenDto>> ActivarPruebaPremium() => Ok(await _eco.ActivarPruebaPremiumAsync(User.IdActual()));
+
     /// <summary>Historial de Eco-Puntos de la persona (ganados, gastados, devueltos), del más reciente al más antiguo.</summary>
     [HttpGet("movimientos")]
     public async Task<ActionResult<PaginaDto<MovimientoEcoPuntosDto>>> Movimientos([FromQuery] PaginacionRequest p)

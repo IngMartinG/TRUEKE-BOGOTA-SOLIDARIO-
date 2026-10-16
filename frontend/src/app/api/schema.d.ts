@@ -2248,6 +2248,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/planes/prueba-premium": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EcoPuntosResumenDto"];
+                        "application/json": components["schemas"]["EcoPuntosResumenDto"];
+                        "text/json": components["schemas"]["EcoPuntosResumenDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/eco-puntos/movimientos": {
         parameters: {
             query?: never;
@@ -5029,6 +5066,8 @@ export interface components {
             descuentoPlanPorcentaje?: number;
             /** Format: date-time */
             proximaRecargaDestacadosUtc?: string | null;
+            pruebaPremiumDisponible?: boolean;
+            enPruebaPremium?: boolean;
         };
         EliminarCuentaRequest: {
             confirmacion: string;
@@ -5537,6 +5576,10 @@ export interface components {
             diasCicloDestacadosGratis?: number;
             /** Format: int32 */
             minimoCobroCop?: number;
+            /** Format: int32 */
+            diasPruebaPremium?: number;
+            /** Format: int32 */
+            destacadosGratisPruebaPremium?: number;
         };
         PqrAdminDto: {
             /** Format: uuid */

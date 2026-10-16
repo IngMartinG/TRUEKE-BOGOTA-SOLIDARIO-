@@ -154,7 +154,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
             @if (u.planVigenteHasta) {
               <p class="text-sm text-tenue">Vigente hasta el {{ u.planVigenteHasta | fecha }}</p>
             }
-            <a routerLink="/eco-puntos" class="btn btn-secundario btn-sm mt-4 w-full">{{ u.planVigenteHasta ? 'Renovar o ver planes' : 'Ver planes' }}</a>
+            <a routerLink="/planes" class="btn btn-secundario btn-sm mt-4 w-full">{{ u.planVigenteHasta ? 'Renovar o ver planes' : 'Ver planes' }}</a>
           </div>
           <div class="tarjeta p-5">
             <h2 class="font-bold">Verificación de identidad</h2>

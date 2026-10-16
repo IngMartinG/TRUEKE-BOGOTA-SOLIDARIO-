@@ -13,6 +13,8 @@ public interface IEcoPuntosService
     /// <summary>Historial propio, del más reciente al más antiguo.</summary>
     Task<PaginaDto<MovimientoEcoPuntosDto>> MovimientosAsync(Guid actorId, int pagina, int tamano);
     PoliticaEcoPuntosDto ObtenerPolitica();
+    /// <summary>Activa la prueba gratis de Premium (una vez por cuenta; exige la cuenta completa).</summary>
+    Task<EcoPuntosResumenDto> ActivarPruebaPremiumAsync(Guid actorId);
 }
 
 public sealed class EcoPuntosService : IEcoPuntosService
@@ -22,11 +24,22 @@ public sealed class EcoPuntosService : IEcoPuntosService
     private readonly IMovimientoEcoPuntosRepository _movimientos;
     private readonly TimeProvider _reloj;
     private readonly FacturacionOpciones _facturacion;
+    private readonly IUnidadDeTrabajo _uow;
 
     public EcoPuntosService(IUsuarioRepository usuarios, ITransaccionRepository transacciones, IMovimientoEcoPuntosRepository movimientos,
-        TimeProvider reloj, IOptions<FacturacionOpciones> facturacion)
+        TimeProvider reloj, IOptions<FacturacionOpciones> facturacion, IUnidadDeTrabajo uow)
     {
         _usuarios = usuarios; _transacciones = transacciones; _movimientos = movimientos; _reloj = reloj; _facturacion = facturacion.Value;
+        _uow = uow;
+    }
+
+    public async Task<EcoPuntosResumenDto> ActivarPruebaPremiumAsync(Guid actorId)
+    {
+        var u = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
+        Guardas.ExigirCuentaCompleta(u);
+        u.ActivarPruebaPremium(_reloj.GetUtcNow().UtcDateTime);
+        await _uow.GuardarCambiosAsync();
+        return await ResumenAsync(actorId);
     }
 
     public async Task<EcoPuntosResumenDto> ResumenAsync(Guid actorId)
@@ -40,7 +53,7 @@ public sealed class EcoPuntosService : IEcoPuntosService
             Math.Max(0, PoliticaEcoPuntos.MaxTransaccionesConPuntosPorDia - hoy), plan.ToString(),
             planVigente ? u.FechaVencimientoSuscripcion : null, u.DestacadosGratisDisponibles(ahora),
             PoliticaEcoPuntos.MaxPublicacionesActivas(plan), PoliticaEcoPuntos.DescuentoPlan(plan),
-            planVigente ? u.ProximaRecargaDestacadosVigente(ahora) : null);
+            planVigente ? u.ProximaRecargaDestacadosVigente(ahora) : null, u.PuedeUsarPruebaPremium, u.PruebaPremiumVigente(ahora));
     }
 
     public async Task<PaginaDto<MovimientoEcoPuntosDto>> MovimientosAsync(Guid actorId, int pagina, int tamano)
@@ -69,6 +82,7 @@ public sealed class EcoPuntosService : IEcoPuntosService
             PoliticaEcoPuntos.DescuentoEmpresaPorcentaje, PoliticaEcoPuntos.MaxPublicacionesIndividual, PoliticaEcoPuntos.MaxPublicacionesPremium,
             PoliticaEcoPuntos.MaxPublicacionesEmpresa, PoliticaEcoPuntos.MaxVentasActivasSinIdentificar,
             PoliticaEcoPuntos.DiasEntreTransaccionesConPuntosMismaPareja, _facturacion.IvaEfectivo > 0, _facturacion.IvaEfectivo,
-            PoliticaEcoPuntos.DiasRecordatorioVencimiento, PoliticaEcoPuntos.DiasCicloDestacadosGratis, PoliticaEcoPuntos.MinimoCobroCop);
+            PoliticaEcoPuntos.DiasRecordatorioVencimiento, PoliticaEcoPuntos.DiasCicloDestacadosGratis, PoliticaEcoPuntos.MinimoCobroCop,
+            PoliticaEcoPuntos.DiasPruebaPremium, PoliticaEcoPuntos.DestacadosGratisPruebaPremium);
     }
 }

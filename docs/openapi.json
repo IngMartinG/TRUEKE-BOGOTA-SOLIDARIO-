@@ -2438,6 +2438,35 @@
         }
       }
     },
+    "/api/v1/planes/prueba-premium": {
+      "post": {
+        "tags": [
+          "EcoPuntos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EcoPuntosResumenDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EcoPuntosResumenDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EcoPuntosResumenDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/eco-puntos/movimientos": {
       "get": {
         "tags": [
@@ -6425,6 +6454,12 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "pruebaPremiumDisponible": {
+            "type": "boolean"
+          },
+          "enPruebaPremium": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -7834,6 +7869,14 @@
             "format": "int32"
           },
           "minimoCobroCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "diasPruebaPremium": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "destacadosGratisPruebaPremium": {
             "type": "integer",
             "format": "int32"
           }
