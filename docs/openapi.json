@@ -3538,6 +3538,13 @@
             }
           },
           {
+            "name": "SoloVerificados",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "Max",
             "in": "query",
             "schema": {
@@ -6397,6 +6404,11 @@
           "descuentoPlanPorcentaje": {
             "type": "integer",
             "format": "int32"
+          },
+          "proximaRecargaDestacadosUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7554,6 +7566,9 @@
             "maxLength": 20,
             "minLength": 6,
             "type": "string"
+          },
+          "mostrarNit": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -7600,6 +7615,9 @@
           "fotoUrl": {
             "type": "string",
             "nullable": true
+          },
+          "nitRegistrado": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -7669,6 +7687,13 @@
           },
           "confianza": {
             "$ref": "#/components/schemas/SenalesConfianzaDto"
+          },
+          "nitRegistrado": {
+            "type": "boolean"
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7792,6 +7817,14 @@
           "ivaPorcentaje": {
             "type": "number",
             "format": "double"
+          },
+          "diasRecordatorioVencimiento": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "diasCicloDestacadosGratis": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -8766,6 +8799,9 @@
           "fotoUrl": {
             "type": "string",
             "nullable": true
+          },
+          "mostrarNit": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

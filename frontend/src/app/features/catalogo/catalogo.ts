@@ -342,9 +342,11 @@ export default class Catalogo {
   protected readonly cercanas = rxResource({
     params: () => {
       const u = this.miUbicacion();
-      return u ? { u, radio: this.radioKm(), modo: this.filtros().modo, cat: this.filtros().categoriaId, cond: this.filtros().condicion } : undefined;
+      const f = this.filtros();
+      return u ? { u, radio: this.radioKm(), modo: f.modo, cat: f.categoriaId, cond: f.condicion, verificados: !!f.soloVerificados } : undefined;
     },
-    stream: ({ params }) => this.api.cercanas(params.u[0], params.u[1], params.radio, params.modo, params.cat, params.cond),
+    stream: ({ params }) =>
+      this.api.cercanas(params.u[0], params.u[1], params.radio, params.modo, params.cat, params.cond, params.verificados),
   });
 
   protected readonly cargando = computed(() =>
@@ -370,7 +372,8 @@ export default class Catalogo {
         lon: p.longitud!,
         titulo: p.titulo ?? '',
         modo: p.modo,
-        detalle: `${INFO_MODO[p.modo as ModoDto]?.etiqueta ?? ''} · ${p.localidad ?? ''}`,
+        destacada: !!p.destacada,
+        detalle: `${p.destacada ? 'Destacada · ' : ''}${INFO_MODO[p.modo as ModoDto]?.etiqueta ?? ''} · ${p.localidad ?? ''}`,
       })),
   );
 

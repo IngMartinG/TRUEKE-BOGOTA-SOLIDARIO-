@@ -157,7 +157,7 @@ import { Volver } from '../../shared/ui/volver';
                           <app-icono nombre="destello" [tamano]="16" /> Destacar para llegar a más personas
                         </a>
                       }
-                      <p class="text-center text-xs text-tenue">Destacar: aparece primero en el catálogo durante 7 días.</p>
+                      <p class="text-center text-xs text-tenue">Destacar: primera en el catálogo, en «Cerca de mí» y en tu perfil durante 7 días.</p>
                     }
                     <details class="group rounded-2xl border border-borde">
                       <summary class="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-3 text-sm font-semibold [&::-webkit-details-marker]:hidden">
@@ -169,7 +169,7 @@ import { Volver } from '../../shared/ui/volver';
                           <app-icono nombre="cohete" [tamano]="16" />Impulsar ({{ puntosImpulsar() }} Eco-Puntos)
                         </button>
                         <p class="-mt-1 px-1 text-xs text-tenue">
-                          {{ puedeImpulsar() ? 'Vuelve al primer lugar de «Más recientes». Una vez cada 24 horas.' : 'Podrás impulsarla de nuevo ' + (p.proximoImpulsoUtc | hace) + '.' }}
+                          {{ puedeImpulsar() ? 'Vuelve al primer lugar de «Más recientes», después de las destacadas. Una vez cada 24 horas.' : 'Podrás impulsarla de nuevo ' + (p.proximoImpulsoUtc | hace) + '.' }}
                         </p>
                         <a routerLink="/mis-publicaciones" [queryParams]="{ estadisticas: p.id }" class="btn btn-secundario justify-start">
                           <app-icono nombre="grafica" [tamano]="16" />Estadísticas · {{ p.vistas ?? 0 }} vistas
@@ -226,7 +226,12 @@ import { Volver } from '../../shared/ui/volver';
               <app-avatar [nombre]="p.propietario?.nombre" [foto]="p.propietario?.fotoUrl" [tamano]="56" [verificado]="!!p.propietario?.verificado" />
               <div class="min-w-0 flex-1">
                 <p class="text-xs text-tenue">Publicado por</p>
-                <p class="truncate font-display font-bold">{{ p.propietario?.nombre }}</p>
+                <p class="truncate font-display font-bold">{{ p.propietario?.nombreComercial || p.propietario?.nombre }}</p>
+                @if (p.propietario?.nitRegistrado) {
+                  <p class="mt-0.5 flex items-center gap-1 text-xs font-semibold text-agua-700 dark:text-agua-100">
+                    <app-icono nombre="verificado" [tamano]="12" />Empresa con NIT registrado
+                  </p>
+                }
                 <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-tenue">
                   @if (p.propietario?.calificacionPromedio) {
                     <span class="flex items-center gap-1"><app-estrellas [valor]="p.propietario!.calificacionPromedio!" [tamano]="12" />

@@ -116,7 +116,9 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
             <form [formGroup]="empresa" (ngSubmit)="guardarEmpresa()" class="tarjeta space-y-5 p-6" novalidate>
               <div>
                 <h2 class="flex items-center gap-2 text-lg font-bold"><app-icono nombre="edificio" [tamano]="20" />Perfil de empresa</h2>
-                <p class="mt-1 text-sm text-tenue">Tu nombre comercial aparece en tus publicaciones y en tu perfil público mientras el plan Empresa esté vigente.</p>
+                <p class="mt-1 text-sm text-tenue">
+                  Mientras el plan Empresa esté vigente, tus publicaciones muestran tu nombre comercial y el sello «Empresa con NIT registrado».
+                </p>
               </div>
               <div class="campo">
                 <label for="nombre-comercial" class="etiqueta">Nombre comercial</label>
@@ -129,6 +131,13 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
                 <p class="ayuda">Si no escribes el dígito de verificación, lo calculamos.</p>
                 <app-error-campo [control]="empresa.controls.nit" etiqueta="El NIT" idError="nit-error" />
               </div>
+              <label class="flex items-start gap-3 text-sm">
+                <input type="checkbox" class="mt-0.5 size-5 shrink-0 accent-bosque-600" formControlName="mostrarNit" />
+                <span>
+                  <span class="font-semibold">Mostrar el número de NIT en mi perfil público</span>
+                  <span class="block text-tenue">Si eres persona natural, tu NIT es tu cédula: déjalo sin marcar y solo se verá el sello.</span>
+                </span>
+              </label>
               <div class="flex justify-end">
                 <button type="submit" class="btn btn-primario" [disabled]="empresa.pristine || guardando()">Guardar perfil de empresa</button>
               </div>
@@ -186,6 +195,7 @@ export default class Perfil {
   protected readonly empresa = this.fb.group({
     nombreComercial: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
     nit: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(20)]],
+    mostrarNit: [false],
   });
   private readonly municipio = toSignal(this.form.controls.municipioCodigo.valueChanges, { initialValue: CODIGO_BOGOTA });
   protected readonly esBogota = computed(() => this.municipio() === CODIGO_BOGOTA);
@@ -201,7 +211,7 @@ export default class Perfil {
           this.municipioCargado = u.municipioCodigo ?? CODIGO_BOGOTA;
           this.form.reset({ nombreCompleto: u.nombreCompleto ?? '', municipioCodigo: this.municipioCargado, localidad: u.localidad ?? '' });
         }
-        if (u && this.empresa.pristine) this.empresa.reset({ nombreComercial: u.nombreComercial ?? '', nit: u.nit ?? '' });
+        if (u && this.empresa.pristine) this.empresa.reset({ nombreComercial: u.nombreComercial ?? '', nit: u.nit ?? '', mostrarNit: !!u.mostrarNit });
       });
     });
     // Al elegir otro municipio, la localidad anterior deja de aplicar.
@@ -281,9 +291,9 @@ export default class Perfil {
     this.guardando.set(true);
     try {
       const v = this.empresa.getRawValue();
-      const u = await firstValueFrom(this.api.actualizarEmpresa({ nombreComercial: v.nombreComercial.trim(), nit: v.nit.trim() }));
+      const u = await firstValueFrom(this.api.actualizarEmpresa({ nombreComercial: v.nombreComercial.trim(), nit: v.nit.trim(), mostrarNit: v.mostrarNit }));
       this.sesion.actualizarUsuario(u);
-      this.empresa.reset({ nombreComercial: u.nombreComercial ?? '', nit: u.nit ?? '' });
+      this.empresa.reset({ nombreComercial: u.nombreComercial ?? '', nit: u.nit ?? '', mostrarNit: !!u.mostrarNit });
       this.avisos.exito('Perfil de empresa actualizado', `NIT registrado: ${u.nit}`);
     } catch (e) {
       if (!aplicarErroresServidor(this.empresa.controls, erroresDeCampos(e))) this.avisos.error(mensajeDe(e));

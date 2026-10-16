@@ -3158,6 +3158,7 @@ export interface paths {
                     CategoriaId?: number;
                     Modo?: components["schemas"]["ModoDto"];
                     Condicion?: components["schemas"]["CondicionDto"];
+                    SoloVerificados?: boolean;
                     Max?: number;
                 };
                 header?: never;
@@ -5018,6 +5019,8 @@ export interface components {
             maxPublicacionesActivas?: number;
             /** Format: int32 */
             descuentoPlanPorcentaje?: number;
+            /** Format: date-time */
+            proximaRecargaDestacadosUtc?: string | null;
         };
         EliminarCuentaRequest: {
             confirmacion: string;
@@ -5418,6 +5421,7 @@ export interface components {
         PerfilEmpresaRequest: {
             nombreComercial: string;
             nit: string;
+            mostrarNit?: boolean;
         };
         PerfilPublicoDto: {
             /** Format: uuid */
@@ -5435,6 +5439,7 @@ export interface components {
             municipio?: string;
             nombreComercial?: string | null;
             fotoUrl?: string | null;
+            nitRegistrado?: boolean;
         };
         PerfilUsuarioDto: {
             /** Format: uuid */
@@ -5463,6 +5468,8 @@ export interface components {
             nombreComercial?: string | null;
             fotoUrl?: string | null;
             confianza?: components["schemas"]["SenalesConfianzaDto"];
+            nitRegistrado?: boolean;
+            nit?: string | null;
         };
         PoliticaEcoPuntosDto: {
             /** Format: int32 */
@@ -5517,6 +5524,10 @@ export interface components {
             preciosIncluyenIva?: boolean;
             /** Format: double */
             ivaPorcentaje?: number;
+            /** Format: int32 */
+            diasRecordatorioVencimiento?: number;
+            /** Format: int32 */
+            diasCicloDestacadosGratis?: number;
         };
         PqrAdminDto: {
             /** Format: uuid */
@@ -5840,6 +5851,7 @@ export interface components {
             nit?: string | null;
             tieneDatosFacturacion?: boolean;
             fotoUrl?: string | null;
+            mostrarNit?: boolean;
         };
         VerificacionPendienteDto: {
             /** Format: uuid */

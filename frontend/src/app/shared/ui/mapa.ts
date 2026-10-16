@@ -25,6 +25,8 @@ export interface PuntoMapa {
   titulo: string;
   modo?: string | null;
   detalle?: string;
+  /** Destacada vigente: pin más grande con estrella, encima de los demás. */
+  destacada?: boolean;
 }
 
 const COLOR_MODO: Record<string, string> = { Trueke: '#1f7a4d', Compra: '#2f6fa3', Donacion: '#c25a2e' };
@@ -120,14 +122,17 @@ export class Mapa {
     this.zona.run(() => this.ubicacionCambiada.emit(punto));
   }
 
-  private icono(color: string, grande = false): L.DivIcon {
-    const t = grande ? 44 : 34;
+  private icono(color: string, grande = false, destacada = false): L.DivIcon {
+    const t = grande || destacada ? 44 : 34;
+    const centro = destacada
+      ? '<path d="m12 6.6 1.05 2.13 2.35.34-1.7 1.66.4 2.34L12 12l-2.1 1.07.4-2.34-1.7-1.66 2.35-.34Z" fill="#f2b705"/>'
+      : '<circle cx="12" cy="10" r="2.6" fill="#fff"/>';
     return this.leaflet!.divIcon({
       className: '',
       iconSize: [t, t],
       iconAnchor: [t / 2, t],
       popupAnchor: [0, -t + 4],
-      html: `<svg width="${t}" height="${t}" viewBox="0 0 24 24" style="filter:drop-shadow(0 3px 4px rgb(0 0 0 / .3))"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z" fill="${color}" stroke="#fff" stroke-width="1.5"/><circle cx="12" cy="10" r="2.6" fill="#fff"/></svg>`,
+      html: `<svg width="${t}" height="${t}" viewBox="0 0 24 24" style="filter:drop-shadow(0 3px 4px rgb(0 0 0 / .3))"><path d="M12 22s7-6.2 7-12a7 7 0 1 0-14 0c0 5.8 7 12 7 12Z" fill="${color}" stroke="${destacada ? '#f2b705' : '#fff'}" stroke-width="1.5"/>${centro}</svg>`,
     });
   }
 
@@ -137,9 +142,10 @@ export class Mapa {
     const limites: L.LatLngExpression[] = [];
     for (const p of puntos) {
       const marcador = L.marker([p.lat, p.lon], {
-        icon: this.icono(COLOR_MODO[p.modo ?? ''] ?? '#1f7a4d'),
-        title: p.titulo,
+        icon: this.icono(COLOR_MODO[p.modo ?? ''] ?? '#1f7a4d', false, p.destacada),
+        title: p.destacada ? `${p.titulo} (destacada)` : p.titulo,
         keyboard: true,
+        zIndexOffset: p.destacada ? 1000 : 0,
       });
       // Contenido construido con textContent: los títulos son texto de usuarios (nunca innerHTML).
       const ficha = document.createElement('button');

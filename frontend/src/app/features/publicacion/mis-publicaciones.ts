@@ -83,7 +83,7 @@ type Filtro = 'activas' | 'negociacion' | 'cerradas';
                 <button type="button" class="btn btn-secundario btn-sm" (click)="abrirEstadisticas(p.id!)"><app-icono nombre="grafica" [tamano]="14" />Estadísticas</button>
                 @if (p.estado === 'Disponible') {
                   <button type="button" class="btn btn-secundario btn-sm" (click)="impulsar(p)" [disabled]="trabajando() || !puedeImpulsar(p)"
-                    [title]="puedeImpulsar(p) ? 'Sube al primer lugar de «Más recientes»' : 'Disponible ' + (p.proximoImpulsoUtc | hace)">
+                    [title]="puedeImpulsar(p) ? 'Sube al primer lugar de «Más recientes», después de las destacadas' : 'Disponible ' + (p.proximoImpulsoUtc | hace)">
                     <app-icono nombre="cohete" [tamano]="14" />Impulsar
                   </button>
                   @if (!p.interesados) {

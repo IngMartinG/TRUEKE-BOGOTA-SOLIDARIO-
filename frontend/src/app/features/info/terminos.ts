@@ -40,7 +40,7 @@ export default class Terminos {
       parrafos: [
         'Los servicios opcionales (destacar, verificar la identidad, planes Premium y Empresa y recargas de Eco-Puntos) se pagan con Wompi. Los precios están en pesos colombianos e incluyen el IVA. La plataforma nunca procesa pagos entre usuarios: los acuerdos de compra se pagan directamente entre las partes.',
         'Cada pago aprobado genera una factura electrónica. Puedes registrar tus datos de facturación en tu cuenta; si no lo haces, la factura se emite a "consumidor final".',
-        'Los planes duran 30 días y no se renuevan automáticamente: te avisamos antes del vencimiento. Si renuevas antes, los días se suman al periodo actual.',
+        'Los planes duran 30 días y no se renuevan automáticamente: te avisamos antes del vencimiento. Si renuevas antes, los días se suman al periodo actual y conservas tus destacados gratis, que se reponen cada 30 días mientras el plan esté vigente (no se acumulan).',
       ],
     },
     {

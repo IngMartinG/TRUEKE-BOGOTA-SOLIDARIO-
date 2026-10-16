@@ -109,7 +109,7 @@ interface Servicio {
         <div>
           <h2 id="titulo-impulsar" class="titulo-seccion">Impulsa tus publicaciones con puntos</h2>
           <p class="mt-2 text-tenue">
-            Por <strong>{{ politica()?.puntosImpulsar ?? 20 }} Eco-Puntos</strong> tu publicación vuelve al primer lugar de «Más recientes».
+            Por <strong>{{ politica()?.puntosImpulsar ?? 20 }} Eco-Puntos</strong> tu publicación vuelve al primer lugar de «Más recientes», justo después de las destacadas.
             Puedes hacerlo una vez cada {{ politica()?.horasEntreImpulsos ?? 24 }} horas por publicación, desde
             <a routerLink="/mis-publicaciones" class="enlace">Mis publicaciones</a>.
           </p>
@@ -121,8 +121,8 @@ interface Servicio {
     <section class="contenedor mt-16" aria-labelledby="titulo-servicios">
       <h2 id="titulo-servicios" class="titulo-seccion">Servicios y planes</h2>
       <p class="mt-1 text-tenue">
-        Mientras más Eco-Puntos tengas, mayor es tu descuento. Publicar, intercambiar y donar es gratis: el plan Individual permite
-        {{ politica()?.maxPublicacionesIndividual ?? 50 }} publicaciones activas.
+        Publicar, intercambiar y donar es gratis: el plan Individual permite {{ politica()?.maxPublicacionesIndividual ?? 50 }} publicaciones activas.
+        Con suficientes Eco-Puntos tienes descuento en destacar y verificar; al pagar con descuento, esos puntos se usan.
       </p>
       @if (config.pagosDePrueba()) {
         <div id="pagos-de-prueba" class="mt-5 scroll-mt-24 rounded-2xl border border-cielo-100 bg-cielo-50 p-4 text-sm dark:border-cielo-700/40 dark:bg-cielo-700/20" role="note">
@@ -154,9 +154,14 @@ interface Servicio {
                 <li class="flex gap-2"><app-icono nombre="check" [tamano]="16" class="mt-0.5 shrink-0 text-bosque-600" />{{ b }}</li>
               }
             </ul>
-            <button type="button" class="btn mt-6 w-full" [class]="s.destacado ? 'btn-sol' : 'btn-primario'" (click)="abrirCompra(s.concepto)">
-              {{ s.concepto === 'Destacar' ? 'Destacar una publicación' : s.concepto === 'Verificar' ? 'Verificar mi cuenta' : planActual() === s.concepto ? 'Renovar plan' : 'Elegir plan' }}
-            </button>
+            @if (planBloqueado(s.concepto); as otro) {
+              <button type="button" class="btn btn-secundario mt-6 w-full" disabled aria-describedby="plan-bloqueado">Elegir plan</button>
+              <p id="plan-bloqueado" class="mt-2 text-xs text-tenue">Tienes el plan {{ otro }} vigente hasta el {{ resumen.value()?.planVigenteHasta | fecha }}: podrás cambiar cuando venza.</p>
+            } @else {
+              <button type="button" class="btn mt-6 w-full" [class]="s.destacado ? 'btn-sol' : 'btn-primario'" (click)="abrirCompra(s.concepto)">
+                {{ s.concepto === 'Destacar' ? (destacadosGratis() > 0 ? 'Usar un destacado gratis' : 'Destacar una publicación') : s.concepto === 'Verificar' ? 'Verificar mi cuenta' : planActual() === s.concepto ? 'Renovar plan' : 'Elegir plan' }}
+              </button>
+            }
           </article>
         }
       </div>
@@ -164,7 +169,9 @@ interface Servicio {
         Precios en pesos colombianos{{ politica()?.preciosIncluyenIva ? ', IVA (' + politica()?.ivaPorcentaje + ' %) incluido' : '' }}. Cada pago genera factura electrónica a
         "consumidor final"; si la quieres a tu nombre o al de tu empresa,
         <a routerLink="/cuenta/facturacion" [queryParams]="{ datos: 1 }" class="enlace">agrega tu cédula o NIT</a>. Los planes no se renuevan solos: te avisamos
-        3 días antes de que venzan y, si renuevas antes, los días se suman. Tienes derecho de retracto dentro de los 5 días hábiles siguientes a la compra
+        {{ politica()?.diasRecordatorioVencimiento ?? 3 }} días antes de que venzan y, si renuevas antes, los días se suman sin perder tus destacados gratis.
+        Si el plan vence, tus publicaciones siguen activas, pero no puedes crear nuevas por encima del límite del plan Individual, y dejas de tener
+        el descuento, la gráfica diaria, el nombre comercial y los destacados gratis. Tienes derecho de retracto dentro de los 5 días hábiles siguientes a la compra
         (<a routerLink="/cuenta/soporte" [queryParams]="{ tipo: 'Retracto' }" class="enlace">solicitarlo</a>).
       </p>
     </section>
@@ -182,7 +189,7 @@ interface Servicio {
         <form class="flex flex-col gap-3 sm:flex-row sm:items-end" (ngSubmit)="recargar()">
           <div class="campo flex-1">
             <label for="monto" class="etiqueta">Monto en pesos</label>
-            <input id="monto" name="monto" type="number" inputmode="numeric" class="entrada text-lg" [min]="politica()?.recargaMinimaCop ?? 0" [max]="politica()?.recargaMaximaCop ?? 0" step="1000" [(ngModel)]="montoRecarga" />
+            <input id="monto" name="monto" type="number" inputmode="numeric" class="entrada text-lg" [min]="politica()?.recargaMinimaCop ?? 0" [max]="politica()?.recargaMaximaCop ?? 0" step="100" [(ngModel)]="montoRecarga" />
             <p class="ayuda">
               Entre {{ politica()?.recargaMinimaCop | cop }} y {{ politica()?.recargaMaximaCop | cop }} · recibes
               <strong class="text-sol-600 dark:text-sol-300">{{ puntosRecarga() | numero }} Eco-Puntos</strong>
@@ -209,6 +216,17 @@ interface Servicio {
               <p class="ayuda">No tienes publicaciones disponibles. <a routerLink="/publicar" class="enlace">Publica algo</a>.</p>
             }
           </div>
+          @if (usaGratis()) {
+            <p class="flex items-start gap-2 rounded-2xl bg-bosque-50 p-4 text-sm dark:bg-bosque-900/40">
+              <app-icono nombre="regalo" [tamano]="18" class="mt-0.5 shrink-0 text-bosque-700 dark:text-bosque-300" />
+              <span>
+                Te {{ destacadosGratis() === 1 ? 'queda 1 destacado gratis' : 'quedan ' + destacadosGratis() + ' destacados gratis' }} de tu plan: no pagas nada.
+                @if (resumen.value()?.proximaRecargaDestacadosUtc; as proxima) {
+                  <span class="block text-tenue">El cupo se repone el {{ proxima | fecha }}.</span>
+                }
+              </span>
+            </p>
+          }
         }
         @if (conceptoCompra() === 'Verificar') {
           <div class="campo">
@@ -245,6 +263,7 @@ interface Servicio {
           @if (planActual() === conceptoCompra()) {
             <p class="text-sm text-tenue">Tu plan vence el {{ resumen.value()?.planVigenteHasta | fecha }}: los {{ politica()?.duracionSuscripcionDias ?? 30 }} días se suman a partir de esa fecha.</p>
           }
+        } @else if (usaGratis()) {
         } @else if (cotizacion.value(); as c) {
           <dl class="space-y-2 rounded-2xl bg-superficie-2 p-4 text-sm">
             <div class="flex justify-between"><dt>Precio</dt><dd>{{ c.precioBaseCop | cop }}</dd></div>
@@ -266,7 +285,7 @@ interface Servicio {
           <div class="esqueleto h-28"></div>
         }
         <!-- Factura: se elige en cada pago y queda registrado (evidencia ante reclamos) -->
-        <fieldset class="space-y-2">
+        <fieldset class="space-y-2" [hidden]="usaGratis()">
           <legend class="etiqueta">¿A nombre de quién emitimos la factura electrónica?</legend>
           <label class="flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-3 transition"
             [class]="facturaANombre() === true ? 'border-bosque-500 bg-bosque-50/60 dark:bg-bosque-900/30' : 'border-borde hover:border-bosque-300'">
@@ -299,16 +318,22 @@ interface Servicio {
             </label>
           }
         </fieldset>
-        <p class="text-xs text-tenue">Al pagar aceptas los <a routerLink="/terminos" class="enlace" target="_blank">términos<span class="sr-only"> (abre otra pestaña)</span></a>.</p>
+        <p class="text-xs text-tenue" [hidden]="usaGratis()">Al pagar aceptas los <a routerLink="/terminos" class="enlace" target="_blank">términos<span class="sr-only"> (abre otra pestaña)</span></a>.</p>
         @if (errorCompra()) {
           <p class="error-campo" role="alert">{{ errorCompra() }}</p>
         }
       </div>
       <div pie class="flex justify-end gap-2 border-t border-borde p-4">
         <button type="button" class="btn btn-fantasma" (click)="compraAbierta.set(false)">Cancelar</button>
-        <button type="button" class="btn btn-primario" [disabled]="!compraLista() || pagando()" (click)="pagar()">
-          <app-icono nombre="candado" [tamano]="16" />{{ pagando() ? 'Procesando…' : 'Ir a pagar' }}
-        </button>
+        @if (usaGratis()) {
+          <button type="button" class="btn btn-sol" [disabled]="!publicacionId() || pagando()" (click)="destacarGratis()">
+            <app-icono nombre="destello" [tamano]="16" />{{ pagando() ? 'Destacando…' : 'Destacar gratis' }}
+          </button>
+        } @else {
+          <button type="button" class="btn btn-primario" [disabled]="!compraLista() || pagando()" (click)="pagar()">
+            <app-icono nombre="candado" [tamano]="16" />{{ pagando() ? 'Procesando…' : 'Ir a pagar' }}
+          </button>
+        }
       </div>
     </app-modal>
   `,
@@ -348,7 +373,12 @@ export default class EcoPuntos {
         icono: 'destello',
         precio: p?.precioDestacarCop ?? 6000,
         extra: '',
-        beneficios: [`Visible arriba durante ${p?.duracionDestacadoDias ?? 7} días`, ...escalones(p?.escalonesDestacar)],
+        beneficios: [
+          `Primera en el catálogo durante ${p?.duracionDestacadoDias ?? 7} días, con cualquier orden`,
+          'Primera en «Cerca de mí» y en tu perfil, con pin especial en el mapa',
+          'En la vitrina de destacadas de tu zona',
+          ...escalones(p?.escalonesDestacar),
+        ],
       },
       {
         concepto: 'Verificar',
@@ -367,7 +397,7 @@ export default class EcoPuntos {
         precio: p?.precioPremiumCop ?? 15000,
         extra: ' / mes',
         beneficios: [
-          `${p?.destacadosGratisPremium ?? 3} destacados gratis al mes`,
+          `${p?.destacadosGratisPremium ?? 3} destacados gratis cada ${p?.diasCicloDestacadosGratis || 30} días (no se acumulan)`,
           `${p?.descuentoPremiumPorcentaje ?? 15}% de descuento adicional en destacar y verificar`,
           `Hasta ${p?.maxPublicacionesPremium ?? 150} publicaciones activas`,
           'Gráfica diaria de vistas de tus publicaciones',
@@ -383,10 +413,10 @@ export default class EcoPuntos {
         precio: p?.precioEmpresaCop ?? 50000,
         extra: ' / mes',
         beneficios: [
-          `${p?.destacadosGratisEmpresa ?? 10} destacados gratis al mes`,
-          `${p?.descuentoEmpresaPorcentaje ?? 20}% de descuento adicional`,
+          `${p?.destacadosGratisEmpresa ?? 10} destacados gratis cada ${p?.diasCicloDestacadosGratis || 30} días (no se acumulan)`,
+          `${p?.descuentoEmpresaPorcentaje ?? 20}% de descuento adicional en destacar y verificar`,
           `Hasta ${p?.maxPublicacionesEmpresa ?? 1000} publicaciones activas`,
-          'Nombre comercial y NIT en tus publicaciones',
+          'Nombre comercial y sello «Empresa con NIT registrado» en tus publicaciones',
           'Vende sin el límite de artículos para cuentas sin verificar',
           'Gráfica diaria de vistas y factura a nombre de tu empresa',
         ],
@@ -398,6 +428,13 @@ export default class EcoPuntos {
     const t = this.resumen.value()?.tipoCuenta;
     return t === 'Premium' || t === 'Empresa' ? t : null;
   });
+  /** Con un plan vigente no se puede tomar el otro hasta que venza (regla del backend): se explica en vez de fallar al pagar. */
+  protected planBloqueado(concepto: ConceptoPagoDto): string | null {
+    const actual = this.planActual();
+    return actual && (concepto === 'Premium' || concepto === 'Empresa') && concepto !== actual ? actual : null;
+  }
+  protected readonly destacadosGratis = computed(() => this.resumen.value()?.destacadosGratisRestantes ?? 0);
+  protected readonly usaGratis = computed(() => this.conceptoCompra() === 'Destacar' && this.destacadosGratis() > 0);
   protected readonly esPlan = computed(() => this.conceptoCompra() === 'Premium' || this.conceptoCompra() === 'Empresa');
   protected readonly precioPlan = computed(() =>
     this.conceptoCompra() === 'Empresa' ? (this.politica()?.precioEmpresaCop ?? 50000) : (this.politica()?.precioPremiumCop ?? 15000),
@@ -528,6 +565,25 @@ export default class EcoPuntos {
       facturaANombre: this.facturaANombre() === true,
       aceptoConsumidorFinal: this.facturaANombre() === false && this.aceptoConsumidorFinal(),
     });
+  }
+
+  /** Destacado incluido en el plan: no pasa por el pago ni genera factura. */
+  protected async destacarGratis(): Promise<void> {
+    const id = this.publicacionId();
+    if (!id) return;
+    this.pagando.set(true);
+    this.errorCompra.set(null);
+    try {
+      await firstValueFrom(this.catalogo.destacarGratis(id));
+      this.compraAbierta.set(false);
+      this.resumen.reload();
+      this.sesion.recargarUsuario();
+      this.avisos.exito('Publicación destacada', 'Aparece primero durante los próximos días.');
+    } catch (e) {
+      this.errorCompra.set(mensajeDe(e));
+    } finally {
+      this.pagando.set(false);
+    }
   }
 
   protected recargar(): void {

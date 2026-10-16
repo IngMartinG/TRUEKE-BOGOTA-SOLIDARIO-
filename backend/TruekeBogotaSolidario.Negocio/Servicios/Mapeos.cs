@@ -24,10 +24,13 @@ internal static class Mapeos
     /// <summary>El nombre comercial solo se muestra mientras el plan Empresa esté vigente.</summary>
     private static string? NombreComercialVisible(Usuario u, DateTime ahora) => u.EmpresaVigente(ahora) ? u.NombreComercial : null;
 
+    /// <summary>Sello "Empresa con NIT registrado": plan Empresa vigente con NIT guardado (el número no viaja).</summary>
+    private static bool NitRegistrado(Usuario u, DateTime ahora) => u.EmpresaVigente(ahora) && !string.IsNullOrEmpty(u.Nit);
+
     public static PerfilPublicoDto APerfilPublico(Usuario u, DateTime ahora)
         => new(u.Id, NombrePublico(u.NombreCompleto), u.Localidad, u.Reputacion, u.EsVerificado, TipoCuentaEfectivo(u, ahora),
             u.CalificacionPromedio, u.CalificacionesTotal, Divipola.NombreCompleto(u.MunicipioCodigo), NombreComercialVisible(u, ahora),
-            FotoVisible(u));
+            FotoVisible(u), NitRegistrado(u, ahora));
 
     /// <summary>Cuentas eliminadas o suspendidas no muestran foto.</summary>
     private static string? FotoVisible(Usuario u) => u.EstaEliminado || u.EstaSuspendido ? null : u.FotoUrl;
@@ -37,7 +40,8 @@ internal static class Mapeos
             new DateTime(u.FechaRegistro.Year, u.FechaRegistro.Month, 1, 0, 0, 0, DateTimeKind.Utc), // solo mes y año
             u.TotalTruekesCompletados, u.TotalComprasRealizadas, u.TotalDonacionesRealizadas,
             u.CalificacionPromedio, u.CalificacionesTotal, publicacionesActivas, Divipola.NombreCompleto(u.MunicipioCodigo),
-            NombreComercialVisible(u, ahora), FotoVisible(u), confianza);
+            NombreComercialVisible(u, ahora), FotoVisible(u), confianza, NitRegistrado(u, ahora),
+            NitRegistrado(u, ahora) && u.MostrarNit ? u.Nit : null);
 
     public static UsuarioDto AUsuarioDto(Usuario u, DateTime ahora)
     {
@@ -45,9 +49,10 @@ internal static class Mapeos
         return new UsuarioDto(u.Id, u.NombreCompleto, u.Localidad, u.Correo, u.Rol.ToString(), TipoCuentaEfectivo(u, ahora),
             planVigente ? u.FechaVencimientoSuscripcion : null, u.EsVerificado, u.EstadoVerificacion.ToString(),
             u.SaldoEcoPuntos, u.Reputacion, u.TotalTruekesCompletados, u.TotalComprasRealizadas, u.TotalDonacionesRealizadas,
-            planVigente ? u.DestacadosGratisRestantes : 0,
+            u.DestacadosGratisDisponibles(ahora),
             u.CorreoVerificado, u.TieneClave, u.GoogleSub is not null, u.DosFactoresActivo, u.CodigosRecuperacionRestantes,
-            u.MunicipioCodigo, Divipola.NombreCompleto(u.MunicipioCodigo), u.NombreComercial, u.Nit, u.TieneDatosFacturacion, u.FotoUrl);
+            u.MunicipioCodigo, Divipola.NombreCompleto(u.MunicipioCodigo), u.NombreComercial, u.Nit, u.TieneDatosFacturacion, u.FotoUrl,
+            u.MostrarNit);
     }
 
     public static CategoriaDto ACategoriaDto(Categoria c) => new(c.Id, c.NombreCategoria, c.Descripcion);
