@@ -652,7 +652,7 @@ public sealed record ImpactoLocalidadDto(string Localidad, string Municipio, int
 
 public sealed record EcoPuntosResumenDto(int Saldo, decimal Reputacion, int TransaccionesConPuntosEnUltimas24h, int TransaccionesConPuntosRestantes,
     string TipoCuenta, DateTime? PlanVigenteHasta, int DestacadosGratisRestantes, int MaxPublicacionesActivas, int DescuentoPlanPorcentaje,
-    DateTime? ProximaRecargaDestacadosUtc = null);
+    DateTime? ProximaRecargaDestacadosUtc = null, bool PruebaPremiumDisponible = false, bool EnPruebaPremium = false);
 
 /// <summary>Los precios incluyen IVA: IvaIncluidoCop es la parte del total que corresponde al impuesto.</summary>
 /// <summary>Precio de Destacar o Verificar. DescuentoPorcentaje es el del plan; los puntos los elige la persona.</summary>
@@ -716,4 +716,5 @@ public sealed record PoliticaEcoPuntosDto(
     int PuntosImpulsar, int HorasEntreImpulsos, int DestacadosGratisEmpresa, int DescuentoEmpresaPorcentaje,
     int MaxPublicacionesIndividual, int MaxPublicacionesPremium, int MaxPublicacionesEmpresa, int MaxVentasActivasSinIdentificar,
     int DiasEntreTransaccionesConPuntosMismaPareja, bool PreciosIncluyenIva, decimal IvaPorcentaje,
-    int DiasRecordatorioVencimiento = 0, int DiasCicloDestacadosGratis = 0, int MinimoCobroCop = 0);
+    int DiasRecordatorioVencimiento = 0, int DiasCicloDestacadosGratis = 0, int MinimoCobroCop = 0,
+    int DiasPruebaPremium = 0, int DestacadosGratisPruebaPremium = 0);

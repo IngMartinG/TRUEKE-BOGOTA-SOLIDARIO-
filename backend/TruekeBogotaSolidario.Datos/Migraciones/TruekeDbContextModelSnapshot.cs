@@ -1355,6 +1355,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<bool>("DosFactoresActivo")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("EnPruebaPremium")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("EstaEliminado")
                         .HasColumnType("bit");
 
@@ -1460,6 +1463,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasColumnType("nvarchar(20)");
 
                     b.Property<DateTime?>("ProximaRecargaDestacadosUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("PruebaPremiumUsadaUtc")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("RecordatorioVencimientoPara")

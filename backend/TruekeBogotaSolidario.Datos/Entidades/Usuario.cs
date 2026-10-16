@@ -78,6 +78,10 @@ public class Usuario
     public int DestacadosGratisRestantes { get; private set; }
     /// <summary>Cuándo se repone el cupo de destacados gratis (cada 30 días mientras el plan esté vigente; no se acumula).</summary>
     public DateTime? ProximaRecargaDestacadosUtc { get; private set; }
+    /// <summary>Cuándo activó la prueba gratis de Premium (una sola vez por cuenta).</summary>
+    public DateTime? PruebaPremiumUsadaUtc { get; private set; }
+    /// <summary>El Premium vigente es la prueba gratis (sin pago); al pagar un plan deja de serlo.</summary>
+    public bool EnPruebaPremium { get; private set; }
 
     // Verificación de identidad
     public EstadoVerificacion EstadoVerificacion { get; private set; }
@@ -356,6 +360,7 @@ public class Usuario
         SaldoEcoPuntos = 0;
         DestacadosGratisRestantes = 0;
         ProximaRecargaDestacadosUtc = null;
+        EnPruebaPremium = false;
         IntentosFallidosLogin = 0;
         BloqueadoHasta = null;
         CorreoVerificado = false;
@@ -550,7 +555,29 @@ public class Usuario
     {
         if (plan == TipoCuenta.Individual) throw new ReglaDeNegocioException("El plan Individual es gratuito.");
         if (plan == TipoCuenta.Premium && EmpresaVigente(ahoraUtc)) throw new ReglaDeNegocioException("Ya tienes un plan Empresa vigente.");
-        if (plan == TipoCuenta.Empresa && PremiumVigente(ahoraUtc)) throw new ReglaDeNegocioException("Tienes un plan Premium vigente; podrás pasar a Empresa cuando venza.");
+        if (plan == TipoCuenta.Empresa && PremiumVigente(ahoraUtc) && !EnPruebaPremium)
+            throw new ReglaDeNegocioException("Tienes un plan Premium vigente; podrás pasar a Empresa cuando venza.");
+    }
+
+    /// <summary>La prueba gratis es para quien nunca tuvo un plan (ni la usó): una vez por cuenta.</summary>
+    public bool PuedeUsarPruebaPremium => PruebaPremiumUsadaUtc is null && FechaVencimientoSuscripcion is null;
+
+    public bool PruebaPremiumVigente(DateTime ahoraUtc) => EnPruebaPremium && PremiumVigente(ahoraUtc);
+
+    /// <summary>
+    /// Premium gratis por unos días: todo Premium salvo los destacados gratis (trae menos). Sin tarjeta ni cobro al terminar:
+    /// cuando vence vuelve al plan Individual como cualquier plan.
+    /// </summary>
+    public void ActivarPruebaPremium(DateTime ahoraUtc)
+    {
+        if (PruebaPremiumUsadaUtc is not null) throw new ReglaDeNegocioException("Ya usaste tu prueba gratis de Premium.");
+        if (FechaVencimientoSuscripcion is not null) throw new ReglaDeNegocioException("La prueba gratis es para cuentas que nunca han tenido un plan.");
+        PruebaPremiumUsadaUtc = ahoraUtc;
+        EnPruebaPremium = true;
+        TipoCuenta = TipoCuenta.Premium;
+        FechaVencimientoSuscripcion = ahoraUtc.AddDays(PoliticaEcoPuntos.DiasPruebaPremium);
+        DestacadosGratisRestantes = PoliticaEcoPuntos.DestacadosGratisPruebaPremium;
+        ProximaRecargaDestacadosUtc = null; // la prueba no repone el cupo
     }
 
     public void ActivarPremium(DateTime ahoraUtc)
@@ -571,9 +598,12 @@ public class Usuario
     /// </summary>
     private void Renovar(TipoCuenta plan, DateTime ahoraUtc)
     {
-        var vigente = PlanEfectivo(ahoraUtc) == plan;
-        var baseFecha = vigente ? FechaVencimientoSuscripcion!.Value : ahoraUtc;
+        var mismoPlan = PlanEfectivo(ahoraUtc) == plan;
+        // Pagar durante la prueba: se suman los días que le quedaban y arranca el cupo completo del plan pagado
+        var vigente = mismoPlan && !EnPruebaPremium;
+        var baseFecha = mismoPlan ? FechaVencimientoSuscripcion!.Value : ahoraUtc;
         TipoCuenta = plan;
+        EnPruebaPremium = false;
         FechaVencimientoSuscripcion = baseFecha.AddDays(PoliticaEcoPuntos.DuracionSuscripcionDias);
         if (!vigente)
         {

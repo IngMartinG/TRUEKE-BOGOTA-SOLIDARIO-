@@ -63,6 +63,7 @@ export const routes: Routes = [
     loadComponent: () => import('./features/notificaciones/notificaciones'),
   },
   { path: 'eco-puntos', title: 'Eco-Puntos', loadComponent: () => import('./features/eco-puntos/eco-puntos') },
+  { path: 'planes', title: 'Planes', loadComponent: () => import('./features/eco-puntos/planes') },
   {
     path: 'pagos/:referencia',
     title: 'Estado del pago',

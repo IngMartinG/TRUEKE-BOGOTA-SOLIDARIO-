@@ -62,6 +62,9 @@ public static class PoliticaEcoPuntos
     public const int DiasRecordatorioVencimiento = 3;
     /// <summary>Cada cuánto se repone el cupo de destacados gratis de Premium y Empresa (no se acumula).</summary>
     public const int DiasCicloDestacadosGratis = 30;
+    /// <summary>Prueba gratis de Premium: una vez por cuenta, sin tarjeta ni cobro al terminar.</summary>
+    public const int DiasPruebaPremium = 7;
+    public const int DestacadosGratisPruebaPremium = 1;
 
     // ---- Límites por plan ----
     public const int MaxPublicacionesIndividual = 50;

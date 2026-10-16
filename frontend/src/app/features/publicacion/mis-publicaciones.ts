@@ -132,7 +132,7 @@ type Filtro = 'activas' | 'negociacion' | 'cerradas';
           <div class="mt-3 rounded-2xl bg-sol-50 p-4 text-sm dark:bg-sol-500/10">
             <p class="font-semibold">La gráfica diaria es un beneficio de los planes Premium y Empresa.</p>
             <p class="mt-1 text-tenue">Mira qué días te visitan más y si destacar tu publicación funcionó.</p>
-            <a routerLink="/eco-puntos" class="btn btn-sol btn-sm mt-3" (click)="estadisticasAbiertas.set(false)"><app-icono nombre="corona" [tamano]="14" />Ver planes</a>
+            <a routerLink="/planes" class="btn btn-sol btn-sm mt-3" (click)="estadisticasAbiertas.set(false)"><app-icono nombre="corona" [tamano]="14" />Ver planes</a>
           </div>
         }
       } @else {
