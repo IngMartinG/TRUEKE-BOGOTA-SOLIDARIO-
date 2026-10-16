@@ -67,6 +67,7 @@ import { Icono } from '../../shared/ui/icono';
         <a [routerLink]="sesion.autenticado() ? '/publicar' : '/registro'" class="btn btn-primario btn-lg">
           {{ sesion.autenticado() ? 'Publicar mi primer objeto' : 'Crear mi cuenta gratis' }}
         </a>
+        <p class="mt-4 text-sm text-tenue">¿Quieres ver lo que ya ha hecho la comunidad? <a routerLink="/impacto" class="enlace">Mira el impacto</a></p>
       </div>
     </section>
   `,

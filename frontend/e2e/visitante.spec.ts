@@ -22,6 +22,17 @@ test.describe('visitante sin cuenta', () => {
     await expect(page.getByRole('heading', { name: 'Explora el catálogo' })).toBeVisible();
   });
 
+  test('el impacto de la comunidad está a un toque desde el encabezado o el pie', async ({ page, isMobile }) => {
+    await page.goto('/');
+    // En PC está en la navegación principal; en celular (sin espacio en la barra) en el pie y en el menú de cuenta.
+    const enlace = isMobile
+      ? page.getByRole('contentinfo').getByRole('link', { name: 'Impacto de la comunidad' })
+      : page.getByRole('navigation', { name: 'Principal' }).getByRole('link', { name: 'Impacto' });
+    await enlace.click();
+    await expect(page).toHaveURL(/\/impacto$/);
+    await expect(page.getByRole('heading', { name: 'Lo que hemos hecho circular' })).toBeVisible();
+  });
+
   test('busca sin tildes, elige una sugerencia y ve el detalle', async ({ page }) => {
     await page.goto('/explorar');
     const buscador = page.getByRole('combobox', { name: 'Buscar publicaciones' });

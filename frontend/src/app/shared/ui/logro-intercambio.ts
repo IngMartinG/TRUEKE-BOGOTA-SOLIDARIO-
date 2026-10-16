@@ -50,6 +50,7 @@ import { Modal } from './modal';
         } @else {
           <p class="text-sm text-tenue">{{ mensaje() }}</p>
         }
+        <a routerLink="/impacto" class="enlace mt-3 inline-block text-sm" (click)="abierto.set(false)">Mira lo que hemos logrado juntos</a>
       </div>
       <div pie class="flex flex-col-reverse gap-2 border-t border-borde p-4 sm:flex-row sm:justify-end">
         <a routerLink="/publicar" class="btn btn-secundario" (click)="abierto.set(false)"><app-icono nombre="mas" [tamano]="16" />Publicar otro objeto</a>

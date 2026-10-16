@@ -99,6 +99,7 @@ interface Servicio {
           La reputación máxima es {{ p.reputacionMaxima }}. Los Eco-Puntos no se convierten en dinero.
         </p>
       }
+      <p class="mt-2 text-sm"><a routerLink="/impacto" class="enlace">Mira lo que la comunidad ya ha hecho circular</a></p>
     </section>
 
     <!-- Usar puntos: impulsar -->

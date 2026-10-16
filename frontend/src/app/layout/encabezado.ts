@@ -157,6 +157,7 @@ export class Encabezado {
     { ruta: '/explorar', texto: 'Explorar' },
     { ruta: '/como-funciona', texto: 'Cómo funciona' },
     { ruta: '/eco-puntos', texto: 'Eco-Puntos' },
+    { ruta: '/impacto', texto: 'Impacto' },
   ];
 
   protected readonly menu = [
@@ -166,6 +167,7 @@ export class Encabezado {
     { ruta: '/mensajes', texto: 'Mensajes', icono: 'mensaje' },
     { ruta: '/favoritos', texto: 'Favoritos', icono: 'heart' },
     { ruta: '/eco-puntos', texto: 'Eco-Puntos y planes', icono: 'moneda' },
+    { ruta: '/impacto', texto: 'Impacto de la comunidad', icono: 'hoja' },
     { ruta: '/ayuda', texto: 'Centro de ayuda', icono: 'soporte' },
   ];
 
