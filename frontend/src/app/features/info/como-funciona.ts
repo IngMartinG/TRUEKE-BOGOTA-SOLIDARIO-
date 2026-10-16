@@ -85,7 +85,7 @@ export default class ComoFunciona {
   ];
   protected readonly preguntas = [
     { p: '¿Cuesta algo usar Trueke?', r: 'No. Publicar, intercambiar, comprar y donar es gratis. Solo pagas si quieres servicios opcionales como destacar una publicación, verificar tu cuenta o un plan Premium.' },
-    { p: '¿Qué son los Eco-Puntos?', r: 'Son la moneda interna de la comunidad. Los ganas al completar intercambios y sirven para obtener descuentos en los servicios opcionales. No se pueden convertir en dinero.' },
+    { p: '¿Qué son los Eco-Puntos?', r: 'Son la moneda interna de la comunidad. Los ganas al completar intercambios y sirven para impulsar, destacar o verificar tu cuenta: cada punto vale $100 en la app y tú eliges cuántos usar. No se pueden convertir en dinero.' },
     { p: '¿Cómo protegen mis datos?', r: 'Nunca mostramos tu correo ni tu ubicación exacta a otras personas. Puedes descargar o eliminar tus datos cuando quieras desde Privacidad, conforme a la Ley 1581 de 2012.' },
     { p: '¿Qué pasa si el intercambio no se da?', r: 'Cualquiera de las dos partes puede marcarlo como "no se concretó" indicando el motivo. La publicación vuelve a estar disponible.' },
     { p: '¿Qué hago si veo algo sospechoso?', r: 'Usa el botón "Reportar" en la publicación, comentario o perfil. El equipo de moderación lo revisa y puede ocultar contenido o suspender cuentas.' },
