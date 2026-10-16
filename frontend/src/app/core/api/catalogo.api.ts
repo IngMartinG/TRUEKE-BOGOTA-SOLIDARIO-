@@ -49,8 +49,8 @@ export class CatalogoApi {
     this.api.get<PublicacionCercanaDto[]>('/publicaciones/cercanas', {
       params: { lat, lon, radioKm, modo, categoriaId, condicion, max: 50 },
     });
-  /** Público: totales de intercambios completados en la comunidad. */
-  impacto = () => this.api.get<ImpactoDto>('/impacto', { silencioso: true });
+  /** Público: totales de intercambios completados (el backend los guarda 10 min); una petición por sesión. */
+  impacto$ = this.api.get<ImpactoDto>('/impacto', { silencioso: true }).pipe(shareReplay(1));
   sugerencias = (texto: string, max = 8) =>
     this.api.get<string[]>('/publicaciones/sugerencias', { params: { texto, max }, silencioso: true });
   obtener = (id: string) => this.api.get<PublicacionDto>(`/publicaciones/${seg(id)}`, { silencioso: true });

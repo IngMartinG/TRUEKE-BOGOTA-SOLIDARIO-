@@ -10,9 +10,10 @@ import { SesionService } from '../../core/sesion.service';
 import { NumeroPipe } from '../../shared/pipes';
 import { Icono } from '../../shared/ui/icono';
 import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-publicacion';
+import { ResumenImpacto } from '../../shared/ui/resumen-impacto';
 
 @Component({
-  imports: [RouterLink, FormsModule, Icono, TarjetaPublicacion, TarjetaEsqueleto, NumeroPipe],
+  imports: [RouterLink, FormsModule, Icono, TarjetaPublicacion, TarjetaEsqueleto, NumeroPipe, ResumenImpacto],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- ============ HERO ============ -->
@@ -164,6 +165,9 @@ import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-pu
         }
       </div>
     </section>
+
+    <!-- ============ IMPACTO ============ -->
+    <app-resumen-impacto />
 
     <!-- ============ CERCA DE TI ============ -->
     <!-- La ubicación se pide solo al tocar el botón (nunca al cargar) y no se guarda: sirve para esta búsqueda -->

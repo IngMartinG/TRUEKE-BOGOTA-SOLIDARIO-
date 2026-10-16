@@ -67,7 +67,7 @@ import { Icono } from '../../shared/ui/icono';
   `,
 })
 export default class Impacto {
-  protected readonly recurso = rxResource({ stream: () => inject(CatalogoApi).impacto() });
+  protected readonly recurso = rxResource({ stream: () => inject(CatalogoApi).impacto$ });
   protected readonly i = computed(() => this.recurso.value());
   protected readonly modos = computed(() => {
     const d = this.i();
