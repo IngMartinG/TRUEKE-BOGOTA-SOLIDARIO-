@@ -618,7 +618,7 @@ export default class EcoPuntos {
 
   protected async pagar(): Promise<void> {
     const concepto = this.conceptoCompra();
-    if (!concepto || !this.facturaLista()) return;
+    if (!concepto || !this.compraLista()) return; // con todo en puntos no hay factura que elegir
     await this.iniciar({
       concepto,
       publicacionId: concepto === 'Destacar' ? this.publicacionId() : null,
