@@ -19,10 +19,10 @@ test('destacar pagando todo con Eco-Puntos: la persona elige usarlos y se aplica
   });
 
   await test.step('en el resumen nada se canjea hasta que elige pagar con puntos', async () => {
-    await page.goto('/eco-puntos');
-    await page.getByRole('button', { name: 'Destacar una publicación' }).click();
+    // Como el botón "Destacar" del detalle: la ventana se abre sola con la publicación elegida (cuando la sesión ya cargó)
+    await page.goto(`/eco-puntos?destacar=${id}`);
     const dialogo = page.getByRole('dialog');
-    await dialogo.getByLabel('¿Qué publicación quieres destacar?').selectOption({ label: titulo });
+    await expect(dialogo.getByLabel('¿Qué publicación quieres destacar?')).toHaveValue(id);
 
     await dialogo.getByRole('button', { name: /Pagar todo con 60 Eco-Puntos/ }).click();
     await expect(dialogo.getByText(/sin pasarela ni factura/)).toBeVisible();
