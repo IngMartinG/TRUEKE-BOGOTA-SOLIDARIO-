@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
-import { cuentaLista, publicar } from './utilidades';
+import { cuentaLista, ingresar, publicar } from './utilidades';
 
 test('destacar pagando todo con Eco-Puntos: la persona elige usarlos y se aplica sin pasarela', async ({ page }) => {
   const titulo = `Lámpara E2E ${randomBytes(3).toString('hex')}`;
@@ -19,7 +19,8 @@ test('destacar pagando todo con Eco-Puntos: la persona elige usarlos y se aplica
   });
 
   await test.step('en el resumen nada se canjea hasta que elige pagar con puntos', async () => {
-    // Como el botón "Destacar" del detalle: la ventana se abre sola con la publicación elegida (cuando la sesión ya cargó)
+    await ingresar(page, cuenta);
+    // Como el botón "Destacar" del detalle: la ventana se abre sola con la publicación elegida
     await page.goto(`/eco-puntos?destacar=${id}`);
     const dialogo = page.getByRole('dialog');
     await expect(dialogo.getByLabel('¿Qué publicación quieres destacar?')).toHaveValue(id);
