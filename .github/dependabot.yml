@@ -24,6 +24,9 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "Microsoft.AspNetCore.*"
         update-types: ["version-update:semver-major"]
+      # MessagePack lo usa el backplane Redis de SignalR, compilado contra la 2.x: la 3.x se adopta cuando SignalR la pida.
+      - dependency-name: "MessagePack"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: npm
     directory: /frontend
