@@ -1,4 +1,4 @@
-# Estado del backend — Trueke Bogotá Solidario (2026-10-03)
+# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-16)
 
 ## Hecho — backend completo para conectar el front
 **Base:**
@@ -170,11 +170,108 @@
   - Pasos para activarla (CSP y política de datos) y qué no hacer.
 - **Con esto se completan las 9 mejoras de la hoja de ruta del 2026-10-10.**
 
-## Pendiente (fuera del código)
-- **Subir la rama:** GitHub Desktop → Publish branch → Pull Request → CI en verde → Merge.
-- **Dependabot:** `gh auth login` y cerrar los PR de .NET 10, EF Core 9, TypeScript 7 y Node 26 (los demás, fusionar si el CI pasa).
-- **Ya listo en local:** Docker, Google (inicio de sesión) y correo Gmail.
-- **Llaves externas pendientes:** reCAPTCHA v3, Wompi y, para producción, Azure (SQL, Redis, Storage, App Service, Key Vault, Application Insights), un correo transaccional y el dominio. Ver la sección 7.1 de `backend/README.md`: dónde se obtiene cada una.
-- **Logo en alta resolución** (1024 px o SVG) para el ícono grande del celular.
-- **Contador / abogado:** confirmar el régimen de IVA (`Facturacion:ResponsableIva`), el tratamiento tributario de las recargas de Eco-Puntos, la resolución de facturación de la DIAN y el texto final de términos y política de datos.
-- **Cuando haya contratos:** cobro recurrente con fuentes de pago de Wompi y emisión automática con la API de un proveedor de factura electrónica.
+## Hecho el 2026-10-11 — auditoría de seguridad (PR 60 a 69)
+Cada hallazgo de la auditoría se corrigió en su propio PR, con pruebas.
+- **Archivos (#60, alto):** las subidas van a un contenedor privado con SAS de solo crear. Al usarlas, el servidor descarga el archivo una vez (condicionado al ETag) y publica **su propia copia**: las fotos siempre se re-codifican. Ya no sirve el metadato que el cliente podía poner para saltarse la limpieza, y nadie puede reemplazar un archivo aceptado.
+- **Google + 2FA (#61):** el login con Google aplica el mismo bloqueo de 5 intentos y exige el segundo factor **antes** de vincular. Al vincular una cuenta con el correo sin verificar se quitan la clave y el 2FA que hubiera puesto un impostor.
+- **Reautenticación (#62):** activar 2FA, crear o cambiar la clave exige confirmar la identidad (`ConfirmadorIdentidad`): la clave actual, que cuenta para el bloqueo, o un ID token de Google de la misma cuenta emitido hace menos de 10 minutos.
+- **Moderación propia (#63):** nadie resuelve denuncias ni apelaciones sobre su propio contenido ni restaura lo suyo, ni siquiera un SuperUsuario.
+- **Disputas (#64):** quien no confirmó la entrega puede marcar "no se concretó" aunque la otra parte ya confirmara. Así una sola persona no puede forzar el intercambio ni los puntos.
+- **Moderar exige 2FA también en las rutas públicas (#65):** lo oculto, los motivos y las coordenadas exactas solo se ven con 2FA. Las validaciones de arranque se aplican en todo entorno publicado, no solo en `Production`: sin pagos ni correo simulados, y `Wompi:LlavePrivada` obligatoria.
+- **Pagos (#66):** una aprobación de Wompi que llega después de un rechazo queda en `RequiereRevision`, con aviso a la persona y a moderación para reembolsarla.
+- **Endurecimientos menores (#67):**
+  - la tarjeta para compartir queda en caché y se generan como máximo 2 a la vez;
+  - `Urls:Api` es obligatoria en producción;
+  - "en línea" solo se muestra a quien tiene sesión;
+  - cerrar sesión en otra pestaña limpia los datos de la página abierta.
+- **CI (#68):**
+  - acciones fijadas por SHA;
+  - ZAP rechaza los hosts de producción;
+  - CSP por `<meta>` en GitHub Pages;
+  - la app no arranca dentro de un iframe ajeno (`core/sin-marcos.ts`).
+- **Docker local (#69):**
+  - puertos solo en `127.0.0.1`;
+  - la API entra a SQL Server con el usuario `trueke_app`, dueño solo de su base (variable `SQL_APP_PASSWORD`);
+  - la clave de Redis ya no aparece en los argumentos del proceso;
+  - imágenes fijadas por digest.
+
+## Hecho el 2026-10-11 — .NET 10 y dependencias (PR 82 a 84)
+- **.NET 10 LTS (#82):** los 4 proyectos en `net10.0`, con EF Core y ASP.NET Core 10. Las imágenes del SDK y del runtime van por digest y la app sigue con usuario sin privilegios. El contrato OpenAPI no cambió. .NET 8 dejaba de recibir parches el 10 de noviembre de 2026.
+- **Dependabot revisado en bloque (#83):**
+  - GitHub Actions, Redis 8 sin root, imágenes de las E2E y paquetes NuGet probados juntos;
+  - Azure.Storage.Blobs exigía subir también Azure.Identity;
+  - 337 pruebas del backend y 20 E2E correctas.
+  - Los PR sueltos de Dependabot (70 a 81) se cerraron.
+- **Docs (#84):** se quitaron referencias a archivos de herramientas locales.
+
+## Hecho el 2026-10-11 — revisión del frontend (PR 85 a 95)
+- **Contraste y foco (#85):** los tonos de Eco-Puntos, error y peligro pasan AA. Hay un token nuevo `borde-campo` para que se vean los campos, y el foco es visible en todo.
+- **Aviso de comentarios (#86):** el dueño recibe la notificación `ComentarioNuevo` en la bandeja, en tiempo real y por push. No se avisa cuando comenta en su propia publicación, y el aviso no lleva datos de quien comentó.
+- **Chat en celular (#87):**
+  - la caja para escribir siempre se ve;
+  - el nombre aparece en la tablet;
+  - en pantallas táctiles, tocar un mensaje muestra sus acciones;
+  - los avisos ya no tapan la caja.
+- **Intercambios (#88):**
+  - "Confirmar entrega" y "Aceptar y reservar" piden confirmación;
+  - la foto de perfil se pide a tiempo, con `?volver=`;
+  - los errores de red son claros.
+- **Lectores de pantalla (#89):**
+  - la directiva `CampoAccesible` marca `aria-invalid` y asocia el campo con su error;
+  - el error aparece al salir del campo;
+  - al cambiar de página, el foco va a `#contenido` y se anuncia el título nuevo.
+- **Detalle (#90):** en celular el orden es foto → título, precio y botón → descripción. La foto principal carga con prioridad.
+- **Inicio (#91):** solo cifras reales y la marca "Nacida en Bogotá, abierta a toda Colombia". La pantalla de carga pasa de 251 KB a 30 KB con `logo-carga.webp`: el mismo logo, solo reescalado.
+- **Táctil y tipografía (#92):** botones de 44 px al tacto, nada legible por debajo de 12 px y mejor navegación en celular.
+- **Modo oscuro y movimiento (#93):** no hay destello claro al cargar (el script en línea va con hash en la CSP), las pastillas tienen variante oscura y toda animación respeta "reducir movimiento".
+- **Logro (#94):** `app-logro-intercambio` celebra el intercambio completado con los Eco-Puntos ganados y es accesible.
+- **Borrador al publicar (#95):** lo escrito se guarda en el navegador, con una clave por cuenta, y se ofrece "Retomar" o "Empezar de cero". El foco va a cada paso.
+
+## Hecho el 2026-10-12 — páginas nuevas (PR 96 a 101)
+- **Historial de Eco-Puntos (#96):**
+  - entidad inmutable `MovimientoEcoPuntos` (migración `HistorialEcoPuntos`), con el motivo, la referencia y el saldo resultante;
+  - pantalla con el historial;
+  - el bloque nuevo también está en `docs/migraciones/script-idempotente.sql`.
+- **Cerca de ti (#97):** una sección en el inicio pide la ubicación solo al tocar el botón y no la guarda. Muestra hasta 8 publicaciones a menos de 5 km, con la distancia, y un enlace directo al mapa del catálogo.
+- **Bienvenida guiada (#98):** `/bienvenida`, al confirmar el correo, muestra el regalo de Eco-Puntos y el progreso (foto de perfil, barrio) y propone qué hacer primero.
+- **Rendimiento (#99):** `@angular/forms` sale del paquete inicial, que vuelve a quedar dentro del presupuesto.
+- **Accesibilidad (#100):** declaración pública `/accesibilidad` (WCAG 2.2 AA), enlazada en el pie.
+- **Impacto (#101):** `GET /api/v1/impacto` anónimo, autorizado por el dueño, y la página pública con totales de la comunidad.
+  - Datos: objetos con nuevo hogar por modo, personas que han intercambiado, intercambios del mes y las localidades más activas.
+  - Privacidad: una localidad aparece solo desde 3 intercambios y nunca hay ids, nombres ni correos.
+  - Caché de 10 minutos.
+  - 341 pruebas del backend.
+
+## Hecho el 2026-10-16 — puntos seguros de encuentro (PR 109)
+- Se recomiendan **tipos de lugar, sin nombres de sedes**: estación de TransMilenio (o de transporte público), centro comercial, biblioteca pública y CAI de la Policía.
+- **Detalle de la publicación:** cada lugar aparece con su consejo.
+- **Chat:** botones para proponer el lugar, en la conversación vacía y con el botón del escudo. Solo escriben la propuesta: la persona la edita y la envía.
+- La ayuda usa los mismos lugares. Hay una prueba del componente y un paso E2E en el chat.
+
+## Pendiente
+**Despliegue y operación:**
+- **Dominio propio:**
+  - resuelve la cookie de sesión entre sitios distintos (Safari/iPhone);
+  - permite cambiar la cookie a `SameSite=Strict`.
+- **Servidor:**
+  - hoy la plataforma corre en la fase gratis (front en GitHub Pages, API en Render Free, que se duerme a los 15 minutos);
+  - se evalúa un VPS o un plan pago para el tráfico real, y sacar el front de GitHub Pages;
+  - guía en `docs/DESPLIEGUE.md`.
+- **Wompi en producción:**
+  - cambiar `BaseUrl` en `render.yaml` y poner las llaves de producción;
+  - **antes**, borrar los datos de prueba, como promete la interfaz.
+- **Después de cada despliegue:** verificar en producción la subida de fotos, por el `ngsw-bypass`.
+- **Dependabot:** revisar y probar juntos los PR abiertos (102 a 108), como se hizo en #83.
+
+**Con terceros:**
+- **Contador / abogado:**
+  - confirmar el régimen de IVA (`Facturacion:ResponsableIva`);
+  - el tratamiento tributario de las recargas de Eco-Puntos;
+  - la resolución de facturación de la DIAN;
+  - el texto final de los términos y de la política de datos.
+- **Cuando haya contratos:** cobro recurrente con fuentes de pago de Wompi y factura electrónica automática con un proveedor.
+
+**Producto (por decidir):**
+- Revisión de la monetización: planes, precios y beneficios.
+- Funciones grandes: lista de deseos, logros, fotos en el chat.
+- Opcional: una cifra de impacto en el inicio.
