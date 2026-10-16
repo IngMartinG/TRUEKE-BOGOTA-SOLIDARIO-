@@ -10,12 +10,18 @@
 
   <!-- Capa DAL: SOLO aquí viven los paquetes de EF Core -->
   <ItemGroup>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.12" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.12" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.12">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="10.0.13" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="10.0.13" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.13">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <!-- Llega transitivo por Microsoft.Data.SqlClient (9.0.11) y MimeKit (10.0.0), ambos con CVE-2026-70162 y CVE-2026-84008.
+       Se fija la versión corregida aquí, debajo de las dos cadenas; quitar cuando esos paquetes la traigan solos. -->
+  <ItemGroup>
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
   </ItemGroup>
 
   <!-- Catálogo oficial de departamentos y municipios (DANE - DIVIPOLA): datos de referencia de solo lectura -->
