@@ -50,9 +50,17 @@ test('trueke completo: solicitar, aceptar, chatear en tiempo real, confirmar la 
     await beto.page.locator('app-tarjeta-solicitud', { hasText: titulo }).getByRole('link', { name: 'Abrir chat' }).click();
     await expect(beto.page).toHaveURL(/\/mensajes\/.+/);
 
-    await ana.page.getByPlaceholder('Escribe un mensaje…').fill('¿Nos vemos el sábado en el parque?');
+    // Proponer un lugar seguro solo escribe la propuesta: no la envía
+    await ana.page.getByRole('button', { name: 'Proponer CAI de la Policía' }).click();
+    await expect(ana.page.getByPlaceholder('Escribe un mensaje…')).toHaveValue(/frente a un CAI de la Policía/);
+    await expect(ana.page.getByPlaceholder('Escribe un mensaje…')).toBeFocused();
+    await ana.page.getByRole('button', { name: 'Proponer un lugar seguro' }).click();
+    await expect(ana.page.getByRole('button', { name: 'Proponer Biblioteca pública' })).toBeVisible();
+    await ana.page.getByRole('button', { name: 'Proponer un lugar seguro' }).click();
+
+    await ana.page.getByPlaceholder('Escribe un mensaje…').fill('¿Nos vemos el sábado en la biblioteca pública?');
     await ana.page.getByRole('button', { name: 'Enviar', exact: true }).click();
-    await expect(beto.page.locator('section').getByText('¿Nos vemos el sábado en el parque?')).toBeVisible();
+    await expect(beto.page.locator('section').getByText('¿Nos vemos el sábado en la biblioteca pública?')).toBeVisible();
 
     await beto.page.getByPlaceholder('Escribe un mensaje…').fill('¡Listo! A las 10.');
     await beto.page.getByRole('button', { name: 'Enviar', exact: true }).click();
