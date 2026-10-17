@@ -5663,7 +5663,9 @@
           "Verificar",
           "Premium",
           "Empresa",
-          "Recarga"
+          "Recarga",
+          "PremiumAnual",
+          "EmpresaAnual"
         ],
         "type": "string"
       },
@@ -7596,6 +7598,24 @@
         },
         "additionalProperties": false
       },
+      "PaqueteRecargaDto": {
+        "type": "object",
+        "properties": {
+          "montoCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "puntos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "bono": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "PerfilEmpresaRequest": {
         "required": [
           "nit",
@@ -7879,6 +7899,25 @@
           "destacadosGratisPruebaPremium": {
             "type": "integer",
             "format": "int32"
+          },
+          "precioPremiumAnualCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "precioEmpresaAnualCop": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "duracionSuscripcionAnualDias": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "paquetesRecarga": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PaqueteRecargaDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false

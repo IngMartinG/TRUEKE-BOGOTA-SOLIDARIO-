@@ -135,6 +135,8 @@ public interface ISolicitudRepository
 public interface IMovimientoEcoPuntosRepository
 {
     Task<(IReadOnlyList<MovimientoEcoPuntos> Items, int Total)> ListarPorUsuarioAsync(Guid usuarioId, int pagina, int tamano);
+    /// <summary>Puntos movidos por un concepto y una referencia (p. ej. el bono que dio una recarga).</summary>
+    Task<int> SumarAsync(Guid usuarioId, ConceptoEcoPuntos concepto, Guid referenciaId);
 }
 
 /// <summary>Totales de intercambios completados para la página de impacto. Nunca incluye datos de personas.</summary>

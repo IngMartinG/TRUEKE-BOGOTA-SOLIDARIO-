@@ -352,6 +352,10 @@ public sealed class MovimientoEcoPuntosRepository : IMovimientoEcoPuntosReposito
             .Skip((pagina - 1) * tamano).Take(tamano).ToListAsync();
         return (items, total);
     }
+
+    public Task<int> SumarAsync(Guid usuarioId, ConceptoEcoPuntos concepto, Guid referenciaId)
+        => _db.MovimientosEcoPuntos.Where(m => m.UsuarioId == usuarioId && m.Concepto == concepto && m.ReferenciaId == referenciaId)
+            .SumAsync(m => m.Puntos);
 }
 
 public sealed class TransaccionRepository : ITransaccionRepository

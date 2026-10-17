@@ -119,7 +119,7 @@ public sealed class PagoService : IPagoService
 
         if (await _pagos.ContarPendientesAsync(actorId, ahora.AddHours(-1)) >= Limites.MaxPagosPendientesPorHora)
             throw new ReglaDeNegocioException("Tienes demasiados pagos pendientes. Complétalos o espera a que expiren.");
-        if (concepto != ConceptoPago.Recarga && await _pagos.ExistePendienteAsync(actorId, concepto, r.PublicacionId))
+        if (concepto != ConceptoPago.Recarga && await ExistePendienteDeLaFamiliaAsync(actorId, concepto, r.PublicacionId))
             throw new ReglaDeNegocioException("Ya tienes un pago pendiente de este tipo. Complétalo o espera a que expire.");
 
         Guid? publicacionId = null;
@@ -151,14 +151,13 @@ public sealed class PagoService : IPagoService
                 monto = cotizacion.TotalCop;
                 break;
             }
-            case ConceptoPago.Premium:
-                u.ValidarPuedeSuscribirse(TipoCuenta.Premium, ahora);
-                monto = PoliticaEcoPuntos.PrecioPremiumCop;
+            case ConceptoPago.Premium or ConceptoPago.Empresa or ConceptoPago.PremiumAnual or ConceptoPago.EmpresaAnual:
+            {
+                var plan = PoliticaEcoPuntos.Suscripcion(concepto)!.Value;
+                u.ValidarPuedeSuscribirse(plan.Plan, ahora);
+                monto = plan.PrecioCop;
                 break;
-            case ConceptoPago.Empresa:
-                u.ValidarPuedeSuscribirse(TipoCuenta.Empresa, ahora);
-                monto = PoliticaEcoPuntos.PrecioEmpresaCop;
-                break;
+            }
             case ConceptoPago.Recarga:
                 if (r.MontoRecargaCop is null) throw new ReglaDeNegocioException("Indica el monto de la recarga.");
                 monto = r.MontoRecargaCop.Value;
@@ -391,15 +390,21 @@ public sealed class PagoService : IPagoService
             case ConceptoPago.Verificar:
                 u.SolicitarVerificacion(pago.DocumentoUrl ?? "");
                 break;
-            case ConceptoPago.Premium:
-                u.ActivarPremium(ahora);
+            case ConceptoPago.Premium or ConceptoPago.Empresa or ConceptoPago.PremiumAnual or ConceptoPago.EmpresaAnual:
+            {
+                var plan = PoliticaEcoPuntos.Suscripcion(pago.Concepto)!.Value;
+                if (plan.Plan == TipoCuenta.Premium) u.ActivarPremium(ahora, plan.Dias);
+                else u.ActivarEmpresa(ahora, plan.Dias);
                 break;
-            case ConceptoPago.Empresa:
-                u.ActivarEmpresa(ahora);
-                break;
+            }
             case ConceptoPago.Recarga:
+            {
                 u.AcreditarEcoPuntos(pago.MontoCop / PoliticaEcoPuntos.CopPorEcoPunto, ConceptoEcoPuntos.Recarga, pago.Id, pago.Referencia);
+                // El bono va aparte para que el historial lo muestre (y el reembolso lo retire tal como se dio)
+                var bono = PoliticaEcoPuntos.BonoRecarga(pago.MontoCop);
+                if (bono > 0) u.AcreditarEcoPuntos(bono, ConceptoEcoPuntos.BonoRecarga, pago.Id, pago.Referencia);
                 break;
+            }
             default:
                 throw new ReglaDeNegocioException("Concepto de pago no válido.");
         }
@@ -417,8 +422,25 @@ public sealed class PagoService : IPagoService
         ConceptoPago.Verificar => "Verificar cuenta",
         ConceptoPago.Premium => "Plan Premium",
         ConceptoPago.Empresa => "Plan Empresa",
+        ConceptoPago.PremiumAnual => "Plan Premium anual",
+        ConceptoPago.EmpresaAnual => "Plan Empresa anual",
         _ => "Recarga",
     };
+
+    /// <summary>El mensual y el anual de un mismo plan son la misma compra: no se dejan dos pagos abiertos.</summary>
+    private async Task<bool> ExistePendienteDeLaFamiliaAsync(Guid actorId, ConceptoPago concepto, Guid? publicacionId)
+    {
+        ConceptoPago? hermano = concepto switch
+        {
+            ConceptoPago.Premium => ConceptoPago.PremiumAnual,
+            ConceptoPago.PremiumAnual => ConceptoPago.Premium,
+            ConceptoPago.Empresa => ConceptoPago.EmpresaAnual,
+            ConceptoPago.EmpresaAnual => ConceptoPago.Empresa,
+            _ => null
+        };
+        return await _pagos.ExistePendienteAsync(actorId, concepto, publicacionId)
+            || (hermano is { } h && await _pagos.ExistePendienteAsync(actorId, h, publicacionId));
+    }
 
     private static PagoEstadoDto ADto(Pago p)
         => new(p.Referencia, p.Concepto.ToString(), p.MontoCop, p.Estado.ToString(), p.FechaUtc, p.FechaResolucionUtc);

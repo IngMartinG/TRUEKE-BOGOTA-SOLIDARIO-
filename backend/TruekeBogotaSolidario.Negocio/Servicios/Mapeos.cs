@@ -112,6 +112,8 @@ internal static class Mapeos
         ConceptoPago.Verificar => "Verificación de identidad de la cuenta",
         ConceptoPago.Premium => $"Plan Premium ({PoliticaEcoPuntos.DuracionSuscripcionDias} días)",
         ConceptoPago.Empresa => $"Plan Empresa ({PoliticaEcoPuntos.DuracionSuscripcionDias} días)",
+        ConceptoPago.PremiumAnual => $"Plan Premium anual ({PoliticaEcoPuntos.DuracionSuscripcionAnualDias} días)",
+        ConceptoPago.EmpresaAnual => $"Plan Empresa anual ({PoliticaEcoPuntos.DuracionSuscripcionAnualDias} días)",
         ConceptoPago.Recarga => "Recarga de Eco-Puntos (crédito de servicios en la plataforma)",
         _ => c.ToString()
     };

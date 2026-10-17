@@ -6,7 +6,7 @@ namespace TruekeBogotaSolidario.Negocio.Dtos;
 // Enums propios de la capa de negocio (mismos valores numéricos que Datos). El usuario actuante NUNCA viaja en un request: sale del JWT.
 public enum ModoDto { Trueke = 1, Compra = 2, Donacion = 3 }
 public enum RolDto { Cliente = 1, Administrador = 2, SuperUsuario = 3 }
-public enum ConceptoPagoDto { Destacar = 1, Verificar = 2, Premium = 3, Empresa = 4, Recarga = 5 }
+public enum ConceptoPagoDto { Destacar = 1, Verificar = 2, Premium = 3, Empresa = 4, Recarga = 5, PremiumAnual = 6, EmpresaAnual = 7 }
 /// <summary>Estado físico del objeto: Nuevo, ComoNuevo (usado pero impecable), Usado, UsadoConDetalles, Reparado, ParaRepuestos.</summary>
 public enum CondicionDto { Nuevo = 1, ComoNuevo = 2, Usado = 3, UsadoConDetalles = 4, Reparado = 5, ParaRepuestos = 6 }
 public enum TipoDocumentoFiscalDto { CC = 1, CE = 2, NIT = 3, Pasaporte = 4 }
@@ -717,4 +717,9 @@ public sealed record PoliticaEcoPuntosDto(
     int MaxPublicacionesIndividual, int MaxPublicacionesPremium, int MaxPublicacionesEmpresa, int MaxVentasActivasSinIdentificar,
     int DiasEntreTransaccionesConPuntosMismaPareja, bool PreciosIncluyenIva, decimal IvaPorcentaje,
     int DiasRecordatorioVencimiento = 0, int DiasCicloDestacadosGratis = 0, int MinimoCobroCop = 0,
-    int DiasPruebaPremium = 0, int DestacadosGratisPruebaPremium = 0);
+    int DiasPruebaPremium = 0, int DestacadosGratisPruebaPremium = 0,
+    int PrecioPremiumAnualCop = 0, int PrecioEmpresaAnualCop = 0, int DuracionSuscripcionAnualDias = 0,
+    IReadOnlyList<PaqueteRecargaDto>? PaquetesRecarga = null);
+
+/// <summary>Paquete de recarga: pagas MontoCop y recibes Puntos + Bono.</summary>
+public sealed record PaqueteRecargaDto(int MontoCop, int Puntos, int Bono);

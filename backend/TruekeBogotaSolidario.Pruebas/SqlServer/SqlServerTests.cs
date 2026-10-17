@@ -166,7 +166,7 @@ public class SqlServerTests : IClassFixture<SqlServerFixture>
             var pago = await (await c.PostAsJsonAsync("/api/v1/pagos/iniciar", cuerpo)).Content.ReadFromJsonAsync<JsonElement>();
             (await c.PostAsync($"/api/v1/pagos/{pago.GetProperty("referencia").GetString()}/simular?aprobado=true", null)).EnsureSuccessStatusCode();
         }
-        await PagarAsync(new { concepto = "Recarga", montoRecargaCop = 2000, facturaANombre = false, aceptoConsumidorFinal = true });
+        await PagarAsync(new { concepto = "Recarga", montoRecargaCop = 5000, facturaANombre = false, aceptoConsumidorFinal = true });
         Assert.Equal(HttpStatusCode.OK, (await c.PostAsync($"/api/v1/publicaciones/{pub}/impulsar", null)).StatusCode);
         await PagarAsync(new { concepto = "Premium", facturaANombre = false, aceptoConsumidorFinal = true });
         var facturas = await c.GetFromJsonAsync<JsonElement>("/api/v1/cuenta/facturas");

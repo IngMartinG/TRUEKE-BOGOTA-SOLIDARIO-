@@ -64,16 +64,18 @@ public sealed class AdministracionService : IAdministracionService
     private readonly ICorreoSaliente _correo;
     private readonly IFacturaRepository _facturas;
     private readonly IPqrRepository _pqrs;
+    private readonly IMovimientoEcoPuntosRepository _movimientos;
     private readonly ILogger<AdministracionService> _log;
 
     public AdministracionService(IUsuarioRepository usuarios, IPublicacionRepository pubs, IUnidadDeTrabajo uow,
         IAuditoriaRepository auditoria, ISesionService sesiones, TimeProvider reloj, INotificador notificador,
         ISesionRefreshRepository refrescos, IAlmacenArchivos almacen, IPagoRepository pagos, ICorreoSaliente correo,
-        IFacturaRepository facturas, IPqrRepository pqrs, ILogger<AdministracionService> log, ISolicitudService truekes)
+        IFacturaRepository facturas, IPqrRepository pqrs, ILogger<AdministracionService> log, ISolicitudService truekes,
+        IMovimientoEcoPuntosRepository movimientos)
     {
         _usuarios = usuarios; _pubs = pubs; _uow = uow; _auditoria = auditoria; _sesiones = sesiones; _reloj = reloj; _truekes = truekes;
         _notificador = notificador; _refrescos = refrescos; _almacen = almacen; _pagos = pagos; _correo = correo;
-        _facturas = facturas; _pqrs = pqrs; _log = log;
+        _facturas = facturas; _pqrs = pqrs; _log = log; _movimientos = movimientos;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
@@ -168,10 +170,14 @@ public sealed class AdministracionService : IAdministracionService
         if (u is null) return;
         switch (p.Concepto)
         {
-            case ConceptoPago.Premium: u.RevertirMesDePlan(TipoCuenta.Premium, ahora); break;
-            case ConceptoPago.Empresa: u.RevertirMesDePlan(TipoCuenta.Empresa, ahora); break;
+            case ConceptoPago.Premium or ConceptoPago.Empresa or ConceptoPago.PremiumAnual or ConceptoPago.EmpresaAnual:
+                var plan = PoliticaEcoPuntos.Suscripcion(p.Concepto)!.Value;
+                u.RevertirPlan(plan.Plan, plan.Dias, ahora);
+                break;
             case ConceptoPago.Recarga:
-                var retirados = u.RetirarEcoPuntosHasta(p.MontoCop / PoliticaEcoPuntos.CopPorEcoPunto, p.Id);
+                // Se retira el bono que de verdad se dio (queda en el historial), aunque los paquetes cambien después
+                var bono = await _movimientos.SumarAsync(u.Id, ConceptoEcoPuntos.BonoRecarga, p.Id);
+                var retirados = u.RetirarEcoPuntosHasta(p.MontoCop / PoliticaEcoPuntos.CopPorEcoPunto + bono, p.Id);
                 _log.LogInformation("Reembolso {Referencia}: {Puntos} Eco-Puntos retirados", p.Referencia, retirados);
                 break;
             case ConceptoPago.Destacar:
@@ -314,6 +320,7 @@ public sealed class AdministracionService : IAdministracionService
         var porConcepto = resumen.GroupBy(x => x.Concepto).OrderByDescending(g => Suma(g))
             .Select(g => new IngresoConceptoDto(g.Key.ToString(), Suma(g), Suma(g.Where(x => x.Estado == EstadoPago.Reembolsado)), g.Sum(x => x.Cantidad)))
             .ToList();
+        // Aproximado: un plan anual vigente cuenta como su precio mensual equivalente
         var recurrente = (long)premium * PoliticaEcoPuntos.PrecioPremiumCop + (long)empresa * PoliticaEcoPuntos.PrecioEmpresaCop;
         return new IngresosDto(desde, hasta, cobrado, reembolsado, cobrado - reembolsado, resumen.Sum(x => x.Cantidad), premium, empresa,
             recurrente, facturasPendientes, pqrAbiertas, porMes, porConcepto);
