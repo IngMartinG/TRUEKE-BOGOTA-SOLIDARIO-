@@ -32,6 +32,7 @@ export default class Terminos {
       titulo: 'Eco-Puntos',
       parrafos: [
         'Los Eco-Puntos son un crédito de servicios dentro de la plataforma: no se pueden retirar, transferir ni convertir en dinero. Se ganan cuando ambas partes confirman la entrega de un intercambio (máximo 5 al día y una vez cada 30 días con la misma persona) y al confirmar el correo de una cuenta nueva.',
+        'Invita y ganan los dos: cada persona tiene un enlace de invitación. Cuando quien se registró con ese enlace completa su primer intercambio, ambas ganan 20 Eco-Puntos. No cuenta si ese primer intercambio es con quien la invitó, y quien invita puede recibir puntos por un máximo de 10 invitaciones recompensadas cada 30 días.',
         'Se usan para impulsar publicaciones y para obtener descuentos en los servicios pagos. Crear varias cuentas o simular intercambios para obtener puntos o reputación es causa de suspensión.',
       ],
     },

@@ -18,6 +18,7 @@ const CONCEPTOS: Record<string, { texto: string; icono: string }> = {
   BonoRecarga: { texto: 'Bono de recarga', icono: 'regalo' },
   CanjeDescuento: { texto: 'Descuento en', icono: 'etiqueta' },
   DevolucionCanje: { texto: 'Devolución del descuento en', icono: 'repeat' },
+  Invitacion: { texto: 'Invitación', icono: 'usuarios' },
   Impulsar: { texto: 'Impulsaste', icono: 'cohete' },
   ReembolsoRecarga: { texto: 'Recarga reembolsada', icono: 'billetera' },
 };

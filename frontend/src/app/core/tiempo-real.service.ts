@@ -18,6 +18,7 @@ export interface EstadoMensajes {
 /** Notificaciones que cambian el saldo o la reputación: tras recibirlas se recarga el perfil. */
 const AFECTAN_PERFIL = new Set([
   'IntercambioCompletado',
+  'InvitacionRecompensada',
   'PagoAprobado',
   'PagoReembolsado',
   'PlanPorVencer',
@@ -181,6 +182,7 @@ export class TiempoRealService {
     this.notificacion$.next(n);
     if (n.tipo && AFECTAN_PERFIL.has(n.tipo)) this.sesion.recargarUsuario();
     if (n.tipo === 'IntercambioCompletado') this.avisos.puntos('¡Intercambio completado!', n.mensaje);
+    else if (n.tipo === 'InvitacionRecompensada') this.avisos.puntos('¡Invitación recompensada!', n.mensaje);
     else this.avisos.info('Nueva notificación', n.mensaje);
   }
 

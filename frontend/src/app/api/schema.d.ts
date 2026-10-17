@@ -2285,6 +2285,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/eco-puntos/invitacion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InvitacionDto"];
+                        "application/json": components["schemas"]["InvitacionDto"];
+                        "text/json": components["schemas"]["InvitacionDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/eco-puntos/movimientos": {
         parameters: {
             query?: never;
@@ -5203,6 +5240,7 @@ export interface components {
             idToken: string;
             aceptoPoliticaDatos?: boolean;
             codigoDosFactores?: string | null;
+            codigoInvitacion?: string | null;
         };
         GuardarBusquedaRequest: {
             /** Format: int32 */
@@ -5301,6 +5339,19 @@ export interface components {
             aceptoConsumidorFinal?: boolean;
             /** Format: int32 */
             puntosAUsar?: number;
+        };
+        InvitacionDto: {
+            codigo?: string;
+            /** Format: int32 */
+            logradas?: number;
+            /** Format: int32 */
+            recompensadasEnCiclo?: number;
+            /** Format: int32 */
+            maxPorCiclo?: number;
+            /** Format: int32 */
+            puntosPorInvitacion?: number;
+            /** Format: int32 */
+            diasCiclo?: number;
         };
         LoginRequest: {
             /** Format: email */
@@ -5595,6 +5646,12 @@ export interface components {
             /** Format: int32 */
             duracionSuscripcionAnualDias?: number;
             paquetesRecarga?: components["schemas"]["PaqueteRecargaDto"][] | null;
+            /** Format: int32 */
+            puntosInvitacion?: number;
+            /** Format: int32 */
+            maxInvitacionesRecompensadasPorCiclo?: number;
+            /** Format: int32 */
+            diasCicloInvitaciones?: number;
         };
         PqrAdminDto: {
             /** Format: uuid */
@@ -5735,6 +5792,7 @@ export interface components {
             clave: string;
             aceptoPoliticaDatos?: boolean;
             captchaToken?: string | null;
+            codigoInvitacion?: string | null;
         };
         ResolverApelacionRequest: {
             aceptar?: boolean;
@@ -6005,6 +6063,7 @@ export type IngresoConceptoDto = components['schemas']['IngresoConceptoDto'];
 export type IngresoMesDto = components['schemas']['IngresoMesDto'];
 export type IngresosDto = components['schemas']['IngresosDto'];
 export type IniciarPagoRequest = components['schemas']['IniciarPagoRequest'];
+export type InvitacionDto = components['schemas']['InvitacionDto'];
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type MensajeChatDto = components['schemas']['MensajeChatDto'];
 export type MensajeCitadoDto = components['schemas']['MensajeCitadoDto'];
