@@ -186,7 +186,7 @@ public class SqlServerTests : IClassFixture<SqlServerFixture>
         // finanzas (GroupBy por año/mes en SQL) y colas de facturas y PQR
         var super = Api.ConToken(f, await Api.LoginAsync(f, FabricaApi.CorreoSuper, FabricaApi.ClaveSuper));
         var ingresos = await super.GetFromJsonAsync<JsonElement>("/api/v1/admin/ingresos");
-        Assert.Equal(17_000, ingresos.GetProperty("aprobadoCop").GetInt64());
+        Assert.Equal(20_000, ingresos.GetProperty("aprobadoCop").GetInt64()); // recarga de 5.000 + Premium de 15.000
         Assert.Equal(HttpStatusCode.OK, (await super.GetAsync("/api/v1/admin/ingresos.csv")).StatusCode);
         Assert.Equal(2, (await super.GetFromJsonAsync<JsonElement>("/api/v1/admin/facturas")).GetProperty("total").GetInt32());
         (await c.PostAsJsonAsync("/api/v1/pqr", new { tipo = "Queja", asunto = "Demora en la entrega", descripcion = "El vendedor no respondió en el chat." })).EnsureSuccessStatusCode();
