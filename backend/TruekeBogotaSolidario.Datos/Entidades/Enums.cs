@@ -55,4 +55,6 @@ public enum ConceptoEcoPuntos
     ReembolsoRecarga = 7,
     /// <summary>Puntos de regalo por recargar un paquete (se retiran si la recarga se reembolsa).</summary>
     BonoRecarga = 8,
+    /// <summary>Invita y ganan los dos: la persona invitada completó su primer intercambio.</summary>
+    Invitacion = 9,
 }

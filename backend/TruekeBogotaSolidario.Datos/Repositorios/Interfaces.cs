@@ -46,6 +46,10 @@ public interface IUsuarioRepository
     /// <summary>Busca por la forma canónica del correo (sin alias "+…" ni puntos de Gmail).</summary>
     Task<Usuario?> ObtenerPorCorreoCanonicoAsync(string correoCanonico);
     Task<bool> ExisteCorreoCanonicoAsync(string correoCanonico);
+    Task<Usuario?> ObtenerPorCodigoInvitacionAsync(string codigo);
+    Task<bool> ExisteCodigoInvitacionAsync(string codigo);
+    /// <summary>Personas invitadas por <paramref name="invitadorId"/> cuya invitación ya se recompensó (desde la fecha, o todas si es null).</summary>
+    Task<int> ContarInvitacionesRecompensadasAsync(Guid invitadorId, DateTime? desdeUtc);
     /// <summary>Administradores y SuperUsuarios activos (para alertas internas).</summary>
     Task<IReadOnlyList<Guid>> ListarIdsModeradoresAsync();
     /// <summary>Con tracking: planes pagos que vencen entre las fechas y a los que aún no se les envió recordatorio.</summary>

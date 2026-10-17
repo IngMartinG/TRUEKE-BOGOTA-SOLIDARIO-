@@ -1327,6 +1327,11 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(256)
                         .HasColumnType("nvarchar(256)");
 
+                    b.Property<string>("CodigoInvitacion")
+                        .HasMaxLength(12)
+                        .IsUnicode(false)
+                        .HasColumnType("varchar(12)");
+
                     b.Property<string>("CodigosRecuperacionHash")
                         .HasMaxLength(700)
                         .IsUnicode(false)
@@ -1422,6 +1427,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<int>("IntentosFallidosLogin")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("InvitadoPorId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("Localidad")
                         .IsRequired()
                         .HasMaxLength(60)
@@ -1466,6 +1474,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("PruebaPremiumUsadaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("RecompensaInvitacionUtc")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("RecordatorioVencimientoPara")
@@ -1518,6 +1529,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CodigoInvitacion")
+                        .IsUnique()
+                        .HasFilter("[CodigoInvitacion] IS NOT NULL");
+
                     b.HasIndex("Correo")
                         .IsUnique();
 
@@ -1531,6 +1546,8 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.HasIndex("GoogleSub")
                         .IsUnique()
                         .HasFilter("[GoogleSub] IS NOT NULL");
+
+                    b.HasIndex("InvitadoPorId", "RecompensaInvitacionUtc");
 
                     b.HasIndex("TipoCuenta", "FechaVencimientoSuscripcion");
 

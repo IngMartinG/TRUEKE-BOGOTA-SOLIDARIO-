@@ -78,6 +78,7 @@ public sealed class AuthService : IAuthService
         // Los Eco-Puntos de bienvenida se entregan al confirmar el correo (no al registrarse).
         var usuario = new Usuario(r.NombreCompleto, r.Localidad, correo, r.Clave, r.MunicipioCodigo);
         usuario.AceptarPoliticaDatos(_legal.VersionPoliticaDatos, Ahora);
+        await RegistrarInvitadorAsync(usuario, r.CodigoInvitacion);
         _usuarios.Agregar(usuario);
         var sesion = _emisor.Emitir(usuario);
         var confirmacion = await _correos.PrepararVerificacionAsync(usuario);
@@ -172,6 +173,7 @@ public sealed class AuthService : IAuthService
                     throw new ReglaDeNegocioException("Para crear tu cuenta debes aceptar la política de tratamiento de datos personales.");
                 usuario = Usuario.CrearDesdeGoogle(id.Nombre ?? "", id.Correo, id.Sub, ahora); // correo verificado por Google: recibe el bono
                 usuario.AceptarPoliticaDatos(_legal.VersionPoliticaDatos, ahora);
+                await RegistrarInvitadorAsync(usuario, r.CodigoInvitacion);
                 _usuarios.Agregar(usuario);
                 creada = true;
             }
@@ -216,6 +218,14 @@ public sealed class AuthService : IAuthService
         _sesiones.Invalidar(usuario.Id);
         if (creada) _log.LogInformation("Usuario registrado con Google {UsuarioId}", usuario.Id);
         return sesion with { CuentaCreada = creada };
+    }
+
+    /// <summary>Un código que no existe no impide crear la cuenta: solo no queda la invitación.</summary>
+    private async Task RegistrarInvitadorAsync(Usuario nuevo, string? codigo)
+    {
+        if (string.IsNullOrWhiteSpace(codigo)) return;
+        if (await _usuarios.ObtenerPorCodigoInvitacionAsync(CodigosInvitacion.Normalizar(codigo)) is { } invitador)
+            nuevo.RegistrarInvitador(invitador);
     }
 
     internal static bool MismoBuzon(string correoCuenta, string correoGoogle)

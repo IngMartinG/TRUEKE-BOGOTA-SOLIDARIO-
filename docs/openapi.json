@@ -2467,6 +2467,35 @@
         }
       }
     },
+    "/api/v1/eco-puntos/invitacion": {
+      "get": {
+        "tags": [
+          "EcoPuntos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitacionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitacionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitacionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/eco-puntos/movimientos": {
       "get": {
         "tags": [
@@ -6873,6 +6902,11 @@
             "maxLength": 20,
             "type": "string",
             "nullable": true
+          },
+          "codigoInvitacion": {
+            "pattern": "^[A-Za-z0-9]{6,12}$",
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7134,6 +7168,35 @@
           "puntosAUsar": {
             "maximum": 1000000,
             "minimum": 0,
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "InvitacionDto": {
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "type": "string"
+          },
+          "logradas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "recompensadasEnCiclo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxPorCiclo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "puntosPorInvitacion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "diasCiclo": {
             "type": "integer",
             "format": "int32"
           }
@@ -7918,6 +7981,18 @@
               "$ref": "#/components/schemas/PaqueteRecargaDto"
             },
             "nullable": true
+          },
+          "puntosInvitacion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxInvitacionesRecompensadasPorCiclo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "diasCicloInvitaciones": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -8326,6 +8401,11 @@
           },
           "captchaToken": {
             "maxLength": 4096,
+            "type": "string",
+            "nullable": true
+          },
+          "codigoInvitacion": {
+            "pattern": "^[A-Za-z0-9]{6,12}$",
             "type": "string",
             "nullable": true
           }

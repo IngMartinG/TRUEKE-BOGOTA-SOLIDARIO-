@@ -19,6 +19,11 @@ public static class PoliticaEcoPuntos
 {
     // ---- Cómo se ganan ----
     public const int PuntosBienvenida = 10;
+    /// <summary>Invita y ganan los dos: puntos para cada uno cuando la persona invitada completa su primer intercambio.</summary>
+    public const int PuntosInvitacion = 20;
+    /// <summary>Anti-abuso: invitaciones recompensadas por persona en cada ventana de <see cref="DiasCicloInvitaciones"/> días.</summary>
+    public const int MaxInvitacionesRecompensadasPorCiclo = 10;
+    public const int DiasCicloInvitaciones = 30;
     public const decimal ReputacionMaxima = 5.0m;
     public const int MaxTransaccionesConPuntosPorDia = 5; // anti-farmeo
     /// <summary>Anti-farmeo: la misma pareja de personas solo suma puntos y reputación una vez en esta ventana.</summary>

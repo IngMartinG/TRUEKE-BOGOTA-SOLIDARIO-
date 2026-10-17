@@ -2011,6 +2011,61 @@ BEGIN
 END;
 GO
 
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261017210419_Invitaciones'
+)
+BEGIN
+    ALTER TABLE [Usuarios] ADD [CodigoInvitacion] varchar(12) NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261017210419_Invitaciones'
+)
+BEGIN
+    ALTER TABLE [Usuarios] ADD [InvitadoPorId] uniqueidentifier NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261017210419_Invitaciones'
+)
+BEGIN
+    ALTER TABLE [Usuarios] ADD [RecompensaInvitacionUtc] datetime2 NULL;
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261017210419_Invitaciones'
+)
+BEGIN
+    EXEC(N'CREATE UNIQUE INDEX [IX_Usuarios_CodigoInvitacion] ON [Usuarios] ([CodigoInvitacion]) WHERE [CodigoInvitacion] IS NOT NULL');
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261017210419_Invitaciones'
+)
+BEGIN
+    CREATE INDEX [IX_Usuarios_InvitadoPorId_RecompensaInvitacionUtc] ON [Usuarios] ([InvitadoPorId], [RecompensaInvitacionUtc]);
+END;
+GO
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261017210419_Invitaciones'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261017210419_Invitaciones', N'10.0.13');
+END;
+GO
+
 COMMIT;
 GO
 
