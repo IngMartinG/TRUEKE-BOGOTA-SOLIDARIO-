@@ -119,6 +119,7 @@ export default class Reportes {
     Mensaje: 'Mensaje del chat',
     Usuario: 'Tu cuenta',
     Calificacion: 'Calificación',
+    Deseo: 'Lo que buscas',
   };
 
   protected motivo(m: string): string {

@@ -468,6 +468,52 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("Denuncias");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Deseo", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("AvisosActivos")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("CategoriaId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("EstaOculto")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("MotivoOcultamiento")
+                        .HasMaxLength(300)
+                        .HasColumnType("nvarchar(300)");
+
+                    b.Property<bool>("Publico")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("RevisadoHastaUtc")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoriaId");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.HasIndex("AvisosActivos", "RevisadoHastaUtc");
+
+                    b.ToTable("Deseos");
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.EstadisticaPublicacionDiaria", b =>
                 {
                     b.Property<Guid>("PublicacionId")
@@ -1670,6 +1716,20 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .WithMany()
                         .HasForeignKey("DenuncianteId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Deseo", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Categoria", null)
+                        .WithMany()
+                        .HasForeignKey("CategoriaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

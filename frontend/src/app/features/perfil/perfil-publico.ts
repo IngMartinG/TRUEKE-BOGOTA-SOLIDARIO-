@@ -82,6 +82,43 @@ import { Volver } from '../../shared/ui/volver';
       </section>
 
       <div class="contenedor grid grid-cols-1 gap-10 py-10 lg:grid-cols-[1fr_22rem]">
+        <div class="min-w-0">
+          @if (perfil.value()?.deseos?.length) {
+            <section aria-labelledby="titulo-deseos" class="mb-10">
+              <h2 id="titulo-deseos" class="text-xl font-bold">Lo que busca</h2>
+              @if (loTiene()) {
+                <p class="mt-1 text-sm text-tenue">Tienes publicado algo que le sirve: ofréceselo en uno de sus truekes.</p>
+              } @else if (!esMio()) {
+                <p class="mt-1 text-sm text-tenue">Si tienes algo de esto, publícalo y ofréceselo en un trueke.</p>
+              }
+              <ul class="mt-4 flex flex-wrap gap-2">
+                @for (d of perfil.value()?.deseos ?? []; track d.id) {
+                  <li class="flex items-center gap-1.5 rounded-full border py-1.5 pr-2 pl-3.5 text-sm"
+                    [class]="d.loTienes ? 'border-sol-300 bg-sol-50 dark:border-sol-500/40 dark:bg-sol-500/10' : 'border-borde bg-superficie'">
+                    <span class="font-semibold">{{ d.texto }}</span>
+                    @if (d.categoria) {
+                      <span class="text-xs text-tenue">en {{ d.categoria }}</span>
+                    }
+                    @if (d.loTienes) {
+                      <span class="insignia-sol"><app-icono nombre="check" [tamano]="12" [grosor]="3" />Lo tienes</span>
+                    }
+                    @if (sesion.autenticado() && !esMio()) {
+                      <button type="button" class="grid size-6 place-items-center rounded-full text-tenue hover:text-tierra-600 dark:hover:text-tierra-500"
+                        (click)="denunciarDeseo(d.id!)" [attr.aria-label]="'Reportar «' + d.texto + '»'">
+                        <app-icono nombre="bandera" [tamano]="12" />
+                      </button>
+                    }
+                  </li>
+                }
+              </ul>
+              @if (esMio()) {
+                <a routerLink="/lo-que-busco" class="enlace mt-3 inline-block text-sm">Editar mi lista</a>
+              }
+              @if (deseoDenunciado(); as idDeseo) {
+                <app-denunciar [(abierto)]="denunciaDeseoAbierta" tipo="Deseo" [objetivoId]="idDeseo" />
+              }
+            </section>
+          }
         <section aria-labelledby="titulo-publicaciones">
           <h2 id="titulo-publicaciones" class="text-xl font-bold">Publicaciones activas</h2>
           <div class="mt-5 grid grid-cols-2 gap-3 sm:gap-5 xl:grid-cols-3">
@@ -100,6 +137,7 @@ import { Volver } from '../../shared/ui/volver';
           }
           <app-paginador [pagina]="paginaPub()" [total]="publicaciones.value()?.total ?? 0" [tamano]="12" (cambiar)="paginaPub.set($event)" />
         </section>
+        </div>
 
         <aside aria-labelledby="titulo-calificaciones">
           @if (perfil.value()?.confianza; as c) {
@@ -190,6 +228,15 @@ export default class PerfilPublico {
   protected readonly paginaPub = signal(1);
   protected readonly paginaCal = signal(1);
   protected readonly denunciaAbierta = signal(false);
+  protected readonly denunciaDeseoAbierta = signal(false);
+  protected readonly deseoDenunciado = signal<string | null>(null);
+  protected readonly esMio = computed(() => this.sesion.usuario()?.id === this.id());
+  protected readonly loTiene = computed(() => !!this.perfil.value()?.deseos?.some((d) => d.loTienes));
+
+  protected denunciarDeseo(id: string): void {
+    this.deseoDenunciado.set(id);
+    this.denunciaDeseoAbierta.set(true);
+  }
   /** Si yo bloqueé a esta persona (sale de mi lista de bloqueados; solo con sesión). */
   private readonly misBloqueados = rxResource({
     params: () => (this.sesion.autenticado() ? true : undefined),

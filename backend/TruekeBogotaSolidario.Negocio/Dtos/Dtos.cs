@@ -242,6 +242,30 @@ public sealed record BusquedaGuardadaDto(Guid Id, string Nombre, string? Texto, 
     string? DepartamentoCodigo, string? MunicipioCodigo, string? Localidad, decimal? PrecioMin, decimal? PrecioMax, bool SoloVerificados,
     bool AlertasActivas, DateTime FechaUtc);
 
+/// <summary>Crear o editar un deseo de "Lo que busco".</summary>
+public sealed class GuardarDeseoRequest
+{
+    [Required(ErrorMessage = "Cuenta lo que buscas."), StringLength(60, MinimumLength = 3, ErrorMessage = "Cuenta lo que buscas en 3 a 60 caracteres.")]
+    public string Texto { get; init; } = "";
+    public int? CategoriaId { get; init; }
+    /// <summary>Se muestra en el perfil y permite encontrar truekes en los dos sentidos.</summary>
+    public bool Publico { get; init; } = true;
+    public bool Avisos { get; init; } = true;
+}
+
+public sealed record DeseoDto(Guid Id, string Texto, int? CategoriaId, string? Categoria, bool Publico, bool AvisosActivos, bool Oculto,
+    string? MotivoOcultamiento, DateTime FechaUtc);
+
+/// <param name="LoTienes">Quien mira el perfil tiene una publicación disponible que coincide (solo con sesión).</param>
+public sealed record DeseoPublicoDto(Guid Id, string Texto, string? Categoria, bool LoTienes);
+
+/// <summary>
+/// Publicación de otra persona que coincide con uno de mis deseos. Mutua: es un trueke y esa persona busca (en público) algo que
+/// tengo disponible; <paramref name="TuPublicacionId"/> es lo que le puedo ofrecer.
+/// </summary>
+public sealed record CoincidenciaDeseoDto(PublicacionDto Publicacion, string TuDeseo, bool Mutua, string? SuDeseo, Guid? TuPublicacionId,
+    string? TuPublicacionTitulo);
+
 /// <summary>Autocompletar del buscador del catálogo.</summary>
 public sealed class SugerenciasRequest
 {
@@ -348,7 +372,7 @@ public sealed class SolicitarSubidaRequest
     [Range(1, 5 * 1024 * 1024)] public long TamanoBytes { get; init; }
 }
 
-public enum TipoDenunciaDto { Publicacion = 1, Comentario = 2, Mensaje = 3, Usuario = 4, Calificacion = 5 }
+public enum TipoDenunciaDto { Publicacion = 1, Comentario = 2, Mensaje = 3, Usuario = 4, Calificacion = 5, Deseo = 6 }
 public enum MotivoDenunciaDto { Spam = 1, Fraude = 2, ContenidoInapropiado = 3, ArticuloProhibido = 4, Acoso = 5, Otro = 6 }
 public enum EstadoDenunciaDto { Pendiente = 1, Resuelta = 2, Descartada = 3 }
 public enum AccionDenunciaDto { Descartar = 1, OcultarContenido = 2, MarcarRevisada = 3 }
@@ -486,7 +510,8 @@ public sealed record PerfilPublicoDto(Guid Id, string Nombre, string Localidad, 
 public sealed record PerfilUsuarioDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
     DateTime MiembroDesde, int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas,
     decimal? CalificacionPromedio, int TotalCalificaciones, int PublicacionesActivas, string Municipio, string? NombreComercial,
-    string? FotoUrl, SenalesConfianzaDto Confianza, bool NitRegistrado = false, string? Nit = null);
+    string? FotoUrl, SenalesConfianzaDto Confianza, bool NitRegistrado = false, string? Nit = null,
+    IReadOnlyList<DeseoPublicoDto>? Deseos = null);
 
 /// <summary>
 /// Lo que ayuda a confiar en alguien antes de intercambiar. Nunca expone datos privados: solo hechos verificables y agregados.
@@ -616,7 +641,8 @@ public sealed record DatosPersonalesDto(DateTime GeneradoUtc, UsuarioDto Perfil,
     IReadOnlyList<CalificacionExportDto> CalificacionesRealizadas, IReadOnlyList<Guid> Favoritos,
     DatosFacturacionDto DatosFacturacion, IReadOnlyList<FacturaDto> Facturas, IReadOnlyList<PqrDto> Pqrs,
     IReadOnlyList<ApelacionDto> Apelaciones, PreferenciasAvisosDto? PreferenciasAvisos = null, IReadOnlyList<BloqueadoDto>? Bloqueados = null,
-    IReadOnlyList<BusquedaGuardadaDto>? BusquedasGuardadas = null, IReadOnlyList<MovimientoEcoPuntosDto>? MovimientosEcoPuntos = null);
+    IReadOnlyList<BusquedaGuardadaDto>? BusquedasGuardadas = null, IReadOnlyList<MovimientoEcoPuntosDto>? MovimientosEcoPuntos = null,
+    IReadOnlyList<DeseoDto>? Deseos = null);
 
 public sealed record CalificacionExportDto(Guid Id, Guid SolicitudId, int Estrellas, string? Comentario, DateTime FechaUtc);
 

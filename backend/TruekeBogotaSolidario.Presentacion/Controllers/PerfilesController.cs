@@ -14,10 +14,20 @@ public sealed class PerfilesController : ControllerBase
 {
     private readonly IPublicacionService _pubs;
     private readonly ISolicitudService _solicitudes;
-    public PerfilesController(IPublicacionService pubs, ISolicitudService solicitudes) { _pubs = pubs; _solicitudes = solicitudes; }
+    private readonly IDeseoService _deseos;
+    public PerfilesController(IPublicacionService pubs, ISolicitudService solicitudes, IDeseoService deseos)
+    {
+        _pubs = pubs; _solicitudes = solicitudes; _deseos = deseos;
+    }
 
+    /// <summary>Incluye su lista pública de "Lo que busco".</summary>
     [HttpGet("perfil"), AllowAnonymous]
-    public async Task<ActionResult<PerfilUsuarioDto>> Perfil(Guid id) => Ok(await _pubs.ObtenerPerfilAsync(User.IdActualOpcional(), id));
+    public async Task<ActionResult<PerfilUsuarioDto>> Perfil(Guid id)
+    {
+        var actor = User.IdActualOpcional();
+        var perfil = await _pubs.ObtenerPerfilAsync(actor, id); // 404 si no está visible
+        return Ok(perfil with { Deseos = await _deseos.VisiblesDePerfilAsync(actor, id) });
+    }
 
     [HttpGet("publicaciones"), AllowAnonymous]
     public async Task<ActionResult<PaginaDto<PublicacionDto>>> Publicaciones(Guid id, [FromQuery] PaginacionRequest p)

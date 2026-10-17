@@ -47,6 +47,8 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
     private readonly IBusquedaGuardadaService _busquedas;
     private readonly IBusquedaGuardadaRepository _busquedasRepo;
     private readonly IMovimientoEcoPuntosRepository _movimientos;
+    private readonly IDeseoService _deseos;
+    private readonly IDeseoRepository _deseosRepo;
     private readonly ILogger<DatosPersonalesService> _log;
 
     public DatosPersonalesService(IUsuarioRepository usuarios, IPublicacionRepository pubs, ISolicitudRepository solicitudes,
@@ -56,9 +58,10 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         IAlmacenArchivos almacen, ISesionService sesiones, INotificador notificador, TimeProvider reloj,
         ICalificacionRepository calificaciones, IFavoritoRepository favoritos, IFacturaRepository facturas, IPqrRepository pqrs,
         IBloqueoService bloqueos, ILogger<DatosPersonalesService> log, ISuscripcionPushRepository suscripcionesPush,
-        IBusquedaGuardadaService busquedas, IBusquedaGuardadaRepository busquedasRepo, IMovimientoEcoPuntosRepository movimientos)
+        IBusquedaGuardadaService busquedas, IBusquedaGuardadaRepository busquedasRepo, IMovimientoEcoPuntosRepository movimientos,
+        IDeseoService deseos, IDeseoRepository deseosRepo)
     {
-        _movimientos = movimientos;
+        _movimientos = movimientos; _deseos = deseos; _deseosRepo = deseosRepo;
         _bloqueos = bloqueos; _suscripcionesPush = suscripcionesPush; _busquedas = busquedas; _busquedasRepo = busquedasRepo;
         _calificaciones = calificaciones; _favoritos = favoritos; _facturas = facturas; _pqrs = pqrs;
         _usuarios = usuarios; _pubs = pubs; _solicitudes = solicitudes; _comentarios = comentarios; _conversaciones = conversaciones;
@@ -108,7 +111,8 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
             (await _denuncias.ListarApelacionesDelUsuarioAsync(actorId, Maximo)).Select(DenunciaService.AApelacionDto).ToList(),
             await _bloqueos.PreferenciasAsync(actorId), await _bloqueos.ListarAsync(actorId), await _busquedas.ListarAsync(actorId),
             (await _movimientos.ListarPorUsuarioAsync(actorId, 1, Maximo)).Items
-                .Select(m => new MovimientoEcoPuntosDto(m.Id, m.Concepto.ToString(), m.Puntos, m.Detalle, m.ReferenciaId, m.SaldoResultante, m.FechaUtc)).ToList());
+                .Select(m => new MovimientoEcoPuntosDto(m.Id, m.Concepto.ToString(), m.Puntos, m.Detalle, m.ReferenciaId, m.SaldoResultante, m.FechaUtc)).ToList(),
+            await _deseos.ListarAsync(actorId));
     }
 
 
@@ -153,6 +157,7 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         await _refrescos.RevocarTodasDelUsuarioAsync(actorId, ahora);
         foreach (var s in await _suscripcionesPush.DeUsuarioAsync(actorId)) _suscripcionesPush.Quitar(s); // ningún aviso más
         foreach (var b in await _busquedasRepo.DeUsuarioAsync(actorId)) _busquedasRepo.Quitar(b);
+        foreach (var d in await _deseosRepo.DeUsuarioAsync(actorId)) _deseosRepo.Quitar(d); // dejan de verse en el perfil
         u.Anonimizar(ahora);
         _auditoria.Agregar(new AuditoriaEvento(actorId, "CUENTA_ELIMINADA", "Usuario", actorId, null, ahora));
         await _uow.GuardarCambiosAsync();

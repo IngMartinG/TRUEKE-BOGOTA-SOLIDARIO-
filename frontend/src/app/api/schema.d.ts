@@ -2002,6 +2002,171 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/deseos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DeseoDto"][];
+                        "application/json": components["schemas"]["DeseoDto"][];
+                        "text/json": components["schemas"]["DeseoDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["GuardarDeseoRequest"];
+                    "text/json": components["schemas"]["GuardarDeseoRequest"];
+                    "application/*+json": components["schemas"]["GuardarDeseoRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DeseoDto"];
+                        "application/json": components["schemas"]["DeseoDto"];
+                        "text/json": components["schemas"]["DeseoDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deseos/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["GuardarDeseoRequest"];
+                    "text/json": components["schemas"]["GuardarDeseoRequest"];
+                    "application/*+json": components["schemas"]["GuardarDeseoRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DeseoDto"];
+                        "application/json": components["schemas"]["DeseoDto"];
+                        "text/json": components["schemas"]["DeseoDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/deseos/coincidencias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CoincidenciaDeseoDto"][];
+                        "application/json": components["schemas"]["CoincidenciaDeseoDto"][];
+                        "text/json": components["schemas"]["CoincidenciaDeseoDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/2fa/configurar": {
         parameters: {
             query?: never;
@@ -4831,6 +4996,15 @@ export interface components {
         CodigosRecuperacionDto: {
             codigosRecuperacion?: string[];
         };
+        CoincidenciaDeseoDto: {
+            publicacion?: components["schemas"]["PublicacionDto"];
+            tuDeseo?: string;
+            mutua?: boolean;
+            suDeseo?: string | null;
+            /** Format: uuid */
+            tuPublicacionId?: string | null;
+            tuPublicacionTitulo?: string | null;
+        };
         ComentarioDto: {
             /** Format: uuid */
             id?: string;
@@ -5025,6 +5199,7 @@ export interface components {
             bloqueados?: components["schemas"]["BloqueadoDto"][] | null;
             busquedasGuardadas?: components["schemas"]["BusquedaGuardadaDto"][] | null;
             movimientosEcoPuntos?: components["schemas"]["MovimientoEcoPuntosDto"][] | null;
+            deseos?: components["schemas"]["DeseoDto"][] | null;
         };
         DenunciaAgrupadaDto: {
             /** Format: uuid */
@@ -5082,6 +5257,27 @@ export interface components {
         DepartamentoDto: {
             codigo?: string;
             nombre?: string;
+        };
+        DeseoDto: {
+            /** Format: uuid */
+            id?: string;
+            texto?: string;
+            /** Format: int32 */
+            categoriaId?: number | null;
+            categoria?: string | null;
+            publico?: boolean;
+            avisosActivos?: boolean;
+            oculto?: boolean;
+            motivoOcultamiento?: string | null;
+            /** Format: date-time */
+            fechaUtc?: string;
+        };
+        DeseoPublicoDto: {
+            /** Format: uuid */
+            id?: string;
+            texto?: string;
+            categoria?: string | null;
+            loTienes?: boolean;
         };
         EcoPuntosResumenDto: {
             /** Format: int32 */
@@ -5257,6 +5453,13 @@ export interface components {
             precioMax?: number | null;
             soloVerificados?: boolean;
             alertas?: boolean;
+        };
+        GuardarDeseoRequest: {
+            texto: string;
+            /** Format: int32 */
+            categoriaId?: number | null;
+            publico?: boolean;
+            avisos?: boolean;
         };
         ImpactoDto: {
             /** Format: int32 */
@@ -5573,6 +5776,7 @@ export interface components {
             confianza?: components["schemas"]["SenalesConfianzaDto"];
             nitRegistrado?: boolean;
             nit?: string | null;
+            deseos?: components["schemas"]["DeseoPublicoDto"][] | null;
         };
         PoliticaEcoPuntosDto: {
             /** Format: int32 */
@@ -5889,7 +6093,7 @@ export interface components {
         /** @enum {string} */
         TipoArchivoDto: "Imagen" | "Documento";
         /** @enum {string} */
-        TipoDenunciaDto: "Publicacion" | "Comentario" | "Mensaje" | "Usuario" | "Calificacion";
+        TipoDenunciaDto: "Publicacion" | "Comentario" | "Mensaje" | "Usuario" | "Calificacion" | "Deseo";
         /** @enum {string} */
         TipoDocumentoFiscalDto: "CC" | "CE" | "NIT" | "Pasaporte";
         /** @enum {string} */
@@ -6015,6 +6219,7 @@ export type CancelarPublicacionRequest = components['schemas']['CancelarPublicac
 export type CategoriaDto = components['schemas']['CategoriaDto'];
 export type CodigoDosFactoresRequest = components['schemas']['CodigoDosFactoresRequest'];
 export type CodigosRecuperacionDto = components['schemas']['CodigosRecuperacionDto'];
+export type CoincidenciaDeseoDto = components['schemas']['CoincidenciaDeseoDto'];
 export type ComentarioDto = components['schemas']['ComentarioDto'];
 export type ComentarioDtoPaginaDto = components['schemas']['ComentarioDtoPaginaDto'];
 export type ComentarioExportDto = components['schemas']['ComentarioExportDto'];
@@ -6040,6 +6245,8 @@ export type DenunciaCreadaDto = components['schemas']['DenunciaCreadaDto'];
 export type DenunciaExportDto = components['schemas']['DenunciaExportDto'];
 export type DenunciaRecibidaDto = components['schemas']['DenunciaRecibidaDto'];
 export type DepartamentoDto = components['schemas']['DepartamentoDto'];
+export type DeseoDto = components['schemas']['DeseoDto'];
+export type DeseoPublicoDto = components['schemas']['DeseoPublicoDto'];
 export type EcoPuntosResumenDto = components['schemas']['EcoPuntosResumenDto'];
 export type EliminarCuentaRequest = components['schemas']['EliminarCuentaRequest'];
 export type EmitirFacturaRequest = components['schemas']['EmitirFacturaRequest'];
@@ -6057,6 +6264,7 @@ export type FacturaDto = components['schemas']['FacturaDto'];
 export type GananciaDto = components['schemas']['GananciaDto'];
 export type GoogleLoginRequest = components['schemas']['GoogleLoginRequest'];
 export type GuardarBusquedaRequest = components['schemas']['GuardarBusquedaRequest'];
+export type GuardarDeseoRequest = components['schemas']['GuardarDeseoRequest'];
 export type ImpactoDto = components['schemas']['ImpactoDto'];
 export type ImpactoLocalidadDto = components['schemas']['ImpactoLocalidadDto'];
 export type IngresoConceptoDto = components['schemas']['IngresoConceptoDto'];

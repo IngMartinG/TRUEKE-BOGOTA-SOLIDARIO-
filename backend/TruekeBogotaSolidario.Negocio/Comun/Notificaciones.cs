@@ -42,6 +42,8 @@ public static class TiposNotificacion
     public const string FacturaEmitida = "FacturaEmitida";
     public const string PqrRespondida = "PqrRespondida";
     public const string BusquedaGuardada = "BusquedaGuardada";
+    /// <summary>Alguien publicó algo de la lista de deseos (RecursoId = PublicacionId si es una sola; sin recurso si son varias).</summary>
+    public const string DeseoCoincidencia = "DeseoCoincidencia";
     // Solo para moderadores
     public const string AlertaPagoEnRevision = "AlertaPagoEnRevision";
     public const string PqrNueva = "PqrNueva";

@@ -837,6 +837,31 @@ public sealed class BusquedaGuardadaRepository : IBusquedaGuardadaRepository
     public void Quitar(BusquedaGuardada b) => _db.BusquedasGuardadas.Remove(b);
 }
 
+public sealed class DeseoRepository : IDeseoRepository
+{
+    private readonly TruekeDbContext _db;
+    public DeseoRepository(TruekeDbContext db) => _db = db;
+
+    public async Task<IReadOnlyList<Deseo>> DeUsuarioAsync(Guid usuarioId)
+        => await _db.Deseos.Where(d => d.UsuarioId == usuarioId).OrderByDescending(d => d.FechaUtc).ThenBy(d => d.Id).ToListAsync();
+
+    public Task<Deseo?> ObtenerAsync(Guid id) => _db.Deseos.FirstOrDefaultAsync(d => d.Id == id);
+
+    public async Task<IReadOnlyList<Deseo>> VisiblesDeUsuariosAsync(IReadOnlyCollection<Guid> usuarioIds)
+        => usuarioIds.Count == 0 ? Array.Empty<Deseo>()
+            : await _db.Deseos.AsNoTracking().Where(d => usuarioIds.Contains(d.UsuarioId) && d.Publico && !d.EstaOculto)
+                .OrderByDescending(d => d.FechaUtc).ThenBy(d => d.Id).ToListAsync();
+
+    public async Task<IReadOnlyList<Deseo>> ListarParaAvisosAsync(DateTime revisadosAntesDeUtc, int maximo)
+        => await _db.Deseos
+            .Where(d => d.AvisosActivos && d.RevisadoHastaUtc < revisadosAntesDeUtc
+                && _db.Usuarios.Any(u => u.Id == d.UsuarioId && !u.EstaEliminado && !u.EstaSuspendido))
+            .OrderBy(d => d.RevisadoHastaUtc).Take(maximo).ToListAsync();
+
+    public void Agregar(Deseo d) => _db.Deseos.Add(d);
+    public void Quitar(Deseo d) => _db.Deseos.Remove(d);
+}
+
 public sealed class SuscripcionPushRepository : ISuscripcionPushRepository
 {
     private readonly TruekeDbContext _db;

@@ -3,6 +3,9 @@ import { shareReplay } from 'rxjs';
 import type {
   ImpactoDto,
   BusquedaGuardadaDto,
+  CoincidenciaDeseoDto,
+  DeseoDto,
+  GuardarDeseoRequest,
   CategoriaDto,
   ComentarioDto,
   ComentarioDtoPaginaDto,
@@ -72,6 +75,12 @@ export class CatalogoApi {
   alertasBusqueda = (id: string, activas: boolean) =>
     this.api.put<BusquedaGuardadaDto>(`/busquedas-guardadas/${seg(id)}/alertas`, { activas });
   eliminarBusqueda = (id: string) => this.api.delete<void>(`/busquedas-guardadas/${seg(id)}`);
+
+  deseos = () => this.api.get<DeseoDto[]>('/deseos');
+  crearDeseo = (r: GuardarDeseoRequest) => this.api.post<DeseoDto>('/deseos', r, { silencioso: true });
+  editarDeseo = (id: string, r: GuardarDeseoRequest) => this.api.put<DeseoDto>(`/deseos/${seg(id)}`, r, { silencioso: true });
+  eliminarDeseo = (id: string) => this.api.delete<void>(`/deseos/${seg(id)}`);
+  coincidencias = () => this.api.get<CoincidenciaDeseoDto[]>('/deseos/coincidencias');
 
   marcarFavorito = (id: string) => this.api.post<void>(`/publicaciones/${seg(id)}/favorito`);
   quitarFavorito = (id: string) => this.api.delete<void>(`/publicaciones/${seg(id)}/favorito`);

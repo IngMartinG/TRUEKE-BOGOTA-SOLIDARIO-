@@ -64,6 +64,7 @@ export class Pie {
         { ruta: '/intercambios', texto: 'Mis intercambios' },
         { ruta: '/mensajes', texto: 'Mensajes' },
         { ruta: '/favoritos', texto: 'Favoritos' },
+        { ruta: '/lo-que-busco', texto: 'Lo que busco' },
         { ruta: '/cuenta/perfil', texto: 'Configuración' },
       ],
     },
