@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
 import { BreakpointObserver } from '@angular/cdk/layout';
 import { HttpErrorResponse } from '@angular/common/http';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
@@ -444,6 +444,9 @@ export default class Detalle {
   protected readonly favoritos = inject(FavoritosService);
 
   readonly id = input.required<string>();
+  /** Desde "Lo que busco" (trueke posible): abre la propuesta con ese objeto mío ya elegido. */
+  readonly ofrecer = input<string>();
+  private ofertaAbierta = false;
   /** Una sola instancia de comentarios: en escritorio va bajo la galería y en móvil al final. */
   protected readonly escritorio = toSignal(
     inject(BreakpointObserver).observe('(min-width: 1024px)').pipe(map((r) => r.matches)),
@@ -512,6 +515,16 @@ export default class Detalle {
       this.id();
       this.indice.set(0);
     });
+    effect(() => {
+      const p = this.p();
+      const ofrecer = this.ofrecer();
+      if (!p || !ofrecer || this.ofertaAbierta || p.modo !== 'Trueke' || p.esMia || p.yaSolicite || p.estado !== 'Disponible') return;
+      this.ofertaAbierta = true;
+      untracked(() => {
+        this.abrirSolicitud();
+        this.ofrecida.set(ofrecer);
+      });
+    });
   }
 
   protected mover(delta: number): void {
@@ -544,7 +557,9 @@ export default class Detalle {
     if (this.misObjetos() !== null) return;
     try {
       const mias = await firstValueFrom(this.api.mias());
-      this.misObjetos.set(mias.filter((o) => o.estado === 'Disponible' && !o.oculta && o.id !== this.p()?.id));
+      const disponibles = mias.filter((o) => o.estado === 'Disponible' && !o.oculta && o.id !== this.p()?.id);
+      this.misObjetos.set(disponibles);
+      if (!disponibles.some((o) => o.id === this.ofrecida())) this.ofrecida.set(null); // la elegida ya no se puede ofrecer
     } catch {
       this.misObjetos.set([]);
     }

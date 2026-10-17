@@ -122,6 +122,7 @@ export default class Apelaciones {
     Mensaje: 'Mensaje',
     Usuario: 'Usuario',
     Calificacion: 'Calificación',
+    Deseo: 'Lo que busca',
   };
   protected readonly recurso = rxResource({ params: () => this.estado(), stream: ({ params }) => this.api.apelaciones(params) });
   protected readonly abierto = signal(false);

@@ -166,6 +166,7 @@ export class Encabezado {
     { ruta: '/intercambios', texto: 'Mis intercambios', icono: 'apreton' },
     { ruta: '/mensajes', texto: 'Mensajes', icono: 'mensaje' },
     { ruta: '/favoritos', texto: 'Favoritos', icono: 'heart' },
+    { ruta: '/lo-que-busco', texto: 'Lo que busco', icono: 'mira' },
     { ruta: '/eco-puntos', texto: 'Eco-Puntos', icono: 'moneda' },
     { ruta: '/planes', texto: 'Planes', icono: 'corona' },
     { ruta: '/impacto', texto: 'Impacto de la comunidad', icono: 'hoja' },

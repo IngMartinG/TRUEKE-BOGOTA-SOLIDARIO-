@@ -106,6 +106,7 @@ export default class Denuncias {
     Mensaje: 'Mensaje',
     Usuario: 'Usuario',
     Calificacion: 'Calificación',
+    Deseo: 'Lo que busca',
   };
   protected readonly recurso = rxResource({ params: () => this.estado(), stream: ({ params }) => this.api.denuncias(params) });
   protected readonly titulos: Record<AccionDenunciaDto, string> = {

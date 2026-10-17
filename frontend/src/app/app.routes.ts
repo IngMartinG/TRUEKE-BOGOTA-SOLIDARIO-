@@ -33,6 +33,12 @@ export const routes: Routes = [
     loadComponent: () => import('./features/catalogo/favoritos'),
   },
   {
+    path: 'lo-que-busco',
+    title: 'Lo que busco',
+    canActivate: [exigirCorreoVerificado],
+    loadComponent: () => import('./features/catalogo/lo-que-busco'),
+  },
+  {
     path: 'intercambios',
     title: 'Mis intercambios',
     canActivate: [exigirCorreoVerificado],
