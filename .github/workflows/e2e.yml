@@ -1,6 +1,6 @@
 name: Pruebas E2E (Playwright)
 
-# Pruebas de punta a punta contra las MISMAS imágenes Docker de producción (API + front con nginx) con SQL Server
+# Pruebas de punta a punta contra las MISMAS imágenes Docker de producción (API + front con nginx) con PostgreSQL
 # (migraciones), Redis, correo por SMTP con TLS (Mailpit) y fotos en Azurite. Ver frontend/e2e/docker-compose.e2e.yml.
 on:
   push:
@@ -50,10 +50,10 @@ jobs:
         if: failure()
         run: |
           docker compose -p trueke-e2e --project-directory ../backend -f ../backend/docker-compose.yml -f e2e/docker-compose.e2e.yml \
-            logs --no-color --tail 400 api web mailpit > e2e/registros.txt 2>&1 || true
+            logs --no-color --tail 400 api web mailpit postgres db-usuario > e2e/registros.txt 2>&1 || true
         env:
-          SQL_SA_PASSWORD: x
-          SQL_APP_PASSWORD: x
+          POSTGRES_PASSWORD: x
+          DB_APP_PASSWORD: x
           JWT_KEY: x
           CLAVE_CIFRADO: x
           REDIS_PASSWORD: x
@@ -75,8 +75,8 @@ jobs:
           docker compose -p trueke-e2e --project-directory ../backend -f ../backend/docker-compose.yml -f e2e/docker-compose.e2e.yml \
             down -v --remove-orphans || true
         env:
-          SQL_SA_PASSWORD: x
-          SQL_APP_PASSWORD: x
+          POSTGRES_PASSWORD: x
+          DB_APP_PASSWORD: x
           JWT_KEY: x
           CLAVE_CIFRADO: x
           REDIS_PASSWORD: x

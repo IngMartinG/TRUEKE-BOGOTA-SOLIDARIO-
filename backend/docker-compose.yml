@@ -1,11 +1,11 @@
-# Entorno completo local: Front + API + SQL Server + Redis.
+# Entorno completo local: Front + API + PostgreSQL + Redis.
 #   1) cp .env.example .env   y completa los valores
 #   2) docker compose up --build
 #   3) Front en http://localhost:8081 (sirve también /api y /hubs: mismo origen, sin CORS)
 #      API directa en http://localhost:8080  (health: /health/ready)
 # Los puertos se publican SOLO en este equipo (127.0.0.1), no en la red local.
-# SQL Server y Redis NO se publican al host: solo la API los ve por la red interna.
-# La API entra a SQL Server con su propio usuario (trueke_app, dueño solo de TruekeDb), no con "sa".
+# PostgreSQL y Redis NO se publican al host: solo la API los ve por la red interna.
+# La API entra a PostgreSQL con su propio usuario (trueke_app, dueño solo de la base trueke), no con el superusuario "postgres".
 # Por defecto corre en "Local" (permite correo y pagos simulados; cualquier otro entorno exige la configuración real). Con ASPNETCORE_ENVIRONMENT=Production
 # la API exige TODOS los servicios reales (SMTP, Wompi, Azure Blob, Urls__Frontend https) o no arranca.
 
@@ -19,8 +19,8 @@ services:
       - "127.0.0.1:8080:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Local}
-      ConnectionStrings__TruekeDb: "Server=sqlserver,1433;Database=TruekeDb;User Id=trueke_app;Password=${SQL_APP_PASSWORD:?Define SQL_APP_PASSWORD en .env};TrustServerCertificate=True;Encrypt=True"
-      Database__Provider: SqlServer
+      ConnectionStrings__TruekeDb: "Host=postgres;Port=5432;Database=trueke;Username=trueke_app;Password=${DB_APP_PASSWORD:?Define DB_APP_PASSWORD en .env}"
+      Database__Provider: PostgreSQL
       Database__Inicializacion: Migrate
       Jwt__Key: ${JWT_KEY:?Define JWT_KEY en .env}
       Pagos__Proveedor: ${PAGOS_PROVEEDOR:-Simulado}
@@ -55,7 +55,7 @@ services:
       Facturacion__IvaPorcentaje: ${FACTURACION_IVA:-19}
       Legal__CorreoContacto: ${CORREO_CONTACTO:-}
     depends_on:
-      sql-usuario:
+      db-usuario:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
@@ -93,45 +93,42 @@ services:
     cap_drop:
       - ALL
 
-  sqlserver:
-    image: mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090
+  postgres:
+    image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
     environment:
-      ACCEPT_EULA: "Y"
-      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD:?Define SQL_SA_PASSWORD en .env}
-      MSSQL_PID: Developer
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
     volumes:
-      - sqldata:/var/opt/mssql
+      - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -C -Q \"SELECT 1\" -b -o /dev/null"]
-      interval: 10s
+      test: ["CMD-SHELL", "pg_isready -U postgres -d postgres"]
+      interval: 5s
       timeout: 5s
       retries: 12
-      start_period: 30s
+      start_period: 10s
     restart: unless-stopped
     security_opt:
       - no-new-privileges:true
 
-  # Crea la base, el usuario de la aplicación (trueke_app, db_owner SOLO de TruekeDb: puede migrar su esquema pero no
-  # administrar el servidor) y le pone la clave de .env. Corre una vez en cada arranque y termina.
-  sql-usuario:
-    image: mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090
-    entrypoint: ["/bin/bash", "-ec"]
+  # Crea el usuario de la aplicación (trueke_app) y la base "trueke" con él como dueño: puede migrar su esquema pero
+  # no administrar el servidor ni ver otras bases. Le pone la clave de .env. Corre una vez en cada arranque y termina.
+  db-usuario:
+    image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+    entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
-        clave=$${SQL_APP_PASSWORD//\'/\'\'}   # comillas simples duplicadas para el literal de T-SQL
-        /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -Q "
-          IF DB_ID('TruekeDb') IS NULL CREATE DATABASE TruekeDb;
-          IF SUSER_ID('trueke_app') IS NULL CREATE LOGIN trueke_app WITH PASSWORD = N'$$clave', CHECK_POLICY = ON;
-          ELSE ALTER LOGIN trueke_app WITH PASSWORD = N'$$clave';"
-        /opt/mssql-tools18/bin/sqlcmd -S sqlserver -U sa -P "$$MSSQL_SA_PASSWORD" -C -b -d TruekeDb -Q "
-          IF USER_ID('trueke_app') IS NULL CREATE USER trueke_app FOR LOGIN trueke_app;
-          ALTER ROLE db_owner ADD MEMBER trueke_app;"
+        # La clave viaja como variable de psql (:'clave' la cita como literal): no se arma SQL concatenando texto.
+        psql -h postgres -U postgres -d postgres -v ON_ERROR_STOP=1 -v clave="$$DB_APP_PASSWORD" <<'SQL'
+        SELECT 'CREATE ROLE trueke_app' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'trueke_app') \gexec
+        ALTER ROLE trueke_app WITH LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE PASSWORD :'clave';
+        SELECT 'CREATE DATABASE trueke OWNER trueke_app' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'trueke') \gexec
+        REVOKE ALL ON DATABASE trueke FROM PUBLIC;
+        SQL
         echo "Usuario trueke_app listo"
     environment:
-      MSSQL_SA_PASSWORD: ${SQL_SA_PASSWORD:?Define SQL_SA_PASSWORD en .env}
-      SQL_APP_PASSWORD: ${SQL_APP_PASSWORD:?Define SQL_APP_PASSWORD en .env}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+      DB_APP_PASSWORD: ${DB_APP_PASSWORD:?Define DB_APP_PASSWORD en .env}
     depends_on:
-      sqlserver:
+      postgres:
         condition: service_healthy
     restart: "no"
     security_opt:
@@ -166,4 +163,4 @@ services:
       - ALL
 
 volumes:
-  sqldata:
+  pgdata:
