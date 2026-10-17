@@ -10,7 +10,7 @@ public class MigracionesTests
 {
     /// <summary>
     /// Si alguien cambia entidades o el DbContext sin generar migración, producción (Database:Inicializacion=Migrate)
-    /// arrancaría con un esquema desactualizado. Esta prueba lo detecta en CI. No abre conexión a SQL Server.
+    /// arrancaría con un esquema desactualizado. Esta prueba lo detecta en CI. No abre conexión a la base.
     /// </summary>
     [Fact]
     public void El_modelo_no_tiene_cambios_sin_migrar()

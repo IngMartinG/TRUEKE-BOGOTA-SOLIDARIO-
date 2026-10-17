@@ -2,7 +2,7 @@
 
 API REST + tiempo real para la plataforma comunitaria de economía circular de **Colombia** (nació en Bogotá y opera en los 1.122 municipios del país): **Trueke, Compra y Donación**, con moneda interna **Eco-Puntos**.
 
-ASP.NET Core 10 · EF Core 10 · SQL Server · SignalR (+ Redis) · Azure Blob Storage · Wompi · SMTP · Google Identity · reCAPTCHA v3 · TOTP (2FA) · Application Insights · Docker · GitHub Actions · Azure App Service.
+ASP.NET Core 10 · EF Core 10 · PostgreSQL (Supabase) · SignalR (+ Redis) · Azure Blob Storage · Wompi · SMTP · Google Identity · reCAPTCHA v3 · TOTP (2FA) · Application Insights · Docker · GitHub Actions · Azure App Service.
 La arquitectura sigue el modelo C4 de [`docs/c4`](../docs/c4) y el contrato para el front está en [`docs/openapi.json`](../docs/openapi.json).
 
 ---
@@ -14,7 +14,7 @@ TruekeBogotaSolidario.sln
 ├── TruekeBogotaSolidario.Datos          Entidades, DbContext, repositorios, migraciones, PoliticaEcoPuntos, PasswordHasher
 ├── TruekeBogotaSolidario.Negocio        Servicios, DTOs y reglas; integraciones (Wompi, SMTP, Google, reCAPTCHA, Azure Blob)
 ├── TruekeBogotaSolidario.Presentacion   Web API: controllers, JWT + cookie de refresco, SignalR, CORS, rate limiting, ProblemDetails
-└── TruekeBogotaSolidario.Pruebas        xUnit: unitarias, integración (WebApplicationFactory), arquitectura, contrato y SQL Server real
+└── TruekeBogotaSolidario.Pruebas        xUnit: unitarias, integración (WebApplicationFactory), arquitectura, contrato y PostgreSQL real
 ```
 
 - **Dependencias entre capas:** Presentacion → Negocio → Datos. Negocio referencia Datos con `PrivateAssets="compile"`, así que un controller **no puede** tocar repositorios ni el DbContext. Las pruebas de arquitectura lo verifican.
@@ -162,19 +162,20 @@ En **Development**:
   dotnet user-secrets set "Almacenamiento:CadenaConexion" "UseDevelopmentStorage=true" --project TruekeBogotaSolidario.Presentacion
   ```
 - **Google / reCAPTCHA en dev:** `dotnet user-secrets set "Google:ClientId" "..."`; `Captcha:ClaveSitio` y `Captcha:ClaveSecreta` (las claves de prueba de Google sirven).
-- **Pruebas contra SQL Server real:** con Docker instalado, `dotnet test` también las ejecuta. Sin Docker se marcan como *omitidas*; el CI las exige.
+- **Pruebas contra PostgreSQL real:** con Docker instalado, `dotnet test` también las ejecuta. Sin Docker se marcan como *omitidas*; el CI las exige.
 
-### Con un SQL Server instalado en el PC (datos persistentes)
+### Con PostgreSQL en el PC (datos persistentes)
+
+Con PostgreSQL instalado, o en Docker: `docker run -d --name trueke-pg -p 127.0.0.1:5432:5432 -e POSTGRES_PASSWORD=<clave> postgres:17-alpine`.
 
 ```bash
-dotnet tool run dotnet-ef database update -p TruekeBogotaSolidario.Datos -s TruekeBogotaSolidario.Datos --connection "Server=.\<INSTANCIA>;Database=TruekeBogotaSolidario;Trusted_Connection=True;TrustServerCertificate=True;Encrypt=True"
-dotnet user-secrets set "ConnectionStrings:TruekeDb" "<la misma cadena>" --project TruekeBogotaSolidario.Presentacion
-dotnet run --project TruekeBogotaSolidario.Presentacion --launch-profile SqlServerLocal
+dotnet user-secrets set "ConnectionStrings:TruekeDb" "Host=localhost;Port=5432;Database=trueke;Username=postgres;Password=<clave>" --project TruekeBogotaSolidario.Presentacion
+dotnet run --project TruekeBogotaSolidario.Presentacion --launch-profile PostgresLocal
 ```
 
-El perfil `SqlServerLocal` usa SQL Server con pagos y correo simulados. Opcional: `Bootstrap:SuperUsuarioCorreo` y `Bootstrap:SuperUsuarioClave` en user-secrets para tener un administrador. En VS Code: *Terminal → Ejecutar tarea → "Trueke: todo (SQL Server local)"*.
+El perfil `PostgresLocal` crea la base y aplica las migraciones al arrancar, con pagos y correo simulados. Opcional: `Bootstrap:SuperUsuarioCorreo` y `Bootstrap:SuperUsuarioClave` en user-secrets para tener un administrador. En VS Code: *Terminal → Ejecutar tarea → "Trueke: todo (PostgreSQL local)"*.
 
-### Con Docker (API + SQL Server + Redis)
+### Con Docker (API + PostgreSQL + Redis)
 
 ```bash
 cp .env.example .env
@@ -189,7 +190,7 @@ Todo se configura por variables de entorno (Azure: *App Settings* o referencias 
 
 | Variable | Obligatoria en producción | Descripción |
 |---|---|---|
-| `ConnectionStrings__TruekeDb` | ✅ | Azure SQL |
+| `ConnectionStrings__TruekeDb` | ✅ | PostgreSQL (Supabase, Session pooler; formato en `docs/DESPLIEGUE.md` §2) |
 | `Jwt__Key` | ✅ | ≥ 32 caracteres aleatorios (`openssl rand -base64 48`) |
 | `Seguridad__ClaveCifrado` | ✅ | 32 bytes en base64 (`openssl rand -base64 32`). **No la cambies**: cifra los secretos de 2FA |
 | `Captcha__ClaveSitio`, `Captcha__ClaveSecreta` | ✅ | reCAPTCHA v3 (google.com/recaptcha/admin) |
@@ -225,7 +226,7 @@ Ninguna llave se escribe en el código ni en `appsettings.json`. En local: `dotn
 | Wompi (webhook) | Misma sección → **URL de eventos** | `https://<tu-api>/api/v1/pagos/wompi/eventos` |
 | **Google (inicio de sesión)** | [console.cloud.google.com](https://console.cloud.google.com) → *APIs y servicios* → *Pantalla de consentimiento OAuth* (tipo Externo, nombre y correo de soporte) → *Credenciales* → *Crear credenciales* → **ID de cliente OAuth** → tipo **Aplicación web** → *Orígenes de JavaScript autorizados*: `http://localhost:4200` y `https://<tu-front>` | ID de cliente (`…apps.googleusercontent.com`) → `Google__ClientId`. **No** se necesita el "secreto de cliente": el backend valida el ID token. |
 | **reCAPTCHA v3** | [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin) → nuevo sitio → **reCAPTCHA v3** → dominios `localhost` y el del front | Clave del sitio → `Captcha__ClaveSitio` · Clave secreta → `Captcha__ClaveSecreta` |
-| **SQL Server (producción)** | Azure Portal → *Azure SQL Database* (servidor + base `TruekeDb`, nivel Basic/S0 para empezar, endpoint privado en la VNet, *Microsoft Entra* como administrador). En *Cadenas de conexión* → ADO.NET. | `ConnectionStrings__TruekeDb=Server=tcp:<servidor>.database.windows.net,1433;Database=TruekeDb;Authentication=Active Directory Default;Encrypt=True;` (con identidad administrada, sin contraseña) o con usuario SQL `User ID=…;Password=…` guardada en Key Vault. Deja `Database__Inicializacion=Migrate` (aplica las migraciones al arrancar) o `None` + script idempotente en el despliegue si hay varias instancias. |
+| **PostgreSQL (producción)** | [supabase.com](https://supabase.com) → *New project* (región East US, **Data API desactivada**) → botón **Connect** → **Session pooler** (IPv4). Pasos en `docs/DESPLIEGUE.md` §2. | `ConnectionStrings__TruekeDb=Host=aws-N-<region>.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.<ref>;Password=…;SSL Mode=Require;Maximum Pool Size=10`. Deja `Database__Inicializacion=Migrate` (aplica las migraciones al arrancar) o `None` + script idempotente en el despliegue si hay varias instancias. |
 | Correo | Azure Communication Services → *Email* (API HTTPS: `Correo__Proveedor=AzureCommunication`, `Correo__Azure__CadenaConexion`; pasos en `docs/DESPLIEGUE.md` §5.1) o cualquier SMTP con TLS (`Correo__Proveedor=Smtp`: `Correo__Smtp__Host`, `__Usuario`, `__Clave`) | `Correo__Remitente` = dirección MailFrom del dominio (Azure) o la cuenta SMTP |
 | Azure Blob | Cuenta de Storage | `Almacenamiento__ServicioUrl=https://<cuenta>.blob.core.windows.net` (con identidad administrada) |
 
@@ -237,7 +238,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 ```
 
 - `MigracionesTests` falla si el modelo cambió sin migración.
-- Las pruebas de `SqlServer/` aplican las migraciones en SQL Server 2022 real.
+- Las pruebas de `PostgreSql/` aplican las migraciones en PostgreSQL 17 real (la versión mayor de Supabase).
 - **Con varias instancias:** aplica el script idempotente en el despliegue y usa `Database__Inicializacion=None`.
 - **Tarea horaria:**
   - cierra automáticamente los intercambios vencidos;
@@ -245,7 +246,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 
 ## 9. Despliegue en Azure
 
-> Fase gratuita (Render + Azure SQL gratis) y cómo pasar a pago, paso a paso: [`docs/DESPLIEGUE.md`](../docs/DESPLIEGUE.md). Esta sección describe la topología de producción completa en Azure.
+> Fase gratuita (Render + Supabase gratis) y cómo pasar a pago, paso a paso: [`docs/DESPLIEGUE.md`](../docs/DESPLIEGUE.md). Esta sección describe la topología de producción completa en Azure.
 
 1. **Imagen:** `docker build -t <registro>.azurecr.io/trueke-api:<versión> backend` y `docker push`.
 2. **App Service (Linux, contenedor):**
@@ -254,7 +255,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
    - HTTPS Only, TLS ≥ 1.2 y **WebSockets** activados;
    - VNet;
    - identidad administrada con acceso a ACR, Key Vault y Storage (*Storage Blob Data Contributor* + *Storage Blob Delegator*).
-3. **Datos y caché:** Azure SQL con endpoint privado; Azure Cache for Redis (`:6380,ssl=true,password=...`).
+3. **Datos y caché:** PostgreSQL administrado (Supabase Pro o Azure Database for PostgreSQL con endpoint privado); Azure Cache for Redis (`:6380,ssl=true,password=...`).
 4. **Storage:**
    - contenedor `imagenes` con acceso anónimo **solo de lectura de blobs**;
    - contenedores `documentos` y `subidas` **privados** (la API los crea si no existen);
@@ -270,7 +271,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
    - **Entrada única:** Azure Front Door (o Application Gateway) con **WAF** (reglas OWASP + bots) delante del front y la API; en App Service, *Restricciones de acceso* para aceptar solo el tráfico de Front Door (etiqueta de servicio `AzureFrontDoor.Backend` + cabecera `X-Azure-FDID`). Así `Proxy__Confiar=true` es seguro.
    - **Redis** habilitado cuando haya más de una instancia: además del backplane de SignalR, activa el **límite de peticiones compartido** entre instancias.
    - **Microsoft Defender for Storage** con *malware scanning* en la cuenta de Blob (escanea las fotos y los documentos al subirse).
-   - **Azure SQL:** copias automáticas con restauración a un punto en el tiempo (PITR, 7–35 días) y, si es posible, retención a largo plazo; *Microsoft Defender for SQL*; auditoría hacia Log Analytics.
+   - **Base de datos:** copias automáticas con restauración a un punto en el tiempo (PITR; Supabase la ofrece como complemento del plan Pro) y la Data API de Supabase desactivada.
    - **Key Vault** para todos los secretos, con rotación anual de `Jwt__Key` y de las llaves de Wompi.
    - **Alertas** de Application Insights: errores 5xx, latencia y la notificación `AlertaPagoEnRevision`.
    - **GitHub:** activar *Secret scanning*, *Push protection*, *Dependabot alerts* y proteger `main` exigiendo los checks de CI y CodeQL.
@@ -371,7 +372,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
   - suspensión de cuentas.
 - **Cadena de suministro:**
   - solo nuget.org;
-  - el CI falla con paquetes vulnerables o con pruebas de SQL Server omitidas;
+  - el CI falla con paquetes vulnerables o con pruebas de PostgreSQL omitidas;
   - dependencias Azure y OpenTelemetry fijadas a versiones compatibles con .NET 10;
   - imagen sin SDK y sin root.
 

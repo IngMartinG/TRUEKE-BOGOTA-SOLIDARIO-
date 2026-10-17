@@ -6,7 +6,7 @@ namespace TruekeBogotaSolidario.Presentacion.Contrato;
 
 /// <summary>
 /// Todas las fechas viajan en UTC ISO-8601 con "Z" (p. ej. 2026-10-02T15:04:05.123Z).
-/// SQL Server devuelve DateTime con Kind=Unspecified: sin este conversor saldrían sin "Z" y el navegador
+/// Una fecha con Kind=Unspecified (p. ej. de la base InMemory) saldría sin "Z" y el navegador
 /// las interpretaría como hora local (en Bogotá, 5 horas de error). Al leer, cualquier fecha se normaliza a UTC.
 /// </summary>
 public sealed class FechaUtcJsonConverter : JsonConverter<DateTime>

@@ -134,7 +134,7 @@ public class SeguridadTests : IClassFixture<FabricaApi>
     {
         using var f = new FabricaEnEntorno("Production",
             ("Pagos:Proveedor", "Wompi"), ("Pagos:Wompi:LlavePublica", "pub_test_x"), ("Pagos:Wompi:LlavePrivada", "prv_test_x"),
-            ("Pagos:Wompi:SecretoIntegridad", "i"), ("Pagos:Wompi:SecretoEventos", "e"), ("Database:Provider", "SqlServer"),
+            ("Pagos:Wompi:SecretoIntegridad", "i"), ("Pagos:Wompi:SecretoEventos", "e"), ("Database:Provider", "PostgreSQL"),
             ("Almacenamiento:CadenaConexion", "UseDevelopmentStorage=true"), ("Seguridad:ClaveCifrado", FabricaApi.ClaveCifradoPruebas),
             ("Captcha:ClaveSecreta", "x"), ("Captcha:ClaveSitio", "x"), ("Correo:Proveedor", "Smtp"),
             ("Urls:Frontend", "https://front.trueke.test"), ("Urls:Api", "https://api.trueke.test"), ("Facturacion:Modo", "Manual"),

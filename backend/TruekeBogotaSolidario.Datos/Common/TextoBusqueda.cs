@@ -7,7 +7,7 @@ namespace TruekeBogotaSolidario.Datos.Common;
 /// Búsqueda del catálogo sin servicios externos: cada publicación guarda su texto normalizado (minúsculas, sin tildes,
 /// solo letras y números separados por un espacio) y la consulta se parte en términos que deben aparecer TODOS como
 /// inicio de palabra. Así "camara" encuentra "Cámara", "bicicletas rojas" encuentra "Bicicleta roja de montaña" y
-/// "sol" no encuentra "consola". Funciona igual en SQL Server (LIKE) y en InMemory (pruebas).
+/// "sol" no encuentra "consola". Funciona igual en PostgreSQL (LIKE) y en InMemory (pruebas).
 /// </summary>
 public static class TextoBusqueda
 {

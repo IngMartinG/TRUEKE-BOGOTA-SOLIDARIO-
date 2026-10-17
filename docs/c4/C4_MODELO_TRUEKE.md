@@ -41,11 +41,11 @@ flowchart TB
 flowchart TB
     U(["👤 Navegador o celular"]):::persona
 
-    subgraph SYS["Trueke Bogotá Solidario (Azure)"]
+    subgraph SYS["Trueke Bogotá Solidario (GitHub Pages · Render · Supabase · Azure Blob)"]
         direction TB
         FE["🖥️ Front-end<br/>Angular 22 (signals, Tailwind)<br/>nginx sin root · CSP"]:::contenedor
         API["⚙️ API<br/>ASP.NET Core 10 (C#)<br/>REST /api/v1 + SignalR /hubs/notificaciones"]:::contenedor
-        DB[("🗄️ SQL Server / Azure SQL<br/>EF Core 10 · migraciones")]:::datos
+        DB[("🗄️ PostgreSQL (Supabase)<br/>EF Core 10 + Npgsql · migraciones<br/>concurrencia con xmin")]:::datos
         REDIS[("⚡ Redis<br/>backplane SignalR · presencia<br/>límite de peticiones")]:::datos
         BLOB["☁️ Azure Blob Storage<br/>imagenes (público) · documentos (privado)<br/>subida directa con SAS"]:::contenedor
     end
@@ -109,7 +109,7 @@ flowchart LR
         E["Entidades con reglas de dominio<br/>PoliticaEcoPuntos · PasswordHasher · Divipola"]:::componente
     end
 
-    DB[("SQL Server")]:::datos
+    DB[("PostgreSQL")]:::datos
 
     FE --> C1 & C2 & C3 & C4 & C5
     FE <-->|"WebSocket"| HUB

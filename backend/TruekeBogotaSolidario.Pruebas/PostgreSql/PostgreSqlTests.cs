@@ -4,38 +4,39 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Contexto;
 using TruekeBogotaSolidario.Datos.Repositorios;
 using TruekeBogotaSolidario.Pruebas.Infraestructura;
 
-namespace TruekeBogotaSolidario.Pruebas.SqlServer;
+namespace TruekeBogotaSolidario.Pruebas.PostgreSql;
 
 /// <summary>
-/// Lo que la base InMemory NO puede comprobar: que las migraciones se aplican en SQL Server, que todas las consultas LINQ
-/// se traducen a SQL, la concurrencia con rowversion (409) y los índices únicos.
+/// Lo que la base InMemory NO puede comprobar: que las migraciones se aplican en PostgreSQL, que todas las consultas LINQ
+/// se traducen a SQL, la concurrencia con xmin (409), las fechas UTC (timestamptz) y los índices únicos.
 /// </summary>
-[Trait("Categoria", "SqlServer")]
-public class SqlServerTests : IClassFixture<SqlServerFixture>
+[Trait("Categoria", "PostgreSQL")]
+public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
 {
-    private readonly SqlServerFixture _sql;
-    public SqlServerTests(SqlServerFixture sql) => _sql = sql;
+    private readonly PostgreSqlFixture _sql;
+    public PostgreSqlTests(PostgreSqlFixture sql) => _sql = sql;
 
-    private sealed class FabricaApiSqlServer : FabricaApi
+    private sealed class FabricaApiPostgreSql : FabricaApi
     {
         private readonly string _cadena;
-        public FabricaApiSqlServer(string cadena) => _cadena = cadena;
+        public FabricaApiPostgreSql(string cadena) => _cadena = cadena;
         protected override void ConfigureWebHost(IWebHostBuilder builder)
         {
             base.ConfigureWebHost(builder);
-            builder.UseSetting("Database:Provider", "SqlServer");
+            builder.UseSetting("Database:Provider", "PostgreSQL");
             builder.UseSetting("ConnectionStrings:TruekeDb", _cadena);
             builder.UseSetting("Database:Inicializacion", "Migrate"); // igual que producción
         }
     }
 
-    private TruekeDbContext Contexto(string cadena) => new(new DbContextOptionsBuilder<TruekeDbContext>().UseSqlServer(cadena).Options);
+    private TruekeDbContext Contexto(string cadena) => new(new DbContextOptionsBuilder<TruekeDbContext>().UseNpgsql(cadena).Options);
 
     [SkippableFact]
     public async Task Las_migraciones_se_aplican_y_siembran_las_categorias()
@@ -49,10 +50,10 @@ public class SqlServerTests : IClassFixture<SqlServerFixture>
     }
 
     [SkippableFact]
-    public async Task Flujo_completo_de_la_API_sobre_SQL_Server()
+    public async Task Flujo_completo_de_la_API_sobre_PostgreSQL()
     {
         Skip.IfNot(_sql.Disponible, _sql.MotivoNoDisponible);
-        await using var f = new FabricaApiSqlServer(_sql.NuevaBase());
+        await using var f = new FabricaApiPostgreSql(_sql.NuevaBase());
         var duenio = await Api.RegistrarAsync(f, "sqlana");
         var otro = await Api.RegistrarAsync(f, "sqlbeto");
         var anonimo = f.CreateClient();
@@ -102,53 +103,15 @@ public class SqlServerTests : IClassFixture<SqlServerFixture>
         Assert.Equal(HttpStatusCode.OK, (await super.GetAsync("/api/v1/admin/pagos?estado=RequiereRevision")).StatusCode);
     }
 
-    /// <summary>
-    /// Producción ya puede tener datos creados con la migración Inicial: la migración de escala nacional debe aplicarse
-    /// sobre ellos (correo canónico único, Bogotá como municipio, bono ya entregado, orden por fecha de publicación).
-    /// </summary>
     [SkippableFact]
-    public async Task La_migracion_de_escala_nacional_respeta_los_datos_existentes()
+    public async Task Monetizacion_y_escala_nacional_sobre_PostgreSQL()
     {
         Skip.IfNot(_sql.Disponible, _sql.MotivoNoDisponible);
-        var cadena = _sql.NuevaBase();
-        await using var db = Contexto(cadena);
-        var migrador = db.Database.GetService<Microsoft.EntityFrameworkCore.Migrations.IMigrator>();
-        await migrador.MigrateAsync("20261002174413_Inicial");
-
-        var u1 = Guid.NewGuid();
-        var u2 = Guid.NewGuid();
-        const string columnas = "(Id, NombreCompleto, Localidad, Correo, ClaveHash, FechaRegistro, VersionSeguridad, IntentosFallidosLogin, SaldoEcoPuntos, Reputacion, " +
-                                "TotalTruekesCompletados, TotalComprasRealizadas, TotalDonacionesRealizadas, Rol, TipoCuenta, DestacadosGratisRestantes, EstadoVerificacion, " +
-                                "CorreoVerificado, EstaEliminado, EstaSuspendido, CalificacionesTotal, CalificacionesSuma, DosFactoresActivo, UltimoPasoDosFactores)";
-        foreach (var (id, correo) in new[] { (u1, "ana.perez@gmail.com"), (u2, "anaperez@gmail.com") }) // alias que antes se permitían
-            await db.Database.ExecuteSqlRawAsync($"INSERT INTO Usuarios {columnas} VALUES ({{0}}, 'Ana Prueba', 'Kennedy', {{1}}, '', SYSUTCDATETIME(), 0, 0, 10, 0, 0, 0, 0, 'Cliente', 'Individual', 0, 'NoVerificado', 1, 0, 0, 0, 0, 0, 0)", id, correo);
-        var pub = Guid.NewGuid();
-        await db.Database.ExecuteSqlRawAsync(
-            "INSERT INTO Publicaciones (Id, PropietarioId, Titulo, Descripcion, CategoriaId, Modo, Localidad, Estado, FechaPublicacion, EstaOculta) " +
-            "VALUES ({0}, {1}, 'Silla', 'De madera', 4, 'Donacion', 'Kennedy', 'Disponible', '2026-09-01T10:00:00', 0)", pub, u1);
-
-        await db.Database.MigrateAsync(); // aplica EscalaNacionalYMonetizacion sobre los datos
-        Assert.Empty(await db.Database.GetPendingMigrationsAsync());
-
-        var usuario = await db.Usuarios.AsNoTracking().SingleAsync(u => u.Id == u1);
-        Assert.Equal("ana.perez@gmail.com", usuario.CorreoCanonico); // sin colisión con el alias existente
-        Assert.Equal(Divipola.CodigoBogota, usuario.MunicipioCodigo);
-        Assert.True(usuario.BonoBienvenidaOtorgado);
-        var p = await db.Publicaciones.AsNoTracking().SingleAsync(x => x.Id == pub);
-        Assert.Equal(Datos.Entidades.CondicionProducto.Usado, p.Condicion);
-        Assert.Equal("11", p.DepartamentoCodigo);
-        Assert.Equal(p.FechaPublicacion, p.FechaRelevancia);
-    }
-
-    [SkippableFact]
-    public async Task Monetizacion_y_escala_nacional_sobre_SQL_Server()
-    {
-        Skip.IfNot(_sql.Disponible, _sql.MotivoNoDisponible);
-        await using var f = new FabricaApiSqlServer(_sql.NuevaBase());
+        await using var f = new FabricaApiPostgreSql(_sql.NuevaBase());
         var c = await Api.RegistrarAsync(f, "sqlnacional");
         var anonimo = f.CreateClient();
 
-        // publicación en Medellín con condición, filtros por departamento/condición y vitrina (NEWID())
+        // publicación en Medellín con condición, filtros por departamento/condición y vitrina (gen_random_uuid())
         var r = await c.PostAsJsonAsync("/api/v1/publicaciones", new
         {
             titulo = "Bicicleta", descripcion = "Rin 26", categoriaId = 1, modo = "Compra", precioReferenciaCop = 300000,
@@ -219,11 +182,70 @@ public class SqlServerTests : IClassFixture<SqlServerFixture>
         await Assert.ThrowsAsync<ConflictoDeConcurrenciaException>(() => new UnidadDeTrabajo(b).GuardarCambiosAsync());
     }
 
+    /// <summary>
+    /// En Supabase los roles anon y authenticated (los de su Data API, con llave pública) reciben permisos por defecto sobre
+    /// "public". Se simula ese ambiente y se comprueba que, tras migrar, no pueden leer ni escribir y todas las tablas tienen RLS.
+    /// </summary>
+    [SkippableFact]
+    public async Task En_Supabase_la_Data_API_no_puede_tocar_las_tablas()
+    {
+        Skip.IfNot(_sql.Disponible, _sql.MotivoNoDisponible);
+        var cadena = _sql.NuevaBase();
+        await using var db = Contexto(cadena);
+        await db.GetService<IRelationalDatabaseCreator>().CreateAsync();
+        await db.Database.ExecuteSqlRawAsync("""
+            DO $$ BEGIN
+                IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'anon') THEN CREATE ROLE anon NOLOGIN; END IF;
+                IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'authenticated') THEN CREATE ROLE authenticated NOLOGIN; END IF;
+            END $$;
+            GRANT USAGE ON SCHEMA public TO anon, authenticated;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO anon, authenticated;
+            ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO anon, authenticated;
+            """);
+
+        await db.Database.MigrateAsync();
+
+        var conPermiso = await db.Database.SqlQueryRaw<string>("""
+            SELECT c.relname AS "Value" FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = 'public' AND c.relkind = 'r'
+              AND (has_table_privilege('anon', c.oid, 'SELECT,INSERT,UPDATE,DELETE')
+                OR has_table_privilege('authenticated', c.oid, 'SELECT,INSERT,UPDATE,DELETE'))
+            """).ToListAsync();
+        Assert.Empty(conPermiso);
+        var sinRls = await db.Database.SqlQueryRaw<string>("""
+            SELECT c.relname AS "Value" FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
+            WHERE n.nspname = 'public' AND c.relkind = 'r' AND NOT c.relrowsecurity
+            """).ToListAsync();
+        Assert.Empty(sinRls);
+        Assert.Equal(7, await db.Categorias.CountAsync()); // la API (dueña de las tablas) sigue leyendo normal
+    }
+
+    [SkippableFact]
+    public async Task Las_fechas_se_guardan_en_timestamptz_y_vuelven_en_UTC()
+    {
+        Skip.IfNot(_sql.Disponible, _sql.MotivoNoDisponible);
+        var cadena = _sql.NuevaBase();
+        await using (var db = Contexto(cadena)) await db.Database.MigrateAsync();
+
+        var u = new Datos.Entidades.Usuario("Fecha Prueba", "Suba", $"f{Guid.NewGuid():N}@t.co", "Clave12345");
+        await using (var db = Contexto(cadena))
+        {
+            db.Usuarios.Add(u);
+            await db.SaveChangesAsync();
+        }
+
+        await using var lectura = Contexto(cadena);
+        var leido = await lectura.Usuarios.AsNoTracking().SingleAsync(x => x.Id == u.Id);
+        Assert.Equal(DateTimeKind.Utc, leido.FechaRegistro.Kind);
+        Assert.True((leido.FechaRegistro - u.FechaRegistro).Duration() < TimeSpan.FromMilliseconds(1)); // PostgreSQL guarda microsegundos
+        Assert.True(await lectura.Usuarios.AnyAsync(x => x.FechaRegistro <= DateTime.UtcNow)); // parámetro UTC en la consulta
+    }
+
     [SkippableFact]
     public async Task Reemplazar_una_factura_emitida_respeta_el_indice_de_factura_vigente()
     {
         Skip.IfNot(_sql.Disponible, _sql.MotivoNoDisponible);
-        await using var f = new FabricaApiSqlServer(_sql.NuevaBase());
+        await using var f = new FabricaApiPostgreSql(_sql.NuevaBase());
         var c = await Api.RegistrarAsync(f, "sqlfactura");
         var pago = await (await c.PostAsJsonAsync("/api/v1/pagos/iniciar",
             new { concepto = "Premium", facturaANombre = false, aceptoConsumidorFinal = true })).Content.ReadFromJsonAsync<JsonElement>();

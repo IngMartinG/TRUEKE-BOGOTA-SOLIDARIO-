@@ -21,6 +21,9 @@
     <PackageReference Include="Azure.Communication.Email" Version="1.1.0" />
     <PackageReference Include="Lib.Net.Http.WebPush" Version="3.3.1" />
     <PackageReference Include="MailKit" Version="4.18.1" />
+    <!-- Llega transitivo por MimeKit (10.0.0) con CVE-2026-70162 y CVE-2026-84008: se fija la versión corregida;
+         quitar cuando MimeKit la traiga solo. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.13" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.13" />
     <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.13" />

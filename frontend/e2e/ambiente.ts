@@ -40,8 +40,8 @@ function secretos(): Record<string, string> {
   generados ??= {
     E2E_PUSH_PUBLICA: vapid.publica,
     E2E_PUSH_PRIVADA: vapid.privada,
-    SQL_SA_PASSWORD: `E2e!${randomBytes(12).toString('hex')}Aa1`,
-    SQL_APP_PASSWORD: `App!${randomBytes(12).toString('hex')}Bb2`,
+    POSTGRES_PASSWORD: randomBytes(16).toString('hex'),
+    DB_APP_PASSWORD: randomBytes(16).toString('hex'),
     JWT_KEY: randomBytes(48).toString('base64'),
     CLAVE_CIFRADO: randomBytes(32).toString('base64'),
     REDIS_PASSWORD: randomBytes(16).toString('hex'),
@@ -71,7 +71,7 @@ export async function levantar(): Promise<void> {
   if (process.env['E2E_URL']) return;
   compose('down', '-v', '--remove-orphans'); // siempre desde cero: base, buzón y fotos vacíos
   compose('up', '-d', '--build');
-  // A través de nginx → API → SQL Server (con las migraciones aplicadas): si responde, todo está arriba.
+  // A través de nginx → API → PostgreSQL (con las migraciones aplicadas): si responde, todo está arriba.
   await esperarListo(`${URL_FRONT}/api/v1/categorias`, 6);
   await esperarListo(`${URL_MAILPIT}/api/v1/info`, 1);
   await calentar();

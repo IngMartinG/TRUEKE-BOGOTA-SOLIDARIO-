@@ -78,7 +78,7 @@ public class Publicacion
     /// <summary>Título, descripción, estado y categoría normalizados: es donde se buscan los términos.</summary>
     public string TextoBusqueda { get; private set; } = "";
 
-    public byte[]? RowVersion { get; private set; }
+    public uint RowVersion { get; private set; }
 
     /// <summary>Recalcula el texto de búsqueda (requiere la categoría cargada). Lo usan Aplicar y el relleno inicial.</summary>
     public void ActualizarTextoBusqueda()

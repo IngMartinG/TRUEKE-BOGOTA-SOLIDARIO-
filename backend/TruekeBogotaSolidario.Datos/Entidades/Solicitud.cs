@@ -44,7 +44,7 @@ public class Solicitud
     public DateTime? ConfirmadaPorDuenioUtc { get; private set; }
     public DateTime? ConfirmadaPorSolicitanteUtc { get; private set; }
     public DateTime? FechaCierreUtc { get; private set; }
-    public byte[]? RowVersion { get; private set; }
+    public uint RowVersion { get; private set; }
 
     public bool EstaEnCurso => Estado is EstadoSolicitud.Pendiente or EstadoSolicitud.Aceptada;
 

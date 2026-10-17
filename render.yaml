@@ -9,12 +9,12 @@ services:
     name: trueke-api
     runtime: docker
     plan: free # Gratis: se duerme a los 15 min sin tráfico y tarda ~30-60 s en despertar. Pasar a pago: plan "starter".
-    region: ohio # cerca de Azure SQL en Central US (las cuentas de prueba de Azure no permiten East US). No se puede cambiar después de crear el servicio.
+    region: ohio # cerca de la base en Supabase (East US, Norte de Virginia). No se puede cambiar después de crear el servicio.
     branch: main
     dockerContext: ./backend
     dockerfilePath: ./backend/Dockerfile
     autoDeployTrigger: checksPass
-    # Liveness (no toca la base): la oferta gratuita de Azure SQL puede estar pausada y tardar en despertar.
+    # Liveness (no toca la base): si Supabase pausó el proyecto por inactividad, la API sigue viva y lo muestra en /health/ready.
     healthCheckPath: /health/live
     envVars:
       # ---------- Fijos (no son secretos) ----------
@@ -59,7 +59,12 @@ services:
         generateValue: true
 
       # ---------- Secretos: se escriben en el panel de Render ----------
-      - key: ConnectionStrings__TruekeDb # Azure SQL (ADO.NET), ver docs/DESPLIEGUE.md §2
+      # PostgreSQL de Supabase por el Session pooler (IPv4, puerto 5432): la conexión directa db.<ref>.supabase.co solo
+      # tiene IPv6 y Render no la alcanza. Formato: Host=aws-N-<region>.pooler.supabase.com;Port=5432;Database=postgres;
+      # Username=postgres.<ref>;Password=<clave>;SSL Mode=Require;Maximum Pool Size=10 (el plan gratis permite pocas conexiones
+      # en modo sesión; docs/DESPLIEGUE.md §2). No usar el Transaction pooler
+      # (6543): no conserva la sesión entre consultas y habría que agregar No Reset On Close=true y evitar sentencias preparadas.
+      - key: ConnectionStrings__TruekeDb
         sync: false
       - key: Almacenamiento__CadenaConexion # cuenta de Storage → Claves de acceso → Cadena de conexión
         sync: false

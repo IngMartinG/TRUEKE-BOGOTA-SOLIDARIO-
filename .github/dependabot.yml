@@ -62,7 +62,7 @@ updates:
       - dependency-name: "dotnet/sdk"
         update-types: ["version-update:semver-major"]
 
-  # Imágenes de docker-compose (SQL Server, Redis, Mailpit, Azurite) también fijadas por digest.
+  # Imágenes de docker-compose (PostgreSQL, Redis, Mailpit, Azurite) también fijadas por digest.
   - package-ecosystem: docker-compose
     directories: ["/backend", "/frontend/e2e"]
     schedule:

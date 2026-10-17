@@ -1,7 +1,7 @@
 # Ambiente de pruebas de punta a punta (Playwright). Se suma a backend/docker-compose.yml:
 #   docker compose -p trueke-e2e --project-directory ../backend -f ../backend/docker-compose.yml -f e2e/docker-compose.e2e.yml up -d --build
 # (lo hace solo `npm run e2e`). Nada de esto se despliega: la app es la MISMA imagen de producción (API + front con nginx,
-# SQL Server con migraciones, Redis). Solo se reemplazan los servicios externos:
+# PostgreSQL con migraciones, Redis). Solo se reemplazan los servicios externos:
 #   - Azure Communication Services → Mailpit, por SMTP con STARTTLS real (certificado de una CA creada aquí, que solo
 #     confía el contenedor de la API).
 #   - Azure Blob → Azurite. Escucha en 127.0.0.2 DENTRO del contenedor de la API (comparte su red) y se publica en el

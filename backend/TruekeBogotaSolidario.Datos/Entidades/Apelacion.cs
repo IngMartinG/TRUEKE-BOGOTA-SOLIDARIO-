@@ -47,7 +47,7 @@ public class Apelacion
     public Guid? ModeradorId { get; private set; }
     public DateTime? FechaResolucionUtc { get; private set; }
     public string? NotaResolucion { get; private set; }
-    public byte[]? RowVersion { get; private set; }
+    public uint RowVersion { get; private set; }
 
     public void Resolver(Guid moderadorId, bool aceptada, string nota, DateTime ahoraUtc)
     {

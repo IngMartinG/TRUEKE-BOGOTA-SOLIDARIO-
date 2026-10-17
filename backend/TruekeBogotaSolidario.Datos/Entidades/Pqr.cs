@@ -50,7 +50,7 @@ public class Pqr
     public string? Respuesta { get; private set; }
     public DateTime? FechaRespuestaUtc { get; private set; }
     public Guid? RespondidaPorId { get; private set; }
-    public byte[]? RowVersion { get; private set; }
+    public uint RowVersion { get; private set; }
 
     public void Responder(Guid moderadorId, string respuesta, DateTime ahoraUtc)
     {

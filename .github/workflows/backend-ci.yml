@@ -41,15 +41,15 @@ jobs:
       - name: Compilar (warnings = errores)
         run: dotnet build TruekeBogotaSolidario.sln -c Release --no-restore -warnaserror
 
-      - name: Pruebas (incluye SQL Server real en Docker con Testcontainers)
+      - name: Pruebas (incluye PostgreSQL real en Docker con Testcontainers)
         run: |
           set -o pipefail   # sin esto, "| tee" ocultaría un fallo de las pruebas
           dotnet test TruekeBogotaSolidario.sln -c Release --no-build --logger "trx;LogFileName=resultados.trx" --logger "console;verbosity=normal" --results-directory TestResults | tee pruebas.txt
 
-      - name: Exigir que las pruebas de SQL Server se ejecutaron (no omitidas)
+      - name: Exigir que las pruebas de PostgreSQL se ejecutaron (no omitidas)
         run: |
           if grep -E "\[SKIP\]" pruebas.txt; then
-            echo "::error::Se omitieron pruebas de SQL Server: en CI deben ejecutarse siempre."
+            echo "::error::Se omitieron pruebas de PostgreSQL: en CI deben ejecutarse siempre."
             exit 1
           fi
 

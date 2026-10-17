@@ -50,7 +50,7 @@ public class Denuncia
     public AccionModeracion? Accion { get; private set; }
     /// <summary>Todas las denuncias resueltas juntas (mismo objetivo) comparten este id: es lo que el denunciado puede apelar.</summary>
     public Guid? ResolucionId { get; private set; }
-    public byte[]? RowVersion { get; private set; }
+    public uint RowVersion { get; private set; }
 
     public void Resolver(Guid moderadorId, AccionModeracion accion, string? nota, DateTime ahoraUtc, Guid resolucionId, Guid? denunciadoId)
     {

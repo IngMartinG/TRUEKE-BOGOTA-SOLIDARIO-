@@ -85,7 +85,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddHostedService<EnvioCorreosHostedService>();
 
         // Persistencia: Presentacion nunca referencia Datos directamente; todo entra por aquí.
-        services.AddDatos(config["Database:Provider"] ?? "SqlServer", config.GetConnectionString("TruekeDb"), config["Database:NombreInMemory"]);
+        services.AddDatos(config["Database:Provider"] ?? "PostgreSQL", config.GetConnectionString("TruekeDb"), config["Database:NombreInMemory"]);
         services.AddScoped<ISaludSistema, SaludSistema>();
 
         services.TryAddSingleton(TimeProvider.System);
