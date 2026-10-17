@@ -8,7 +8,7 @@ test('destacar pagando todo con Eco-Puntos: la persona elige usarlos y se aplica
   const auth = { Authorization: `Bearer ${cuenta.token}` };
   const id = await publicar(page.request, cuenta, titulo);
 
-  await test.step('recarga 100 Eco-Puntos (pasarela simulada del ambiente de pruebas)', async () => {
+  await test.step('recarga el paquete de $10.000: 100 Eco-Puntos + 10 de bono (pasarela simulada del ambiente de pruebas)', async () => {
     const r = await page.request.post('/api/v1/pagos/iniciar', {
       headers: auth,
       data: { concepto: 'Recarga', montoRecargaCop: 10000, facturaANombre: false, aceptoConsumidorFinal: true },
@@ -34,7 +34,7 @@ test('destacar pagando todo con Eco-Puntos: la persona elige usarlos y se aplica
   await test.step('la publicación queda destacada y el saldo baja exactamente 60', async () => {
     const resumen = await page.request.get('/api/v1/eco-puntos/resumen', { headers: auth });
     const { saldo } = (await resumen.json()) as { saldo: number };
-    expect(saldo).toBe(110 - 60); // 10 de bienvenida + 100 de la recarga
+    expect(saldo).toBe(120 - 60); // 10 de bienvenida + 100 de la recarga + 10 de bono
     const pub = await page.request.get(`/api/v1/publicaciones/${id}`, { headers: auth });
     expect(((await pub.json()) as { destacada: boolean }).destacada).toBe(true);
   });

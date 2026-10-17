@@ -39,6 +39,17 @@ interface Fila {
     </section>
 
     <div class="contenedor max-w-6xl pb-16">
+      <div class="mb-8 flex flex-wrap items-center justify-center gap-3">
+        <div role="radiogroup" aria-label="Periodo de pago" class="inline-flex rounded-full border border-borde bg-superficie-2 p-1">
+          @for (o of periodos; track o.valor) {
+            <button type="button" role="radio" [attr.aria-checked]="periodo() === o.valor" [attr.tabindex]="periodo() === o.valor ? 0 : -1"
+              class="rounded-full px-5 py-2 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sol-400 motion-reduce:transition-none"
+              [class]="periodo() === o.valor ? 'bg-bosque-950 text-white shadow dark:bg-sol-400 dark:text-bosque-950' : 'text-tenue hover:text-tinta'"
+              (click)="periodo.set(o.valor)" (keydown)="teclaPeriodo($event)">{{ o.texto }}</button>
+          }
+        </div>
+        <span class="insignia bg-sol-100 text-bosque-950 dark:bg-sol-500/20 dark:text-sol-100">2 meses gratis con el plan anual</span>
+      </div>
       <div class="grid grid-cols-1 gap-5 md:grid-cols-3">
         @for (t of tarjetas(); track t.plan) {
           <article class="tarjeta relative flex flex-col p-6" [class.ring-2]="t.plan === 'Premium'" [class.ring-sol-400]="t.plan === 'Premium'">
@@ -49,11 +60,14 @@ interface Fila {
             <p class="mt-1 text-sm text-tenue">{{ t.para }}</p>
             <p class="mt-5 font-display text-4xl font-extrabold">
               @if (t.precio) {
-                {{ t.precio | cop }}<span class="text-base font-medium text-tenue"> / {{ politica()?.duracionSuscripcionDias ?? 30 }} días</span>
+                {{ precioDe(t) | cop }}<span class="text-base font-medium text-tenue"> / {{ periodo() === 'anual' ? 'año' : (politica()?.duracionSuscripcionDias ?? 30) + ' días' }}</span>
               } @else {
                 Gratis
               }
             </p>
+            @if (t.precio && periodo() === 'anual') {
+              <p class="mt-1 text-sm font-semibold text-bosque-700 dark:text-bosque-300">Equivale a {{ cop(equivalenteMes(t)) }} al mes · ahorras {{ cop(ahorroAnual(t)) }}</p>
+            }
             @if (t.ahorro) {
               <p class="mt-1 text-sm font-semibold text-bosque-700 dark:text-bosque-300">{{ t.ahorro }}</p>
             }
@@ -157,6 +171,34 @@ export default class Planes {
     stream: () => this.api.resumenPuntos(),
   });
   protected readonly activando = signal(false);
+  protected readonly periodos = [
+    { valor: 'mensual', texto: 'Mensual' },
+    { valor: 'anual', texto: 'Anual' },
+  ] as const;
+  protected readonly periodo = signal<'mensual' | 'anual'>('mensual');
+
+  protected teclaPeriodo(e: KeyboardEvent): void {
+    const paso = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+    if (!paso) return;
+    e.preventDefault();
+    const i = this.periodos.findIndex((o) => o.valor === this.periodo());
+    const j = (i + paso + this.periodos.length) % this.periodos.length;
+    this.periodo.set(this.periodos[j].valor);
+    const grupo = (e.currentTarget as HTMLElement).parentElement;
+    (grupo?.children[j] as HTMLElement | undefined)?.focus();
+  }
+
+  protected precioDe(t: { precio: number; precioAnual: number }): number {
+    return this.periodo() === 'anual' ? t.precioAnual : t.precio;
+  }
+  /** Precio anual repartido en 12 meses. */
+  protected equivalenteMes(t: { precioAnual: number }): number {
+    return Math.round(t.precioAnual / 12);
+  }
+  /** Lo que se ahorra frente a pagar 12 meses sueltos. */
+  protected ahorroAnual(t: { precio: number; precioAnual: number }): number {
+    return 12 * t.precio - t.precioAnual;
+  }
 
   protected readonly planActual = computed<Plan | null>(() => {
     if (!this.sesion.autenticado()) return null;
@@ -178,10 +220,12 @@ export default class Planes {
     const destacar = p?.precioDestacarCop ?? 6000;
     const premium = p?.precioPremiumCop ?? 15000;
     const empresa = p?.precioEmpresaCop ?? 50000;
+    const premiumAnual = p?.precioPremiumAnualCop ?? 150000;
+    const empresaAnual = p?.precioEmpresaAnualCop ?? 500000;
     const valorDestacados = (n: number) => n * destacar;
     return [
       {
-        plan: 'Individual' as Plan, titulo: 'Gratis', icono: 'usuario', precio: 0, ahorro: '',
+        plan: 'Individual' as Plan, titulo: 'Gratis', icono: 'usuario', precio: 0, precioAnual: 0, ahorro: '',
         para: 'Para intercambiar, vender y donar lo que ya no usas.',
         beneficios: [
           `Hasta ${p?.maxPublicacionesIndividual ?? 50} publicaciones activas`,
@@ -190,7 +234,7 @@ export default class Planes {
         ],
       },
       {
-        plan: 'Premium' as Plan, titulo: 'Premium', icono: 'corona', precio: premium,
+        plan: 'Premium' as Plan, titulo: 'Premium', icono: 'corona', precio: premium, precioAnual: premiumAnual,
         ahorro: `Los destacados incluidos valen ${this.cop(valorDestacados(p?.destacadosGratisPremium ?? 3))}`,
         para: 'Para quienes publican e intercambian seguido.',
         beneficios: [
@@ -202,7 +246,7 @@ export default class Planes {
         ],
       },
       {
-        plan: 'Empresa' as Plan, titulo: 'Empresa', icono: 'edificio', precio: empresa,
+        plan: 'Empresa' as Plan, titulo: 'Empresa', icono: 'edificio', precio: empresa, precioAnual: empresaAnual,
         ahorro: `Los destacados incluidos valen ${this.cop(valorDestacados(p?.destacadosGratisEmpresa ?? 10))}`,
         para: 'Para tiendas de segunda mano, reparadores, fundaciones y emprendimientos.',
         beneficios: [
@@ -239,13 +283,14 @@ export default class Planes {
       { p: '¿Cómo funciona la prueba gratis?', r: `Tienes Premium ${dias} días sin pagar nada y sin tarjeta. Incluye todo Premium, con ${p?.destacadosGratisPruebaPremium ?? 1} destacado gratis en vez de ${p?.destacadosGratisPremium ?? 3}. Al terminar vuelves al plan Gratis: no se cobra nada. Es una vez por cuenta, para quien nunca ha tenido un plan.` },
       { p: '¿Se renueva solo?', r: `No. Ningún plan se cobra automáticamente. Te avisamos ${p?.diasRecordatorioVencimiento ?? 3} días antes de que venza y, si renuevas antes, los días se suman sin perder tus destacados gratis.` },
       { p: '¿Qué pasa si se vence?', r: 'Tus publicaciones siguen activas, pero no puedes crear nuevas por encima del límite del plan Gratis. Dejas de tener el descuento, la gráfica diaria, el nombre comercial y los destacados gratis.' },
+      { p: '¿Cómo funciona el plan anual?', r: `Pagas una sola vez y tienes ${p?.duracionSuscripcionAnualDias ?? 365} días de Premium o Empresa: son 12 meses por el precio de 10. Los destacados gratis se reponen igual, cada ${p?.diasCicloDestacadosGratis || 30} días, y si ya tienes el plan mensual los días del anual se suman a los que te quedan.` },
       { p: '¿Puedo pasar de Premium a Empresa?', r: 'Sí, cuando venza tu Premium. Durante la prueba gratis puedes pasar a Empresa cuando quieras.' },
       { p: '¿Me dan factura?', r: 'Sí: cada pago genera factura electrónica. Si la quieres a tu nombre o al de tu empresa, agrega tu cédula o NIT en Cuenta → Pagos y facturas.' },
       { p: '¿Puedo arrepentirme?', r: 'Tienes derecho de retracto dentro de los 5 días hábiles siguientes a la compra; se solicita desde Soporte.' },
     ];
   });
 
-  private cop(v: number): string {
+  protected cop(v: number): string {
     return `$${v.toLocaleString('es-CO')}`;
   }
 
@@ -254,7 +299,7 @@ export default class Planes {
       void this.router.navigate(['/ingresar'], { queryParams: { volver: '/planes' } });
       return;
     }
-    void this.router.navigate(['/eco-puntos'], { queryParams: { plan } });
+    void this.router.navigate(['/eco-puntos'], { queryParams: this.periodo() === 'anual' && plan !== 'Individual' ? { plan, periodo: 'anual' } : { plan } });
   }
 
   protected async probarPremium(): Promise<void> {

@@ -38,9 +38,9 @@ export default class Terminos {
     {
       titulo: 'Pagos, facturación y planes',
       parrafos: [
-        'Los servicios opcionales (destacar, verificar la identidad, planes Premium y Empresa y recargas de Eco-Puntos) se pagan con Wompi. Destacar y verificar también se pueden pagar, en parte o del todo, con Eco-Puntos (1 punto = $100), solo si la persona lo elige; lo pagado del todo con puntos no genera cobro ni factura. Los precios están en pesos colombianos e incluyen el IVA. La plataforma nunca procesa pagos entre usuarios: los acuerdos de compra se pagan directamente entre las partes.',
+        'Los servicios opcionales (destacar, verificar la identidad, planes Premium y Empresa y recargas de Eco-Puntos) se pagan con Wompi. Destacar y verificar también se pueden pagar, en parte o del todo, con Eco-Puntos (1 punto = $100), solo si la persona lo elige; las recargas parten de $5.000 y los paquetes de $10.000, $20.000 y $50.000 suman Eco-Puntos de bono (un monto distinto se recarga sin bono); lo pagado del todo con puntos no genera cobro ni factura. Los precios están en pesos colombianos e incluyen el IVA. La plataforma nunca procesa pagos entre usuarios: los acuerdos de compra se pagan directamente entre las partes.',
         'Cada pago aprobado genera una factura electrónica. Puedes registrar tus datos de facturación en tu cuenta; si no lo haces, la factura se emite a "consumidor final".',
-        'Los planes duran 30 días y no se renuevan automáticamente: te avisamos antes del vencimiento. Si renuevas antes, los días se suman al periodo actual y conservas tus destacados gratis, que se reponen cada 30 días mientras el plan esté vigente (no se acumulan).',
+        'Los planes Premium y Empresa se pueden pagar por 30 días o, con el plan anual, por 365 días en un solo pago. No se renuevan automáticamente: te avisamos antes del vencimiento. Si renuevas antes, los días se suman al periodo actual y conservas tus destacados gratis, que se reponen cada 30 días mientras el plan esté vigente (no se acumulan).',
       ],
     },
     {

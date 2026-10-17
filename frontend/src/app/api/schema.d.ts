@@ -4827,7 +4827,7 @@ export interface components {
             oculto?: boolean;
         };
         /** @enum {string} */
-        ConceptoPagoDto: "Destacar" | "Verificar" | "Premium" | "Empresa" | "Recarga";
+        ConceptoPagoDto: "Destacar" | "Verificar" | "Premium" | "Empresa" | "Recarga" | "PremiumAnual" | "EmpresaAnual";
         /** @enum {string} */
         CondicionDto: "Nuevo" | "ComoNuevo" | "Usado" | "UsadoConDetalles" | "Reparado" | "ParaRepuestos";
         ConfiguracionDosFactoresDto: {
@@ -5462,6 +5462,14 @@ export interface components {
             expiraUtc?: string;
             aplicadoConPuntos?: boolean;
         };
+        PaqueteRecargaDto: {
+            /** Format: int32 */
+            montoCop?: number;
+            /** Format: int32 */
+            puntos?: number;
+            /** Format: int32 */
+            bono?: number;
+        };
         PerfilEmpresaRequest: {
             nombreComercial: string;
             nit: string;
@@ -5580,6 +5588,13 @@ export interface components {
             diasPruebaPremium?: number;
             /** Format: int32 */
             destacadosGratisPruebaPremium?: number;
+            /** Format: int32 */
+            precioPremiumAnualCop?: number;
+            /** Format: int32 */
+            precioEmpresaAnualCop?: number;
+            /** Format: int32 */
+            duracionSuscripcionAnualDias?: number;
+            paquetesRecarga?: components["schemas"]["PaqueteRecargaDto"][] | null;
         };
         PqrAdminDto: {
             /** Format: uuid */
@@ -6009,6 +6024,7 @@ export type PagoAdminDto = components['schemas']['PagoAdminDto'];
 export type PagoAdminDtoPaginaDto = components['schemas']['PagoAdminDtoPaginaDto'];
 export type PagoEstadoDto = components['schemas']['PagoEstadoDto'];
 export type PagoIniciadoDto = components['schemas']['PagoIniciadoDto'];
+export type PaqueteRecargaDto = components['schemas']['PaqueteRecargaDto'];
 export type PerfilEmpresaRequest = components['schemas']['PerfilEmpresaRequest'];
 export type PerfilPublicoDto = components['schemas']['PerfilPublicoDto'];
 export type PerfilUsuarioDto = components['schemas']['PerfilUsuarioDto'];
