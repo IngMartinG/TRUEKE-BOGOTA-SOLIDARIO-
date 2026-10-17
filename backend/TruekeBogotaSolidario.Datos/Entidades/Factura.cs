@@ -167,7 +167,7 @@ public class Factura
     /// <summary>El pago se reembolsó después de emitir la factura: hay que emitir una nota crédito.</summary>
     public bool RequiereNotaCredito { get; private set; }
     public string? NotaInterna { get; private set; }
-    public byte[]? RowVersion { get; private set; }
+    public uint RowVersion { get; private set; }
 
     public void MarcarEmitida(string numeroDian, string cufe, DateTime ahoraUtc)
     {

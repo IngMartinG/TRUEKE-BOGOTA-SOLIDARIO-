@@ -35,7 +35,7 @@ public class Comentario
     public bool EstaOculto { get; private set; }
     public string? MotivoOcultamiento { get; private set; }
 
-    public byte[]? RowVersion { get; private set; }
+    public uint RowVersion { get; private set; }
 
     public void Ocultar(string motivo)
     {

@@ -32,7 +32,7 @@ public class TextoBusquedaTests
         Assert.Empty(TextoBusqueda.Terminos("de la para"));
         Assert.Empty(TextoBusqueda.Terminos("   "));
         Assert.Equal(TextoBusqueda.MaxTerminos, TextoBusqueda.Terminos("uno dos tres cuatro cinco seis siete ocho").Count);
-        // nada que el LIKE de SQL Server interprete como comodín
-        Assert.All(TextoBusqueda.Terminos("50% [oferta] mesa_auxiliar"), t => Assert.DoesNotContain(t, c => c is '%' or '_' or '['));
+        // nada que el LIKE de PostgreSQL interprete como especial
+        Assert.All(TextoBusqueda.Terminos("50% [oferta] mesa_auxiliar\\"), t => Assert.DoesNotContain(t, c => c is '%' or '_' or '[' or '\\'));
     }
 }

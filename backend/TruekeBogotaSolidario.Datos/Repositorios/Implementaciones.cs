@@ -31,7 +31,7 @@ public sealed class UnidadDeTrabajo : IUnidadDeTrabajo
     public async Task EnTransaccionAsync(Func<Task> trabajo)
     {
         if (!_db.Database.IsRelational()) { await trabajo(); return; } // InMemory (desarrollo) no tiene transacciones
-        // Con reintentos de SQL Server activos, la transacción debe ir dentro de la estrategia de ejecución.
+        // Con reintentos de PostgreSQL activos, la transacción debe ir dentro de la estrategia de ejecución.
         await _db.Database.CreateExecutionStrategy().ExecuteAsync(async () =>
         {
             await using var tx = await _db.Database.BeginTransactionAsync();
@@ -178,7 +178,7 @@ public sealed class PublicacionRepository : IPublicacionRepository
 
     /// <summary>
     /// Cada término debe estar al INICIO de alguna palabra (el texto normalizado empieza y termina con espacio).
-    /// El LIKE de SQL Server trata '_', '%' y '[' como comodines; los términos normalizados solo tienen letras y números.
+    /// El LIKE de PostgreSQL trata '_', '%' y la barra invertida como especiales; los términos normalizados solo tienen letras y números.
     /// </summary>
     private static IQueryable<Publicacion> ConTerminos(IQueryable<Publicacion> q, IReadOnlyList<string> terminos,
         Expression<Func<Publicacion, string>> campo)
@@ -251,7 +251,7 @@ public sealed class PublicacionRepository : IPublicacionRepository
         if (!string.IsNullOrWhiteSpace(departamentoCodigo)) { var dep = departamentoCodigo.Trim(); q = q.Where(p => p.DepartamentoCodigo == dep); }
         if (!string.IsNullOrWhiteSpace(municipioCodigo)) { var mpio = municipioCodigo.Trim(); q = q.Where(p => p.MunicipioCodigo == mpio); }
         if (categoriaId.HasValue) q = q.Where(p => p.CategoriaId == categoriaId.Value);
-        // Aleatorio (NEWID() en SQL Server): todas las destacadas reciben exposición, no solo las más recientes.
+        // Aleatorio (gen_random_uuid() en PostgreSQL): todas las destacadas reciben exposición, no solo las más recientes.
         return await q.OrderBy(_ => Guid.NewGuid()).Take(Math.Clamp(maximo, 1, 24)).ToListAsync();
     }
 
@@ -525,7 +525,7 @@ public sealed class EstadisticaRepository : IEstadisticaRepository
         foreach (var (pubId, dia, n) in vistas.Where(v => v.Vistas > 0))
         {
             var fecha = dia.Date;
-            if (_db.Database.IsSqlServer())
+            if (_db.Database.IsNpgsql())
             {
                 // UPDATE atómico (Vistas = Vistas + n): varias instancias de la API pueden sumar a la vez sin perder conteos
                 var filas = await _db.EstadisticasPublicaciones.Where(e => e.PublicacionId == pubId && e.Fecha == fecha)

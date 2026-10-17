@@ -40,7 +40,7 @@ public class Pago
     public string? ProveedorTransaccionId { get; private set; }
     public DateTime? FechaResolucionUtc { get; private set; }
     public string? NotaInterna { get; private set; }
-    public byte[]? RowVersion { get; private set; }
+    public uint RowVersion { get; private set; }
 
     public long MontoEnCentavos => MontoCop * 100L;
 

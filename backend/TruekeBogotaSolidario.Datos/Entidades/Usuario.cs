@@ -141,8 +141,8 @@ public class Usuario
     /// <summary>Hashes SHA-256 de los códigos de recuperación no usados, separados por ";".</summary>
     public string? CodigosRecuperacionHash { get; private set; }
 
-    /// <summary>Token de concurrencia optimista (solo SQL Server).</summary>
-    public byte[]? RowVersion { get; private set; }
+    /// <summary>Token de concurrencia optimista: la columna de sistema xmin de PostgreSQL.</summary>
+    public uint RowVersion { get; private set; }
 
     public bool EsVerificado => EstadoVerificacion == EstadoVerificacion.Aprobada;
 

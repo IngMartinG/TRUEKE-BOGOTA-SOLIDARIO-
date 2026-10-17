@@ -34,7 +34,7 @@ public class SesionRefresh
     public bool ConDosFactores { get; private set; }
     public Guid? ReemplazadoPorId { get; private set; }
     public DateTime? RevocadoUtc { get; private set; }
-    public byte[]? RowVersion { get; private set; }
+    public uint RowVersion { get; private set; }
 
     public bool EstaActiva(DateTime ahoraUtc) => RevocadoUtc is null && ReemplazadoPorId is null && ExpiraUtc > ahoraUtc;
 

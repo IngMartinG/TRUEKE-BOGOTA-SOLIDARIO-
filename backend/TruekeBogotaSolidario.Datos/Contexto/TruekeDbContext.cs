@@ -35,8 +35,8 @@ public class TruekeDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder mb)
     {
-        // La concurrencia optimista (rowversion) solo existe en SQL Server; el proveedor InMemory no la soporta.
-        var sqlServer = Database.IsSqlServer();
+        // La concurrencia optimista usa xmin de PostgreSQL (cambia en cada UPDATE); el proveedor InMemory no la soporta.
+        var postgres = Database.IsNpgsql();
 
         mb.Entity<Usuario>(e =>
         {
@@ -56,7 +56,7 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => x.Correo).IsUnique();
             e.HasIndex(x => x.EstadoVerificacion);
             e.Property(x => x.GoogleSub).HasMaxLength(64).IsUnicode(false);
-            e.HasIndex(x => x.GoogleSub).IsUnique().HasFilter("[GoogleSub] IS NOT NULL");
+            e.HasIndex(x => x.GoogleSub).IsUnique().HasFilter("\"GoogleSub\" IS NOT NULL");
             e.Property(x => x.PoliticaDatosVersion).HasMaxLength(20);
             e.Property(x => x.MotivoSuspension).HasMaxLength(300);
             e.Property(x => x.SecretoDosFactoresCifrado).HasMaxLength(200).IsUnicode(false);
@@ -75,7 +75,7 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.FacturacionMunicipioCodigo).HasMaxLength(5).IsUnicode(false);
             e.HasIndex(x => new { x.TipoCuenta, x.FechaVencimientoSuscripcion }); // recordatorios e ingresos recurrentes
             e.Property(x => x.CodigoInvitacion).HasMaxLength(12).IsUnicode(false);
-            e.HasIndex(x => x.CodigoInvitacion).IsUnique().HasFilter("[CodigoInvitacion] IS NOT NULL");
+            e.HasIndex(x => x.CodigoInvitacion).IsUnique().HasFilter("\"CodigoInvitacion\" IS NOT NULL");
             e.HasIndex(x => new { x.InvitadoPorId, x.RecompensaInvitacionUtc }); // contador y tope de invitaciones
             e.Ignore(x => x.TieneDatosFacturacion);
             e.Ignore(x => x.DatosFacturacion);
@@ -83,7 +83,7 @@ public class TruekeDbContext : DbContext
             e.Ignore(x => x.TieneClave);
             e.Ignore(x => x.CalificacionPromedio);
             e.Ignore(x => x.CodigosRecuperacionRestantes);
-            if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+            if (postgres) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
         });
 
         mb.Entity<Categoria>(e =>
@@ -139,7 +139,7 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => x.FechaRelevancia);                              // orden "Más recientes" (con impulsos)
             e.HasIndex(x => x.DestacadaHasta);
             e.HasIndex(x => new { x.Latitud, x.Longitud }); // prefiltro de /publicaciones/cercanas
-            if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+            if (postgres) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
         });
 
         mb.Entity<Solicitud>(e =>
@@ -155,7 +155,7 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => new { x.PublicacionOfrecidaId, x.Estado });
             e.HasIndex(x => new { x.PublicacionId, x.Estado });
             e.HasIndex(x => new { x.SolicitanteId, x.Estado });
-            if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+            if (postgres) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
         });
 
         mb.Entity<Comentario>(e =>
@@ -168,7 +168,7 @@ public class TruekeDbContext : DbContext
             e.HasOne(x => x.Autor).WithMany().HasForeignKey(x => x.AutorId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.PublicacionId, x.EstaOculto, x.FechaUtc });
             e.HasIndex(x => new { x.AutorId, x.FechaUtc });
-            if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+            if (postgres) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
         });
 
         mb.Entity<SesionRefresh>(e =>
@@ -181,7 +181,7 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => new { x.UsuarioId, x.RevocadoUtc });
             e.HasIndex(x => x.FamiliaId);
             e.HasIndex(x => x.ExpiraUtc);
-            if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+            if (postgres) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
         });
 
         mb.Entity<TokenUsoUnico>(e =>
@@ -250,7 +250,7 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => new { x.Tipo, x.ObjetivoId, x.Estado });
             e.HasIndex(x => new { x.DenunciadoId, x.Estado });
             e.HasIndex(x => x.ResolucionId);
-            if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+            if (postgres) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
         });
 
         mb.Entity<Bloqueo>(e =>
@@ -274,7 +274,7 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => x.ResolucionId).IsUnique();   // una apelación por resolución
             e.HasIndex(x => new { x.Estado, x.FechaUtc });
             e.HasIndex(x => x.UsuarioId);
-            if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+            if (postgres) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
         });
 
         mb.Entity<BusquedaGuardada>(e =>
@@ -397,10 +397,10 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.CompradorDireccion).HasMaxLength(150);
             e.Property(x => x.CompradorMunicipioCodigo).HasMaxLength(5).IsUnicode(false);
             e.HasIndex(x => x.Referencia).IsUnique();
-            e.HasIndex(x => x.ProveedorTransaccionId).IsUnique().HasFilter("[ProveedorTransaccionId] IS NOT NULL");
+            e.HasIndex(x => x.ProveedorTransaccionId).IsUnique().HasFilter("\"ProveedorTransaccionId\" IS NOT NULL");
             e.HasIndex(x => new { x.UsuarioId, x.Concepto, x.Estado });
             e.HasIndex(x => new { x.Estado, x.FechaUtc });
-            if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+            if (postgres) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
         });
 
         mb.Entity<Factura>(e =>
@@ -426,11 +426,11 @@ public class TruekeDbContext : DbContext
             e.HasOne<Pago>().WithMany().HasForeignKey(x => x.PagoId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
             // Una factura VIGENTE por pago (idempotencia); las anuladas o reemplazadas quedan como historial.
-            e.HasIndex(x => x.PagoId).IsUnique().HasFilter("[Estado] IN (N'Pendiente', N'Emitida')");
+            e.HasIndex(x => x.PagoId).IsUnique().HasFilter("\"Estado\" IN ('Pendiente', 'Emitida')");
             e.Property(x => x.MotivoCorreccion).HasMaxLength(300);
             e.HasIndex(x => new { x.UsuarioId, x.FechaUtc });
             e.HasIndex(x => new { x.Estado, x.FechaUtc });
-            if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+            if (postgres) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
         });
 
         mb.Entity<Pqr>(e =>
@@ -448,14 +448,14 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => x.Radicado).IsUnique();
             e.HasIndex(x => new { x.UsuarioId, x.FechaUtc });
             e.HasIndex(x => new { x.Estado, x.FechaLimiteUtc });
-            if (sqlServer) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+            if (postgres) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
         });
 
         mb.Entity<EstadisticaPublicacionDiaria>(e =>
         {
             e.ToTable("EstadisticasPublicaciones");
             e.HasKey(x => new { x.PublicacionId, x.Fecha });
-            if (sqlServer) e.Property(x => x.Fecha).HasColumnType("date");
+            if (postgres) e.Property(x => x.Fecha).HasColumnType("date");
             e.HasOne<Publicacion>().WithMany().HasForeignKey(x => x.PublicacionId).OnDelete(DeleteBehavior.Cascade);
         });
     }

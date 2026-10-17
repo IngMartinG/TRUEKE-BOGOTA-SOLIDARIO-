@@ -7,20 +7,20 @@ namespace TruekeBogotaSolidario.Datos.Contexto;
 
 public static class DatosServiceCollectionExtensions
 {
-    /// <param name="proveedor">"InMemory" (desarrollo/pruebas) o "SqlServer".</param>
+    /// <param name="proveedor">"InMemory" (desarrollo/pruebas) o "PostgreSQL".</param>
     /// <param name="nombreInMemory">Nombre de la base InMemory (las pruebas usan uno distinto por instancia para aislarse).</param>
     public static IServiceCollection AddDatos(this IServiceCollection services, string proveedor, string? cadenaConexion, string? nombreInMemory = null)
     {
         var p = (proveedor ?? "").Trim().ToLowerInvariant();
-        if (p != "inmemory" && p != "sqlserver")
-            throw new InvalidOperationException($"Database:Provider inválido: '{proveedor}'. Usa 'InMemory' o 'SqlServer'.");
-        if (p == "sqlserver" && string.IsNullOrWhiteSpace(cadenaConexion))
-            throw new InvalidOperationException("Falta ConnectionStrings:TruekeDb para usar SQL Server.");
+        if (p != "inmemory" && p != "postgresql")
+            throw new InvalidOperationException($"Database:Provider inválido: '{proveedor}'. Usa 'InMemory' o 'PostgreSQL'.");
+        if (p == "postgresql" && string.IsNullOrWhiteSpace(cadenaConexion))
+            throw new InvalidOperationException("Falta ConnectionStrings:TruekeDb para usar PostgreSQL.");
 
         services.AddDbContext<TruekeDbContext>(o =>
         {
             if (p == "inmemory") o.UseInMemoryDatabase(string.IsNullOrWhiteSpace(nombreInMemory) ? "TruekeDb" : nombreInMemory);
-            else o.UseSqlServer(cadenaConexion!, sql => sql.EnableRetryOnFailure());
+            else o.UseNpgsql(cadenaConexion!, pg => pg.EnableRetryOnFailure());
         });
 
         services.AddScoped<IUnidadDeTrabajo, UnidadDeTrabajo>();
