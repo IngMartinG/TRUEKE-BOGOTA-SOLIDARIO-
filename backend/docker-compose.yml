@@ -94,7 +94,7 @@ services:
       - ALL
 
   postgres:
-    image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+    image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
     volumes:
@@ -112,7 +112,7 @@ services:
   # Crea el usuario de la aplicación (trueke_app) y la base "trueke" con él como dueño: puede migrar su esquema pero
   # no administrar el servidor ni ver otras bases. Le pone la clave de .env. Corre una vez en cada arranque y termina.
   db-usuario:
-    image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+    image: postgres:18-alpine@sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
