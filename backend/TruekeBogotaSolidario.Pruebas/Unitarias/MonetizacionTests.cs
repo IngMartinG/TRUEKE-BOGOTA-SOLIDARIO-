@@ -97,11 +97,11 @@ public class MonetizacionTests
         // con 10 puntos de bienvenida no alcanza (cuesta 20)
         await Assert.ThrowsAsync<ReglaDeNegocioException>(() => e.EnScopeAsync<IPublicacionService, PublicacionDto>(s => s.ImpulsarAsync(ana, vieja.Id)));
 
-        await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 2_000 }); // +20 puntos
+        await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 5_000 }); // +50 puntos
         var impulsada = await e.EnScopeAsync<IPublicacionService, PublicacionDto>(s => s.ImpulsarAsync(ana, vieja.Id));
         Assert.NotNull(impulsada.ProximoImpulsoUtc);
         var resumen = await e.EnScopeAsync<IEcoPuntosService, EcoPuntosResumenDto>(s => s.ResumenAsync(ana));
-        Assert.Equal(PoliticaEcoPuntos.PuntosBienvenida + 20 - PoliticaEcoPuntos.PuntosImpulsar, resumen.Saldo);
+        Assert.Equal(PoliticaEcoPuntos.PuntosBienvenida + 50 - PoliticaEcoPuntos.PuntosImpulsar, resumen.Saldo);
 
         var primera = await e.EnScopeAsync<IPublicacionService, PaginaDto<PublicacionDto>>(s => s.ListarAsync(null, new FiltroPublicacionesRequest()));
         Assert.Equal("Vieja", primera.Items[0].Titulo);
@@ -177,7 +177,7 @@ public class MonetizacionTests
             Direccion = "Calle 10 # 20-30", MunicipioCodigo = "05001"
         }));
         await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = true, Concepto = ConceptoPagoDto.Premium });
-        await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 3_000 }, aprobado: false); // rechazado: sin factura
+        await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 6_000 }, aprobado: false); // rechazado: sin factura
 
         var factura = Assert.Single(await e.EnScopeAsync<IFacturacionService, IReadOnlyList<FacturaDto>>(s => s.ListarMiasAsync(ana)));
         Assert.Equal(PoliticaEcoPuntos.PrecioPremiumCop, factura.TotalCop);
@@ -206,7 +206,7 @@ public class MonetizacionTests
     {
         using var e = new EntornoNegocio();
         var ana = (await e.RegistrarAsync("ana")).Usuario.Id;
-        await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 2_000 });
+        await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 5_000 });
         var f = Assert.Single(await e.EnScopeAsync<IFacturacionService, IReadOnlyList<FacturaDto>>(s => s.ListarMiasAsync(ana)));
         Assert.Equal(Factura.DocumentoConsumidorFinal, f.CompradorDocumento);
         Assert.Equal("Consumidor final", f.CompradorNombre);

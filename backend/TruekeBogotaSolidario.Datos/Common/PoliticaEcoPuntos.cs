@@ -54,6 +54,10 @@ public static class PoliticaEcoPuntos
     public const int PrecioPremiumCop = 15_000;
     public const int PrecioEmpresaCop = 50_000;
     public const int DuracionSuscripcionDias = 30;
+    /// <summary>Plan anual: 12 meses por el precio de 10, en un solo pago. El cupo de destacados se repone igual, cada 30 días.</summary>
+    public const int PrecioPremiumAnualCop = 150_000;
+    public const int PrecioEmpresaAnualCop = 500_000;
+    public const int DuracionSuscripcionAnualDias = 365;
     public const int DestacadosGratisPremium = 3;
     public const int DescuentoPremiumPorcentaje = 15;
     public const int DestacadosGratisEmpresa = 10;
@@ -97,9 +101,29 @@ public static class PoliticaEcoPuntos
         _ => 0
     };
 
+    /// <summary>Plan, precio y días de cada concepto de plan (mensual o anual); null si el concepto no es un plan.</summary>
+    public static (TipoCuenta Plan, int PrecioCop, int Dias)? Suscripcion(ConceptoPago concepto) => concepto switch
+    {
+        ConceptoPago.Premium => (TipoCuenta.Premium, PrecioPremiumCop, DuracionSuscripcionDias),
+        ConceptoPago.Empresa => (TipoCuenta.Empresa, PrecioEmpresaCop, DuracionSuscripcionDias),
+        ConceptoPago.PremiumAnual => (TipoCuenta.Premium, PrecioPremiumAnualCop, DuracionSuscripcionAnualDias),
+        ConceptoPago.EmpresaAnual => (TipoCuenta.Empresa, PrecioEmpresaAnualCop, DuracionSuscripcionAnualDias),
+        _ => null
+    };
+
     // ---- Recarga con dinero real (entra a la plataforma vía Wompi; nunca sale) ----
     public const int CopPorEcoPunto = 100;
-    public const int RecargaMinimaCop = 2_000;
+    public const int RecargaMinimaCop = 5_000;
+    /// <summary>Paquetes de recarga con bono. Cualquier otro monto se recarga sin bono.</summary>
+    public static readonly IReadOnlyList<(int MontoCop, int Bono)> PaquetesRecarga = [(10_000, 10), (20_000, 30), (50_000, 100)];
+
+    /// <summary>Puntos de regalo de una recarga: solo si el monto es exactamente el de un paquete.</summary>
+    public static int BonoRecarga(int montoCop)
+    {
+        foreach (var (monto, bono) in PaquetesRecarga)
+            if (monto == montoCop) return bono;
+        return 0;
+    }
     public const int RecargaMaximaCop = 500_000;
     /// <summary>Lo mínimo que se cobra con la pasarela: con puntos, el resto por pagar es 0 (todo con puntos) o al menos esto.</summary>
     public const int MinimoCobroCop = 2_000;

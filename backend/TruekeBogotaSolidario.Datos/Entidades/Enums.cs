@@ -17,7 +17,8 @@ public enum EstadoVerificacion { NoVerificado = 0, Pendiente = 1, Aprobada = 2, 
 /// <summary>Aceptada = acordado, en coordinación de la entrega. Completada = ambas partes confirmaron (o venció la gracia con una confirmación).</summary>
 public enum EstadoSolicitud { Pendiente = 1, Aceptada = 2, Rechazada = 3, Cancelada = 4, Completada = 5, NoConcretada = 6 }
 
-public enum ConceptoPago { Destacar = 1, Verificar = 2, Premium = 3, Empresa = 4, Recarga = 5 }
+/// <summary>PremiumAnual y EmpresaAnual: el mismo plan por 365 días en un solo pago.</summary>
+public enum ConceptoPago { Destacar = 1, Verificar = 2, Premium = 3, Empresa = 4, Recarga = 5, PremiumAnual = 6, EmpresaAnual = 7 }
 
 /// <summary>Pendiente → Aprobado | Rechazado | Expirado. RequiereRevision = se cobró pero el beneficio no pudo aplicarse (reembolso manual).</summary>
 public enum EstadoPago { Pendiente = 1, Aprobado = 2, Rechazado = 3, Expirado = 4, RequiereRevision = 5, Reembolsado = 6 }
@@ -52,4 +53,6 @@ public enum ConceptoEcoPuntos
     Impulsar = 6,
     /// <summary>Puntos de una recarga retirados porque se reembolsó.</summary>
     ReembolsoRecarga = 7,
+    /// <summary>Puntos de regalo por recargar un paquete (se retiran si la recarga se reembolsa).</summary>
+    BonoRecarga = 8,
 }

@@ -42,6 +42,8 @@ export const ETIQUETA_CONCEPTO: Record<string, string> = {
   Verificar: 'Verificar cuenta',
   Premium: 'Plan Premium',
   Empresa: 'Plan Empresa',
+  PremiumAnual: 'Plan Premium anual',
+  EmpresaAnual: 'Plan Empresa anual',
   Recarga: 'Recarga de Eco-Puntos',
 };
 

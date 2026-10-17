@@ -17,8 +17,14 @@ import { Modal } from '../../shared/ui/modal';
 import { abrirCheckoutWompi, esOrigenLocal, urlCheckoutWompi, urlRetornoPago } from './wompi';
 import { HistorialEcoPuntos } from './historial-eco-puntos';
 
+type ConceptoPlan = 'Premium' | 'Empresa' | 'PremiumAnual' | 'EmpresaAnual';
+/** Plan al que pertenece un concepto de pago (el anual es el mismo plan por 365 días). */
+const planDe = (c: ConceptoPagoDto | string | null | undefined): 'Premium' | 'Empresa' | null =>
+  c === 'Premium' || c === 'PremiumAnual' ? 'Premium' : c === 'Empresa' || c === 'EmpresaAnual' ? 'Empresa' : null;
+const esAnual = (c: ConceptoPagoDto | null | undefined) => c === 'PremiumAnual' || c === 'EmpresaAnual';
+
 interface Servicio {
-  concepto: Exclude<ConceptoPagoDto, 'Recarga'>;
+  concepto: Exclude<ConceptoPagoDto, 'Recarga' | 'PremiumAnual' | 'EmpresaAnual'>;
   titulo: string;
   descripcion: string;
   icono: string;
@@ -199,16 +205,32 @@ interface Servicio {
             o para alcanzar un escalón de descuento. El pago se procesa de forma segura con Wompi.
           </p>
         </div>
-        <form class="flex flex-col gap-3 sm:flex-row sm:items-end" (ngSubmit)="recargar()">
-          <div class="campo flex-1">
-            <label for="monto" class="etiqueta">Monto en pesos</label>
+        <form class="space-y-4" (ngSubmit)="recargar()">
+          @if (paquetes().length) {
+            <div role="radiogroup" aria-label="Paquete de recarga" class="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              @for (q of paquetes(); track q.montoCop; let i = $index) {
+                <button type="button" role="radio" class="relative rounded-2xl border-2 p-4 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sol-400 motion-reduce:transition-none"
+                  [class]="paqueteElegido()?.montoCop === q.montoCop ? 'border-bosque-500 bg-bosque-50/60 dark:bg-bosque-900/30' : 'border-borde hover:border-bosque-300'"
+                  [attr.aria-checked]="paqueteElegido()?.montoCop === q.montoCop" [attr.tabindex]="paqueteElegido()?.montoCop === q.montoCop || (!paqueteElegido() && i === 0) ? 0 : -1"
+                  (click)="elegirPaquete(q.montoCop ?? 0)" (keydown)="teclaPaquete($event, i)">
+                  @if (q.montoCop === masElegido()) {
+                    <span class="absolute -top-2.5 right-3 insignia bg-sol-400 text-bosque-950 shadow">Más elegido</span>
+                  }
+                  <span class="block font-display text-2xl font-extrabold">{{ q.montoCop | cop }}</span>
+                  <span class="mt-1 block text-sm text-tenue">{{ q.puntos | numero }} Eco-Puntos + {{ q.bono | numero }} de bono</span>
+                </button>
+              }
+            </div>
+          }
+          <div class="campo">
+            <label for="monto" class="etiqueta">Otro monto en pesos <span class="font-normal text-tenue">· Sin bono</span></label>
             <input id="monto" name="monto" type="number" inputmode="numeric" class="entrada text-lg" [min]="politica()?.recargaMinimaCop ?? 0" [max]="politica()?.recargaMaximaCop ?? 0" step="100" [(ngModel)]="montoRecarga" />
             <p class="ayuda">
               Entre {{ politica()?.recargaMinimaCop | cop }} y {{ politica()?.recargaMaximaCop | cop }} · recibes
-              <strong class="text-sol-600 dark:text-sol-300">{{ puntosRecarga() | numero }} Eco-Puntos</strong>
+              <strong class="text-sol-600 dark:text-sol-300">{{ puntosRecarga() | numero }}@if (bonoRecarga() > 0) { + {{ bonoRecarga() | numero }} de bono } Eco-Puntos</strong>
             </p>
           </div>
-          <button type="submit" class="btn btn-sol btn-lg" [disabled]="!montoValido() || pagando()"><app-icono nombre="billetera" [tamano]="18" />Recargar</button>
+          <button type="submit" class="btn btn-sol btn-lg w-full sm:w-auto" [disabled]="!montoValido() || pagando()"><app-icono nombre="billetera" [tamano]="18" />Recargar {{ montoRecarga() ?? 0 | cop }}</button>
         </form>
       </div>
     </section>
@@ -259,7 +281,16 @@ interface Servicio {
 
         @if (conceptoCompra() === 'Recarga') {
           <dl class="space-y-2 rounded-2xl bg-superficie-2 p-4 text-sm">
-            <div class="flex justify-between"><dt>Eco-Puntos que recibes</dt><dd>{{ puntosRecarga() | numero }}</dd></div>
+            <div class="flex justify-between">
+              <dt>Eco-Puntos que recibes</dt>
+              <dd>
+                @if (bonoRecarga() > 0) {
+                  {{ puntosRecarga() | numero }} + {{ bonoRecarga() | numero }} de bono = {{ puntosRecarga() + bonoRecarga() | numero }}
+                } @else {
+                  {{ puntosRecarga() | numero }}
+                }
+              </dd>
+            </div>
             @if (politica()?.preciosIncluyenIva) {
               <div class="flex justify-between text-tenue"><dt>IVA incluido</dt><dd>{{ ivaDe(montoRecarga() ?? 0) | cop }}</dd></div>
             }
@@ -267,14 +298,14 @@ interface Servicio {
           </dl>
         } @else if (esPlan()) {
           <dl class="space-y-2 rounded-2xl bg-superficie-2 p-4 text-sm">
-            <div class="flex justify-between"><dt>{{ tituloCompra() }} · {{ politica()?.duracionSuscripcionDias ?? 30 }} días</dt><dd>{{ precioPlan() | cop }}</dd></div>
+            <div class="flex justify-between"><dt>{{ tituloCompra() }} · {{ duracionPlan() }} días</dt><dd>{{ precioPlan() | cop }}</dd></div>
             @if (politica()?.preciosIncluyenIva) {
               <div class="flex justify-between text-tenue"><dt>IVA incluido</dt><dd>{{ ivaDe(precioPlan()) | cop }}</dd></div>
             }
             <div class="flex justify-between border-t border-borde pt-2 text-base font-bold"><dt>Total</dt><dd>{{ precioPlan() | cop }}</dd></div>
           </dl>
-          @if (planActual() === conceptoCompra()) {
-            <p class="text-sm text-tenue">Tu plan vence el {{ resumen.value()?.planVigenteHasta | fecha }}: los {{ politica()?.duracionSuscripcionDias ?? 30 }} días se suman a partir de esa fecha.</p>
+          @if (planActual() === planDe(conceptoCompra())) {
+            <p class="text-sm text-tenue">Tu plan vence el {{ resumen.value()?.planVigenteHasta | fecha }}: los {{ duracionPlan() }} días se suman a partir de esa fecha.</p>
           }
         } @else if (usaGratis()) {
         } @else if (cotizacion.value(); as c) {
@@ -403,6 +434,9 @@ export default class EcoPuntos {
   readonly destacar = input<string>();
   /** `?plan=Premium|Empresa` llega desde la página de planes: abre la compra de ese plan. */
   readonly plan = input<string>();
+  /** `?periodo=anual` (con `?plan=`): la compra es del plan anual. */
+  readonly periodo = input<string>();
+  protected readonly planDe = planDe;
 
   protected readonly politica = toSignal(this.api.politica$.pipe(catchError(() => of(null))));
   protected readonly resumen = rxResource({
@@ -478,13 +512,13 @@ export default class EcoPuntos {
   });
 
   protected readonly planActual = computed(() => {
-    const t = this.resumen.value()?.tipoCuenta;
-    return t === 'Premium' || t === 'Empresa' ? t : null;
+    return planDe(this.resumen.value()?.tipoCuenta);
   });
   /** Con un plan vigente no se puede tomar el otro hasta que venza (regla del backend): se explica en vez de fallar al pagar. */
   protected planBloqueado(concepto: ConceptoPagoDto): string | null {
     const actual = this.planActual();
-    return actual && (concepto === 'Premium' || concepto === 'Empresa') && concepto !== actual ? actual : null;
+    const plan = planDe(concepto);
+    return actual && plan && plan !== actual ? actual : null;
   }
   protected readonly destacadosGratis = computed(() => this.resumen.value()?.destacadosGratisRestantes ?? 0);
   protected readonly usaGratis = computed(() => this.conceptoCompra() === 'Destacar' && this.destacadosGratis() > 0);
@@ -512,9 +546,17 @@ export default class EcoPuntos {
     if (!c) return 0;
     return this.cubreTodo() ? 0 : Math.max(0, (c.precioConPlanCop ?? 0) - this.puntosAUsar() * this.copPorPunto());
   });
-  protected readonly esPlan = computed(() => this.conceptoCompra() === 'Premium' || this.conceptoCompra() === 'Empresa');
-  protected readonly precioPlan = computed(() =>
-    this.conceptoCompra() === 'Empresa' ? (this.politica()?.precioEmpresaCop ?? 50000) : (this.politica()?.precioPremiumCop ?? 15000),
+  protected readonly esPlan = computed(() => planDe(this.conceptoCompra()) !== null);
+  protected readonly precioPlan = computed(() => {
+    const p = this.politica();
+    const c = this.conceptoCompra();
+    if (c === 'EmpresaAnual') return p?.precioEmpresaAnualCop ?? 500000;
+    if (c === 'PremiumAnual') return p?.precioPremiumAnualCop ?? 150000;
+    return c === 'Empresa' ? (p?.precioEmpresaCop ?? 50000) : (p?.precioPremiumCop ?? 15000);
+  });
+  /** Días que dura lo que se está comprando: 365 en el anual, 30 en el mensual. */
+  protected readonly duracionPlan = computed(() =>
+    esAnual(this.conceptoCompra()) ? (this.politica()?.duracionSuscripcionAnualDias ?? 365) : (this.politica()?.duracionSuscripcionDias ?? 30),
   );
 
   /** Parte del precio que corresponde al IVA (los precios lo incluyen). */
@@ -525,6 +567,28 @@ export default class EcoPuntos {
 
   // Recarga
   protected readonly montoRecarga = signal<number | null>(20000);
+  protected readonly paquetes = computed(() => this.politica()?.paquetesRecarga ?? []);
+  /** El bono solo se da si el monto es exactamente el de un paquete. */
+  protected readonly paqueteElegido = computed(() => this.paquetes().find((q) => q.montoCop === this.montoRecarga()) ?? null);
+  protected readonly bonoRecarga = computed(() => this.paqueteElegido()?.bono ?? 0);
+  /** El paquete del medio es el recomendado. */
+  protected readonly masElegido = computed(() => {
+    const q = this.paquetes();
+    return q.length >= 3 ? q[Math.floor(q.length / 2)].montoCop : null;
+  });
+  protected elegirPaquete(monto: number): void {
+    this.montoRecarga.set(monto);
+  }
+  protected teclaPaquete(e: KeyboardEvent, i: number): void {
+    const n = this.paquetes().length;
+    const paso = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+    if (!paso || !n) return;
+    e.preventDefault();
+    const j = (i + paso + n) % n;
+    this.elegirPaquete(this.paquetes()[j].montoCop ?? 0);
+    const grupo = (e.currentTarget as HTMLElement).parentElement;
+    (grupo?.children[j] as HTMLElement | undefined)?.focus();
+  }
   protected readonly puntosRecarga = computed(() => Math.floor((this.montoRecarga() ?? 0) / (this.politica()?.copPorEcoPunto ?? 100)));
   protected readonly montoValido = computed(() => {
     const m = this.montoRecarga() ?? 0;
@@ -550,9 +614,13 @@ export default class EcoPuntos {
   protected readonly subiendoDocumento = signal(false);
   protected readonly pagando = signal(false);
   protected readonly errorCompra = signal<string | null>(null);
-  protected readonly tituloCompra = computed(() =>
-    this.conceptoCompra() === 'Recarga' ? 'Recarga de Eco-Puntos' : (this.servicios().find((s) => s.concepto === this.conceptoCompra())?.titulo ?? ''),
-  );
+  protected readonly tituloCompra = computed(() => {
+    const c = this.conceptoCompra();
+    if (c === 'Recarga') return 'Recarga de Eco-Puntos';
+    const plan = planDe(c);
+    if (plan && esAnual(c)) return `${plan} anual`;
+    return this.servicios().find((s) => s.concepto === c)?.titulo ?? '';
+  });
   /** Solo Destacar y Verificar tienen descuento por Eco-Puntos (los planes tienen precio fijo). */
   protected readonly cotizacion = rxResource({
     params: () => {
@@ -587,7 +655,8 @@ export default class EcoPuntos {
     });
     effect(() => {
       const plan = this.plan();
-      if ((plan === 'Premium' || plan === 'Empresa') && this.sesion.autenticado()) untracked(() => this.abrirCompra(plan));
+      const anual = this.periodo() === 'anual';
+      if ((plan === 'Premium' || plan === 'Empresa') && this.sesion.autenticado()) untracked(() => this.abrirCompra(anual ? (`${plan}Anual` as ConceptoPlan) : plan));
     });
   }
 

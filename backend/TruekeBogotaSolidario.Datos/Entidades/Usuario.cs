@@ -520,13 +520,13 @@ public class Usuario
     public void MarcarRecordatorioVencimiento(DateTime vencimiento) => RecordatorioVencimientoPara = vencimiento;
 
     /// <summary>
-    /// Reembolso de un mes de plan (retracto o reversión): se descuentan los días pagados. Si el plan queda vencido,
+    /// Reembolso de un plan (retracto o reversión): se descuentan los días pagados (30 o 365). Si el plan queda vencido,
     /// se pierden los destacados gratis restantes.
     /// </summary>
-    public void RevertirMesDePlan(TipoCuenta plan, DateTime ahoraUtc)
+    public void RevertirPlan(TipoCuenta plan, int dias, DateTime ahoraUtc)
     {
         if (TipoCuenta != plan || FechaVencimientoSuscripcion is null) return;
-        FechaVencimientoSuscripcion = FechaVencimientoSuscripcion.Value.AddDays(-PoliticaEcoPuntos.DuracionSuscripcionDias);
+        FechaVencimientoSuscripcion = FechaVencimientoSuscripcion.Value.AddDays(-dias);
         if (FechaVencimientoSuscripcion <= ahoraUtc)
         {
             FechaVencimientoSuscripcion = ahoraUtc;
@@ -580,31 +580,34 @@ public class Usuario
         ProximaRecargaDestacadosUtc = null; // la prueba no repone el cupo
     }
 
-    public void ActivarPremium(DateTime ahoraUtc)
+    /// <param name="dias">30 el mensual, 365 el anual.</param>
+    public void ActivarPremium(DateTime ahoraUtc, int dias = PoliticaEcoPuntos.DuracionSuscripcionDias)
     {
         ValidarPuedeSuscribirse(TipoCuenta.Premium, ahoraUtc);
-        Renovar(TipoCuenta.Premium, ahoraUtc);
+        Renovar(TipoCuenta.Premium, ahoraUtc, dias);
     }
 
-    public void ActivarEmpresa(DateTime ahoraUtc)
+    /// <param name="dias">30 el mensual, 365 el anual.</param>
+    public void ActivarEmpresa(DateTime ahoraUtc, int dias = PoliticaEcoPuntos.DuracionSuscripcionDias)
     {
         ValidarPuedeSuscribirse(TipoCuenta.Empresa, ahoraUtc);
-        Renovar(TipoCuenta.Empresa, ahoraUtc);
+        Renovar(TipoCuenta.Empresa, ahoraUtc, dias);
     }
 
     /// <summary>
-    /// Renovar con el plan vigente solo suma días: el cupo de destacados y su próxima reposición siguen igual (no se pierde nada).
-    /// Un plan nuevo (o tras vencer) arranca con el cupo completo y lo repone cada 30 días.
+    /// Renovar con el plan vigente solo suma días (mensual o anual): el cupo de destacados y su próxima reposición siguen igual
+    /// (no se pierde nada). Un plan nuevo (o tras vencer) arranca con el cupo completo y lo repone cada 30 días, también en el anual.
     /// </summary>
-    private void Renovar(TipoCuenta plan, DateTime ahoraUtc)
+    private void Renovar(TipoCuenta plan, DateTime ahoraUtc, int dias)
     {
+        if (dias <= 0) throw new ReglaDeNegocioException("Duración del plan no válida.");
         var mismoPlan = PlanEfectivo(ahoraUtc) == plan;
         // Pagar durante la prueba: se suman los días que le quedaban y arranca el cupo completo del plan pagado
         var vigente = mismoPlan && !EnPruebaPremium;
         var baseFecha = mismoPlan ? FechaVencimientoSuscripcion!.Value : ahoraUtc;
         TipoCuenta = plan;
         EnPruebaPremium = false;
-        FechaVencimientoSuscripcion = baseFecha.AddDays(PoliticaEcoPuntos.DuracionSuscripcionDias);
+        FechaVencimientoSuscripcion = baseFecha.AddDays(dias);
         if (!vigente)
         {
             DestacadosGratisRestantes = PoliticaEcoPuntos.DestacadosGratisPorPlan(plan);

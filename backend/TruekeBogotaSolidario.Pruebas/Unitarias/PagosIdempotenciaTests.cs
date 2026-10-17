@@ -1,3 +1,4 @@
+using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Dtos;
 using TruekeBogotaSolidario.Negocio.Pagos;
@@ -51,7 +52,7 @@ public class PagosIdempotenciaTests
         for (var i = 0; i < 3; i++)
             await entorno.EnScopeAsync<IPagoService>(p => p.ProcesarEventoWompiAsync(evento));
 
-        Assert.Equal(saldoInicial + 10_000 / 100, await SaldoAsync(entorno, usuarioId));
+        Assert.Equal(saldoInicial + 10_000 / 100 + PoliticaEcoPuntos.BonoRecarga(10_000), await SaldoAsync(entorno, usuarioId));
         var estado = await entorno.EnScopeAsync<IPagoService, PagoEstadoDto>(p => p.ObtenerEstadoAsync(usuarioId, pago.Referencia));
         Assert.Equal("Aprobado", estado.Estado);
     }

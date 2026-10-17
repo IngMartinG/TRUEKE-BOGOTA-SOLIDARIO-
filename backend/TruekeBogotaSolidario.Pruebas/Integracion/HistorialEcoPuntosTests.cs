@@ -24,8 +24,8 @@ public class HistorialEcoPuntosTests : IClassFixture<FabricaApi>
         Assert.Equal("Bienvenida", bienvenida.GetProperty("concepto").GetString());
         Assert.Equal(10, bienvenida.GetProperty("puntos").GetInt32());
 
-        // Recarga aprobada: +100
-        var ini = await c.PostAsJsonAsync("/api/v1/pagos/iniciar", new { concepto = "Recarga", montoRecargaCop = 10000, facturaANombre = false, aceptoConsumidorFinal = true });
+        // Recarga aprobada de un monto sin paquete (sin bono): +120
+        var ini = await c.PostAsJsonAsync("/api/v1/pagos/iniciar", new { concepto = "Recarga", montoRecargaCop = 12000, facturaANombre = false, aceptoConsumidorFinal = true });
         Assert.Equal(HttpStatusCode.Created, ini.StatusCode);
         var referencia = (await ini.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("referencia").GetString();
         (await c.PostAsync($"/api/v1/pagos/{referencia}/simular?aprobado=true", null)).EnsureSuccessStatusCode();
@@ -40,7 +40,7 @@ public class HistorialEcoPuntosTests : IClassFixture<FabricaApi>
         Assert.Equal(new[] { "Impulsar", "Recarga", "Bienvenida" }, items.Select(i => i.GetProperty("concepto").GetString()));
         Assert.Equal(-20, items[0].GetProperty("puntos").GetInt32());
         Assert.Equal(pub, items[0].GetProperty("referenciaId").GetGuid());
-        Assert.Equal(100, items[1].GetProperty("puntos").GetInt32());
+        Assert.Equal(120, items[1].GetProperty("puntos").GetInt32());
 
         var saldo = (await c.GetFromJsonAsync<JsonElement>("/api/v1/eco-puntos/resumen")).GetProperty("saldo").GetInt32();
         Assert.Equal(saldo, items.Sum(i => i.GetProperty("puntos").GetInt32()));

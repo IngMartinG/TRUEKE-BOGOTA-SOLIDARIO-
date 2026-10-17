@@ -83,6 +83,9 @@ public sealed class EcoPuntosService : IEcoPuntosService
             PoliticaEcoPuntos.MaxPublicacionesEmpresa, PoliticaEcoPuntos.MaxVentasActivasSinIdentificar,
             PoliticaEcoPuntos.DiasEntreTransaccionesConPuntosMismaPareja, _facturacion.IvaEfectivo > 0, _facturacion.IvaEfectivo,
             PoliticaEcoPuntos.DiasRecordatorioVencimiento, PoliticaEcoPuntos.DiasCicloDestacadosGratis, PoliticaEcoPuntos.MinimoCobroCop,
-            PoliticaEcoPuntos.DiasPruebaPremium, PoliticaEcoPuntos.DestacadosGratisPruebaPremium);
+            PoliticaEcoPuntos.DiasPruebaPremium, PoliticaEcoPuntos.DestacadosGratisPruebaPremium,
+            PoliticaEcoPuntos.PrecioPremiumAnualCop, PoliticaEcoPuntos.PrecioEmpresaAnualCop, PoliticaEcoPuntos.DuracionSuscripcionAnualDias,
+            PoliticaEcoPuntos.PaquetesRecarga
+                .Select(p => new PaqueteRecargaDto(p.MontoCop, p.MontoCop / PoliticaEcoPuntos.CopPorEcoPunto, p.Bono)).ToList());
     }
 }

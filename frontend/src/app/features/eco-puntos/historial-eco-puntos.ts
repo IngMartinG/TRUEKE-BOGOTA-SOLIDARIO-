@@ -15,6 +15,7 @@ const CONCEPTOS: Record<string, { texto: string; icono: string }> = {
   Bienvenida: { texto: 'Bienvenida por confirmar tu correo', icono: 'regalo' },
   Intercambio: { texto: 'Intercambio completado', icono: 'apreton' },
   Recarga: { texto: 'Recarga', icono: 'billetera' },
+  BonoRecarga: { texto: 'Bono de recarga', icono: 'regalo' },
   CanjeDescuento: { texto: 'Descuento en', icono: 'etiqueta' },
   DevolucionCanje: { texto: 'Devolución del descuento en', icono: 'repeat' },
   Impulsar: { texto: 'Impulsaste', icono: 'cohete' },
@@ -96,7 +97,7 @@ export class HistorialEcoPuntos {
 
   protected texto(m: MovimientoEcoPuntosDto): string {
     const c = this.concepto(m);
-    return m.detalle && m.concepto !== 'Recarga' && m.concepto !== 'ReembolsoRecarga' ? `${c.texto} · ${m.detalle}`.replace(' en ·', ' en') : c.texto;
+    return m.detalle && m.concepto !== 'Recarga' && m.concepto !== 'ReembolsoRecarga' && m.concepto !== 'BonoRecarga' ? `${c.texto} · ${m.detalle}`.replace(' en ·', ' en') : c.texto;
   }
 
   protected abs(n: number | undefined): number {
