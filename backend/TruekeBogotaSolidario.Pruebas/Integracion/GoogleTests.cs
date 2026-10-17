@@ -57,8 +57,9 @@ public class GoogleTests : IClassFixture<FabricaApi>
         return token;
     }
 
-    private Task<HttpResponseMessage> GoogleAsync(string idToken, bool acepto = true, string? codigo = null)
-        => _f.CreateClient().PostAsJsonAsync("/api/v1/auth/google", new { idToken, aceptoPoliticaDatos = acepto, codigoDosFactores = codigo });
+    private Task<HttpResponseMessage> GoogleAsync(string idToken, bool acepto = true, string? codigo = null, string? codigoInvitacion = null)
+        => _f.CreateClient().PostAsJsonAsync("/api/v1/auth/google",
+            new { idToken, aceptoPoliticaDatos = acepto, codigoDosFactores = codigo, codigoInvitacion });
 
     private static byte[] DesdeBase32(string s)
     {
@@ -89,6 +90,30 @@ public class GoogleTests : IClassFixture<FabricaApi>
         => (await r.Content.ReadFromJsonAsync<JsonElement>()).TryGetProperty("codigo", out var c) ? c.GetString() : null;
 
     private static string Correo() => $"g{Guid.NewGuid():N}@gmail.test";
+
+    [Fact]
+    public async Task Con_Google_la_cuenta_nueva_queda_invitada_y_un_ingreso_posterior_no_cambia_nada()
+    {
+        var sesion = await Api.RegistrarSesionAsync(_f, "anfitriona");
+        var anfitrion = Api.ConToken(_f, sesion.Token);
+        var codigo = (await anfitrion.GetFromJsonAsync<JsonElement>("/api/v1/eco-puntos/invitacion")).GetProperty("codigo").GetString()!;
+        var anfitrionId = sesion.Usuario.Id;
+
+        var correo = Correo();
+        var sub = Guid.NewGuid().ToString("N");
+        var r = await GoogleAsync(Emitir(correo, sub: sub), codigoInvitacion: codigo.ToLowerInvariant()); // pegado en minúsculas
+        Assert.Equal(HttpStatusCode.Created, r.StatusCode);
+        var nuevaId = (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("usuario").GetProperty("id").GetGuid();
+
+        // un segundo ingreso con otro código no cambia quién invitó
+        var otro = Api.ConToken(_f, (await Api.RegistrarSesionAsync(_f, "otro")).Token);
+        var otroCodigo = (await otro.GetFromJsonAsync<JsonElement>("/api/v1/eco-puntos/invitacion")).GetProperty("codigo").GetString()!;
+        Assert.Equal(HttpStatusCode.OK, (await GoogleAsync(Emitir(correo, sub: sub), codigoInvitacion: otroCodigo)).StatusCode);
+
+        using var scope = _f.Services.CreateScope();
+        var u = await scope.ServiceProvider.GetRequiredService<Datos.Repositorios.IUsuarioRepository>().ObtenerPorIdAsync(nuevaId);
+        Assert.Equal(anfitrionId, u!.InvitadoPorId);
+    }
 
     [Fact]
     public async Task Cuenta_nueva_exige_consentimiento_y_queda_verificada_sin_clave()

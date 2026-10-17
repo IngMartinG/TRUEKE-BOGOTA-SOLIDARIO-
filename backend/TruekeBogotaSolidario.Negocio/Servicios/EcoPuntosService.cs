@@ -15,6 +15,8 @@ public interface IEcoPuntosService
     PoliticaEcoPuntosDto ObtenerPolitica();
     /// <summary>Activa la prueba gratis de Premium (una vez por cuenta; exige la cuenta completa).</summary>
     Task<EcoPuntosResumenDto> ActivarPruebaPremiumAsync(Guid actorId);
+    /// <summary>Invita y ganan los dos: el código propio (se crea la primera vez) y el contador de invitaciones logradas.</summary>
+    Task<InvitacionDto> InvitacionAsync(Guid actorId);
 }
 
 public sealed class EcoPuntosService : IEcoPuntosService
@@ -40,6 +42,28 @@ public sealed class EcoPuntosService : IEcoPuntosService
         u.ActivarPruebaPremium(_reloj.GetUtcNow().UtcDateTime);
         await _uow.GuardarCambiosAsync();
         return await ResumenAsync(actorId);
+    }
+
+    public async Task<InvitacionDto> InvitacionAsync(Guid actorId)
+    {
+        var u = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
+        if (u.CodigoInvitacion is null)
+        {
+            string codigo;
+            var intentos = 0;
+            do
+            {
+                if (++intentos > 10) throw new InvalidOperationException("No se pudo generar un código de invitación único.");
+                codigo = CodigosInvitacion.Generar();
+            } while (await _usuarios.ExisteCodigoInvitacionAsync(codigo));
+            u.AsignarCodigoInvitacion(codigo);
+            await _uow.GuardarCambiosAsync(); // el índice único cubre el caso (muy raro) de dos códigos iguales a la vez
+        }
+        var ahora = _reloj.GetUtcNow().UtcDateTime;
+        var logradas = await _usuarios.ContarInvitacionesRecompensadasAsync(actorId, null);
+        var enCiclo = await _usuarios.ContarInvitacionesRecompensadasAsync(actorId, ahora.AddDays(-PoliticaEcoPuntos.DiasCicloInvitaciones));
+        return new InvitacionDto(u.CodigoInvitacion!, logradas, enCiclo, PoliticaEcoPuntos.MaxInvitacionesRecompensadasPorCiclo,
+            PoliticaEcoPuntos.PuntosInvitacion, PoliticaEcoPuntos.DiasCicloInvitaciones);
     }
 
     public async Task<EcoPuntosResumenDto> ResumenAsync(Guid actorId)
@@ -86,6 +110,7 @@ public sealed class EcoPuntosService : IEcoPuntosService
             PoliticaEcoPuntos.DiasPruebaPremium, PoliticaEcoPuntos.DestacadosGratisPruebaPremium,
             PoliticaEcoPuntos.PrecioPremiumAnualCop, PoliticaEcoPuntos.PrecioEmpresaAnualCop, PoliticaEcoPuntos.DuracionSuscripcionAnualDias,
             PoliticaEcoPuntos.PaquetesRecarga
-                .Select(p => new PaqueteRecargaDto(p.MontoCop, p.MontoCop / PoliticaEcoPuntos.CopPorEcoPunto, p.Bono)).ToList());
+                .Select(p => new PaqueteRecargaDto(p.MontoCop, p.MontoCop / PoliticaEcoPuntos.CopPorEcoPunto, p.Bono)).ToList(),
+            PoliticaEcoPuntos.PuntosInvitacion, PoliticaEcoPuntos.MaxInvitacionesRecompensadasPorCiclo, PoliticaEcoPuntos.DiasCicloInvitaciones);
     }
 }

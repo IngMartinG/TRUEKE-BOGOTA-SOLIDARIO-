@@ -16,6 +16,7 @@ import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
 import { abrirCheckoutWompi, esOrigenLocal, urlCheckoutWompi, urlRetornoPago } from './wompi';
 import { HistorialEcoPuntos } from './historial-eco-puntos';
+import { Invitar } from './invitar';
 
 type ConceptoPlan = 'Premium' | 'Empresa' | 'PremiumAnual' | 'EmpresaAnual';
 /** Plan al que pertenece un concepto de pago (el anual es el mismo plan por 365 días). */
@@ -35,7 +36,7 @@ interface Servicio {
 }
 
 @Component({
-  imports: [FormsModule, RouterLink, Icono, Modal, CopPipe, NumeroPipe, FechaPipe, HistorialEcoPuntos],
+  imports: [FormsModule, RouterLink, Icono, Modal, CopPipe, NumeroPipe, FechaPipe, HistorialEcoPuntos, Invitar],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Encabezado con saldo -->
@@ -104,6 +105,12 @@ interface Servicio {
           {{ p.diasEntreTransaccionesConPuntosMismaPareja }} días (así nadie puede inflar sus puntos con cuentas de amigos).
           La reputación máxima es {{ p.reputacionMaxima }}. Los Eco-Puntos no se convierten en dinero.
         </p>
+        <p class="mt-2 text-sm text-tenue">
+          <strong class="text-tinta">Invita a alguien: +{{ p.puntosInvitacion ?? 20 }}</strong> para cada uno cuando complete su primer intercambio.
+        </p>
+      }
+      @if (sesion.autenticado()) {
+        <div class="mt-6"><app-invitar /></div>
       }
       <p class="mt-2 text-sm"><a routerLink="/impacto" class="enlace">Mira lo que la comunidad ya ha hecho circular</a></p>
     </section>

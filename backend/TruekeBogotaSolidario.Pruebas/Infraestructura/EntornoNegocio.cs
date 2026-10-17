@@ -62,12 +62,12 @@ public sealed class EntornoNegocio : IDisposable
     }
 
     /// <summary>Registra un usuario listo para operar (correo verificado y foto de perfil) y devuelve su sesión.</summary>
-    public async Task<SesionDto> RegistrarAsync(string nombre)
+    public async Task<SesionDto> RegistrarAsync(string nombre, string? codigoInvitacion = null)
     {
         var r = await EnScopeAsync<IAuthService, ResultadoAutenticacion>(a => a.RegistrarAsync(new RegistroRequest
         {
             NombreCompleto = nombre + " Prueba", Localidad = "Kennedy", Correo = $"{nombre}{Guid.NewGuid():N}@t.co",
-            Clave = "Clave12345", AceptoPoliticaDatos = true
+            Clave = "Clave12345", AceptoPoliticaDatos = true, CodigoInvitacion = codigoInvitacion
         }));
         await MarcarCorreoVerificadoAsync(r.Sesion.Usuario.Id);
         await ModificarUsuarioAsync(r.Sesion.Usuario.Id, u => u.CambiarFoto($"https://almacen.test/imagenes/{u.Id:N}/perfil.jpg"));

@@ -52,6 +52,11 @@ public sealed class UsuarioRepository : IUsuarioRepository
     public Task<bool> ExisteCorreoAsync(string correo) => _db.Usuarios.AnyAsync(u => u.Correo == correo);
     public Task<Usuario?> ObtenerPorCorreoCanonicoAsync(string correoCanonico) => _db.Usuarios.FirstOrDefaultAsync(u => u.CorreoCanonico == correoCanonico);
     public Task<bool> ExisteCorreoCanonicoAsync(string correoCanonico) => _db.Usuarios.AnyAsync(u => u.CorreoCanonico == correoCanonico);
+    public Task<Usuario?> ObtenerPorCodigoInvitacionAsync(string codigo) => _db.Usuarios.FirstOrDefaultAsync(u => u.CodigoInvitacion == codigo);
+    public Task<bool> ExisteCodigoInvitacionAsync(string codigo) => _db.Usuarios.AnyAsync(u => u.CodigoInvitacion == codigo);
+    public Task<int> ContarInvitacionesRecompensadasAsync(Guid invitadorId, DateTime? desdeUtc)
+        => _db.Usuarios.CountAsync(u => u.InvitadoPorId == invitadorId && u.RecompensaInvitacionUtc != null
+            && (desdeUtc == null || u.RecompensaInvitacionUtc >= desdeUtc));
 
     public async Task<IReadOnlyList<Guid>> ListarIdsModeradoresAsync()
         => await _db.Usuarios.AsNoTracking()

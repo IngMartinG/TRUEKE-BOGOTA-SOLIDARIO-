@@ -7,13 +7,14 @@ import { SesionService } from '../../core/sesion.service';
 import { NumeroPipe } from '../../shared/pipes';
 import { Avatar } from '../../shared/ui/avatar';
 import { Icono } from '../../shared/ui/icono';
+import { Invitar } from '../eco-puntos/invitar';
 
 /**
  * Bienvenida guiada después de confirmar el correo: en vez de varias franjas de aviso, tres pasos claros
  * (foto, barrio y primer paso) con su progreso. Se puede volver cuando se quiera desde el aviso o la cuenta.
  */
 @Component({
-  imports: [RouterLink, Icono, Avatar, NumeroPipe],
+  imports: [RouterLink, Icono, Avatar, NumeroPipe, Invitar],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor max-w-3xl py-8 sm:py-12">
@@ -100,6 +101,10 @@ import { Icono } from '../../shared/ui/icono';
           </div>
         </li>
       </ol>
+
+      @if (sesion.autenticado()) {
+        <div class="mt-6"><app-invitar /></div>
+      }
 
       <p class="mt-8 text-center text-sm text-tenue">
         Cada intercambio completado te suma Eco-Puntos:

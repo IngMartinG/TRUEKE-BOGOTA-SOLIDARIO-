@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
 import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -6,6 +6,7 @@ import type { SesionDto } from '../../api/tipos';
 import { AuthApi } from '../../core/api/auth.api';
 import { AvisosService } from '../../core/avisos.service';
 import { erroresDeCampos, problemaDe } from '../../core/http/problema';
+import { codigoInvitacionGuardado, guardarCodigoInvitacion, olvidarCodigoInvitacion } from '../../core/invitacion';
 import { SesionService } from '../../core/sesion.service';
 import { CaptchaService } from '../../core/terceros/captcha.service';
 import { CampoClave } from '../../shared/ui/campo-clave';
@@ -90,6 +91,8 @@ export default class Ingresar {
   private readonly avisos = inject(AvisosService);
 
   readonly volver = input<string>();
+  /** `?invita=CODIGO`: por si la persona crea su cuenta con Google desde aquí. */
+  readonly invita = input<string>();
   protected readonly pedirCodigo = signal(false);
   protected readonly enviando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -97,6 +100,13 @@ export default class Ingresar {
   protected readonly aceptaPolitica = signal(false);
   protected idTokenGoogle: string | null = null;
   private viaGoogle = false;
+
+  constructor() {
+    effect(() => {
+      const c = this.invita();
+      if (c) guardarCodigoInvitacion(c);
+    });
+  }
 
   protected readonly form = this.fb.group({
     correo: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
@@ -134,7 +144,8 @@ export default class Ingresar {
     this.error.set(null);
     try {
       const codigo = this.form.controls.codigoDosFactores.value.trim() || null;
-      const sesion = await firstValueFrom(this.authApi.google({ idToken, aceptoPoliticaDatos, codigoDosFactores: codigo }));
+      const invita = codigoInvitacionGuardado();
+      const sesion = await firstValueFrom(this.authApi.google({ idToken, aceptoPoliticaDatos, codigoDosFactores: codigo, ...(invita ? { codigoInvitacion: invita } : {}) }));
       this.consentimientoAbierto.set(false);
       await this.exito(sesion);
     } catch (e) {
@@ -172,6 +183,8 @@ export default class Ingresar {
   }
 
   private async exito(sesion: SesionDto): Promise<void> {
+    // Con correo y clave no se envió código: solo se descarta tras el login con Google.
+    if (this.viaGoogle) olvidarCodigoInvitacion();
     this.sesion.establecer(sesion);
     this.avisos.exito(`¡Hola, ${this.sesion.primerNombre()}!`);
     await this.router.navigateByUrl(destinoSeguro(this.volver()));

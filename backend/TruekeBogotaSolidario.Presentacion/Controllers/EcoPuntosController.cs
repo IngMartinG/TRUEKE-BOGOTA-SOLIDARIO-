@@ -26,6 +26,10 @@ public sealed class EcoPuntosController : ControllerBase
     [HttpPost("~/api/v1/planes/prueba-premium")]
     public async Task<ActionResult<EcoPuntosResumenDto>> ActivarPruebaPremium() => Ok(await _eco.ActivarPruebaPremiumAsync(User.IdActual()));
 
+    /// <summary>Invita y ganan los dos: código propio para el enlace /registro?invita= y cuántas invitaciones ya dieron puntos.</summary>
+    [HttpGet("invitacion")]
+    public async Task<ActionResult<InvitacionDto>> Invitacion() => Ok(await _eco.InvitacionAsync(User.IdActual()));
+
     /// <summary>Historial de Eco-Puntos de la persona (ganados, gastados, devueltos), del más reciente al más antiguo.</summary>
     [HttpGet("movimientos")]
     public async Task<ActionResult<PaginaDto<MovimientoEcoPuntosDto>>> Movimientos([FromQuery] PaginacionRequest p)

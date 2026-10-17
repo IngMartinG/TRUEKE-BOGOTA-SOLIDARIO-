@@ -358,6 +358,10 @@ public sealed class SolicitudService : ISolicitudService
         if (ofrecida is { Estado: EstadoPublicacionEnum.EnNegociacion }) ofrecida.ConfirmarIntercambio();
         oferente.RegistrarTransaccionCompletada(pub.Modo, puntosOferente, s.Id, pub.Titulo);
         receptor.RegistrarTransaccionCompletada(pub.Modo, puntosReceptor, s.Id, pub.Titulo);
+        var invitaciones = new List<(Guid Invitado, Guid? Invitador)>();
+        foreach (var (invitado, otro, conPuntos) in new[] { (oferente, receptor, puntosOferente), (receptor, oferente, puntosReceptor) })
+            if (await RecompensarInvitacionAsync(invitado, otro, conPuntos, s.Id, ahora) is { } recompensa)
+                invitaciones.Add(recompensa);
         _transacciones.Agregar(new Transaccion(pub.Id, s.Id, oferente.Id, receptor.Id, pub.Modo, puntosOferente, puntosReceptor, ahora));
         // Los objetos ya se entregaron: sus listas de espera se cierran (en el mismo guardado, todo o nada).
         var avisos = new AvisosDiferidos();
@@ -379,6 +383,34 @@ public sealed class SolicitudService : ISolicitudService
             await NotificarAsync(id, TiposNotificacion.IntercambioCompletado, parejaRepetida
                 ? $"¡Intercambio de \"{pub.Titulo}\" completado! Como ya intercambiaron hace poco, este no suma Eco-Puntos (se suman una vez cada {PoliticaEcoPuntos.DiasEntreTransaccionesConPuntosMismaPareja} días por pareja)."
                 : $"¡Intercambio de \"{pub.Titulo}\" completado! Ya puedes calificar a la otra persona.", s.Id);
+        foreach (var (invitado, invitador) in invitaciones)
+        {
+            await NotificarAsync(invitado, TiposNotificacion.InvitacionRecompensada,
+                $"¡Completaste tu primer intercambio! Ganaste {PoliticaEcoPuntos.PuntosInvitacion} Eco-Puntos por llegar con una invitación.", s.Id);
+            if (invitador is { } id)
+                await _notificador.NotificarAsync(id, TiposNotificacion.InvitacionRecompensada,
+                    $"Una persona que invitaste completó su primer intercambio: ganaste {PoliticaEcoPuntos.PuntosInvitacion} Eco-Puntos.");
+        }
+    }
+
+    /// <summary>
+    /// Invita y ganan los dos: el primer intercambio VÁLIDO de la persona invitada da puntos a ambos. No cuenta un intercambio con
+    /// quien la invitó ni uno que el anti-farmeo dejó sin puntos (se espera al siguiente). Quien invita gana como máximo
+    /// N invitaciones por ciclo; pasado el tope, la persona invitada recibe lo suyo igual.
+    /// </summary>
+    /// <returns>A quién avisar, o null si este intercambio no cierra la invitación.</returns>
+    private async Task<(Guid Invitado, Guid? Invitador)?> RecompensarInvitacionAsync(Usuario invitado, Usuario otro, bool conPuntos, Guid solicitudId, DateTime ahora)
+    {
+        if (!invitado.EsperaRecompensaInvitacion || !conPuntos || otro.Id == invitado.InvitadoPorId) return null;
+        var invitador = await _usuarios.ObtenerPorIdAsync(invitado.InvitadoPorId!.Value);
+        var invitadorGana = invitador is { EstaEliminado: false }
+            && await _usuarios.ContarInvitacionesRecompensadasAsync(invitador.Id, ahora.AddDays(-PoliticaEcoPuntos.DiasCicloInvitaciones))
+                < PoliticaEcoPuntos.MaxInvitacionesRecompensadasPorCiclo;
+        invitado.RecibirRecompensaInvitacion(ahora, solicitudId);
+        if (!invitadorGana) return (invitado.Id, null);
+        invitador!.AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosInvitacion, ConceptoEcoPuntos.Invitacion, null,
+            "Una persona que invitaste completó su primer intercambio");
+        return (invitado.Id, invitador.Id);
     }
 
     public async Task<IReadOnlyList<Guid>> ListarParaCierreAutomaticoAsync(int maximo)

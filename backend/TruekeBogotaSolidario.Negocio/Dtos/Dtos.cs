@@ -36,6 +36,13 @@ public sealed class RegistroRequest
     public bool AceptoPoliticaDatos { get; init; }
     /// <summary>Token de reCAPTCHA v3 (grecaptcha.execute). Obligatorio cuando el captcha está habilitado.</summary>
     [MaxLength(4096)] public string? CaptchaToken { get; init; }
+    /// <summary>Código de quien invitó (enlace /registro?invita=). Si no existe, la cuenta se crea igual, sin invitación.</summary>
+    [RegularExpression(FormatosInvitacion.Codigo, ErrorMessage = "El código de invitación no es válido.")] public string? CodigoInvitacion { get; init; }
+}
+
+public static class FormatosInvitacion
+{
+    public const string Codigo = "^[A-Za-z0-9]{6,12}$";
 }
 
 public sealed class GoogleLoginRequest
@@ -46,6 +53,8 @@ public sealed class GoogleLoginRequest
     public bool AceptoPoliticaDatos { get; init; }
     /// <summary>Solo si la cuenta tiene verificación en dos pasos: 6 dígitos de la app o un código de recuperación.</summary>
     [MaxLength(20)] public string? CodigoDosFactores { get; init; }
+    /// <summary>Código de quien invitó: solo cuenta si con este ingreso se crea la cuenta.</summary>
+    [RegularExpression(FormatosInvitacion.Codigo, ErrorMessage = "El código de invitación no es válido.")] public string? CodigoInvitacion { get; init; }
 }
 
 public sealed class LoginRequest
@@ -719,7 +728,11 @@ public sealed record PoliticaEcoPuntosDto(
     int DiasRecordatorioVencimiento = 0, int DiasCicloDestacadosGratis = 0, int MinimoCobroCop = 0,
     int DiasPruebaPremium = 0, int DestacadosGratisPruebaPremium = 0,
     int PrecioPremiumAnualCop = 0, int PrecioEmpresaAnualCop = 0, int DuracionSuscripcionAnualDias = 0,
-    IReadOnlyList<PaqueteRecargaDto>? PaquetesRecarga = null);
+    IReadOnlyList<PaqueteRecargaDto>? PaquetesRecarga = null,
+    int PuntosInvitacion = 0, int MaxInvitacionesRecompensadasPorCiclo = 0, int DiasCicloInvitaciones = 0);
+
+/// <summary>Invita y ganan los dos: el código propio y cuántas invitaciones ya dieron puntos (sin datos de las personas invitadas).</summary>
+public sealed record InvitacionDto(string Codigo, int Logradas, int RecompensadasEnCiclo, int MaxPorCiclo, int PuntosPorInvitacion, int DiasCiclo);
 
 /// <summary>Paquete de recarga: pagas MontoCop y recibes Puntos + Bono.</summary>
 public sealed record PaqueteRecargaDto(int MontoCop, int Puntos, int Bono);

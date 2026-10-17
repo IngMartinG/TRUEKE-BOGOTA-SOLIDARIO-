@@ -2,12 +2,14 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, si
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { firstValueFrom } from 'rxjs';
+import { catchError, firstValueFrom, of } from 'rxjs';
 import { CODIGO_BOGOTA, LOCALIDADES, type SesionDto } from '../../api/tipos';
 import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
 import { AuthApi } from '../../core/api/auth.api';
+import { CuentaApi } from '../../core/api/cuenta.api';
 import { AvisosService } from '../../core/avisos.service';
 import { erroresDeCampos, problemaDe } from '../../core/http/problema';
+import { codigoInvitacionGuardado, guardarCodigoInvitacion, olvidarCodigoInvitacion } from '../../core/invitacion';
 import { SesionService } from '../../core/sesion.service';
 import { CaptchaService } from '../../core/terceros/captcha.service';
 import { CampoClave } from '../../shared/ui/campo-clave';
@@ -24,6 +26,12 @@ import { destinoSeguro } from './redireccion';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-marco-auth [conCaptcha]="true" titulo="Crea tu cuenta" subtitulo="Únete gratis y recibe Eco-Puntos de bienvenida." lema="Cada objeto que circula es un residuo menos en los rellenos sanitarios.">
+      @if (codigoInvita()) {
+        <p class="mb-5 flex items-start gap-2 rounded-xl bg-bosque-50 p-3 text-sm text-bosque-800 dark:bg-bosque-900 dark:text-bosque-100" role="status">
+          <app-icono nombre="regalo" [tamano]="18" class="mt-0.5 shrink-0" />
+          <span><strong>Te invitaron:</strong> cuando completes tu primer intercambio, ganan {{ puntosInvitacion() }} Eco-Puntos cada uno.</span>
+        </p>
+      }
       <form [formGroup]="form" (ngSubmit)="registrar()" class="space-y-5" novalidate>
         <div class="campo">
           <label class="etiqueta" for="nombre">Nombre completo</label>
@@ -100,6 +108,11 @@ export default class Registro {
   private readonly avisos = inject(AvisosService);
 
   readonly volver = input<string>();
+  /** `?invita=CODIGO`: quién invitó a esta persona (se recuerda hasta crear la cuenta). */
+  readonly invita = input<string>();
+  protected readonly codigoInvita = signal<string | null>(codigoInvitacionGuardado());
+  private readonly politica = toSignal(inject(CuentaApi).politica$.pipe(catchError(() => of(null))));
+  protected readonly puntosInvitacion = computed(() => this.politica()?.puntosInvitacion ?? 20);
   protected readonly localidades = LOCALIDADES;
   protected readonly enviando = signal(false);
   protected readonly error = signal<string | null>(null);
@@ -117,6 +130,10 @@ export default class Registro {
   protected readonly esBogota = computed(() => this.municipio() === CODIGO_BOGOTA);
 
   constructor() {
+    effect(() => {
+      const c = this.invita();
+      if (c) this.codigoInvita.set(guardarCodigoInvitacion(c));
+    });
     // La lista de localidades es de Bogotá: al cambiar de municipio se escribe el barrio.
     effect(() => {
       this.municipio();
@@ -141,6 +158,7 @@ export default class Registro {
           clave: v.clave,
           aceptoPoliticaDatos: true,
           captchaToken,
+          ...this.cuerpoInvitacion(),
         }),
       );
       await this.exito(sesion, true);
@@ -157,7 +175,7 @@ export default class Registro {
     this.enviando.set(true);
     this.error.set(null);
     try {
-      const sesion = await firstValueFrom(this.authApi.google({ idToken, aceptoPoliticaDatos: true }));
+      const sesion = await firstValueFrom(this.authApi.google({ idToken, aceptoPoliticaDatos: true, ...this.cuerpoInvitacion() }));
       await this.exito(sesion, false);
     } catch (e) {
       const p = problemaDe(e);
@@ -171,7 +189,13 @@ export default class Registro {
     }
   }
 
+  private cuerpoInvitacion(): { codigoInvitacion?: string } {
+    const c = this.codigoInvita();
+    return c ? { codigoInvitacion: c } : {};
+  }
+
   private async exito(sesion: SesionDto, porCorreo: boolean): Promise<void> {
+    olvidarCodigoInvitacion();
     this.sesion.establecer(sesion);
     const falta = porCorreo && !this.sesion.correoVerificado();
     // Los Eco-Puntos de bienvenida se otorgan al verificar el correo (con Google ya llega verificado).

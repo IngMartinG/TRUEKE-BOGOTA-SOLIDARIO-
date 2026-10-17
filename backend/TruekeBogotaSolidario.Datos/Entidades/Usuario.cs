@@ -83,6 +83,14 @@ public class Usuario
     /// <summary>El Premium vigente es la prueba gratis (sin pago); al pagar un plan deja de serlo.</summary>
     public bool EnPruebaPremium { get; private set; }
 
+    // Invita y ganan los dos
+    /// <summary>Código propio para invitar (corto y legible, único). Se crea la primera vez que la persona lo pide.</summary>
+    public string? CodigoInvitacion { get; private set; }
+    /// <summary>Quién invitó a esta persona (solo al crear la cuenta).</summary>
+    public Guid? InvitadoPorId { get; private set; }
+    /// <summary>Cuándo se cerró la invitación: su primer intercambio válido ya dio la recompensa (una sola vez).</summary>
+    public DateTime? RecompensaInvitacionUtc { get; private set; }
+
     // Verificación de identidad
     public EstadoVerificacion EstadoVerificacion { get; private set; }
     public string? DocumentoVerificacionUrl { get; private set; }
@@ -361,6 +369,7 @@ public class Usuario
         DestacadosGratisRestantes = 0;
         ProximaRecargaDestacadosUtc = null;
         EnPruebaPremium = false;
+        CodigoInvitacion = null; // el enlace deja de funcionar
         IntentosFallidosLogin = 0;
         BloqueadoHasta = null;
         CorreoVerificado = false;
@@ -467,6 +476,32 @@ public class Usuario
         if (Rol == nuevoRol) return;
         Rol = nuevoRol;
         VersionSeguridad++; // los tokens con el rol anterior dejan de valer
+    }
+
+    // ---------------- Invitaciones ----------------
+    public void AsignarCodigoInvitacion(string codigo)
+    {
+        if (CodigoInvitacion is not null) return;
+        if (string.IsNullOrWhiteSpace(codigo) || codigo.Length is < 6 or > 12 || !codigo.All(char.IsAsciiLetterOrDigit))
+            throw new ReglaDeNegocioException("Código de invitación no válido.");
+        CodigoInvitacion = codigo;
+    }
+
+    /// <summary>Solo al crear la cuenta y una sola vez. Nadie se invita a sí mismo ni lo invita una cuenta eliminada.</summary>
+    public void RegistrarInvitador(Usuario invitador)
+    {
+        if (InvitadoPorId is not null || invitador.Id == Id || invitador.EstaEliminado) return;
+        InvitadoPorId = invitador.Id;
+    }
+
+    public bool EsperaRecompensaInvitacion => InvitadoPorId is not null && RecompensaInvitacionUtc is null && !EstaEliminado;
+
+    /// <summary>Primer intercambio válido de la persona invitada: recibe sus puntos y la invitación queda cerrada.</summary>
+    public void RecibirRecompensaInvitacion(DateTime ahoraUtc, Guid solicitudId)
+    {
+        if (!EsperaRecompensaInvitacion) return;
+        RecompensaInvitacionUtc = ahoraUtc;
+        AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosInvitacion, ConceptoEcoPuntos.Invitacion, solicitudId, "Te invitaron y completaste tu primer intercambio");
     }
 
     // ---------------- Eco-Puntos ----------------
