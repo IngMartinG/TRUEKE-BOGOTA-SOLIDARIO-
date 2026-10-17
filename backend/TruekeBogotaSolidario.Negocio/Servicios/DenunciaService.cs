@@ -38,12 +38,14 @@ public sealed class DenunciaService : IDenunciaService
     private readonly INotificador _notificador;
     private readonly TimeProvider _reloj;
     private readonly ICalificacionRepository _calificacionesRepo;
+    private readonly IDeseoRepository _deseos;
     private readonly ILogger<DenunciaService> _log;
 
     public DenunciaService(IDenunciaRepository denuncias, IUsuarioRepository usuarios, IPublicacionRepository pubs, IComentarioRepository comentarios,
         IConversacionRepository conversaciones, IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, INotificador notificador,
-        TimeProvider reloj, ICalificacionRepository calificacionesRepo, ILogger<DenunciaService> log)
+        TimeProvider reloj, ICalificacionRepository calificacionesRepo, ILogger<DenunciaService> log, IDeseoRepository deseos)
     {
+        _deseos = deseos;
         _calificacionesRepo = calificacionesRepo;
         _denuncias = denuncias; _usuarios = usuarios; _pubs = pubs; _comentarios = comentarios; _conversaciones = conversaciones;
         _auditoria = auditoria; _uow = uow; _notificador = notificador; _reloj = reloj; _log = log;
@@ -70,6 +72,7 @@ public sealed class DenunciaService : IDenunciaService
         TipoObjetoDenuncia.Comentario => "uno de tus comentarios",
         TipoObjetoDenuncia.Mensaje => "uno de tus mensajes del chat",
         TipoObjetoDenuncia.Calificacion => "una de tus calificaciones",
+        TipoObjetoDenuncia.Deseo => "uno de tus deseos de «Lo que busco»",
         _ => "tu cuenta"
     };
 
@@ -110,6 +113,13 @@ public sealed class DenunciaService : IDenunciaService
                 if (c.AutorId == actorId) throw new ReglaDeNegocioException(propio);
                 return c.AutorId;
             }
+            case TipoObjetoDenuncia.Deseo:
+            {
+                var d = await _deseos.ObtenerAsync(objetivoId);
+                if (d is null || !d.EsVisible) throw new NoEncontradoException("Deseo no encontrado.");
+                if (d.UsuarioId == actorId) throw new ReglaDeNegocioException(propio);
+                return d.UsuarioId;
+            }
             case TipoObjetoDenuncia.Usuario:
             {
                 var u = await _usuarios.ObtenerPorIdAsync(objetivoId);
@@ -129,6 +139,7 @@ public sealed class DenunciaService : IDenunciaService
         TipoObjetoDenuncia.Comentario => (await _comentarios.ObtenerPorIdAsync(id))?.AutorId,
         TipoObjetoDenuncia.Mensaje => (await _conversaciones.ObtenerMensajeAsync(id))?.AutorId,
         TipoObjetoDenuncia.Calificacion => (await _calificacionesRepo.ObtenerAsync(id))?.AutorId,
+        TipoObjetoDenuncia.Deseo => (await _deseos.ObtenerAsync(id))?.UsuarioId,
         TipoObjetoDenuncia.Usuario => (await _usuarios.ObtenerPorIdAsync(id))?.Id,
         _ => null
     };
@@ -168,6 +179,7 @@ public sealed class DenunciaService : IDenunciaService
         TipoObjetoDenuncia.Mensaje => await _conversaciones.ObtenerMensajeAsync(id) is { } m ? (true, Recortar(m.Texto)) : (false, null),
         TipoObjetoDenuncia.Usuario => await _usuarios.ObtenerPorIdAsync(id) is { } u ? (true, Mapeos.NombrePublico(u.NombreCompleto)) : (false, null),
         TipoObjetoDenuncia.Calificacion => await _calificacionesRepo.ObtenerAsync(id) is { } k ? (true, Recortar($"{k.Estrellas}★ {k.Comentario}")) : (false, null),
+        TipoObjetoDenuncia.Deseo => await _deseos.ObtenerAsync(id) is { } w ? (true, Recortar($"Busca: {w.Texto}")) : (false, null),
         _ => (false, null)
     };
 
@@ -227,6 +239,12 @@ public sealed class DenunciaService : IDenunciaService
                 {
                     var k = await _calificacionesRepo.ObtenerAsync(d.ObjetivoId) ?? throw new NoEncontradoException("La calificación ya no existe.");
                     if (!k.ComentarioOculto) k.OcultarComentario(nota!);
+                    break;
+                }
+                case TipoObjetoDenuncia.Deseo:
+                {
+                    var w = await _deseos.ObtenerAsync(d.ObjetivoId) ?? throw new NoEncontradoException("El deseo ya no existe.");
+                    if (!w.EstaOculto) w.Ocultar(nota!);
                     break;
                 }
                 default:
@@ -367,6 +385,9 @@ public sealed class DenunciaService : IDenunciaService
                     break;
                 case TipoObjetoDenuncia.Calificacion:
                     if (await _calificacionesRepo.ObtenerAsync(a.ObjetivoId) is { ComentarioOculto: true } k) k.MostrarComentario();
+                    break;
+                case TipoObjetoDenuncia.Deseo:
+                    if (await _deseos.ObtenerAsync(a.ObjetivoId) is { EstaOculto: true } w) w.Mostrar();
                     break;
             }
         }

@@ -2188,6 +2188,208 @@
         }
       }
     },
+    "/api/v1/deseos": {
+      "get": {
+        "tags": [
+          "Deseos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeseoDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeseoDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/DeseoDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Deseos"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarDeseoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarDeseoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarDeseoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeseoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeseoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeseoDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/deseos/{id}": {
+      "put": {
+        "tags": [
+          "Deseos"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarDeseoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarDeseoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarDeseoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeseoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeseoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DeseoDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Deseos"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/deseos/coincidencias": {
+      "get": {
+        "tags": [
+          "Deseos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CoincidenciaDeseoDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CoincidenciaDeseoDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CoincidenciaDeseoDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/2fa/configurar": {
       "post": {
         "tags": [
@@ -5604,6 +5806,34 @@
         },
         "additionalProperties": false
       },
+      "CoincidenciaDeseoDto": {
+        "type": "object",
+        "properties": {
+          "publicacion": {
+            "$ref": "#/components/schemas/PublicacionDto"
+          },
+          "tuDeseo": {
+            "type": "string"
+          },
+          "mutua": {
+            "type": "boolean"
+          },
+          "suDeseo": {
+            "type": "string",
+            "nullable": true
+          },
+          "tuPublicacionId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "tuPublicacionTitulo": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ComentarioDto": {
         "type": "object",
         "properties": {
@@ -6281,6 +6511,13 @@
               "$ref": "#/components/schemas/MovimientoEcoPuntosDto"
             },
             "nullable": true
+          },
+          "deseos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeseoDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -6438,6 +6675,65 @@
           },
           "nombre": {
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DeseoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "categoriaId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "categoria": {
+            "type": "string",
+            "nullable": true
+          },
+          "publico": {
+            "type": "boolean"
+          },
+          "avisosActivos": {
+            "type": "boolean"
+          },
+          "oculto": {
+            "type": "boolean"
+          },
+          "motivoOcultamiento": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DeseoPublicoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "categoria": {
+            "type": "string",
+            "nullable": true
+          },
+          "loTienes": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -6963,6 +7259,31 @@
             "type": "boolean"
           },
           "alertas": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GuardarDeseoRequest": {
+        "required": [
+          "texto"
+        ],
+        "type": "object",
+        "properties": {
+          "texto": {
+            "maxLength": 60,
+            "minLength": 3,
+            "type": "string"
+          },
+          "categoriaId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "publico": {
+            "type": "boolean"
+          },
+          "avisos": {
             "type": "boolean"
           }
         },
@@ -7822,6 +8143,13 @@
           },
           "nit": {
             "type": "string",
+            "nullable": true
+          },
+          "deseos": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/DeseoPublicoDto"
+            },
             "nullable": true
           }
         },
@@ -8730,7 +9058,8 @@
           "Comentario",
           "Mensaje",
           "Usuario",
-          "Calificacion"
+          "Calificacion",
+          "Deseo"
         ],
         "type": "string"
       },

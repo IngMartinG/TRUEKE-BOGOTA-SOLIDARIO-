@@ -2069,3 +2069,62 @@ GO
 COMMIT;
 GO
 
+BEGIN TRANSACTION;
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261017215526_ListaDeDeseos'
+)
+BEGIN
+    CREATE TABLE [Deseos] (
+        [Id] uniqueidentifier NOT NULL,
+        [UsuarioId] uniqueidentifier NOT NULL,
+        [Texto] nvarchar(60) NOT NULL,
+        [CategoriaId] int NULL,
+        [Publico] bit NOT NULL,
+        [AvisosActivos] bit NOT NULL,
+        [FechaUtc] datetime2 NOT NULL,
+        [RevisadoHastaUtc] datetime2 NOT NULL,
+        [EstaOculto] bit NOT NULL,
+        [MotivoOcultamiento] nvarchar(300) NULL,
+        CONSTRAINT [PK_Deseos] PRIMARY KEY ([Id]),
+        CONSTRAINT [FK_Deseos_Categorias_CategoriaId] FOREIGN KEY ([CategoriaId]) REFERENCES [Categorias] ([Id]) ON DELETE NO ACTION,
+        CONSTRAINT [FK_Deseos_Usuarios_UsuarioId] FOREIGN KEY ([UsuarioId]) REFERENCES [Usuarios] ([Id]) ON DELETE CASCADE
+    );
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261017215526_ListaDeDeseos'
+)
+BEGIN
+    CREATE INDEX [IX_Deseos_AvisosActivos_RevisadoHastaUtc] ON [Deseos] ([AvisosActivos], [RevisadoHastaUtc]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261017215526_ListaDeDeseos'
+)
+BEGIN
+    CREATE INDEX [IX_Deseos_CategoriaId] ON [Deseos] ([CategoriaId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261017215526_ListaDeDeseos'
+)
+BEGIN
+    CREATE INDEX [IX_Deseos_UsuarioId] ON [Deseos] ([UsuarioId]);
+END;
+
+IF NOT EXISTS (
+    SELECT * FROM [__EFMigrationsHistory]
+    WHERE [MigrationId] = N'20261017215526_ListaDeDeseos'
+)
+BEGIN
+    INSERT INTO [__EFMigrationsHistory] ([MigrationId], [ProductVersion])
+    VALUES (N'20261017215526_ListaDeDeseos', N'10.0.13');
+END;
+
+COMMIT;
+GO
+

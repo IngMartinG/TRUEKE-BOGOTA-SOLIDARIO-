@@ -53,6 +53,12 @@ public sealed class MantenimientoHostedService : BackgroundService
                 await scope.ServiceProvider.GetRequiredService<IBusquedaGuardadaService>().RevisarAlertasAsync(500);
             }
             catch (Exception ex) { _log.LogError(ex, "Fallo revisando las alertas de búsquedas guardadas"); }
+            try
+            {
+                using var scope = _fabrica.CreateScope();
+                await scope.ServiceProvider.GetRequiredService<IDeseoService>().RevisarAvisosAsync(500);
+            }
+            catch (Exception ex) { _log.LogError(ex, "Fallo revisando los avisos de la lista de deseos"); }
 
             try { await Task.Delay(Intervalo, ct); }
             catch (OperationCanceledException) { break; }

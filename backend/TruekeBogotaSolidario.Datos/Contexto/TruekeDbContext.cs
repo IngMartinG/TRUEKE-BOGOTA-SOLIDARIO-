@@ -27,6 +27,7 @@ public class TruekeDbContext : DbContext
     public DbSet<Favorito> Favoritos => Set<Favorito>();
     public DbSet<SuscripcionPush> SuscripcionesPush => Set<SuscripcionPush>();
     public DbSet<BusquedaGuardada> BusquedasGuardadas => Set<BusquedaGuardada>();
+    public DbSet<Deseo> Deseos => Set<Deseo>();
     public DbSet<Calificacion> Calificaciones => Set<Calificacion>();
     public DbSet<Factura> Facturas => Set<Factura>();
     public DbSet<Pqr> Pqrs => Set<Pqr>();
@@ -292,6 +293,18 @@ public class TruekeDbContext : DbContext
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => x.UsuarioId);
             e.HasIndex(x => new { x.AlertasActivas, x.RevisadaHastaUtc });
+        });
+
+        mb.Entity<Deseo>(e =>
+        {
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Texto).HasMaxLength(Deseo.LongitudMaxima).IsRequired();
+            e.Property(x => x.MotivoOcultamiento).HasMaxLength(300);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Categoria>().WithMany().HasForeignKey(x => x.CategoriaId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.UsuarioId);
+            e.HasIndex(x => new { x.AvisosActivos, x.RevisadoHastaUtc });
         });
 
         mb.Entity<SuscripcionPush>(e =>

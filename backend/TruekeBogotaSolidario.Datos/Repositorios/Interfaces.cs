@@ -331,6 +331,19 @@ public interface IBusquedaGuardadaRepository
     void Quitar(BusquedaGuardada b);
 }
 
+public interface IDeseoRepository
+{
+    /// <summary>Con tracking, más recientes primero.</summary>
+    Task<IReadOnlyList<Deseo>> DeUsuarioAsync(Guid usuarioId);
+    Task<Deseo?> ObtenerAsync(Guid id);
+    /// <summary>Públicos y no ocultos de esas personas (sin tracking): los que ven las demás.</summary>
+    Task<IReadOnlyList<Deseo>> VisiblesDeUsuariosAsync(IReadOnlyCollection<Guid> usuarioIds);
+    /// <summary>Con avisos activos y de cuentas activas, los revisados hace más tiempo primero (con tracking).</summary>
+    Task<IReadOnlyList<Deseo>> ListarParaAvisosAsync(DateTime revisadosAntesDeUtc, int maximo);
+    void Agregar(Deseo d);
+    void Quitar(Deseo d);
+}
+
 public interface ISuscripcionPushRepository
 {
     Task<SuscripcionPush?> PorEndpointAsync(string endpoint);
