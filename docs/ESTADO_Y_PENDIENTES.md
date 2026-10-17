@@ -1,4 +1,4 @@
-# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-16)
+# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-17)
 
 ## Hecho — backend completo para conectar el front
 **Base:**
@@ -248,6 +248,17 @@ Cada hallazgo de la auditoría se corrigió en su propio PR, con pruebas.
 - **Chat:** botones para proponer el lugar, en la conversación vacía y con el botón del escudo. Solo escriben la propuesta: la persona la edita y la envía.
 - La ayuda usa los mismos lugares. Hay una prueba del componente y un paso E2E en el chat.
 
+## Hecho el 2026-10-17 — lista de deseos ("Lo que busco")
+- **Lista:** hasta 10 deseos por persona (texto corto y categoría opcional), con dos interruptores: "En mi perfil" y "Avisarme". Pantalla `/lo-que-busco`.
+- **Coincidencias** (`GET /api/v1/deseos/coincidencias`):
+  - publicaciones de otras personas que coinciden, con la misma búsqueda del catálogo;
+  - primero los **truekes mutuos**: la otra persona busca, en público, algo que tú tienes disponible;
+  - "Proponer trueke" abre la propuesta con tu objeto ya elegido (`/publicacion/{id}?ofrecer=…`).
+- **Perfil público:** sección "Lo que busca" con la marca "Lo tienes" para quien mira con sesión. Solo se muestran los deseos públicos.
+- **Avisos:** la tarea horaria avisa de publicaciones nuevas que coinciden, sin repetir (notificación `DeseoCoincidencia`).
+- **Moderación y datos:** los deseos se denuncian y se ocultan con apelación, se exportan con los datos personales y se borran al eliminar la cuenta. Se omiten las personas bloqueadas.
+- Migración `ListaDeDeseos` (solo una tabla nueva), también en `docs/migraciones/script-idempotente.sql`. Pruebas de integración, del componente y un E2E.
+
 ## Pendiente
 **Despliegue y operación:**
 - **Dominio propio:**
@@ -273,5 +284,5 @@ Cada hallazgo de la auditoría se corrigió en su propio PR, con pruebas.
 
 **Producto (por decidir):**
 - Revisión de la monetización: planes, precios y beneficios.
-- Funciones grandes: lista de deseos, logros, fotos en el chat.
+- Funciones grandes: logros, fotos en el chat.
 - Opcional: una cifra de impacto en el inicio.
