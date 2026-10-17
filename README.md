@@ -23,10 +23,10 @@ Plataforma comunitaria de **economía circular** en Colombia, nacida en Bogotá.
 |---|---|
 | Front-end | Angular 22 (signals, sin Zone.js), Tailwind v4 |
 | API | ASP.NET Core 10 (C#, LTS), SignalR |
-| Datos | SQL Server (EF Core 10), Redis (backplane de SignalR, presencia y límite de peticiones) |
+| Datos | PostgreSQL en Supabase (EF Core 10 + Npgsql), Redis (backplane de SignalR, presencia y límite de peticiones) |
 | Archivos | Azure Blob Storage (subida directa con SAS; fotos sin GPS ni metadatos) |
 | Pagos | Wompi (solo dinero hacia la plataforma) y factura electrónica por cada pago |
-| Infraestructura | Docker, GitHub Actions, Azure App Service + VNet + Key Vault + Application Insights |
+| Infraestructura | Docker, GitHub Actions, GitHub Pages (front), Render (API), Supabase (base) y Azure Blob (fotos, por migrar) |
 
 ## Empezar (desarrollo local)
 
@@ -34,9 +34,9 @@ Plataforma comunitaria de **economía circular** en Colombia, nacida en Bogotá.
    ```bash
    cd backend
    dotnet tool restore
-   dotnet run --project TruekeBogotaSolidario.Presentacion --launch-profile SqlServerLocal
+   dotnet run --project TruekeBogotaSolidario.Presentacion --launch-profile PostgresLocal
    ```
-   Sin SQL Server instalado, el perfil por defecto usa una base en memoria (se borra al reiniciar).
+   El perfil `PostgresLocal` necesita un PostgreSQL local (ver `backend/README.md`); el perfil por defecto usa una base en memoria (se borra al reiniciar).
 2. **Front** — detalles en [`frontend/README.md`](frontend/README.md) (Node 24 LTS):
    ```bash
    cd frontend
@@ -44,13 +44,13 @@ Plataforma comunitaria de **economía circular** en Colombia, nacida en Bogotá.
    npm start
    ```
    Abre `http://localhost:4200`; `/api` y `/hubs` se reenvían a la API.
-3. **Todo con Docker:** `docker compose up` desde `backend/` (API + SQL Server + Redis).
+3. **Todo con Docker:** `docker compose up` desde `backend/` (API + PostgreSQL + Redis).
 
 Verificaciones: `dotnet test` en `backend/` y `npm run verificar` en `frontend/`.
 
 ## Publicación
 - **Front:** https://ingmarting.github.io/TRUEKE-BOGOTA-SOLIDARIO-/ (GitHub Pages, se publica solo en cada merge a `main`).
-- **API:** Render + Azure SQL. Guía paso a paso, fase gratis y cómo pasar a pago: [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md).
+- **API:** Render + Supabase (PostgreSQL). Guía paso a paso, fase gratis y cómo pasar a pago: [`docs/DESPLIEGUE.md`](docs/DESPLIEGUE.md).
 
 ## Documentación
 

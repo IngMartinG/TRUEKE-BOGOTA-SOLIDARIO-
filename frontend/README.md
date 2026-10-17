@@ -50,7 +50,7 @@ npm start
 Si la API cambia: en `backend/` ejecuta `ACTUALIZAR_OPENAPI=1 dotnet test --filter OpenApiTests` y luego `npm run api`. El CI falla si los tipos no coinciden con el contrato.
 
 ### Pruebas de punta a punta (Playwright)
-Un Chromium real recorre la app en **PC y celular** contra las **mismas imágenes Docker de producción**: API, front con nginx (cabeceras y CSP incluidas), SQL Server con las migraciones y Redis. Solo se reemplazan los servicios externos, y la app no tiene ningún modo especial para pruebas (`e2e/docker-compose.e2e.yml`):
+Un Chromium real recorre la app en **PC y celular** contra las **mismas imágenes Docker de producción**: API, front con nginx (cabeceras y CSP incluidas), PostgreSQL con las migraciones y Redis. Solo se reemplazan los servicios externos, y la app no tiene ningún modo especial para pruebas (`e2e/docker-compose.e2e.yml`):
 - **Correo:** Mailpit, por SMTP con STARTTLS real. Lo firma una CA creada en cada corrida que publica su lista de revocación, porque la API valida cadena y revocación.
 - **Fotos:** Azurite (el emulador de Azure Blob), con subidas directas por SAS como en producción.
 - **Pagos:** simulados.
@@ -104,7 +104,7 @@ docker build -t trueke-web frontend
 docker run -p 8081:8080 -e API_UPSTREAM=http://api:8080 trueke-web
 ```
 
-O todo el entorno (front + API + SQL Server + Redis): `cd backend && docker compose up --build` → http://localhost:8081.
+O todo el entorno (front + API + PostgreSQL + Redis): `cd backend && docker compose up --build` → http://localhost:8081.
 
 La imagen sirve el build con **nginx sin root** (puerto 8080), fallback de SPA, caché de un año para los archivos con hash, `index.html` y `config.json` sin caché, y cabeceras de seguridad (CSP, HSTS, `nosniff`, `DENY`, `Permissions-Policy`). Por defecto hace de **proxy inverso** de `/api` y `/hubs`, así el front y la API comparten origen: sin CORS y con la cookie `SameSite=Strict` funcionando.
 

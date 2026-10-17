@@ -6,7 +6,7 @@ Guía para publicar la plataforma completa. Hay dos fases: **gratis** (para la c
 |---|---|---|
 | Front (Angular) | GitHub Pages (ya publicado) | GitHub Pages o Azure Static Web Apps, con dominio propio |
 | API (.NET 10, Docker) | Render Free | Render Starter (~US$7/mes) o Azure App Service B1 |
-| Base de datos (SQL Server) | Azure SQL Database, oferta gratuita | Azure SQL Database (Basic/S0) con backups |
+| Base de datos (PostgreSQL) | Supabase Free (500 MB) | Supabase Pro (US$25/mes: sin pausa, backups diarios) |
 | Fotos | Azure Blob Storage (centavos al mes) | Igual |
 | Tiempo real entre instancias | No hace falta (1 instancia) | Azure Cache for Redis si hay más de una instancia |
 
@@ -17,27 +17,40 @@ Guía para publicar la plataforma completa. Hay dos fases: **gratis** (para la c
 ---
 
 ## 1. Antes de empezar
-- Cuenta de **Azure**, una de estas dos:
+- Cuenta de **Supabase** para la base de datos (§2): gratis y sin tarjeta.
+- Cuenta de **Azure**, por ahora solo para fotos (§3) y correo (§5.1). Se está saliendo de Azure: las fotos pasan a Supabase Storage y el correo a Brevo (ver `docs/ESTADO_Y_PENDIENTES.md`). Una de estas dos:
   - **Azure for Students** ([azure.microsoft.com/free/students](https://azure.microsoft.com/free/students)) con el correo de la universidad: sin tarjeta, US$100 de crédito. Si dice *"No se puede renovar Azure for Students"*, no hay forma de reactivarla desde la web; usar la otra opción.
-  - **Cuenta gratuita** ([azure.microsoft.com/free](https://azure.microsoft.com/free)): pide una tarjeta solo para verificar identidad (puede aparecer un cobro de verificación que se devuelve) y da US$200 por 30 días. Al terminar, se pasa a *pago por uso* para que los recursos sigan encendidos: la base con la oferta gratuita sigue sin costo y las fotos cuestan centavos.
+  - **Cuenta gratuita** ([azure.microsoft.com/free](https://azure.microsoft.com/free)): pide una tarjeta solo para verificar identidad (puede aparecer un cobro de verificación que se devuelve) y da US$200 por 30 días. Al terminar, Azure apaga los recursos salvo que se pase a *pago por uso*.
 - **Alerta de presupuesto (hacerla primero):** portal → **Administración de costos** → **Presupuestos** → *Agregar*: monto mensual **US$1**, alerta al 100 % al correo del equipo. Así nada se cobra sin que se enteren.
 - Cuenta de **Render**: [render.com](https://render.com) → *Get started* → **con GitHub** (así ve el repositorio).
 - Para generar claves aleatorias sirve cualquier terminal con Git Bash: `openssl rand -base64 32`.
 
-## 2. Base de datos: Azure SQL (gratis)
-1. Portal de Azure → buscar **Azure SQL** → *Crear* → **Base de datos SQL**. Arriba aparece el aviso de la **oferta gratuita** → *Aplicar oferta*.
-2. Grupo de recursos: `trueke`. Nombre de la base: `TruekeDb`.
-3. Servidor → *Crear nuevo*: nombre único (p. ej. `trueke-sql-<algo>`), región **Central US** (las cuentas de prueba no permiten East US; Render queda en Ohio, al lado). Si una región sale en rojo, probar otra de EE. UU. y poner la misma en Storage y la más cercana en `render.yaml`, autenticación **SQL** con un usuario administrador y una clave larga. Guardar ambos en un gestor de contraseñas.
-4. En *Comportamiento al alcanzar el límite gratis* elegir **Pausar la base hasta el próximo mes**. Así nunca hay cobros.
-5. *Redes*: acceso **público**, y por ahora **no** marcar "Agregar la IP actual". Las reglas se agregan en el paso 4.3.
-6. Crear. Al terminar: base → *Cadenas de conexión* → **ADO.NET**. Copiarla, reemplazar `{your_password}` y agregar al final `Connection Timeout=60;` (la base gratis puede tardar en despertar):
+## 2. Base de datos: PostgreSQL en Supabase (gratis)
+El plan Free de Supabase no vence: da 500 MB de base, no pide tarjeta y no mide horas de cómputo. Su única condición: **pausa el proyecto si pasa 7 días sin actividad**. Los datos no se borran; se reactiva con *Restore* en el panel (ver §7).
+
+1. [supabase.com](https://supabase.com) → *Start your project* → entrar **con GitHub**.
+2. *New project*:
+   - Organización: la personal (plan Free).
+   - Nombre: `trueke`.
+   - **Database Password**: *Generate a password*. Guardarla en un gestor de contraseñas, porque no se vuelve a mostrar.
+   - Región: **East US (North Virginia)**, la más cercana a Render Ohio.
+3. En *Security options* (o después en *Project Settings → Data API*), **desmarcar "Enable Data API"**. Trueke no la usa: toda la lectura y escritura pasa por nuestra API. Si quedara encendida, la llave pública `anon` podría consultar las tablas. Por si acaso, la migración `CerrarDataApiSupabase` les quita los permisos a `anon` y `authenticated` y activa RLS en todas las tablas.
+4. *Create new project* y esperar 1-2 minutos.
+5. Botón **Connect** (arriba) → pestaña **Session pooler**. Es la opción con **IPv4**: la conexión directa `db.<ref>.supabase.co` solo tiene IPv6 y Render no la alcanza. Supabase la muestra como URI:
    ```
-   Server=tcp:trueke-sql-xxx.database.windows.net,1433;Initial Catalog=TruekeDb;User ID=...;Password=...;Encrypt=True;TrustServerCertificate=False;Connection Timeout=60;
+   postgresql://postgres.<ref>:[YOUR-PASSWORD]@aws-N-us-east-1.pooler.supabase.com:5432/postgres
    ```
-   Este valor va en `ConnectionStrings__TruekeDb`. Las tablas las crea la API sola al arrancar (migraciones).
+   Npgsql (el conector de .NET) no lee ese formato. Hay que pasarla a pares `clave=valor` con la clave del paso 2:
+   ```
+   Host=aws-N-us-east-1.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.<ref>;Password=<clave>;SSL Mode=Require;Maximum Pool Size=10
+   ```
+   - Este valor va en `ConnectionStrings__TruekeDb`. Las tablas las crea la API sola al arrancar (migraciones).
+   - `Maximum Pool Size=10`: en modo sesión cada conexión de la API ocupa una del pooler, y el plan gratis permite pocas.
+   - **No usar el Transaction pooler (puerto 6543):** no conserva la sesión entre consultas y obligaría a desactivar las sentencias preparadas (`No Reset On Close=true`).
+6. Si la clave tiene `;` o comillas, generar otra (*Project Settings → Database → Reset database password*). Esos caracteres rompen la cadena.
 
 ## 3. Fotos: Azure Blob Storage
-1. Portal → **Cuentas de almacenamiento** → *Crear*: grupo `trueke`, nombre único en minúsculas (p. ej. `truekefotos<algo>`), región **la misma de la base** (Central US), rendimiento **Estándar**, redundancia **LRS** (la más barata).
+1. Portal → **Cuentas de almacenamiento** → *Crear*: grupo `trueke`, nombre único en minúsculas (p. ej. `truekefotos<algo>`), región **Central US**, rendimiento **Estándar**, redundancia **LRS** (la más barata).
 2. *Configuración* → **Permitir el acceso anónimo de blobs: Habilitado**. Solo el contenedor `imagenes` es público (de solo lectura); `documentos` y `subidas` quedan privados. La API crea los tres contenedores sola.
 3. *Uso compartido de recursos (CORS)* → pestaña **Blob service** → agregar una regla:
    - Orígenes permitidos: `https://ingmarting.github.io`
@@ -56,8 +69,8 @@ Guía para publicar la plataforma completa. Hay dos fases: **gratis** (para la c
 
 ## 4. API en Render
 1. Render → **New** → **Blueprint** → elegir el repositorio `TRUEKE-BOGOTA-SOLIDARIO-`. Render lee [`render.yaml`](../render.yaml) y muestra el servicio `trueke-api`.
-2. Render pide los valores marcados como secretos. Llenarlos con lo de los pasos 2, 3 y 5 (reCAPTCHA, correo, Wompi). `Jwt__Key` y `Seguridad__ClaveCifrado` los genera Render solo. → **Apply**.
-3. Mientras construye: servicio → **Connect** → **Outbound** → copiar las IP de salida. En Azure → servidor SQL → *Redes* → **Reglas de firewall** → agregar cada IP (inicio = fin). Sin esto, la API no llega a la base.
+2. Render pide los valores marcados como secretos. Llenarlos con lo de los pasos 2 (Supabase), 3 y 5 (reCAPTCHA, correo, Wompi). `Jwt__Key` y `Seguridad__ClaveCifrado` los genera Render solo. → **Apply**.
+3. No hace falta abrir firewall: Supabase acepta conexiones desde cualquier IP con usuario y clave, siempre cifradas (`SSL Mode=Require`).
 4. Cuando termine, la URL queda como `https://trueke-api.onrender.com` (o parecida). Probar:
    - `https://<api>/health/live` → responde OK (la API está viva).
    - `https://<api>/health/ready` → `{"estado":"ok"}` (la API llega a la base).
@@ -117,30 +130,30 @@ En un plan pago de Render se puede volver a Gmail u otro SMTP: `Correo__Proveedo
 ## 7. Limitaciones de la fase gratis
 - **Arranque en frío:** tras 15 min sin uso, la primera petición tarda 30-60 s.
 - **iPhone/Safari:** el front (`github.io`) y la API (`onrender.com`) son sitios distintos, y Safari bloquea esa cookie de sesión "de terceros". En Safari la sesión se cierra cuando vence el token (15 min). En Chrome, Edge y Firefox funciona bien. **Se resuelve con dominio propio** (§8).
-- **Cuota de la base gratis:** cada mes trae 32 GB y 100.000 vCore-segundos de cómputo, que son unas **28-55 horas de base activa** (la base se duerme sola cuando nadie la usa; como la API de Render también se duerme, solo gasta mientras alguien usa la app). Alcanza para la clase y las pruebas, no para usuarios todo el día. Si se agota, la base se pausa hasta el mes siguiente; para tráfico real, pasarla a un plan de pago (§8). El consumo se ve en la base → *Información general* → "Cantidad mensual gratuita de vCore". Fuente: [oferta gratuita de Azure SQL](https://learn.microsoft.com/azure/azure-sql/database/free-offer).
+- **Pausa de Supabase por inactividad:** si el proyecto pasa 7 días sin actividad, Supabase lo pausa y avisa por correo. La API sigue viva, pero `/health/ready` y todo lo que use la base fallan. Para reactivarlo: panel de Supabase → proyecto → **Restore project** (1-2 minutos). Los datos no se pierden. Con usuarios entrando cada semana no pasa. Además: 500 MB de base (las fotos van aparte) y 5 GB de salida al mes; el consumo se ve en *Project Settings → Usage*.
 - Sin Redis: el límite de intentos es por instancia (correcto mientras haya una sola).
-- **Sin chequeo de disponibilidad (a propósito):** un monitor cada 5 min mantendría despierta la API. Las tareas de fondo (mantenimiento cada hora, reconciliación de pagos) despertarían también la base, y la cuota gratis de Azure SQL se agotaría en 1-2 días: **la base quedaría pausada hasta el mes siguiente**. Activarlo solo con plan pago (§7.2).
+- **Sin chequeo de disponibilidad por ahora:** un monitor cada 5 min mantendría despierta la API de Render (750 horas gratis al mes alcanzan para una sola instancia encendida siempre) y, de paso, evitaría la pausa de Supabase. Se puede activar ya con UptimeRobot (§7.2).
 
 ### 7.1 Monitoreo con Application Insights (gratis hasta 5 GB/mes)
-La API envía errores, peticiones lentas, consultas a SQL (sin el texto ni los parámetros) y logs solo si existe la variable `APPLICATIONINSIGHTS_CONNECTION_STRING`. Nunca envía cuerpos de peticiones, contraseñas ni la query string (allí viaja el token del chat en tiempo real). Los `/health` no se registran.
+La API envía errores, peticiones lentas, consultas a la base (sin el texto ni los parámetros) y logs solo si existe la variable `APPLICATIONINSIGHTS_CONNECTION_STRING`. Nunca envía cuerpos de peticiones, contraseñas ni la query string (allí viaja el token del chat en tiempo real). Los `/health` no se registran.
 1. Portal → **Application Insights** → *Crear*: grupo `trueke`, nombre `trueke-monitoreo`, región **Central US**. Se crea también un *área de trabajo de Log Analytics*, que es donde se cobra por datos.
 2. **Tope para no pagar nunca:** área de trabajo de Log Analytics → *Uso y costos estimados* → **Límite diario** = `0.15` GB/día (≈4,5 GB/mes, por debajo de los 5 GB gratis). Si se llega al tope, ese día deja de llegar telemetría, pero la app sigue funcionando.
 3. Application Insights → *Información general* → copiar la **Cadena de conexión** → en Render → *Environment* → `APPLICATIONINSIGHTS_CONNECTION_STRING` → *Save* (Render redespliega). Al arrancar ya no sale el aviso "no habrá monitoreo" en los logs.
 4. **Alertas:**
    - *Detección inteligente → Anomalías de errores* viene activa y es gratis: avisa por correo a los dueños de la suscripción cuando sube el porcentaje de peticiones fallidas.
    - Opcional (≈US$0,10/mes): *Alertas → Crear regla de alerta* → señal **Excepciones** → mayor que 5 en 15 min → *Grupo de acciones* con tu correo.
-5. Dónde mirar: **Errores** (excepciones con su traza), **Rendimiento** (endpoints lentos y consultas a SQL), **Mapa de aplicación** (`trueke-api` → SQL, Blob, Wompi) y **Métricas en vivo**.
+5. Dónde mirar: **Errores** (excepciones con su traza), **Rendimiento** (endpoints lentos y consultas a la base), **Mapa de aplicación** (`trueke-api` → PostgreSQL, Blob, Wompi) y **Métricas en vivo**.
 6. **Costo:** con el tráfico actual, muy por debajo de los 5 GB. Si un mes se acerca al tope, bajar el muestreo con la variable `Monitoreo__Muestreo=0.25` (envía 1 de cada 4 peticiones; los errores siguen visibles en proporción).
 
 ### 7.2 Chequeo de disponibilidad (cuando haya plan pago)
-- **Gratis:** [UptimeRobot](https://uptimerobot.com) (cuenta propia) → monitor HTTP(s) a `https://<API>/health/live` cada 5 min, con aviso por correo. `/health/live` no toca la base; `/health/ready` sí (úsalo solo con la base en plan pago).
+- **Gratis:** [UptimeRobot](https://uptimerobot.com) (cuenta propia) → monitor HTTP(s) a `https://<API>/health/live` cada 5 min, con aviso por correo. `/health/live` no toca la base; `/health/ready` sí.
 - **En Azure:** Application Insights → *Disponibilidad* → *Prueba estándar* a la misma URL, con alerta. Cobra por ejecución: revisar la calculadora de precios de Azure antes de activarla.
-- Se activa junto con: API en plan pago (no se duerme) y Azure SQL en plan pago (la base gratis no aguanta estar siempre activa).
+- Con Supabase ya no hay cuota de cómputo que cuidar: se puede activar en la fase gratis. Usar `/health/ready` si además se quiere mantener activa la base.
 
 ## 8. Pasar a pago (producción real)
 1. **Dominio propio** (p. ej. `trueke.co`, ~US$15-30/año en un registrador o en Cloudflare): `trueke.co` → front y `api.trueke.co` → API. Al quedar en el mismo sitio, cambiar `Auth__CookieSameSite` a `Strict`, y `Cors__Origenes__0` / `Urls__Frontend` al dominio nuevo. Agregar el dominio en reCAPTCHA, en el CORS del Storage y en Google.
 2. **API sin arranque en frío:** en `render.yaml` cambiar `plan: free` → `plan: starter`, o mover la misma imagen a **Azure App Service B1** (Linux, contenedor) con Managed Identity (`Almacenamiento__ServicioUrl` en lugar de la cadena de conexión) y Key Vault. Ver `backend/README.md` §9.
-3. **Base de datos:** pasar Azure SQL a Basic/S0 (sin pausa) y revisar la retención de backups.
+3. **Base de datos:** Supabase **Pro** (US$25/mes): sin pausa por inactividad, backups diarios y más conexiones. Alternativa: cualquier PostgreSQL administrado (Azure Database for PostgreSQL, Neon, Render Postgres) con la misma cadena de conexión.
 4. **Pagos reales:** cuando Wompi apruebe el comercio, usar las llaves `pub_prod_…` y cambiar `Pagos__Wompi__BaseUrl` a `https://production.wompi.co/v1` **en `render.yaml`** (si se cambia solo en el panel, la sincronización del Blueprint lo devuelve a sandbox). Con eso desaparece sola la franja "Sitio de demostración". **Antes**, borrar los datos de prueba (la app promete a los testers que los beneficios de prueba se borran): lo más limpio es una base nueva vacía (`Database__Inicializacion=Migrate` crea las tablas).
 5. **Monitoreo:** Application Insights ya funciona en la fase gratis (§7.1); con plan pago, activar el chequeo de disponibilidad (§7.2).
 6. **Más de una instancia:** Azure Cache for Redis (`Redis__Habilitado=true`, `Redis__Conexion`).

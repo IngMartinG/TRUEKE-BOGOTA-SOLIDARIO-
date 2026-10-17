@@ -20,7 +20,7 @@
 
 **Funcionalidad:**
 - perfil público;
-- editar publicaciones y hasta 5 fotos (Azure Blob con SAS);
+- editar publicaciones y hasta 5 fotos (subida directa con URL firmada);
 - chat interno;
 - **confirmación de entrega por ambas partes** con cierre automático (7 y 30 días);
 - **calificaciones**;
@@ -39,7 +39,7 @@
 - Application Insights (OpenTelemetry);
 - correos HTML;
 - tarea horaria de cierre y purga;
-- pruebas contra SQL Server real (Testcontainers) obligatorias en el CI.
+- pruebas contra la base real (Testcontainers; hoy PostgreSQL) obligatorias en el CI.
 
 ## Hecho el 2026-10-03 — escala nacional, monetización y seguridad
 - **Colombia completa:** 33 departamentos y 1.122 municipios (DANE-DIVIPOLA), filtros por departamento/municipio, registro y perfil con municipio.
@@ -191,7 +191,7 @@ Cada hallazgo de la auditoría se corrigió en su propio PR, con pruebas.
   - la app no arranca dentro de un iframe ajeno (`core/sin-marcos.ts`).
 - **Docker local (#69):**
   - puertos solo en `127.0.0.1`;
-  - la API entra a SQL Server con el usuario `trueke_app`, dueño solo de su base (variable `SQL_APP_PASSWORD`);
+  - la API entra a la base con el usuario `trueke_app`, dueño solo de su base (hoy PostgreSQL, variable `DB_APP_PASSWORD`);
   - la clave de Redis ya no aparece en los argumentos del proceso;
   - imágenes fijadas por digest.
 
@@ -259,8 +259,27 @@ Cada hallazgo de la auditoría se corrigió en su propio PR, con pruebas.
 - **Moderación y datos:** los deseos se denuncian y se ocultan con apelación, se exportan con los datos personales y se borran al eliminar la cuenta. Se omiten las personas bloqueadas.
 - Migración `ListaDeDeseos` (solo una tabla nueva), también en `docs/migraciones/script-idempotente.sql`. Pruebas de integración, del componente y un E2E.
 
+## Hecho el 2026-10-17 — base de datos en PostgreSQL (Supabase)
+Azure SQL gratis agotó su cupo del mes y se pausó (error 42119): la API de Render no arrancaba porque migra al iniciar. Además, la cuenta gratuita de Azure vence a los 30 días. Por eso se sale de Azure en tres pasos; este es el primero:
+- **Motor:** SQL Server se reemplazó del todo por PostgreSQL con el proveedor Npgsql de EF Core. Producción usa Supabase Free por el Session pooler (IPv4). `Database:Provider` admite `InMemory` (desarrollo) o `PostgreSQL`.
+- **Concurrencia:** el token de concurrencia es la columna de sistema `xmin` de PostgreSQL. Dos cambios simultáneos siguen dando 409.
+- **Fechas:** todas las fechas son `timestamptz` (UTC); las estadísticas diarias van en `date`.
+- **Migraciones:**
+  - Se empezó con la base vacía: una sola migración `Inicial`, más `CerrarDataApiSupabase`. Esta última les quita a `anon` y `authenticated` los permisos de la Data API de Supabase y activa RLS en todas las tablas.
+  - Las 17 migraciones de SQL Server y su script quedaron archivados en `docs/historico/migraciones-sqlserver/`.
+- **Pruebas:**
+  - Las de `TruekeBogotaSolidario.Pruebas/PostgreSql` corren contra PostgreSQL 17 real (Testcontainers): migraciones, flujo completo de la API, monetización, 409, fechas UTC, índices únicos y la Data API cerrada.
+  - El CI las exige (no pueden quedar omitidas).
+- **Docker local y E2E:** `postgres:17-alpine` con el usuario `trueke_app`, dueño solo de la base `trueke`. Variables `POSTGRES_PASSWORD` y `DB_APP_PASSWORD`, que reemplazan a `SQL_SA_PASSWORD` y `SQL_APP_PASSWORD`.
+- **Guía:** `docs/DESPLIEGUE.md` §2 explica cómo crear el proyecto en Supabase y configurar Render.
+
 ## Pendiente
 **Despliegue y operación:**
+- **Salir de Azure (la cuenta gratuita vence hacia el 2026-11-09):**
+  - fotos: Azure Blob → Supabase Storage (URL firmada de subida, como hoy con SAS);
+  - correo: Azure Communication Services → Brevo (API HTTPS, 300 correos al día gratis);
+  - monitoreo: Application Insights se apaga dejando vacía `APPLICATIONINSIGHTS_CONNECTION_STRING`.
+- **Supabase Free pausa el proyecto tras 7 días sin actividad:** se reactiva con *Restore project* (los datos no se pierden). Un monitor de `/health/ready` lo evita (`docs/DESPLIEGUE.md` §7.2).
 - **Dominio propio:**
   - resuelve la cookie de sesión entre sitios distintos (Safari/iPhone);
   - permite cambiar la cookie a `SameSite=Strict`.

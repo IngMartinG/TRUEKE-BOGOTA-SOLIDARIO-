@@ -22,48 +22,47 @@ Trueke maneja datos personales (Ley 1581 de 2012) y la confianza es el producto.
 | Velocidad de carga real (Core Web Vitals) | Si el celular promedio la siente rápida | Herramienta de visitas |
 | Errores y lentitud de la API | Salud técnica | Application Insights (ya activo) |
 
-## Consultas para la base (Azure SQL)
-Se corren en Azure → base `TruekeDb` → **Editor de consultas**.
-- Cada consulta **despierta la base** y gasta un poco de la cuota gratis: correrlas como mucho una vez por semana, todas juntas.
+## Consultas para la base (PostgreSQL en Supabase)
+Se corren en Supabase → proyecto → **SQL Editor**.
 - Son solo de lectura y no muestran datos personales: solo conteos.
+- Los nombres van entre comillas dobles porque EF Core crea las tablas y columnas con mayúsculas.
 
 ```sql
 -- Cuentas nuevas por semana (últimas 8) y % que confirmó el correo
-SELECT DATEPART(iso_week, FechaRegistro) AS Semana, COUNT(*) AS Nuevas,
-       CAST(100.0 * SUM(CASE WHEN CorreoVerificado = 1 THEN 1 ELSE 0 END) / COUNT(*) AS DECIMAL(5,1)) AS PctVerificado
-FROM Usuarios
-WHERE FechaRegistro >= DATEADD(week, -8, SYSUTCDATETIME()) AND EstaEliminado = 0
-GROUP BY DATEPART(iso_week, FechaRegistro) ORDER BY Semana;
+SELECT date_trunc('week', "FechaRegistro")::date AS "Semana", COUNT(*) AS "Nuevas",
+       ROUND(100.0 * COUNT(*) FILTER (WHERE "CorreoVerificado") / COUNT(*), 1) AS "PctVerificado"
+FROM "Usuarios"
+WHERE "FechaRegistro" >= now() - interval '8 weeks' AND NOT "EstaEliminado"
+GROUP BY 1 ORDER BY 1;
 
 -- Publicaciones nuevas por semana y modo
-SELECT DATEPART(iso_week, FechaPublicacion) AS Semana, Modo, COUNT(*) AS Publicaciones
-FROM Publicaciones
-WHERE FechaPublicacion >= DATEADD(week, -8, SYSUTCDATETIME())
-GROUP BY DATEPART(iso_week, FechaPublicacion), Modo ORDER BY Semana, Modo;
+SELECT date_trunc('week', "FechaPublicacion")::date AS "Semana", "Modo", COUNT(*) AS "Publicaciones"
+FROM "Publicaciones"
+WHERE "FechaPublicacion" >= now() - interval '8 weeks'
+GROUP BY 1, 2 ORDER BY 1, 2;
 
 -- Embudo de los últimos 30 días
-SELECT COUNT(*) AS Solicitudes,
-       SUM(CASE WHEN FechaAceptacionUtc IS NOT NULL THEN 1 ELSE 0 END) AS Aceptadas,
-       SUM(CASE WHEN Estado = 'Completada' THEN 1 ELSE 0 END) AS Completadas,
-       SUM(CASE WHEN Estado = 'NoConcretada' THEN 1 ELSE 0 END) AS NoConcretadas
-FROM Solicitudes
-WHERE FechaSolicitud >= DATEADD(day, -30, SYSUTCDATETIME());
+SELECT COUNT(*) AS "Solicitudes",
+       COUNT(*) FILTER (WHERE "FechaAceptacionUtc" IS NOT NULL) AS "Aceptadas",
+       COUNT(*) FILTER (WHERE "Estado" = 'Completada') AS "Completadas",
+       COUNT(*) FILTER (WHERE "Estado" = 'NoConcretada') AS "NoConcretadas"
+FROM "Solicitudes"
+WHERE "FechaSolicitud" >= now() - interval '30 days';
 
--- Horas hasta que el dueño acepta (mediana aproximada y promedio, últimos 30 días)
-SELECT AVG(CAST(DATEDIFF(minute, FechaSolicitud, FechaAceptacionUtc) AS FLOAT)) / 60 AS HorasPromedio,
-       (SELECT TOP 1 PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY DATEDIFF(minute, FechaSolicitud, FechaAceptacionUtc)) OVER () / 60.0
-        FROM Solicitudes WHERE FechaAceptacionUtc IS NOT NULL AND FechaSolicitud >= DATEADD(day, -30, SYSUTCDATETIME())) AS HorasMediana
-FROM Solicitudes
-WHERE FechaAceptacionUtc IS NOT NULL AND FechaSolicitud >= DATEADD(day, -30, SYSUTCDATETIME());
+-- Horas hasta que el dueño acepta (mediana y promedio, últimos 30 días)
+SELECT ROUND((AVG(EXTRACT(EPOCH FROM "FechaAceptacionUtc" - "FechaSolicitud")) / 3600)::numeric, 1) AS "HorasPromedio",
+       ROUND((PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY EXTRACT(EPOCH FROM "FechaAceptacionUtc" - "FechaSolicitud")) / 3600)::numeric, 1) AS "HorasMediana"
+FROM "Solicitudes"
+WHERE "FechaAceptacionUtc" IS NOT NULL AND "FechaSolicitud" >= now() - interval '30 days';
 
 -- Intercambios completados por modo (últimos 30 días)
-SELECT Modo, COUNT(*) AS Completados FROM Transacciones
-WHERE FechaUtc >= DATEADD(day, -30, SYSUTCDATETIME()) GROUP BY Modo;
+SELECT "Modo", COUNT(*) AS "Completados" FROM "Transacciones"
+WHERE "FechaUtc" >= now() - interval '30 days' GROUP BY "Modo";
 
 -- Personas activas en 30 días (publicaron o pidieron algo)
-SELECT COUNT(DISTINCT Id) AS Activas FROM (
-  SELECT PropietarioId AS Id FROM Publicaciones WHERE FechaPublicacion >= DATEADD(day, -30, SYSUTCDATETIME())
-  UNION SELECT SolicitanteId FROM Solicitudes WHERE FechaSolicitud >= DATEADD(day, -30, SYSUTCDATETIME())
+SELECT COUNT(DISTINCT "Id") AS "Activas" FROM (
+  SELECT "PropietarioId" AS "Id" FROM "Publicaciones" WHERE "FechaPublicacion" >= now() - interval '30 days'
+  UNION SELECT "SolicitanteId" FROM "Solicitudes" WHERE "FechaSolicitud" >= now() - interval '30 days'
 ) a;
 ```
 Si un día se quiere verlas en la app, el paso natural es una pantalla de **Administración → Indicadores** (solo SuperUsuario y con 2FA), que haga estos mismos conteos.

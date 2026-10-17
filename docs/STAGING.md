@@ -8,7 +8,7 @@ Staging es una **copia separada de producción**: mismo código, mismas imágene
 - mostrar algo a alguien sin tocar los datos reales;
 - correr el escaneo de seguridad **OWASP ZAP** (`.github/workflows/zap-staging.yml`), que está pensado para correr contra staging y **nunca** contra producción.
 
-**No reemplaza** a las pruebas automáticas: las E2E (`npm run e2e`) ya prueban cada PR con las imágenes de producción. Staging agrega lo que las E2E no pueden: Azure real (SQL, Blob, Communication Services), Wompi sandbox real, Google y el servicio de push real.
+**No reemplaza** a las pruebas automáticas: las E2E (`npm run e2e`) ya prueban cada PR con las imágenes de producción. Staging agrega lo que las E2E no pueden: Supabase real, Azure real (Blob, Communication Services), Wompi sandbox real, Google y el servicio de push real.
 
 **Cuándo vale la pena:**
 - antes de pasar Wompi a producción (dinero real);
@@ -23,7 +23,7 @@ Mientras el equipo sea una persona y el tráfico sea de amistades, **las E2E en 
 |---|---|---|
 | Front | GitHub Pages (`ingmarting.github.io/TRUEKE-BOGOTA-SOLIDARIO-/`) | **Render Static Site** (`trueke-staging.onrender.com`). Pages solo permite un sitio por repositorio. |
 | API | Render Free, servicio `trueke-api` | Render Free, servicio `trueke-api-staging` en **otro workspace** (ver costos) |
-| Base | Azure SQL `TruekeDb` (oferta gratis) | Azure SQL **`TruekeDbStaging`** en el mismo servidor (otra base gratis) |
+| Base | Supabase, proyecto `trueke` (Free) | Supabase, proyecto **`trueke-staging`** (el segundo proyecto gratis) |
 | Fotos | La cuenta de Storage de producción | **Otra cuenta de Storage** (p. ej. `truekefotosstaging…`), para que nunca se mezclen ni se borren fotos reales |
 | Correo | Azure Communication Services | El mismo recurso (10 correos/hora compartidos) o uno propio |
 | Pagos | Wompi **sandbox** (por ahora) | Wompi **sandbox, siempre**. Nunca llaves de producción. |
@@ -33,7 +33,7 @@ Mientras el equipo sea una persona y el tráfico sea de amistades, **las E2E en 
 ## Costos
 **Todo cabe en lo gratis**, con estas condiciones:
 - **Render:** las 750 horas gratis al mes son **por workspace** y se reparten entre todos sus servicios gratis. Al agotarse, Render **suspende todos** los servicios gratis del workspace hasta el mes siguiente ([fuente](https://render.com/docs/free)). Por eso staging debe ir en **otro workspace** (otra cuenta o equipo de Render): así nunca le gasta las horas a producción. Los *Static Sites* son gratis y no usan horas.
-- **Azure SQL:** la oferta gratis permite **hasta 10 bases por suscripción**, cada una con sus 100.000 vCore-segundos al mes ([fuente](https://learn.microsoft.com/azure/azure-sql/database/free-offer)). La base de staging tiene su propia cuota y no le resta a producción.
+- **Supabase:** el plan Free permite **2 proyectos activos** por organización, cada uno con sus 500 MB y su propia pausa a los 7 días sin actividad. El de staging no le resta a producción; si se pausa, se reactiva con *Restore project*.
 - **Storage:** centavos de dólar al mes con pocas fotos de prueba.
 - **Si producción pasa a plan pago**, staging puede quedarse en gratis: solo se usa de vez en cuando y se duerme sola.
 
@@ -45,7 +45,7 @@ Mientras el equipo sea una persona y el tráfico sea de amistades, **las E2E en 
 5. Los buscadores no deben indexarla: el front de staging debe enviar `X-Robots-Tag: noindex` (en Render Static Site → *Headers*).
 
 ## Pasos para crearlo (cuando se decida)
-1. **Base:** Azure → el servidor SQL de producción (grupo `trueke`) → *Crear base de datos* `TruekeDbStaging` → **Aplicar oferta gratis** → al agotar la cuota: **auto-pausa** (nunca cobrar).
+1. **Base:** Supabase → *New project* `trueke-staging`, con los mismos pasos de `docs/DESPLIEGUE.md` §2 (Data API desactivada, cadena del Session pooler).
 2. **Storage:** crear `truekefotosstaging<algo>` (mismo grupo, Central US, LRS). Activar acceso anónimo de blobs y una regla CORS para el dominio del front de staging (igual que `docs/DESPLIEGUE.md` §3).
 3. **API en Render** (en el workspace nuevo): *New → Web Service* desde este repositorio, **Docker**, `backend/Dockerfile`, rama `staging`.
    - Variables: las mismas de `render.yaml`, con los valores de staging.
@@ -65,4 +65,4 @@ Mientras el equipo sea una persona y el tráfico sea de amistades, **las E2E en 
 7. **Seguridad:** *Actions → OWASP ZAP → Run workflow* con la URL del front de staging. Revisar el issue que abre con los hallazgos.
 
 ## Cuándo retirarlo
-Si no se usa en un mes: borrar los servicios de Render del workspace de staging y pausar o borrar `TruekeDbStaging` y la cuenta de Storage de staging. No afecta a producción.
+Si no se usa en un mes: borrar los servicios de Render del workspace de staging y pausar o borrar el proyecto `trueke-staging` de Supabase y la cuenta de Storage de staging. No afecta a producción.
