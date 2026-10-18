@@ -47,10 +47,10 @@ services:
         value: https://sandbox.wompi.co/v1
       - key: Facturacion__Modo
         value: Manual
-      # Render gratis bloquea los puertos SMTP (25, 465 y 587): el correo sale por la API HTTPS de Azure Communication
-      # Services. En un plan pago se puede volver a "Smtp" (Gmail u otro) con las variables Correo__Smtp__*.
+      # Render gratis bloquea los puertos SMTP (25, 465 y 587): el correo sale por la API HTTPS de Brevo (300 al día gratis).
+      # En un plan pago se puede volver a "Smtp" (Gmail u otro) con las variables Correo__Smtp__*.
       - key: Correo__Proveedor
-        value: AzureCommunication
+        value: Brevo
 
       # ---------- Generados por Render (256 bits aleatorios en base64) ----------
       - key: Jwt__Key
@@ -80,15 +80,13 @@ services:
         sync: false
       - key: Captcha__ClaveSecreta
         sync: false
-      - key: Correo__Azure__CadenaConexion # Communication Services → Claves → Cadena de conexión (docs/DESPLIEGUE.md §5)
+      - key: Correo__Brevo__ClaveApi # Brevo → SMTP & API → API Keys (xkeysib-…; docs/DESPLIEGUE.md §5.1). Sin ella, la API no arranca
         sync: false
       - key: Push__ClavePublica # notificaciones push: llaves VAPID (docs/DESPLIEGUE.md §6.2). Vacías = apagadas
         sync: false
       - key: Push__ClavePrivada
         sync: false
-      - key: APPLICATIONINSIGHTS_CONNECTION_STRING # Application Insights → Información general → Cadena de conexión (docs/DESPLIEGUE.md §7.1). Vacía = sin monitoreo
-        sync: false
-      - key: Correo__Remitente # con Azure: la dirección MailFrom del dominio conectado, p. ej. DoNotReply@xxxx.azurecomm.net
+      - key: Correo__Remitente # con Brevo: un remitente verificado en Brevo → Senders (docs/DESPLIEGUE.md §5.1)
         sync: false
       - key: Correo__Smtp__Host # solo con Correo__Proveedor=Smtp (plan pago)
         sync: false

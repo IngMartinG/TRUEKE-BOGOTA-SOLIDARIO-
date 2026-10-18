@@ -31,6 +31,7 @@ services:
       Pagos__Wompi__SecretoEventos: ${WOMPI_SECRETO_EVENTOS:-}
       Correo__Proveedor: ${CORREO_PROVEEDOR:-Simulado}
       Correo__Remitente: ${CORREO_REMITENTE:-no-responder@trueke.co}
+      Correo__Brevo__ClaveApi: ${BREVO_CLAVE_API:-}
       Correo__Smtp__Host: ${SMTP_HOST:-}
       Correo__Smtp__Puerto: ${SMTP_PUERTO:-587}
       Correo__Smtp__Usuario: ${SMTP_USUARIO:-}
@@ -40,7 +41,6 @@ services:
       Captcha__ClaveSecreta: ${CAPTCHA_CLAVE_SECRETA:-}
       Seguridad__ClaveCifrado: ${CLAVE_CIFRADO:?Define CLAVE_CIFRADO en .env}
       Seguridad__ExigirDosFactoresModeradores: ${EXIGIR_2FA_ADMIN:-true}
-      APPLICATIONINSIGHTS_CONNECTION_STRING: ${APPLICATIONINSIGHTS_CONNECTION_STRING:-}
       Almacenamiento__Url: ${ALMACENAMIENTO_URL:-}
       Almacenamiento__LlaveServicio: ${ALMACENAMIENTO_LLAVE:-}
       Urls__Frontend: ${URL_FRONTEND:-http://localhost:8081}
