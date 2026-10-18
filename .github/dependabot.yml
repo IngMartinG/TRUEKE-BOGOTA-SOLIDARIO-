@@ -71,6 +71,11 @@ updates:
     directories: ["/backend", "/frontend/e2e"]
     schedule:
       interval: weekly
+    ignore:
+      # PostgreSQL sigue la versión mayor de Supabase (17 hoy): la siguiente se adopta a propósito, cuando Supabase la use.
+      # La 18 además cambia la carpeta de datos de la imagen, así que exige ajustar los volúmenes.
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: docker
     directory: /frontend
