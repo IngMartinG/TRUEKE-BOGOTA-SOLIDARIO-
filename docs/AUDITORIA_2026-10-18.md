@@ -18,7 +18,7 @@ Cada corrección va en su propio PR. Lo que necesita una decisión del dueño, d
 
 | # | Severidad | Hallazgo | Estado |
 |---|---|---|---|
-| 1 | **Alta** (legal) | No existe el registro de oferentes que exige la Ley 1480 a un portal de contacto (art. 53) | **Corregido** en `feat/registro-oferentes` (texto legal: revisión del abogado) |
+| 1 | **Alta** (legal) | No existe el registro de oferentes que exige la Ley 1480 a un portal de contacto (art. 53) | **Corregido** en #161 (texto legal: revisión del abogado) |
 | 2 | Media | Un fragmento JS que no carga hacía fallar el ingreso ("Ocurrió un error inesperado") | **Corregido** en #155 |
 | 3 | Media | La PQRS pública reenviaba a cualquier correo el texto escrito por quien la radicaba | **Corregido** en #156 |
 | 4 | Media | Al enviar un formulario con errores, el foco no iba al primer campo inválido (WCAG 3.3.1 y 2.4.3) | **Corregido** en #157 |

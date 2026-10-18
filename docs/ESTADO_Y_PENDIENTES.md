@@ -399,7 +399,7 @@ Informe completo, con los hallazgos por severidad, en `docs/AUDITORIA_2026-10-18
   saldo de Eco-Puntos queda congelado porque no puede operar. La moderación la encuentra con el filtro "En revisión por
   edad" y, si comprueba que fue un error de digitación, la descarta (`POST /admin/usuarios/{id}/descartar-menor`, con
   motivo en la auditoría); si es menor, la suspende. En el front, la fecha de menor se envía solo después de confirmarla.
-- **Registro de oferentes** (Ley 1480, art. 53; decisión del dueño del 2026-10-18: solo para vender en modo Compra):
+- **#161, registro de oferentes** (Ley 1480, art. 53; decisión del dueño del 2026-10-18: solo para vender en modo Compra):
   publicar o editar en Compra sin el registro responde 403 `datos_oferente_requeridos` y el front lleva a
   `/cuenta/vendedor` (el borrador de la publicación se conserva). `PUT /usuarios/yo/oferente` guarda nombre, documento
   (validado con `DocumentosFiscales`), dirección de notificaciones, municipio y teléfono de Colombia; documento, dirección y
