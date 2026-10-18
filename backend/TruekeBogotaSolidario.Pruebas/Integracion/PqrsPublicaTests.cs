@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Mvc.Testing;
 using TruekeBogotaSolidario.Pruebas.Infraestructura;
 
 namespace TruekeBogotaSolidario.Pruebas.Integracion;
@@ -76,5 +78,41 @@ public class PqrsPublicaTests : IClassFixture<FabricaApi>
         var sexta = await RadicarAsync(correo);
         Assert.Equal(HttpStatusCode.BadRequest, sexta.StatusCode);
         Assert.Contains("varias solicitudes", await sexta.Content.ReadAsStringAsync());
+    }
+
+    [Fact]
+    public async Task Superar_el_limite_por_minuto_responde_429_y_el_ingreso_desde_la_misma_IP_sigue_funcionando()
+    {
+        await using var f = _f.WithWebHostBuilder(b => b.UseSetting("RateLimiting:PqrPublicaPorMinuto", "2"));
+        var c = f.CreateClient();
+        Task<HttpResponseMessage> Radicar() => c.PostAsJsonAsync("/api/v1/pqr/publica", new
+        {
+            nombre = "Ana Pérez", correo = $"rl{Guid.NewGuid():N}@trueke.test", tipo = "Peticion",
+            asunto = "No puedo crear mi cuenta", descripcion = "Al registrarme aparece un error y no avanza."
+        });
+        Assert.Equal(HttpStatusCode.Created, (await Radicar()).StatusCode);
+        Assert.Equal(HttpStatusCode.Created, (await Radicar()).StatusCode);
+        var tercera = await Radicar();
+        Assert.Equal(HttpStatusCode.TooManyRequests, tercera.StatusCode);
+        Assert.InRange(int.Parse(tercera.Headers.GetValues("Retry-After").Single()), 1, 61);
+        // La consulta comparte el límite de la PQRS pública
+        var consulta = await c.PostAsJsonAsync("/api/v1/pqr/consultar", new { radicado = "PQR-20260101-ABCDEF", correo = "x@trueke.test" });
+        Assert.Equal(HttpStatusCode.TooManyRequests, consulta.StatusCode);
+
+        // Misma IP: el ingreso tiene su propio límite y no se ve afectado
+        var login = await c.PostAsJsonAsync("/api/v1/auth/login", new { correo = FabricaApi.CorreoSuper, clave = FabricaApi.ClaveSuper });
+        Assert.Equal(HttpStatusCode.OK, login.StatusCode);
+    }
+
+    [Fact]
+    public async Task Tambien_hay_un_limite_por_hora()
+    {
+        await using var f = _f.WithWebHostBuilder(b => b.UseSetting("RateLimiting:PqrPublicaPorHora", "1"));
+        var c = f.CreateClient();
+        var cuerpo = new { radicado = "PQR-20260101-ABCDEF", correo = "x@trueke.test" };
+        Assert.Equal(HttpStatusCode.NotFound, (await c.PostAsJsonAsync("/api/v1/pqr/consultar", cuerpo)).StatusCode);
+        var segunda = await c.PostAsJsonAsync("/api/v1/pqr/consultar", cuerpo);
+        Assert.Equal(HttpStatusCode.TooManyRequests, segunda.StatusCode);
+        Assert.InRange(int.Parse(segunda.Headers.GetValues("Retry-After").Single()), 1, 3601);
     }
 }

@@ -37,6 +37,8 @@ public class FabricaApi : WebApplicationFactory<Program>
         builder.UseSetting("RateLimiting:GlobalPorMinuto", "10000");
         builder.UseSetting("RateLimiting:EscrituraPorMinuto", "1000");
         builder.UseSetting("RateLimiting:RefrescoPorMinuto", "1000");
+        builder.UseSetting("RateLimiting:PqrPublicaPorMinuto", "1000");
+        builder.UseSetting("RateLimiting:PqrPublicaPorHora", "1000");
         builder.UseSetting("Seguridad:SegundosGraciaRefresco", "0");
         builder.UseSetting("Correo:Proveedor", "Simulado");
         builder.UseSetting("Seguridad:ClaveCifrado", ClaveCifradoPruebas);

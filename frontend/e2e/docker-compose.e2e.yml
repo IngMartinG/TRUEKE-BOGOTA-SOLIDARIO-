@@ -124,6 +124,8 @@ services:
       # Varias cuentas desde la misma IP en pocos segundos: límites más altos que en producción.
       RateLimiting__AuthPorMinuto: "300"
       RateLimiting__EscrituraPorMinuto: "300"
+      RateLimiting__PqrPublicaPorMinuto: "300"
+      RateLimiting__PqrPublicaPorHora: "3000"
       RateLimiting__GlobalPorMinuto: "5000"
     volumes:
       - certs:/certs:ro

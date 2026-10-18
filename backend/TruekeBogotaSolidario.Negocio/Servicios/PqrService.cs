@@ -33,14 +33,16 @@ public sealed class PqrService : IPqrService
     private readonly ICorreoSaliente _correo;
     private readonly LegalOpciones _legal;
     private readonly IVerificadorCaptcha _captcha;
+    private readonly ResumenPqrPublicas _resumenPublicas;
     private readonly TimeProvider _reloj;
     private readonly ILogger<PqrService> _log;
 
     public PqrService(IPqrRepository pqrs, IPagoRepository pagos, IUsuarioRepository usuarios, IUnidadDeTrabajo uow, INotificador notificador,
-        ICorreoSaliente correo, IOptions<LegalOpciones> legal, IVerificadorCaptcha captcha, TimeProvider reloj, ILogger<PqrService> log)
+        ICorreoSaliente correo, IOptions<LegalOpciones> legal, IVerificadorCaptcha captcha, ResumenPqrPublicas resumenPublicas, TimeProvider reloj,
+        ILogger<PqrService> log)
     {
         _pqrs = pqrs; _pagos = pagos; _usuarios = usuarios; _uow = uow; _notificador = notificador; _correo = correo;
-        _legal = legal.Value; _captcha = captcha; _reloj = reloj; _log = log;
+        _legal = legal.Value; _captcha = captcha; _resumenPublicas = resumenPublicas; _reloj = reloj; _log = log;
     }
 
     public async Task<PqrDto> CrearAsync(Guid actorId, CrearPqrRequest r)
@@ -105,6 +107,7 @@ public sealed class PqrService : IPqrService
     /// Acuse con el radicado y la fecha límite al correo de quien la radicó, y aviso al equipo de moderación.
     /// En el canal público (<paramref name="nombre"/> null) el correo lo escribe cualquiera: el acuse no repite nada de lo
     /// que escribió quien radicó (nombre ni asunto), para que no sirva para enviar textos ajenos a un buzón de terceros.
+    /// Las públicas tampoco avisan una por una a la moderación: entran al resumen periódico (<see cref="ResumenPqrPublicas"/>).
     /// </summary>
     private async Task AvisarRadicadoAsync(Pqr pqr, string correo, string? nombre)
     {
@@ -118,6 +121,11 @@ public sealed class PqrService : IPqrService
             nombre is null ? "Hola:" : $"Hola {nombre}:",
             parrafos,
             pie: string.IsNullOrWhiteSpace(_legal.CorreoContacto) ? null : $"También puedes escribirnos a {_legal.CorreoContacto}."));
+        if (nombre is null)
+        {
+            _resumenPublicas.Registrar();
+            return;
+        }
         foreach (var moderador in await _usuarios.ListarIdsModeradoresAsync())
             await _notificador.NotificarAsync(moderador, TiposNotificacion.PqrNueva, $"Nueva {Etiqueta(pqr.Tipo).ToLowerInvariant()} {pqr.Radicado}: {pqr.Asunto}", pqr.Id);
     }

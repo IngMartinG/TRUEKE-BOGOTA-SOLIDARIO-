@@ -4,12 +4,16 @@ using StackExchange.Redis;
 
 namespace TruekeBogotaSolidario.Presentacion.Seguridad;
 
-/// <summary>Límites por minuto de cada política (los mismos valores del limitador en memoria).</summary>
-public sealed record LimitesPorMinuto(int Global, int Auth, int Webhook, int Escritura, int Refresco)
+/// <summary>
+/// Límites por minuto de cada política (los mismos valores del limitador en memoria). La PQRS pública tiene además un
+/// límite por hora (<see cref="PqrPublicaPorHora"/>).
+/// </summary>
+public sealed record LimitesPorMinuto(int Global, int Auth, int Webhook, int Escritura, int Refresco, int PqrPublica, int PqrPublicaPorHora)
 {
     public int? De(string? politica) => politica switch
     {
         Politicas.LimiteAuth => Auth,
+        Politicas.LimitePqrPublica => PqrPublica,
         Politicas.LimiteWebhook => Webhook,
         Politicas.LimiteEscritura => Escritura,
         Politicas.LimiteRefresco => Refresco,
@@ -18,7 +22,8 @@ public sealed record LimitesPorMinuto(int Global, int Auth, int Webhook, int Esc
 }
 
 /// <summary>
-/// Límite de peticiones COMPARTIDO entre todas las instancias de la API (ventana fija de 1 minuto en Redis).
+/// Límite de peticiones COMPARTIDO entre todas las instancias de la API (ventana fija de 1 minuto en Redis; la PQRS
+/// pública suma una ventana fija de 1 hora).
 /// El limitador de ASP.NET Core vive en la memoria de cada instancia: con 3 instancias, un atacante tendría 3 veces el
 /// límite de intentos de login. Este middleware usa contadores en Redis (INCR + EXPIRE) para que el límite sea global.
 /// Si Redis falla, deja pasar (el limitador en memoria sigue activo como respaldo): nunca tumba la API.
@@ -59,6 +64,12 @@ public sealed class LimitadorDistribuidoMiddleware
                     await RechazarAsync(ctx, espera2);
                     return;
                 }
+                if (politica == Politicas.LimitePqrPublica
+                    && await ExcedeAsync(db, $"trueke:rl:{politica}:h:{ip}:{minuto / 60}", _limites.PqrPublicaPorHora, 3600) is { } espera3)
+                {
+                    await RechazarAsync(ctx, espera3);
+                    return;
+                }
             }
         }
         catch (Exception ex) when (ex is RedisException or TimeoutException or ObjectDisposedException)
@@ -73,12 +84,12 @@ public sealed class LimitadorDistribuidoMiddleware
     }
 
     /// <returns>Segundos de espera si se superó el límite; null si se puede continuar.</returns>
-    private static async Task<int?> ExcedeAsync(IDatabase db, string clave, int limite)
+    private static async Task<int?> ExcedeAsync(IDatabase db, string clave, int limite, int ventanaSegundos = 60)
     {
         var contador = await db.StringIncrementAsync(clave);
-        if (contador == 1) await db.KeyExpireAsync(clave, TimeSpan.FromSeconds(70));
+        if (contador == 1) await db.KeyExpireAsync(clave, TimeSpan.FromSeconds(ventanaSegundos + 10));
         if (contador <= limite) return null;
-        return (int)(60 - DateTimeOffset.UtcNow.ToUnixTimeSeconds() % 60) + 1;
+        return (int)(ventanaSegundos - DateTimeOffset.UtcNow.ToUnixTimeSeconds() % ventanaSegundos) + 1;
     }
 
     private static Task RechazarAsync(HttpContext ctx, int segundos)
