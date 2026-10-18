@@ -22,7 +22,7 @@ Cada corrección va en su propio PR. Lo que necesita una decisión del dueño, d
 | 2 | Media | Un fragmento JS que no carga hacía fallar el ingreso ("Ocurrió un error inesperado") | **Corregido** en #155 |
 | 3 | Media | La PQRS pública reenviaba a cualquier correo el texto escrito por quien la radicaba | **Corregido** en #156 |
 | 4 | Media | Al enviar un formulario con errores, el foco no iba al primer campo inválido (WCAG 3.3.1 y 2.4.3) | **Corregido** en #157 |
-| 5 | Media | Una cuenta antigua que declara una fecha de menor de edad puede reintentar con otra fecha | **Corregido** en `fix/menor-cuenta-antigua` |
+| 5 | Media | Una cuenta antigua que declara una fecha de menor de edad puede reintentar con otra fecha | **Corregido** en #160 |
 | 6 | Media-baja | La PQRS pública comparte el límite por IP con el ingreso y avisa a la moderación sin tope global | **Corregido** en #159 |
 | 7 | Baja | Cambiar el rol de una cuenta devolvía su fecha de nacimiento | **Corregido** en #156 |
 | 8 | Baja | Facturas de administración sin `aria-invalid`; correctores ortográficos en correos y códigos; el indicador "buscando" del asistente no se anunciaba | **Corregido** en #157 |

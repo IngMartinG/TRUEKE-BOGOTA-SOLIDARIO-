@@ -392,7 +392,7 @@ Informe completo, con los hallazgos por severidad, en `docs/AUDITORIA_2026-10-18
   con 3 por minuto y 10 por hora (`RateLimiting__PqrPublicaPorMinuto` y `RateLimiting__PqrPublicaPorHora`), también en el
   limitador de Redis. Ya no comparten el límite del ingreso. Las PQRS públicas avisan a la moderación en un resumen cada
   10 minutos ("N PQRS públicas nuevas"); las de usuarios con cuenta siguen avisando una por una.
-- **Cuenta existente que declara ser menor** (decisión del dueño del 2026-10-18: marcar y revisar): el primer intento con
+- **#160, cuenta existente que declara ser menor** (decisión del dueño del 2026-10-18: marcar y revisar): el primer intento con
   una fecha de menor en `PUT /usuarios/yo/fecha-nacimiento` marca `Usuario.MenorDetectadoUtc` (migración `MenorDetectado`),
   no guarda la fecha, oculta sus publicaciones activas y avisa a la moderación. Los reintentos responden 403
   `menor_de_edad_detectado` y el token lleva `edad=menor`. Conserva la sesión, exportar y eliminar sus datos y la PQRS; el
