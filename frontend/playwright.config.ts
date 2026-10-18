@@ -25,6 +25,10 @@ export default defineConfig({
     baseURL: URL_FRONT,
     locale: 'es-CO',
     timezoneId: 'America/Bogota',
+    // Sin service worker salvo en pwa.spec.ts: al instalarse descarga todos los fragmentos para su caché y, con Docker en
+    // el mismo equipo, Chromium se queda sin memoria para blobs (net::ERR_BLOB_OUT_OF_MEMORY) y fallan las descargas de
+    // la prueba que esté corriendo.
+    serviceWorkers: 'block',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
     video: 'retain-on-failure',

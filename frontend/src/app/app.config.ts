@@ -14,11 +14,14 @@ import {
   TitleStrategy,
   withComponentInputBinding,
   withInMemoryScrolling,
+  withNavigationErrorHandler,
+  withRouterConfig,
   withViewTransitions,
 } from '@angular/router';
 import { provideServiceWorker } from '@angular/service-worker';
 import { routes } from './app.routes';
 import { ConfigService } from './core/config.service';
+import { manejarErrorNavegacion } from './core/navegacion';
 import { NotificacionesPushService } from './core/notificaciones-push.service';
 import { PwaService } from './core/pwa.service';
 import { authInterceptor } from './core/http/auth.interceptor';
@@ -37,6 +40,9 @@ export const appConfig: ApplicationConfig = {
       withComponentInputBinding(),
       withInMemoryScrolling({ scrollPositionRestoration: 'top', anchorScrolling: 'enabled' }),
       withViewTransitions({ skipInitialTransition: true }),
+      // Un fragmento que no cargó nunca hace ver como fallida una acción que ya salió bien (ver core/navegacion.ts).
+      withRouterConfig({ resolveNavigationPromiseOnError: true }),
+      withNavigationErrorHandler(manejarErrorNavegacion),
     ),
     { provide: TitleStrategy, useClass: TituloEstrategia },
     // El primero es el más externo: el de errores ve el resultado final tras el reintento por refresco.
