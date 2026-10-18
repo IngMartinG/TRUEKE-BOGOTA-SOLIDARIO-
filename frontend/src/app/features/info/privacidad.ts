@@ -133,7 +133,7 @@ export default class Privacidad {
         ],
         lista: [
           'Una cookie segura (HttpOnly) que mantiene tu sesión iniciada.',
-          'El almacenamiento local del navegador para recordar el modo claro u oscuro, el borrador de una publicación y el código de invitación con el que llegaste.',
+          'El almacenamiento local del navegador para recordar el modo claro u oscuro, el borrador de una publicación y el código de invitación con el que llegaste. Si el asistente de ayuda pasa tu conversación a una PQRS, ese texto queda solo en esa pestaña hasta que se abre el formulario (máximo 10 minutos).',
           'reCAPTCHA de Google, que puede usar sus propias cookies para distinguir personas de robots en el registro y el inicio de sesión.',
         ],
       },

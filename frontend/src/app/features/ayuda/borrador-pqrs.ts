@@ -45,24 +45,55 @@ export function escalarAPqrs(turnos: readonly TurnoConversacion[], tipo: TipoPqr
   return { ruta: conSesion ? '/cuenta/soporte' : '/pqrs', tipo: final, borrador: { tipo: final, asunto, descripcion } };
 }
 
+const CLAVE_BORRADOR = 'trueke.borrador-pqrs';
+/** Pasado este tiempo sin usarlo, el borrador se descarta. */
+const VIGENCIA_BORRADOR_MS = 10 * 60_000;
+
 /**
  * Lleva el texto de la conversación hasta el formulario de PQRS en memoria, no en la URL: lo que la persona escribió
- * puede tener datos personales y no debe quedar en el historial ni en registros de servidores.
+ * puede tener datos personales y no debe quedar en el historial ni en registros de servidores. Una copia queda en el
+ * sessionStorage de la pestaña solo hasta que el formulario la toma (máximo 10 minutos): así sobrevive si la página de
+ * PQRS tuvo que cargarse completa porque su fragmento no descargó (ver core/navegacion.ts).
  */
 @Injectable({ providedIn: 'root' })
 export class BorradorPqrs {
-  private readonly _pendiente = signal<Borrador | null>(null);
+  private readonly _pendiente = signal<Borrador | null>(leerGuardado());
   /** Los formularios lo observan: así también se llena si la persona ya estaba en la página de PQRS. */
   readonly pendiente = this._pendiente.asReadonly();
 
   guardar(b: Borrador): void {
     this._pendiente.set(b);
+    try {
+      sessionStorage.setItem(CLAVE_BORRADOR, JSON.stringify({ b, t: Date.now() }));
+    } catch {
+      // Sin almacenamiento: queda solo en memoria.
+    }
   }
 
-  /** Lo entrega una sola vez (al recargar la página ya no está). */
+  /** Lo entrega una sola vez. */
   tomar(): Borrador | null {
     const b = this._pendiente();
     this._pendiente.set(null);
+    borrarGuardado();
     return b;
+  }
+}
+
+function leerGuardado(): Borrador | null {
+  try {
+    const g = JSON.parse(sessionStorage.getItem(CLAVE_BORRADOR) ?? 'null') as { b: Borrador; t: number } | null;
+    if (g && Date.now() - g.t < VIGENCIA_BORRADOR_MS) return g.b;
+  } catch {
+    // Sin almacenamiento o dato dañado: no hay borrador.
+  }
+  borrarGuardado();
+  return null;
+}
+
+function borrarGuardado(): void {
+  try {
+    sessionStorage.removeItem(CLAVE_BORRADOR);
+  } catch {
+    // Igual que arriba.
   }
 }
