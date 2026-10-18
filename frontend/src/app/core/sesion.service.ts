@@ -52,6 +52,11 @@ export class SesionService {
   readonly correoVerificado = computed(() => this._usuario()?.correoVerificado === true);
   /** Foto de perfil: obligatoria (con el correo verificado) para publicar, solicitar, chatear y pagar. */
   readonly tieneFoto = computed(() => !!this._usuario()?.fotoUrl);
+  /**
+   * La plataforma es solo para mayores de 18 años. Las cuentas creadas antes de pedir la fecha de nacimiento deben
+   * registrarla antes de hacer cualquier otra cosa (la API responde 403 "fecha_nacimiento_requerida").
+   */
+  readonly mayoriaEdadConfirmada = computed(() => !!this._usuario()?.fechaNacimiento);
   readonly primerNombre = computed(() => this._usuario()?.nombreCompleto?.split(' ')[0] ?? '');
 
   constructor() {

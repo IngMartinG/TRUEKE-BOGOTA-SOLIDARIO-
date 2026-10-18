@@ -86,7 +86,7 @@ async function calentar(): Promise<void> {
   const r = await fetch(`${URL_FRONT}/api/v1/auth/registrar`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ nombreCompleto: 'Calentamiento Pruebas', municipioCodigo: '11001', localidad: 'Chapinero', correo, clave: 'Clave12345', aceptoPoliticaDatos: true }),
+    body: JSON.stringify({ nombreCompleto: 'Calentamiento Pruebas', municipioCodigo: '11001', localidad: 'Chapinero', correo, clave: 'Clave12345', fechaNacimiento: '1990-05-20', aceptoPoliticaDatos: true }),
   });
   if (r.status !== 201) throw new Error(`No se pudo calentar la API: HTTP ${r.status} ${await r.text()}`);
   await fetch(`${URL_FRONT}/api/v1/auth/login`, {

@@ -16,6 +16,7 @@ import type {
   DatosFacturacionRequest,
   DatosPersonalesDto,
   FacturaDto,
+  FechaNacimientoRequest,
   PerfilEmpresaRequest,
   PqrDto,
   ApelacionDto,
@@ -45,6 +46,7 @@ export class CuentaApi {
   configuracion = () => this.api.get<ConfiguracionPublicaDto>('/configuracion', { silencioso: true });
 
   yo = () => this.api.get<UsuarioDto>('/usuarios/yo');
+  registrarFechaNacimiento = (r: FechaNacimientoRequest) => this.api.put<UsuarioDto>('/usuarios/yo/fecha-nacimiento', r, { silencioso: true });
   actualizarPerfil = (r: ActualizarPerfilRequest) => this.api.put<UsuarioDto>('/usuarios/yo', r, { silencioso: true });
   bloquear = (id: string) => this.api.post<void>(`/usuarios/${seg(id)}/bloqueo`, {});
   desbloquear = (id: string) => this.api.delete<void>(`/usuarios/${seg(id)}/bloqueo`);

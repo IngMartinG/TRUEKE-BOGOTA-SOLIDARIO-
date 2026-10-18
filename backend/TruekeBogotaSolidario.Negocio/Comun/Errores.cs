@@ -35,6 +35,14 @@ public sealed class FotoPerfilRequeridaException : Exception
         : base("Agrega una foto de perfil donde se vea tu cara: así la comunidad sabe con quién intercambia. Hazlo en Mi cuenta → Perfil.") { }
 }
 
+/// <summary>Cuenta anterior a la regla de mayoría de edad sin fecha de nacimiento (HTTP 403, codigo "fecha_nacimiento_requerida").</summary>
+public sealed class MayoriaEdadRequeridaException : Exception
+{
+    public const string Codigo = "fecha_nacimiento_requerida";
+    public MayoriaEdadRequeridaException()
+        : base("Registra tu fecha de nacimiento para seguir: Trueke Bogotá Solidario es solo para personas mayores de 18 años.") { }
+}
+
 /// <param name="Codigo">Identificador estable para que el front reaccione sin depender del texto.</param>
 public sealed record ErrorTraducido(int Estado, string Titulo, bool EsInesperado, string? Codigo = null);
 
@@ -51,6 +59,7 @@ public static class TraductorErrores
         AccesoDenegadoException e => new(403, e.Message, false),
         DosFactoresRequeridoException e => new(401, e.Message, false, DosFactoresRequeridoException.Codigo),
         FotoPerfilRequeridaException e => new(403, e.Message, false, FotoPerfilRequeridaException.Codigo),
+        MayoriaEdadRequeridaException e => new(403, e.Message, false, MayoriaEdadRequeridaException.Codigo),
         AutenticacionException e => new(401, e.Message, false),
         ConflictoDeConcurrenciaException e => new(409, e.Message, false),
         _ => new(500, "Error interno del servidor.", true)

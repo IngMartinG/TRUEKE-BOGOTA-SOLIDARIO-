@@ -1,7 +1,7 @@
 import { Routes } from '@angular/router';
-import { exigirCorreoVerificado, exigirCuentaCompleta, exigirModerador, exigirSesion, soloInvitado } from './core/guardas';
+import { exigirCorreoVerificado, exigirCuentaCompleta, exigirMayoriaEdad, exigirModerador, exigirSesion, soloInvitado } from './core/guardas';
 
-export const routes: Routes = [
+const paginas: Routes = [
   { path: '', title: '', loadComponent: () => import('./features/inicio/inicio') },
   { path: 'explorar', title: 'Explorar', loadComponent: () => import('./features/catalogo/catalogo') },
   { path: 'como-funciona', title: 'Cómo funciona', loadComponent: () => import('./features/info/como-funciona') },
@@ -106,6 +106,12 @@ export const routes: Routes = [
   { path: 'restablecer-clave', title: 'Nueva contraseña', loadComponent: () => import('./features/auth/restablecer-clave') },
   { path: 'verificar-correo', title: 'Verificar correo', loadComponent: () => import('./features/auth/verificar-correo') },
   {
+    path: 'completar-perfil',
+    title: 'Completa tu perfil',
+    canActivate: [exigirSesion],
+    loadComponent: () => import('./features/auth/completar-perfil'),
+  },
+  {
     path: 'verifica-tu-correo',
     title: 'Verifica tu correo',
     canActivate: [exigirSesion],
@@ -119,3 +125,6 @@ export const routes: Routes = [
 
   { path: '**', title: 'Página no encontrada', loadComponent: () => import('./features/info/no-encontrada') },
 ];
+
+/** Toda página pasa por la mayoría de edad: una cuenta sin fecha de nacimiento solo puede registrarla (y lo legal y su ayuda). */
+export const routes: Routes = [{ path: '', canActivateChild: [exigirMayoriaEdad], children: paginas }];

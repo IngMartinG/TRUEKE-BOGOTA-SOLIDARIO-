@@ -32,7 +32,8 @@ export default class Privacidad {
     {
       titulo: 'Datos que recolectamos',
       parrafos: [
-        'Nombre, correo electrónico, municipio y barrio o localidad de residencia, datos de facturación si los registras (documento, nombre o razón social, correo y dirección) y, si decides usarla, la ubicación aproximada de tus publicaciones. Si vinculas tu cuenta de Google, recibimos tu nombre y correo verificados por Google.',
+        'Nombre, correo electrónico, fecha de nacimiento (solo para comprobar que eres mayor de 18 años; nunca se muestra a otras personas), municipio y barrio o localidad de residencia, datos de facturación si los registras (documento, nombre o razón social, correo y dirección) y, si decides usarla, la ubicación aproximada de tus publicaciones. Si vinculas tu cuenta de Google, recibimos tu nombre y correo verificados por Google.',
+        'La plataforma es solo para mayores de 18 años y no recolectamos a sabiendas datos de menores de edad. Si una persona indica una edad menor, no se crea la cuenta ni se guarda su fecha; si descubrimos una cuenta de un menor, la suprimimos.',
         'También guardamos el contenido que publicas (publicaciones, fotos, comentarios y mensajes del chat), tus intercambios, calificaciones y movimientos de Eco-Puntos.',
         'Si solicitas la verificación de tu cuenta, recibimos una imagen de tu documento de identidad, que se elimina en cuanto se resuelve la solicitud.',
       ],

@@ -1,12 +1,14 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, provideRouter, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
-import { exigirCorreoVerificado, exigirCuentaCompleta, exigirModerador } from './guardas';
+import { exigirCorreoVerificado, exigirCuentaCompleta, exigirMayoriaEdad, exigirModerador } from './guardas';
 import { SesionService } from './sesion.service';
 
 function ejecutar(
   guarda: typeof exigirCorreoVerificado,
-  sesion: { autenticado: boolean; verificado: boolean; moderador?: boolean; foto?: boolean },
+  sesion: { autenticado: boolean; verificado: boolean; moderador?: boolean; foto?: boolean; mayor?: boolean },
+  url = '/cuenta/perfil',
 ) {
+  TestBed.resetTestingModule(); // varias llamadas en la misma prueba
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
@@ -17,12 +19,14 @@ function ejecutar(
           correoVerificado: () => sesion.verificado,
           esModerador: () => sesion.moderador ?? false,
           tieneFoto: () => sesion.foto ?? true,
+          usuario: () => (sesion.autenticado ? {} : null),
+          mayoriaEdadConfirmada: () => sesion.mayor ?? true,
         },
       },
     ],
   });
   const resultado = TestBed.runInInjectionContext(() =>
-    guarda({} as ActivatedRouteSnapshot, { url: '/cuenta/perfil' } as RouterStateSnapshot),
+    guarda({} as ActivatedRouteSnapshot, { url } as RouterStateSnapshot),
   );
   return resultado instanceof UrlTree ? TestBed.inject(Router).serializeUrl(resultado) : resultado;
 }
@@ -58,5 +62,23 @@ describe('exigirCuentaCompleta (publicar y editar)', () => {
 
   it('con correo verificado y foto deja pasar', () => {
     expect(ejecutar(exigirCuentaCompleta, { autenticado: true, verificado: true, foto: true })).toBe(true);
+  });
+});
+
+describe('exigirMayoriaEdad (cuentas sin fecha de nacimiento)', () => {
+  it('lleva a completar el perfil y vuelve luego a la página pedida', () => {
+    expect(ejecutar(exigirMayoriaEdad, { autenticado: true, verificado: true, mayor: false }, '/publicar')).toBe(
+      '/completar-perfil?volver=%2Fpublicar',
+    );
+  });
+
+  it('deja abrir lo legal, la ayuda, la privacidad de la cuenta y la propia pantalla', () => {
+    for (const url of ['/completar-perfil?volver=%2F', '/privacidad', '/terminos', '/ayuda', '/cuenta/privacidad', '/cuenta/soporte'])
+      expect(ejecutar(exigirMayoriaEdad, { autenticado: true, verificado: true, mayor: false }, url)).toBe(true);
+  });
+
+  it('sin sesión o con la fecha registrada no hace nada', () => {
+    expect(ejecutar(exigirMayoriaEdad, { autenticado: false, verificado: false, mayor: false }, '/publicar')).toBe(true);
+    expect(ejecutar(exigirMayoriaEdad, { autenticado: true, verificado: true, mayor: true }, '/publicar')).toBe(true);
   });
 });

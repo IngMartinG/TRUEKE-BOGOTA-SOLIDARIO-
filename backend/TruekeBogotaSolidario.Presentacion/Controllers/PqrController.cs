@@ -10,6 +10,7 @@ namespace TruekeBogotaSolidario.Presentacion.Controllers;
 /// <summary>Peticiones, quejas, reclamos, sugerencias, retracto y reversión del pago (Ley 1755 de 2015 y Ley 1480 de 2011).</summary>
 [ApiController]
 [Authorize]
+[PermitirSinFechaNacimiento] // reclamar o pedir ayuda nunca se bloquea
 [Route("api/v1/pqr")]
 public sealed class PqrController : ControllerBase
 {

@@ -29,6 +29,13 @@ export const erroresInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
+      if (problema.codigo === 'fecha_nacimiento_requerida') {
+        // Cuenta anterior a la regla: se lleva (una sola vez, sin repetir avisos) a registrar la fecha.
+        if (!router.url.startsWith('/completar-perfil'))
+          void router.navigate(['/completar-perfil'], { queryParams: { volver: router.url } });
+        return throwError(() => error);
+      }
+
       if (problema.codigo === 'foto_requerida') {
         avisos.info('Agrega tu foto de perfil', 'Es necesaria para publicar, solicitar, chatear y pagar: así la comunidad sabe con quién intercambia.');
         void router.navigate(['/cuenta/perfil'], { fragment: 'foto', queryParams: { volver: router.url } });

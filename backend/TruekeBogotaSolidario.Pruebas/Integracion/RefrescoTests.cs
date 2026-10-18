@@ -31,7 +31,7 @@ public class RefrescoTests : IClassFixture<FabricaApi>
         var r = await _fabrica.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar", new
         {
             nombreCompleto = "Refresco Prueba", localidad = "Usaquén", correo = $"rf{Guid.NewGuid():N}@trueke.test",
-            clave = Api.ClaveValida, aceptoPoliticaDatos = true
+            clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true
         });
         Assert.Equal(HttpStatusCode.Created, r.StatusCode);
         return (r, ValorCookie(r));
@@ -83,7 +83,7 @@ public class RefrescoTests : IClassFixture<FabricaApi>
         var registro = await f.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar", new
         {
             nombreCompleto = "Pestanas Prueba", localidad = "Bosa", correo = $"tab{Guid.NewGuid():N}@trueke.test",
-            clave = Api.ClaveValida, aceptoPoliticaDatos = true
+            clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true
         });
         var original = ValorCookie(registro);
         var nueva = ValorCookie(await RefrescarAsync(f, original));

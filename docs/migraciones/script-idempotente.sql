@@ -1177,3 +1177,21 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018081031_FechaNacimiento') THEN
+    ALTER TABLE "Usuarios" ADD "FechaNacimiento" date;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018081031_FechaNacimiento') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20261018081031_FechaNacimiento', '10.0.13');
+    END IF;
+END $EF$;
+COMMIT;
+

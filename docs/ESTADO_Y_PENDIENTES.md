@@ -298,6 +298,13 @@ Tercer y último paso para salir de Azure: ya no queda nada en Azure.
 - **Monitoreo:** se quitaron Application Insights y OpenTelemetry (`Azure.Monitor.OpenTelemetry.AspNetCore`, `Telemetria.cs` y `APPLICATIONINSIGHTS_CONNECTION_STRING`). Los errores quedan en los logs de Render.
 - **Guía:** `docs/DESPLIEGUE.md` §5.1 (cuenta, remitente verificado, clave API e IPs autorizadas de Brevo).
 
+## Hecho el 2026-10-18 — solo para mayores de 18 años
+- El registro (correo y Google) pide la fecha de nacimiento y rechaza a menores sin crear la cuenta ni guardar la fecha.
+- Las cuentas anteriores a la regla quedan bloqueadas hasta registrarla en `/completar-perfil`: el token lleva el claim
+  `edad`, la política de autorización por defecto lo exige y la API responde 403 `fecha_nacimiento_requerida`. Siguen
+  abiertos la sesión, la seguridad de la cuenta, los avisos, la PQR y exportar o eliminar los datos.
+- La fecha se registra una sola vez, sale en la exportación de datos y nunca en el perfil público.
+
 ## Pendiente
 **Despliegue y operación:**
 - **Brevo con un Gmail como remitente:** algunos correos pueden caer en spam. Con dominio propio, autenticarlo en Brevo (DKIM y DMARC) y usar `no-responder@tudominio`.

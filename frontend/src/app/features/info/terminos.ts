@@ -17,7 +17,7 @@ export default class Terminos {
     {
       titulo: 'Cuentas',
       parrafos: [
-        'Debes ser mayor de edad, dar información veraz y mantener la confidencialidad de tu contraseña. Eres responsable de la actividad realizada desde tu cuenta.',
+        'Solo pueden usar la plataforma personas mayores de 18 años. Al crear la cuenta registras tu fecha de nacimiento y declaras que es verdadera; las cuentas creadas antes de esta regla deben registrarla para seguir usándola. Debes dar información veraz y mantener la confidencialidad de tu contraseña. Eres responsable de la actividad realizada desde tu cuenta.',
       ],
     },
     {

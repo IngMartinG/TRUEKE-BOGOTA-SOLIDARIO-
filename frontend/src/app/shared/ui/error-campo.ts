@@ -41,6 +41,8 @@ export class ErrorCampo {
     if (e['requiredTrue']) return 'Debes aceptar para continuar.';
     if (e['claveDebil']) return 'Usa al menos 8 caracteres con mayúscula, minúscula y número.';
     if (e['noCoincide']) return 'Las contraseñas no coinciden.';
+    if (e['menorDeEdad']) return 'Trueke Bogotá Solidario es solo para personas mayores de 18 años.';
+    if (e['fechaInvalida']) return 'Revisa la fecha: no parece correcta.';
     return `${this.etiqueta()} no es válido.`;
   });
 }
