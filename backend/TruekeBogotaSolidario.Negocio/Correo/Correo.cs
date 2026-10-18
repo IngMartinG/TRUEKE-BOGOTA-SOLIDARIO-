@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
+using System.Net.Http.Json;
+using System.Text.Json.Serialization;
 using System.Threading.Channels;
-using Azure;
-using Azure.Communication.Email;
 using MailKit.Net.Smtp;
 using MailKit.Security;
 using Microsoft.Extensions.DependencyInjection;
@@ -25,26 +25,26 @@ public sealed class SmtpOpciones
     public string Seguridad { get; set; } = "StartTls";
 }
 
-/// <summary>Azure Communication Services Email: API HTTPS (sirve donde el SMTP está bloqueado, como Render gratis).</summary>
-public sealed class AzureComunicacionOpciones
+/// <summary>Brevo: API HTTPS de correo transaccional (sirve donde el SMTP está bloqueado, como Render gratis).</summary>
+public sealed class BrevoOpciones
 {
-    /// <summary>Recurso de Communication Services → Claves → Cadena de conexión (endpoint=...;accesskey=...).</summary>
-    public string CadenaConexion { get; set; } = "";
+    /// <summary>Brevo → SMTP y API → Claves API (xkeysib-...). Es un secreto: nunca va en appsettings ni en el repo.</summary>
+    public string ClaveApi { get; set; } = "";
 }
 
 public sealed class CorreoOpciones
 {
     public const string Seccion = "Correo";
-    public const string ProveedorAzure = "AzureCommunication";
-    /// <summary>"Smtp", "AzureCommunication" (reales) o "Simulado" (solo desarrollo/pruebas; el arranque lo rechaza en Producción).</summary>
+    public const string ProveedorBrevo = "Brevo";
+    /// <summary>"Smtp", "Brevo" (reales) o "Simulado" (solo desarrollo/pruebas; el arranque lo rechaza en Producción).</summary>
     public string Proveedor { get; set; } = "Smtp";
-    /// <summary>Con AzureCommunication debe ser una dirección "MailFrom" del dominio conectado (p. ej. DoNotReply@xxxx.azurecomm.net).</summary>
+    /// <summary>Con Brevo debe ser un remitente verificado en la cuenta (Brevo → Remitentes); si no, Brevo rechaza el envío.</summary>
     [EmailAddress] public string Remitente { get; set; } = "no-responder@trueke.co";
     [StringLength(80)] public string NombreRemitente { get; set; } = "Trueke Bogotá Solidario";
     public SmtpOpciones Smtp { get; set; } = new();
-    public AzureComunicacionOpciones Azure { get; set; } = new();
+    public BrevoOpciones Brevo { get; set; } = new();
     public bool EsSimulado => string.Equals(Proveedor, "Simulado", StringComparison.OrdinalIgnoreCase);
-    public bool EsAzure => string.Equals(Proveedor, ProveedorAzure, StringComparison.OrdinalIgnoreCase);
+    public bool EsBrevo => string.Equals(Proveedor, ProveedorBrevo, StringComparison.OrdinalIgnoreCase);
 }
 
 /// <summary>
@@ -125,30 +125,49 @@ public sealed class TransporteCorreoSimulado : ITransporteCorreo
 }
 
 /// <summary>
-/// Azure Communication Services Email por su API HTTPS. Se usa donde el proveedor bloquea los puertos SMTP (Render gratis).
-/// El nombre visible del remitente se configura en Azure (dirección MailFrom del dominio), no aquí.
+/// Brevo por su API HTTPS (POST /v3/smtp/email). Se usa donde el proveedor bloquea los puertos SMTP (Render gratis).
+/// Si Brevo no acepta el correo (clave inválida, remitente sin verificar, límite diario), lanza y el worker reintenta.
 /// </summary>
-public sealed class TransporteCorreoAzure : ITransporteCorreo
+public sealed class TransporteCorreoBrevo : ITransporteCorreo
 {
-    private readonly EmailClient _cliente;
+    public const string ClienteHttp = "correo-brevo";
+    public static readonly Uri Endpoint = new("https://api.brevo.com/v3/smtp/email");
+
+    private readonly IHttpClientFactory _http;
     private readonly CorreoOpciones _o;
 
-    public TransporteCorreoAzure(EmailClient cliente, IOptions<CorreoOpciones> o)
+    public TransporteCorreoBrevo(IHttpClientFactory http, IOptions<CorreoOpciones> o)
     {
-        _cliente = cliente; _o = o.Value;
+        _http = http; _o = o.Value;
     }
 
     public async Task EnviarAsync(MensajeCorreo m, CancellationToken ct)
     {
-        var contenido = new EmailContent(m.Asunto) { PlainText = m.Texto, Html = m.Html };
-        var mensaje = new EmailMessage(_o.Remitente, new EmailRecipients(new List<EmailAddress> { new(m.Para) }), contenido);
-        // WaitUntil.Started: Azure aceptó el correo y lo entrega en segundo plano (no se bloquea el worker esperando).
-        // Si falla (credencial, remitente no conectado, límite por hora), lanza y el worker reintenta.
-        await _cliente.SendAsync(WaitUntil.Started, mensaje, ct);
+        var cuerpo = new CorreoBrevo(
+            new DireccionBrevo(_o.Remitente, _o.NombreRemitente), [new DireccionBrevo(m.Para)], m.Asunto, m.Texto, m.Html);
+        using var req = new HttpRequestMessage(HttpMethod.Post, Endpoint) { Content = JsonContent.Create(cuerpo) };
+        req.Headers.Add("api-key", _o.Brevo.ClaveApi);
+        req.Headers.Accept.ParseAdd("application/json");
+
+        using var respuesta = await _http.CreateClient(ClienteHttp).SendAsync(req, ct);
+        // Solo el código: la respuesta de Brevo puede repetir el destinatario (dato personal).
+        if (!respuesta.IsSuccessStatusCode)
+            throw new HttpRequestException($"Brevo rechazó el correo (HTTP {(int)respuesta.StatusCode}).", null, respuesta.StatusCode);
     }
+
+    private sealed record DireccionBrevo(
+        [property: JsonPropertyName("email")] string Correo,
+        [property: JsonPropertyName("name"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Nombre = null);
+
+    private sealed record CorreoBrevo(
+        [property: JsonPropertyName("sender")] DireccionBrevo Remitente,
+        [property: JsonPropertyName("to")] DireccionBrevo[] Para,
+        [property: JsonPropertyName("subject")] string Asunto,
+        [property: JsonPropertyName("textContent")] string Texto,
+        [property: JsonPropertyName("htmlContent"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? Html);
 }
 
-/// <summary>SMTP con TLS obligatorio (sirve para Azure Communication Services, SendGrid, Gmail, etc.).</summary>
+/// <summary>SMTP con TLS obligatorio (sirve para Brevo, SendGrid, Gmail, etc. donde el puerto no esté bloqueado).</summary>
 public sealed class TransporteCorreoSmtp : ITransporteCorreo
 {
     private readonly CorreoOpciones _o;
