@@ -66,11 +66,15 @@ services:
       # (6543): no conserva la sesión entre consultas y habría que agregar No Reset On Close=true y evitar sentencias preparadas.
       - key: ConnectionStrings__TruekeDb
         sync: false
-      - key: Almacenamiento__CadenaConexion # cuenta de Storage → Claves de acceso → Cadena de conexión
+      # Supabase Storage (fotos y documentos; docs/DESPLIEGUE.md §3): https://<ref>.supabase.co/storage/v1 y la llave
+      # secreta del proyecto (Project Settings → API Keys → Secret key, sb_secret_…). Los buckets los crea la API sola.
+      - key: Almacenamiento__Url
         sync: false
-      - key: Urls__HostsPermitidosImagenes__0 # <cuenta>.blob.core.windows.net
+      - key: Almacenamiento__LlaveServicio
         sync: false
-      - key: Urls__HostsPermitidosDocumentos__0 # <cuenta>.blob.core.windows.net
+      - key: Urls__HostsPermitidosImagenes__0 # <ref>.supabase.co
+        sync: false
+      - key: Urls__HostsPermitidosDocumentos__0 # <ref>.supabase.co
         sync: false
       - key: Captcha__ClaveSitio
         sync: false

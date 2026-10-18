@@ -4,8 +4,11 @@
 # PostgreSQL con migraciones, Redis). Solo se reemplazan los servicios externos:
 #   - Azure Communication Services → Mailpit, por SMTP con STARTTLS real (certificado de una CA creada aquí, que solo
 #     confía el contenedor de la API).
-#   - Azure Blob → Azurite. Escucha en 127.0.0.2 DENTRO del contenedor de la API (comparte su red) y se publica en el
-#     equipo: así las URLs de las fotos son de loopback (las únicas http que acepta la API) y el navegador las alcanza.
+#   - Supabase Storage → el mismo servidor que corre Supabase (supabase/storage-api, archivos en memoria) detrás de una
+#     "puerta" nginx que, como el gateway de Supabase, lo publica bajo /storage/v1 con CORS. La puerta escucha en 127.0.0.2
+#     DENTRO del contenedor de la API (comparte su red) y se publica en el equipo: así las URLs de las fotos son de
+#     loopback (las únicas http que acepta la API) y el navegador las alcanza. Llaves de DEMOSTRACIÓN de Supabase (ver
+#     backend/docker-compose.storage.yml): no son secretos.
 #   - Wompi → pagos simulados (ya es el valor por defecto del compose en el entorno Local).
 
 services:
@@ -59,14 +62,51 @@ services:
       certificados:
         condition: service_healthy
 
-  azurite:
-    image: mcr.microsoft.com/azure-storage/azurite:3.37.0@sha256:830430c1da1a2d537e08f3e6764dd1f5ae00cf0346bcaf625b968ec3f0971fd5
-    command: ["azurite-blob", "--blobHost", "0.0.0.0", "--blobPort", "10000", "--inMemoryPersistence", "--skipApiVersionCheck", "--loose"]
+  storage-db:
+    image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+    environment:
+      POSTGRES_PASSWORD: storage-e2e
+      POSTGRES_DB: storage
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d storage"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  storage:
+    image: supabase/storage-api:v1.79.28@sha256:1f6c99d3952d78d57129802aa2ae8a80d75e327492cf24742fd0aeaf90967b96
+    environment:
+      AUTH_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      PGRST_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+      ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+      SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+      DATABASE_URL: postgres://postgres:storage-e2e@storage-db:5432/storage
+      DB_INSTALL_ROLES: "true"
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /tmp/storage
+      FILE_SIZE_LIMIT: "52428800"
+      TENANT_ID: e2e
+      REGION: local
+      GLOBAL_S3_BUCKET: e2e
+    tmpfs:
+      - /tmp
+    depends_on:
+      storage-db:
+        condition: service_healthy
+
+  puerta-storage:
+    image: nginxinc/nginx-unprivileged:1.30-alpine@sha256:15c994d10d6d78658721c3bcafff14cb281fba2a4bdf9d5ba92c416a472516e3
     network_mode: "service:api"
+    volumes:
+      - ./supabase-storage/puerta.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - storage
 
   api:
     ports:
-      - "10000:10000" # Azurite (comparte la red de la API)
+      - "8082:8082" # Puerta de Storage (comparte la red de la API)
     environment:
       Correo__Proveedor: Smtp
       Correo__Smtp__Host: mailpit
@@ -75,7 +115,8 @@ services:
       Correo__Smtp__Usuario: ""
       # Solo la CA de este ambiente: la API no necesita confiar en nada más aquí.
       SSL_CERT_DIR: /certs/confianza
-      Almacenamiento__CadenaConexion: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://127.0.0.2:10000/devstoreaccount1;"
+      Almacenamiento__Url: http://127.0.0.2:8082/storage/v1
+      Almacenamiento__LlaveServicio: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
       Urls__Frontend: http://localhost:8081
       # Notificaciones push con llaves VAPID de un solo uso (las genera e2e/ambiente.ts)
       Push__ClavePublica: ${E2E_PUSH_PUBLICA:-}
@@ -92,8 +133,8 @@ services:
 
   web:
     environment:
-      CSP_IMG_EXTRA: http://127.0.0.2:10000
-      CSP_CONNECT_EXTRA: http://127.0.0.2:10000
+      CSP_IMG_EXTRA: http://127.0.0.2:8082
+      CSP_CONNECT_EXTRA: http://127.0.0.2:8082
 
 volumes:
   certs:

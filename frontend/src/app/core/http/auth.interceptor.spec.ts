@@ -35,10 +35,10 @@ describe('authInterceptor', () => {
   it('añade el JWT solo a la API propia', () => {
     sesion.establecer(sesionValida('t1'));
     void firstValueFrom(http.get(`${api}/usuarios/yo`));
-    void firstValueFrom(http.get('https://cuenta.blob.core.windows.net/imagenes/x.webp'));
+    void firstValueFrom(http.get('https://proyecto.supabase.co/storage/v1/object/public/imagenes/x.webp'));
 
     expect(pedido(`${api}/usuarios/yo`).request.headers.get('Authorization')).toBe('Bearer t1');
-    expect(control.expectOne('https://cuenta.blob.core.windows.net/imagenes/x.webp').request.headers.has('Authorization')).toBe(false);
+    expect(control.expectOne('https://proyecto.supabase.co/storage/v1/object/public/imagenes/x.webp').request.headers.has('Authorization')).toBe(false);
   });
 
   it('envía cookie y cabecera anti-CSRF en las rutas /auth/*', () => {

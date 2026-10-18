@@ -124,10 +124,9 @@ export async function subirFoto(api: APIRequestContext, token: string, png: Buff
   });
   expect(r.status(), await r.text()).toBe(201);
   const subida = (await r.json()) as { urlSubida: string; urlArchivo: string; cabeceras: Record<string, string> };
-  // Azurite (el emulador) a veces corta la conexión bajo carga: un reintento ante un corte de red, no ante un error HTTP.
-  const subir = () => api.put(subida.urlSubida, { data: png, headers: subida.cabeceras });
-  const put = await subir().catch(() => subir());
-  expect(put.status(), await put.text()).toBe(201);
+  // Lo que hace el navegador: PUT directo a Storage con la URL firmada (sin la llave de la API).
+  const put = await api.put(subida.urlSubida, { data: png, headers: subida.cabeceras });
+  expect(put.status(), await put.text()).toBe(200);
   return subida.urlArchivo;
 }
 
