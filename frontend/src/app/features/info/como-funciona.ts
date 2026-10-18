@@ -1,8 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
+import { catchError, of } from 'rxjs';
 import { INFO_MODO, MODOS } from '../../api/tipos';
+import { CuentaApi } from '../../core/api/cuenta.api';
 import { SesionService } from '../../core/sesion.service';
 import { Icono } from '../../shared/ui/icono';
+import { preguntasDe } from '../ayuda/conocimiento';
 
 @Component({
   imports: [RouterLink, Icono],
@@ -53,7 +57,7 @@ import { Icono } from '../../shared/ui/icono';
     <section class="contenedor mt-20 max-w-3xl">
       <h2 class="titulo-seccion text-center">Preguntas frecuentes</h2>
       <div class="mt-8 space-y-3">
-        @for (f of preguntas; track f.p) {
+        @for (f of preguntas(); track f.id) {
           <details class="group tarjeta p-5 open:shadow-elevada">
             <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold">
               {{ f.p }}
@@ -74,6 +78,7 @@ import { Icono } from '../../shared/ui/icono';
 })
 export default class ComoFunciona {
   protected readonly sesion = inject(SesionService);
+  private readonly politica = toSignal(inject(CuentaApi).politica$.pipe(catchError(() => of(null))));
   protected readonly info = INFO_MODO;
   protected readonly modos = MODOS;
   protected readonly pasos = [
@@ -84,11 +89,5 @@ export default class ComoFunciona {
     { icono: 'apreton', titulo: 'Confirmen la entrega', texto: 'Cuando el objeto cambie de manos, ambas personas confirman en la app. Si alguien olvida confirmar, el intercambio se cierra automáticamente tras unos días.' },
     { icono: 'estrella', titulo: 'Califica y gana', texto: 'Ambos reciben Eco-Puntos y reputación, y pueden calificarse. Así la comunidad sabe en quién confiar.' },
   ];
-  protected readonly preguntas = [
-    { p: '¿Cuesta algo usar Trueke?', r: 'No. Publicar, intercambiar, comprar y donar es gratis. Solo pagas si quieres servicios opcionales como destacar una publicación, verificar tu cuenta o un plan Premium.' },
-    { p: '¿Qué son los Eco-Puntos?', r: 'Son la moneda interna de la comunidad. Los ganas al completar intercambios y sirven para impulsar, destacar o verificar tu cuenta: cada punto vale $100 en la app y tú eliges cuántos usar. No se pueden convertir en dinero.' },
-    { p: '¿Cómo protegen mis datos?', r: 'Nunca mostramos tu correo ni tu ubicación exacta a otras personas. Puedes descargar o eliminar tus datos cuando quieras desde Privacidad, conforme a la Ley 1581 de 2012.' },
-    { p: '¿Qué pasa si el intercambio no se da?', r: 'Cualquiera de las dos partes puede marcarlo como "no se concretó" indicando el motivo. La publicación vuelve a estar disponible.' },
-    { p: '¿Qué hago si veo algo sospechoso?', r: 'Usa el botón "Reportar" en la publicación, comentario o perfil. El equipo de moderación lo revisa y puede ocultar contenido o suspender cuentas.' },
-  ];
+  protected readonly preguntas = computed(() => preguntasDe('como-funciona', this.politica()));
 }

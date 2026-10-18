@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
@@ -12,6 +12,8 @@ import { textoSeguro } from '../../shared/validadores';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
 import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { Icono } from '../../shared/ui/icono';
+import { BorradorPqrs, type Borrador } from '../ayuda/borrador-pqrs';
+import { esTipoPqr } from '../ayuda/motor';
 
 @Component({
   imports: [ReactiveFormsModule, ErrorCampo, CampoAccesible, Icono, FechaPipe],
@@ -103,13 +105,31 @@ export default class Soporte {
   protected readonly mias = rxResource({ stream: () => this.api.misPqr() });
 
   protected readonly form = this.fb.group({
-    tipo: this.fb.control<TipoPqrDto>((this.ruta.snapshot.queryParamMap.get('tipo') as TipoPqrDto) || 'Peticion'),
+    tipo: this.fb.control<TipoPqrDto>(this.tipoDeLaRuta()),
     pagoReferencia: [this.ruta.snapshot.queryParamMap.get('pago') ?? '', [Validators.maxLength(100), Validators.pattern(/^ *[A-Za-z]{3}-[A-Za-z0-9]{1,96} *$/)]],
     asunto: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(120), textoSeguro()]],
     descripcion: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(2000), textoSeguro(true)]],
   });
   protected readonly tipo = toSignal(this.form.controls.tipo.valueChanges, { initialValue: this.form.controls.tipo.value });
   protected readonly conPago = computed(() => TIPOS_PQR.find((t) => t.valor === this.tipo())?.conPago ?? false);
+
+  constructor() {
+    // Lo que se habló con el asistente llega en memoria (no en la URL) y se aplica una vez, aunque ya estés aquí.
+    const borrador = inject(BorradorPqrs);
+    effect(() => {
+      if (!borrador.pendiente()) return;
+      untracked(() => this.aplicar(borrador.tomar()));
+    });
+  }
+
+  private tipoDeLaRuta(): TipoPqrDto {
+    const t = this.ruta.snapshot.queryParamMap.get('tipo');
+    return esTipoPqr(t) ? t : 'Peticion';
+  }
+
+  private aplicar(b: Borrador | null): void {
+    if (b) this.form.patchValue({ tipo: b.tipo, asunto: b.asunto, descripcion: b.descripcion });
+  }
 
   protected async enviar(): Promise<void> {
     this.form.markAllAsTouched();

@@ -8,6 +8,7 @@ import { ConfigService } from './core/config.service';
 import { SesionService } from './core/sesion.service';
 import { TemaService } from './core/tema.service';
 import { TiempoRealService } from './core/tiempo-real.service';
+import { AsistenteSoporte } from './features/ayuda/asistente-soporte';
 import { BarraMovil } from './layout/barra-movil';
 import { Encabezado } from './layout/encabezado';
 import { Pie } from './layout/pie';
@@ -17,7 +18,7 @@ import { LogroIntercambio } from './shared/ui/logro-intercambio';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, Encabezado, Pie, BarraMovil, Avisos, Icono, LogroIntercambio],
+  imports: [RouterOutlet, RouterLink, Encabezado, Pie, BarraMovil, Avisos, Icono, LogroIntercambio, AsistenteSoporte],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <a href="#contenido" class="sr-only z-[200] rounded-full bg-bosque-700 px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3">
@@ -63,6 +64,10 @@ import { LogroIntercambio } from './shared/ui/logro-intercambio';
     <app-barra-movil />
     <app-avisos />
     <app-logro-intercambio />
+    <!-- El asistente no es urgente: se carga cuando el navegador queda libre, fuera del paquete inicial. -->
+    @defer (on idle) {
+      <app-asistente-soporte />
+    }
   `,
 })
 export class App {
