@@ -239,12 +239,17 @@ const TAMANO = 40;
                 </button>
                 <label for="nuevo-mensaje" class="sr-only">Escribe un mensaje</label>
                 <textarea #entrada id="nuevo-mensaje" name="texto" rows="1" class="entrada max-h-32 min-h-11 resize-none rounded-2xl py-2.5" maxlength="1000"
-                  [(ngModel)]="texto" (input)="alEscribir()" (keydown.enter)="alPresionarEnter($event)" (keydown.escape)="cancelarRespuesta()" placeholder="Escribe un mensaje…"></textarea>
+                  [(ngModel)]="texto" (input)="alEscribir()" (keydown.enter)="alPresionarEnter($event)" (keydown.escape)="cancelarRespuesta()" placeholder="Escribe un mensaje…"
+                  aria-describedby="aviso-chat"></textarea>
                 <button type="submit" class="grid size-11 shrink-0 place-items-center rounded-full bg-bosque-600 text-white transition hover:bg-bosque-700 disabled:opacity-50"
                   [disabled]="!texto().trim() || enviando()" aria-label="Enviar">
                   <app-icono nombre="enviar" [tamano]="18" />
                 </button>
               </form>
+              <p id="aviso-chat" class="px-4 pb-2 text-[11px] leading-snug text-tenue">
+                Por seguridad, no compartas documentos, claves ni datos bancarios por el chat.
+                <a routerLink="/terminos" fragment="seccion-10" class="underline hover:text-tinta">Reglas de conducta</a>
+              </p>
             }
           }
         </section>

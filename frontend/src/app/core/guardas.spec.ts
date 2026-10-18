@@ -5,7 +5,7 @@ import { SesionService } from './sesion.service';
 
 function ejecutar(
   guarda: typeof exigirCorreoVerificado,
-  sesion: { autenticado: boolean; verificado: boolean; moderador?: boolean; foto?: boolean; mayor?: boolean; sinNombre?: boolean },
+  sesion: { autenticado: boolean; verificado: boolean; moderador?: boolean; foto?: boolean; mayor?: boolean; sinNombre?: boolean; legalViejo?: boolean },
   url = '/cuenta/perfil',
 ) {
   TestBed.resetTestingModule(); // varias llamadas en la misma prueba
@@ -22,6 +22,7 @@ function ejecutar(
           nombreRealPendiente: () => sesion.sinNombre ?? false,
           usuario: () => (sesion.autenticado ? {} : null),
           mayoriaEdadConfirmada: () => sesion.mayor ?? true,
+          legalPendiente: () => sesion.legalViejo ?? false,
         },
       },
     ],
@@ -82,6 +83,12 @@ describe('exigirMayoriaEdad (cuentas sin fecha de nacimiento)', () => {
   it('deja abrir lo legal, la ayuda, la privacidad de la cuenta y la propia pantalla', () => {
     for (const url of ['/completar-perfil?volver=%2F', '/privacidad', '/terminos', '/ayuda', '/cuenta/privacidad', '/cuenta/soporte'])
       expect(ejecutar(exigirMayoriaEdad, { autenticado: true, verificado: true, mayor: false }, url)).toBe(true);
+  });
+
+  it('con una versión vieja de la política o los términos también lleva a completar el perfil', () => {
+    expect(ejecutar(exigirMayoriaEdad, { autenticado: true, verificado: true, mayor: true, legalViejo: true }, '/mensajes')).toBe(
+      '/completar-perfil?volver=%2Fmensajes',
+    );
   });
 
   it('sin sesión o con la fecha registrada no hace nada', () => {

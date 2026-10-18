@@ -1,7 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
 import { URL_API } from './ambiente';
-import { cuentaLista, publicar } from './utilidades';
+import { correoUnico, cuentaLista, esperarCorreo, publicar } from './utilidades';
 
 test.describe('visitante sin cuenta', () => {
   let titulo = '';
@@ -65,5 +65,30 @@ test.describe('visitante sin cuenta', () => {
     const jpeg = await request.get(`${URL_API}/compartir/publicaciones/${id}/imagen.jpg`);
     expect(jpeg.status()).toBe(200);
     expect(jpeg.headers()['content-type']).toBe('image/jpeg');
+  });
+  test('radica una PQRS sin cuenta, recibe el radicado por correo y consulta el estado', async ({ page }) => {
+    const correo = correoUnico('pqrs');
+    await page.goto('/');
+    await page.getByRole('contentinfo').getByRole('link', { name: /PQRS/ }).click();
+    await expect(page.getByRole('heading', { name: 'PQRS', exact: true })).toBeVisible();
+    await page.getByText('Consulta de mis datos').click();
+    await page.getByLabel('Nombre y apellido').fill('Elena Prueba Ríos');
+    await page.getByLabel('Correo para la respuesta').fill(correo);
+    await page.getByLabel('Asunto').fill('Qué datos míos tienen');
+    await page.getByLabel('Cuéntanos qué pasó').fill('Quiero saber qué datos personales guardan sobre mí.');
+    await page.getByRole('button', { name: 'Radicar solicitud' }).click();
+    const radicado = (await page.locator('[role="status"] strong.font-mono').textContent())!.trim();
+    expect(radicado).toMatch(/^PQR-\d{8}-[0-9A-F]{6}$/);
+
+    const texto = await esperarCorreo(page.request, correo, /Recibimos tu solicitud/);
+    expect(texto).toContain(radicado);
+    expect(texto).toContain('10 días hábiles');
+
+    await page.getByRole('tab', { name: 'Consultar el estado' }).click();
+    await page.getByLabel('Radicado').fill(radicado);
+    await page.getByLabel('Correo con el que la radicaste').fill(correo);
+    await page.getByRole('button', { name: 'Consultar' }).click();
+    await expect(page.getByText('Qué datos míos tienen')).toBeVisible();
+    await expect(page.getByText('Recibida')).toBeVisible();
   });
 });

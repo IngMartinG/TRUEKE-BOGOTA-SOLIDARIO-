@@ -711,6 +711,46 @@
         }
       }
     },
+    "/api/v1/admin/pqr/{id}/en-tramite": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrAdminDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrAdminDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrAdminDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/ingresos": {
       "get": {
         "tags": [
@@ -3456,6 +3496,102 @@
         }
       }
     },
+    "/api/v1/pqr/publica": {
+      "post": {
+        "tags": [
+          "Pqr"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPqrPublicaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPqrPublicaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearPqrPublicaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/pqr/consultar": {
+      "post": {
+        "tags": [
+          "Pqr"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsultarPqrRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsultarPqrRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/ConsultarPqrRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PqrDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/categorias": {
       "get": {
         "tags": [
@@ -5356,6 +5492,54 @@
         }
       }
     },
+    "/api/v1/usuarios/yo/aceptar-legal": {
+      "put": {
+        "tags": [
+          "Usuarios"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AceptarLegalRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AceptarLegalRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/AceptarLegalRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/usuarios/yo/empresa": {
       "put": {
         "tags": [
@@ -5414,6 +5598,18 @@
           "MarcarRevisada"
         ],
         "type": "string"
+      },
+      "AceptarLegalRequest": {
+        "type": "object",
+        "properties": {
+          "aceptoPoliticaDatos": {
+            "type": "boolean"
+          },
+          "aceptoTerminos": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
       },
       "ActivacionDosFactoresDto": {
         "type": "object",
@@ -6048,6 +6244,9 @@
           "pushClavePublica": {
             "type": "string",
             "nullable": true
+          },
+          "legal": {
+            "$ref": "#/components/schemas/LegalPublicoDto"
           }
         },
         "additionalProperties": false
@@ -6063,6 +6262,32 @@
           "googleIdToken": {
             "maxLength": 4096,
             "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ConsultarPqrRequest": {
+        "required": [
+          "correo",
+          "radicado"
+        ],
+        "type": "object",
+        "properties": {
+          "radicado": {
+            "minLength": 1,
+            "pattern": "^ *[Pp][Qq][Rr]-[0-9]{8}-[0-9A-Fa-f]{6} *$",
+            "type": "string"
+          },
+          "correo": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string",
+            "format": "email"
+          },
+          "captchaToken": {
+            "maxLength": 4096,
             "type": "string",
             "nullable": true
           }
@@ -6223,6 +6448,48 @@
           },
           "detalle": {
             "maxLength": 500,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "CrearPqrPublicaRequest": {
+        "required": [
+          "asunto",
+          "correo",
+          "descripcion",
+          "nombre"
+        ],
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "maxLength": 120,
+            "minLength": 3,
+            "pattern": "^ *\\p{L}\\p{M}*(?:[\u0027\u2019.-]?\\p{L}\\p{M}*)*\\.?(?: \u002B\\p{L}\\p{M}*(?:[\u0027\u2019.-]?\\p{L}\\p{M}*)*\\.?)* *$",
+            "type": "string"
+          },
+          "correo": {
+            "maxLength": 160,
+            "minLength": 1,
+            "type": "string",
+            "format": "email"
+          },
+          "tipo": {
+            "$ref": "#/components/schemas/TipoPqrDto"
+          },
+          "asunto": {
+            "maxLength": 120,
+            "minLength": 5,
+            "type": "string"
+          },
+          "descripcion": {
+            "maxLength": 2000,
+            "minLength": 10,
+            "type": "string"
+          },
+          "captchaToken": {
+            "maxLength": 4096,
             "type": "string",
             "nullable": true
           }
@@ -6997,7 +7264,8 @@
       "EstadoPqrDto": {
         "enum": [
           "Abierta",
-          "Respondida"
+          "Respondida",
+          "EnTramite"
         ],
         "type": "string"
       },
@@ -7257,6 +7525,9 @@
             "type": "string"
           },
           "aceptoPoliticaDatos": {
+            "type": "boolean"
+          },
+          "aceptoTerminos": {
             "type": "boolean"
           },
           "fechaNacimiento": {
@@ -7590,6 +7861,41 @@
           "diasCiclo": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "LegalPublicoDto": {
+        "type": "object",
+        "properties": {
+          "versionPoliticaDatos": {
+            "type": "string"
+          },
+          "versionTerminos": {
+            "type": "string"
+          },
+          "fechaVigencia": {
+            "type": "string"
+          },
+          "responsableNombre": {
+            "type": "string",
+            "nullable": true
+          },
+          "responsableDocumento": {
+            "type": "string",
+            "nullable": true
+          },
+          "domicilio": {
+            "type": "string",
+            "nullable": true
+          },
+          "correoContacto": {
+            "type": "string",
+            "nullable": true
+          },
+          "telefono": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8445,13 +8751,17 @@
           },
           "usuarioId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "nullable": true
           },
           "nombreUsuario": {
             "type": "string"
           },
           "correoUsuario": {
             "type": "string"
+          },
+          "publica": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -8806,6 +9116,9 @@
           "aceptoPoliticaDatos": {
             "type": "boolean"
           },
+          "aceptoTerminos": {
+            "type": "boolean"
+          },
           "captchaToken": {
             "maxLength": 4096,
             "type": "string",
@@ -9158,7 +9471,8 @@
           "Reclamo",
           "Sugerencia",
           "Retracto",
-          "ReversionPago"
+          "ReversionPago",
+          "Consulta"
         ],
         "type": "string"
       },
@@ -9391,6 +9705,14 @@
           },
           "nombreRealPendiente": {
             "type": "boolean"
+          },
+          "politicaDatosVersion": {
+            "type": "string",
+            "nullable": true
+          },
+          "terminosVersion": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

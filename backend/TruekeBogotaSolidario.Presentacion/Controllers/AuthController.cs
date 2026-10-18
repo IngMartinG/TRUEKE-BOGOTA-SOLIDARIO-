@@ -182,6 +182,14 @@ public sealed class UsuariosController : ControllerBase
     public async Task<ActionResult<UsuarioDto>> RegistrarFechaNacimiento([FromBody] FechaNacimientoRequest r)
         => Ok(await _auth.RegistrarFechaNacimientoAsync(User.IdActual(), r));
 
+    /// <summary>
+    /// Acepta las versiones vigentes de la política de datos y de los términos cuando cambian. Después el front refresca la
+    /// sesión para recibir un token con el claim "legal".
+    /// </summary>
+    [HttpPut("yo/aceptar-legal"), EnableRateLimiting(Politicas.LimiteAuth), PermitirSinFechaNacimiento]
+    public async Task<ActionResult<UsuarioDto>> AceptarLegal([FromBody] AceptarLegalRequest r)
+        => Ok(await _auth.AceptarLegalAsync(User.IdActual(), r));
+
     [HttpPut("yo")]
     public async Task<ActionResult<UsuarioDto>> ActualizarYo([FromBody] ActualizarPerfilRequest r)
         => Ok(await _auth.ActualizarPerfilAsync(User.IdActual(), r));

@@ -52,7 +52,7 @@ public class ArquitecturaTests
         Assert.DoesNotContain("<InvariantGlobalization>true</InvariantGlobalization>", csproj);
     }
 
-    /// <summary>Lista blanca de endpoints anónimos (reglas de seguridad del proyecto): login, registro, GET de catálogo (incluye compartir) y categorías, política de Eco-Puntos, impacto de la comunidad (solo totales) y webhook de Wompi.</summary>
+    /// <summary>Lista blanca de endpoints anónimos (reglas de seguridad del proyecto): login, registro, GET de catálogo (incluye compartir) y categorías, política de Eco-Puntos, impacto de la comunidad (solo totales), PQRS pública (radicar y consultar) y webhook de Wompi.</summary>
     [Fact]
     public void Solo_los_endpoints_permitidos_son_anonimos()
     {
@@ -79,6 +79,8 @@ public class ArquitecturaTests
             "GET api/v1/publicaciones/{id:guid}/comentarios",
             "GET api/v1/eco-puntos/politica",
             "GET api/v1/impacto",
+            "POST api/v1/pqr/publica",   // PQRS pública con captcha y límite por IP y por correo (autorizado por el dueño el 2026-10-18)
+            "POST api/v1/pqr/consultar",
             "GET api/v1/configuracion",
             "GET api/v1/usuarios/{id:guid}/perfil",
             "GET api/v1/usuarios/{id:guid}/publicaciones",

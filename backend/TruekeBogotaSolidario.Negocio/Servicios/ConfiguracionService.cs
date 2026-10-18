@@ -12,7 +12,14 @@ namespace TruekeBogotaSolidario.Negocio.Servicios;
 public sealed record ConfiguracionPublicaDto(string? CaptchaClaveSitio, string? GoogleClientId, string VersionPoliticaDatos,
     bool SubidaArchivosHabilitada, int MaxImagenesPorPublicacion, long TamanoMaximoArchivoBytes,
     int DiasCierreConUnaConfirmacion, int DiasCierreSinConfirmacion, bool PagosDePrueba,
-    string? ImagenesOrigenUrl = null, string? ImagenesCdnUrl = null, string? PushClavePublica = null);
+    string? ImagenesOrigenUrl = null, string? ImagenesCdnUrl = null, string? PushClavePublica = null, LegalPublicoDto? Legal = null);
+
+/// <summary>
+/// Datos legales para la política, los términos y el pie de página: versiones vigentes y responsable del tratamiento.
+/// Null en un dato = no está configurado (solo pasa fuera de producción).
+/// </summary>
+public sealed record LegalPublicoDto(string VersionPoliticaDatos, string VersionTerminos, string FechaVigencia,
+    string? ResponsableNombre, string? ResponsableDocumento, string? Domicilio, string? CorreoContacto, string? Telefono);
 
 public interface IConfiguracionService
 {
@@ -51,5 +58,10 @@ public sealed class ConfiguracionService : IConfiguracionService
         _pagos.EsDePrueba,
         CdnActiva ? _almacenamiento.OrigenPublico : null,
         CdnActiva ? _almacenamiento.CdnUrl.TrimEnd('/') + "/" : null,
-        _push.Habilitado && _push.Validas ? _push.ClavePublica : null);
+        _push.Habilitado && _push.Validas ? _push.ClavePublica : null,
+        new LegalPublicoDto(_legal.VersionPoliticaDatos, _legal.VersionTerminos, _legal.FechaVigencia,
+            Vacio(_legal.ResponsableNombre), Vacio(_legal.ResponsableDocumento), Vacio(_legal.Domicilio), Vacio(_legal.CorreoContacto),
+            Vacio(_legal.Telefono)));
+
+    private static string? Vacio(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 }

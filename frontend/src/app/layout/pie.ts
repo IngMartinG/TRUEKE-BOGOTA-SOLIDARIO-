@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { ConfigService } from '../core/config.service';
 import { Icono } from '../shared/ui/icono';
 import { Logo } from '../shared/ui/logo';
 
@@ -36,7 +37,16 @@ import { Logo } from '../shared/ui/logo';
       <div class="border-t border-white/10">
         <!-- pb-24: espacio para la barra inferior de celular y tablet -->
         <div class="contenedor flex flex-col gap-2 py-6 pb-24 text-xs text-bosque-200/60 sm:flex-row sm:justify-between lg:pb-6">
-          <p>© {{ anio }} Trueke Bogotá Solidario · Hecho en Colombia</p>
+          <div class="space-y-1">
+            <p>© {{ anio }} Trueke Bogotá Solidario · Hecho en Colombia</p>
+            @if (legal()?.responsableNombre; as nombre) {
+              <p>
+                Responsable: {{ nombre }}@if (legal()?.domicilio; as domicilio) { · {{ domicilio }} }
+                @if (legal()?.correoContacto; as correo) { · <a [href]="'mailto:' + correo" class="underline hover:text-white">{{ correo }}</a> }
+                @if (legal()?.telefono; as tel) { · {{ tel }} }
+              </p>
+            }
+          </div>
           <p>Tus datos se tratan conforme a la Ley 1581 de 2012.</p>
         </div>
       </div>
@@ -44,6 +54,7 @@ import { Logo } from '../shared/ui/logo';
   `,
 })
 export class Pie {
+  protected readonly legal = inject(ConfigService).legal;
   protected readonly anio = new Date().getFullYear();
   protected readonly columnas = [
     {
@@ -74,6 +85,7 @@ export class Pie {
         { ruta: '/privacidad', texto: 'Tratamiento de datos' },
         { ruta: '/terminos', texto: 'Términos de uso' },
         { ruta: '/accesibilidad', texto: 'Accesibilidad' },
+        { ruta: '/pqrs', texto: 'PQRS: peticiones, quejas y reclamos' },
         { ruta: '/cuenta/privacidad', texto: 'Exportar o eliminar mis datos' },
       ],
     },

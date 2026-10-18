@@ -13,8 +13,8 @@ public enum ConceptoPagoDto { Destacar = 1, Verificar = 2, Premium = 3, Empresa 
 public enum CondicionDto { Nuevo = 1, ComoNuevo = 2, Usado = 3, UsadoConDetalles = 4, Reparado = 5, ParaRepuestos = 6 }
 public enum TipoDocumentoFiscalDto { CC = 1, CE = 2, NIT = 3, Pasaporte = 4 }
 public enum EstadoFacturaDto { Pendiente = 1, Emitida = 2, Anulada = 3, Reemplazada = 4 }
-public enum TipoPqrDto { Peticion = 1, Queja = 2, Reclamo = 3, Sugerencia = 4, Retracto = 5, ReversionPago = 6 }
-public enum EstadoPqrDto { Abierta = 1, Respondida = 2 }
+public enum TipoPqrDto { Peticion = 1, Queja = 2, Reclamo = 3, Sugerencia = 4, Retracto = 5, ReversionPago = 6, Consulta = 7 }
+public enum EstadoPqrDto { Abierta = 1, Respondida = 2, EnTramite = 3 }
 
 /// <summary>Formatos DIVIPOLA: departamento = 2 dígitos, municipio = 5 dígitos.</summary>
 internal static class FormatosUbicacion
@@ -41,6 +41,9 @@ public sealed class RegistroRequest
     /// <summary>Ley 1581 de 2012: autorización expresa para el tratamiento de datos personales.</summary>
     [Range(typeof(bool), "true", "true", ErrorMessage = "Debes aceptar la política de tratamiento de datos personales.")]
     public bool AceptoPoliticaDatos { get; init; }
+    /// <summary>Aceptación de los términos de uso y declaración de ser mayor de 18 años (casilla separada de la autorización de datos).</summary>
+    [Range(typeof(bool), "true", "true", ErrorMessage = "Debes aceptar los términos de uso y declarar que eres mayor de 18 años.")]
+    public bool AceptoTerminos { get; init; }
     /// <summary>Token de reCAPTCHA v3 (grecaptcha.execute). Obligatorio cuando el captcha está habilitado.</summary>
     [MaxLength(4096)] public string? CaptchaToken { get; init; }
     /// <summary>Código de quien invitó (enlace /registro?invita=). Si no existe, la cuenta se crea igual, sin invitación.</summary>
@@ -64,6 +67,8 @@ public sealed class GoogleLoginRequest
     [Required, StringLength(4096, MinimumLength = 20)] public string IdToken { get; init; } = "";
     /// <summary>Obligatorio solo si la cuenta es nueva (Ley 1581).</summary>
     public bool AceptoPoliticaDatos { get; init; }
+    /// <summary>Obligatorio solo si la cuenta es nueva: términos de uso y declaración de ser mayor de 18 años.</summary>
+    public bool AceptoTerminos { get; init; }
     /// <summary>"yyyy-MM-dd". Obligatoria solo si la cuenta es nueva: la plataforma es para mayores de 18 años.</summary>
     public DateOnly? FechaNacimiento { get; init; }
     /// <summary>Solo si la cuenta tiene verificación en dos pasos: 6 dígitos de la app o un código de recuperación.</summary>
@@ -121,6 +126,15 @@ public sealed class FechaNacimientoRequest
 {
     /// <summary>"yyyy-MM-dd".</summary>
     [Required(ErrorMessage = "Indica tu fecha de nacimiento.")] public DateOnly? FechaNacimiento { get; init; }
+}
+
+/// <summary>Aceptar de nuevo cuando cambian la política de datos o los términos (403 "terminos_desactualizados").</summary>
+public sealed class AceptarLegalRequest
+{
+    [Range(typeof(bool), "true", "true", ErrorMessage = "Debes aceptar la política de tratamiento de datos personales.")]
+    public bool AceptoPoliticaDatos { get; init; }
+    [Range(typeof(bool), "true", "true", ErrorMessage = "Debes aceptar los términos de uso y declarar que eres mayor de 18 años.")]
+    public bool AceptoTerminos { get; init; }
 }
 
 public sealed class ActualizarPerfilRequest
@@ -353,6 +367,35 @@ public sealed class CrearPqrRequest
     public string? PagoReferencia { get; init; }
 }
 
+/// <summary>PQRS pública: cualquier persona, sin cuenta, con su nombre y correo (autorizado por el dueño el 2026-10-18).</summary>
+public sealed class CrearPqrPublicaRequest
+{
+    [Required, StringLength(120, MinimumLength = 3), RegularExpression(FormatosTexto.NombrePersona, ErrorMessage = FormatosTexto.MensajeNombrePersona)]
+    public string Nombre { get; init; } = "";
+    /// <summary>Allí llegan el radicado y la respuesta.</summary>
+    [Required, EmailAddress, MaxLength(160)] public string Correo { get; init; } = "";
+    /// <summary>Retracto y reversión del pago se piden desde la cuenta (sobre un pago propio).</summary>
+    [EnumDataType(typeof(TipoPqrDto))] public TipoPqrDto Tipo { get; init; } = TipoPqrDto.Peticion;
+    [Required, StringLength(120, MinimumLength = 5), TextoLimpio] public string Asunto { get; init; } = "";
+    [Required, StringLength(2000, MinimumLength = 10), TextoLimpio(Multilinea = true)] public string Descripcion { get; init; } = "";
+    /// <summary>Token de reCAPTCHA v3. Obligatorio cuando el captcha está habilitado.</summary>
+    [MaxLength(4096)] public string? CaptchaToken { get; init; }
+}
+
+/// <summary>Consultar el estado de una PQRS con su radicado y el correo con que se radicó (canal público).</summary>
+public sealed class ConsultarPqrRequest
+{
+    [Required, RegularExpression(FormatosPqr.Radicado, ErrorMessage = "El radicado tiene la forma PQR-AAAAMMDD-XXXXXX.")]
+    public string Radicado { get; init; } = "";
+    [Required, EmailAddress, MaxLength(160)] public string Correo { get; init; } = "";
+    [MaxLength(4096)] public string? CaptchaToken { get; init; }
+}
+
+public static class FormatosPqr
+{
+    public const string Radicado = "^ *[Pp][Qq][Rr]-[0-9]{8}-[0-9A-Fa-f]{6} *$";
+}
+
 public sealed class ResponderPqrRequest
 {
     [Required, StringLength(2000, MinimumLength = 10)] public string Respuesta { get; init; } = "";
@@ -519,7 +562,8 @@ public sealed record UsuarioDto(Guid Id, string NombreCompleto, string Localidad
     int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas, int DestacadosGratisRestantes,
     bool CorreoVerificado, bool TieneClave, bool VinculadoGoogle, bool DosFactoresActivo, int CodigosRecuperacionRestantes,
     string MunicipioCodigo, string Municipio, string? NombreComercial, string? Nit, bool TieneDatosFacturacion, string? FotoUrl = null,
-    bool MostrarNit = false, DateOnly? FechaNacimiento = null, bool NombreRealPendiente = false);
+    bool MostrarNit = false, DateOnly? FechaNacimiento = null, bool NombreRealPendiente = false,
+    string? PoliticaDatosVersion = null, string? TerminosVersion = null);
 
 public sealed record SesionDto(string Token, DateTime ExpiraUtc, UsuarioDto Usuario);
 
@@ -770,7 +814,7 @@ public sealed record PqrDto(Guid Id, string Radicado, string Tipo, string Asunto
 
 public sealed record PqrAdminDto(Guid Id, string Radicado, string Tipo, string Asunto, string Descripcion, string? PagoReferencia, string Estado,
     DateTime FechaUtc, DateTime FechaLimiteUtc, bool Vencida, string? Respuesta, DateTime? FechaRespuestaUtc,
-    Guid UsuarioId, string NombreUsuario, string CorreoUsuario);
+    Guid? UsuarioId, string NombreUsuario, string CorreoUsuario, bool Publica = false);
 
 public sealed record IngresoMesDto(int Anio, int Mes, long AprobadoCop, long ReembolsadoCop, int Pagos);
 public sealed record IngresoConceptoDto(string Concepto, long AprobadoCop, long ReembolsadoCop, int Pagos);

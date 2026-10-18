@@ -26,6 +26,7 @@ public static class AccionesCaptcha
     public const string Registro = "registro";
     public const string Login = "login";
     public const string OlvideClave = "olvide_clave";
+    public const string Pqr = "pqr";
 }
 
 /// <summary>Frena bots en registro, login y recuperación de clave (además del rate limiting por IP).</summary>

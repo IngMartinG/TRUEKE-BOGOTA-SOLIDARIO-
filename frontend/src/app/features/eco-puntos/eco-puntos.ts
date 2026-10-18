@@ -279,7 +279,10 @@ interface Servicio {
                 <span class="text-sm">{{ subiendoDocumento() ? 'Subiendo…' : documentoUrl() ? 'Documento cargado. Toca para cambiarlo.' : 'Sube una foto o PDF de tu cédula' }}</span>
                 <input type="file" class="sr-only" accept="application/pdf,image/jpeg,image/png,image/webp" (change)="subirDocumento($event)" />
               </label>
-              <p class="ayuda">Es privado: solo lo ve el equipo de moderación y se elimina al resolver la solicitud.</p>
+              <p class="ayuda">
+                Es un dato sensible y entregarlo es voluntario: solo lo ve el equipo de moderación para verificar tu identidad y se
+                elimina al resolver la solicitud. <a routerLink="/privacidad" fragment="seccion-4" class="enlace" target="_blank">Cómo lo tratamos<span class="sr-only"> (abre otra pestaña)</span></a>
+              </p>
             } @else {
               <p class="rounded-xl bg-sol-50 p-3 text-sm dark:bg-sol-500/10">La carga de documentos no está disponible en este momento.</p>
             }
@@ -404,7 +407,11 @@ interface Servicio {
             </label>
           }
         </fieldset>
-        <p class="text-xs text-tenue" [hidden]="usaGratis() || cubreTodo()">Al pagar aceptas los <a routerLink="/terminos" class="enlace" target="_blank">términos<span class="sr-only"> (abre otra pestaña)</span></a>.</p>
+        <p class="text-xs text-tenue" [hidden]="usaGratis() || cubreTodo()">
+          Al pagar aceptas los <a routerLink="/terminos" class="enlace" target="_blank">términos<span class="sr-only"> (abre otra pestaña)</span></a>.
+          Tienes 5 días hábiles para retractarte si el servicio aún no ha comenzado
+          (<a routerLink="/terminos" fragment="seccion-8" class="enlace" target="_blank">retracto y reversión<span class="sr-only"> (abre otra pestaña)</span></a>).
+        </p>
         @if (errorCompra()) {
           <p class="error-campo" role="alert">{{ errorCompra() }}</p>
         }

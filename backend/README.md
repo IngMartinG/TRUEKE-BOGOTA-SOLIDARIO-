@@ -212,9 +212,10 @@ Todo se configura por variables de entorno (Azure: *App Settings* o referencias 
 | `Proxy__RedesConfiables__0..n`, `Proxy__ProxiesConfiables__0..n` | Recomendado | CIDR/IP del proxy o Front Door: solo de ahí se acepta `X-Forwarded-For` |
 | `Facturacion__Modo` | ✅ (`Manual`) | `Manual` en producción; `Simulado` está prohibido |
 | `Facturacion__ResponsableIva`, `Facturacion__IvaPorcentaje` | — | `true` / `19` por defecto (confírmalo con tu contador) |
-| `Legal__CorreoContacto` | Recomendado | Correo de atención (PQR) que se muestra a los usuarios |
+| `Legal__ResponsableNombre`, `Legal__Domicilio`, `Legal__CorreoContacto`, `Legal__Telefono` | ✅ | Responsable del tratamiento de datos (Decreto 1377, art. 13, y Ley 1480, art. 50): nombre, dirección de notificación y ciudad, correo y teléfono. Se muestran en la política, los términos y el pie; el correo también atiende las PQRS |
+| `Legal__ResponsableDocumento` | — | Cédula o NIT del responsable, si quieres mostrarlo (con una SAS, su NIT) |
 | `Seguridad__DominiosCorreoBloqueados__0..n` | — | Dominios extra que no pueden registrarse |
-| `Legal__VersionPoliticaDatos` | — | Versión de la política aceptada al registrarse |
+| `Legal__VersionPoliticaDatos`, `Legal__VersionTerminos`, `Legal__FechaVigencia` | — | Versiones vigentes (`2026-10-18`). Al cambiar una, quien aceptó la anterior debe aceptarla de nuevo (403 `terminos_desactualizados`) |
 | `Database__Inicializacion` | — | `Migrate` (por defecto), `EnsureCreated` o `None` |
 | `RateLimiting__*PorMinuto` | — | Auth 10 · Refresco 60 · Escritura 20 · Webhook 120 · Global 300 |
 

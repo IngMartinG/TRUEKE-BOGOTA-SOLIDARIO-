@@ -104,7 +104,15 @@ services:
         sync: false
       - key: Google__ClientId # opcional: botón "Continuar con Google"
         sync: false
-      - key: Legal__CorreoContacto
+      - key: Legal__CorreoContacto # obligatorio: atención de PQRS y contacto del responsable
+        sync: false
+      - key: Legal__ResponsableNombre # obligatorio: responsable del tratamiento (Ley 1581)
+        sync: false
+      - key: Legal__Domicilio # obligatorio: dirección de notificación y ciudad del responsable
+        sync: false
+      - key: Legal__ResponsableDocumento # opcional: cédula o NIT del responsable
+        sync: false
+      - key: Legal__Telefono # obligatorio: teléfono de contacto (puede ser una línea o un WhatsApp de la plataforma)
         sync: false
       - key: Bootstrap__SuperUsuarioCorreo # crea el SuperUsuario la primera vez; después se puede borrar
         sync: false

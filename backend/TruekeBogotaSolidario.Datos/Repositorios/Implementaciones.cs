@@ -500,17 +500,24 @@ public sealed class PqrRepository : IPqrRepository
     {
         pagina = Math.Max(pagina, 1);
         tamano = Math.Clamp(tamano, 1, 50);
-        var q = _db.Pqrs.AsNoTracking().Where(p => p.Estado == estado);
+        var q = estado == EstadoPqr.Abierta
+            ? _db.Pqrs.AsNoTracking().Where(p => p.Estado == EstadoPqr.Abierta || p.Estado == EstadoPqr.EnTramite)
+            : _db.Pqrs.AsNoTracking().Where(p => p.Estado == estado);
         var total = await q.CountAsync();
         var items = await q.OrderBy(p => p.FechaLimiteUtc).Skip((pagina - 1) * tamano).Take(tamano).ToListAsync();
         return (items, total);
     }
 
     public Task<bool> ExisteAbiertaParaPagoAsync(string pagoReferencia)
-        => _db.Pqrs.AnyAsync(p => p.PagoReferencia == pagoReferencia && p.Estado == EstadoPqr.Abierta);
+        => _db.Pqrs.AnyAsync(p => p.PagoReferencia == pagoReferencia && (p.Estado == EstadoPqr.Abierta || p.Estado == EstadoPqr.EnTramite));
 
     public Task<int> ContarDelUsuarioDesdeAsync(Guid usuarioId, DateTime desdeUtc)
         => _db.Pqrs.CountAsync(p => p.UsuarioId == usuarioId && p.FechaUtc >= desdeUtc);
+
+    public Task<int> ContarPublicasDelCorreoDesdeAsync(string correo, DateTime desdeUtc)
+        => _db.Pqrs.CountAsync(p => p.UsuarioId == null && p.CorreoSolicitante == correo && p.FechaUtc >= desdeUtc);
+
+    public Task<Pqr?> ObtenerPorRadicadoAsync(string radicado) => _db.Pqrs.AsNoTracking().FirstOrDefaultAsync(p => p.Radicado == radicado);
 
     public void Agregar(Pqr pqr) => _db.Pqrs.Add(pqr);
 }

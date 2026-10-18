@@ -3,7 +3,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { etiquetaPqr, type EstadoPqrDto, type PqrAdminDto } from '../../api/tipos';
+import { estadoPqr, etiquetaPqr, type EstadoPqrDto, type PqrAdminDto } from '../../api/tipos';
 import { AdminApi } from '../../core/api/admin.api';
 import { AvisosService } from '../../core/avisos.service';
 import { mensajeDe } from '../../core/http/problema';
@@ -14,7 +14,10 @@ import { Paginador } from '../../shared/ui/paginador';
 
 const TAMANO = 20;
 
-/** Bandeja de PQR: las de plazo más próximo primero. El plazo legal de respuesta es de 15 días hábiles. */
+/**
+ * Bandeja de PQR: las de plazo más próximo primero. Plazo legal en días hábiles colombianos: 10 para una consulta de datos
+ * personales y 15 para lo demás. "Abiertas" incluye las que están en trámite.
+ */
 @Component({
   imports: [FormsModule, RouterLink, Icono, Modal, Paginador, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -25,7 +28,8 @@ const TAMANO = 20;
         <p class="text-sm text-tenue">Responde por escrito antes de la fecha límite. Retractos y reversiones: reembolsa en Wompi y regístralo en <a routerLink="../pagos" class="enlace">Pagos</a>.</p>
       </div>
       <select class="entrada w-full sm:w-44" [ngModel]="estado()" (ngModelChange)="estado.set($event); pagina.set(1)" aria-label="Filtrar por estado">
-        <option value="Abierta">Abiertas</option>
+        <option value="Abierta">Pendientes</option>
+        <option value="EnTramite">En trámite</option>
         <option value="Respondida">Respondidas</option>
       </select>
     </div>
@@ -36,10 +40,18 @@ const TAMANO = 20;
           <div class="flex flex-wrap items-start justify-between gap-2">
             <div>
               <p class="font-semibold">{{ p.asunto }}</p>
-              <p class="text-xs text-tenue">{{ etiqueta(p.tipo) }} · <span class="font-mono">{{ p.radicado }}</span> · {{ p.nombreUsuario }} ({{ p.correoUsuario }}) · {{ p.fechaUtc | fecha }}</p>
+              <p class="text-xs text-tenue">
+                {{ etiqueta(p.tipo) }} · <span class="font-mono">{{ p.radicado }}</span> · {{ p.nombreUsuario }} ({{ p.correoUsuario }}) · {{ p.fechaUtc | fecha }}
+                @if (p.publica) { · <span class="insignia-neutra">Sin cuenta</span> }
+              </p>
             </div>
-            @if (p.estado === 'Abierta') {
-              <span [class]="p.vencida ? 'insignia-donacion' : 'insignia-sol'">{{ p.vencida ? 'Vencida' : 'Vence' }} {{ p.fechaLimiteUtc | fecha }}</span>
+            @if (p.estado !== 'Respondida') {
+              <span class="flex flex-wrap items-center gap-1.5">
+                @if (p.estado === 'EnTramite') {
+                  <span [class]="estadoDe(p.estado).clase">{{ estadoDe(p.estado).texto }}</span>
+                }
+                <span [class]="p.vencida ? 'insignia-donacion' : 'insignia-sol'">{{ p.vencida ? 'Vencida' : 'Vence' }} {{ p.fechaLimiteUtc | fecha }}</span>
+              </span>
             } @else {
               <span class="insignia-trueke">Respondida {{ p.fechaRespuestaUtc | fecha }}</span>
             }
@@ -51,7 +63,12 @@ const TAMANO = 20;
           @if (p.respuesta) {
             <p class="mt-3 rounded-xl bg-bosque-50 p-3 text-sm whitespace-pre-line dark:bg-bosque-950/50">{{ p.respuesta }}</p>
           } @else {
-            <button type="button" class="btn btn-primario btn-sm mt-3" (click)="abrir(p)"><app-icono nombre="enviar" [tamano]="14" />Responder</button>
+            <div class="mt-3 flex flex-wrap gap-2">
+              <button type="button" class="btn btn-primario btn-sm" (click)="abrir(p)"><app-icono nombre="enviar" [tamano]="14" />Responder</button>
+              @if (p.estado === 'Abierta') {
+                <button type="button" class="btn btn-secundario btn-sm" (click)="enTramite(p)">Marcar en trámite</button>
+              }
+            </div>
           }
         </li>
       } @empty {
@@ -62,7 +79,7 @@ const TAMANO = 20;
 
     <app-modal [(abierto)]="abierto" titulo="Responder solicitud" [subtitulo]="seleccionada()?.radicado ?? ''">
       <form id="form-pqr" (ngSubmit)="responder()" class="campo">
-        <label for="respuesta" class="etiqueta">Respuesta (se envía por correo y queda en la cuenta del usuario)</label>
+        <label for="respuesta" class="etiqueta">Respuesta (se envía por correo{{ seleccionada()?.publica ? '' : ' y queda en la cuenta del usuario' }})</label>
         <textarea id="respuesta" name="respuesta" class="entrada min-h-40" maxlength="2000" [(ngModel)]="respuesta"></textarea>
         @if (error()) {<p class="error-campo" role="alert">{{ error() }}</p>}
       </form>
@@ -78,6 +95,7 @@ export default class Pqr {
   private readonly avisos = inject(AvisosService);
   protected readonly tamano = TAMANO;
   protected readonly etiqueta = etiquetaPqr;
+  protected readonly estadoDe = estadoPqr;
   protected readonly estado = signal<EstadoPqrDto>('Abierta');
   protected readonly pagina = signal(1);
   protected readonly recurso = rxResource({
@@ -94,6 +112,18 @@ export default class Pqr {
     this.respuesta.set('');
     this.error.set(null);
     this.abierto.set(true);
+  }
+
+  /** Avisa a quien la radicó que ya se está revisando. */
+  protected async enTramite(p: PqrAdminDto): Promise<void> {
+    if (!p.id) return;
+    try {
+      await firstValueFrom(this.api.pqrEnTramite(p.id));
+      this.avisos.exito('Marcada en trámite', 'Le avisamos a quien la radicó.');
+      this.recurso.reload();
+    } catch (e) {
+      this.avisos.error(mensajeDe(e));
+    }
   }
 
   protected async responder(): Promise<void> {

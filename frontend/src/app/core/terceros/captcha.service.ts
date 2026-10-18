@@ -12,7 +12,7 @@ declare global {
   }
 }
 
-export type AccionCaptcha = 'registro' | 'login' | 'olvide_clave';
+export type AccionCaptcha = 'registro' | 'login' | 'olvide_clave' | 'pqr';
 
 /** reCAPTCHA v3 (invisible). Solo se carga si la API publica una clave de sitio. */
 @Injectable({ providedIn: 'root' })

@@ -39,7 +39,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
           @if (volver() && !u.fotoUrl) {
             <p class="my-2 rounded-xl bg-sol-50 p-3 text-sm font-medium dark:bg-sol-500/10">Sube tu foto para continuar. Al terminar te llevamos de vuelta a donde estabas.</p>
           }
-          <p class="text-sm text-tenue">Es obligatoria para publicar, solicitar, chatear y pagar: usa una foto donde se vea tu cara, así la comunidad sabe con quién intercambia. Le quitamos la ubicación y los datos ocultos antes de publicarla.</p>
+          <p class="text-sm text-tenue">Es obligatoria para publicar, solicitar, chatear y pagar: usa una foto donde se vea tu cara, así la comunidad sabe con quién intercambia. Le quitamos la ubicación y los datos ocultos antes de publicarla. Es un dato sensible: <a routerLink="/privacidad" fragment="seccion-4" class="enlace">cómo lo tratamos</a>.</p>
           <div class="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
             <label class="btn btn-primario btn-sm cursor-pointer" [class.pointer-events-none]="subiendoFoto()" [class.opacity-60]="subiendoFoto()">
               <app-icono nombre="camara" [tamano]="16" />{{ u.fotoUrl ? 'Cambiar foto' : 'Subir foto' }}

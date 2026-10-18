@@ -60,7 +60,7 @@ public class GoogleTests : IClassFixture<FabricaApi>
     private Task<HttpResponseMessage> GoogleAsync(string idToken, bool acepto = true, string? codigo = null, string? codigoInvitacion = null,
         string? fechaNacimiento = Api.FechaNacimientoAdulta)
         => _f.CreateClient().PostAsJsonAsync("/api/v1/auth/google",
-            new { idToken, aceptoPoliticaDatos = acepto, fechaNacimiento, codigoDosFactores = codigo, codigoInvitacion });
+            new { idToken, aceptoPoliticaDatos = acepto, aceptoTerminos = acepto, fechaNacimiento, codigoDosFactores = codigo, codigoInvitacion });
 
     private static byte[] DesdeBase32(string s)
     {
@@ -229,7 +229,7 @@ public class GoogleTests : IClassFixture<FabricaApi>
         var correo = Correo();
         // alguien registró ese correo (que no es suyo) con una clave y nunca lo verificó
         (await _f.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar", new
-        { nombreCompleto = "Impostor Prueba", localidad = "Usme", correo, clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true })).EnsureSuccessStatusCode();
+        { nombreCompleto = "Impostor Prueba", localidad = "Usme", correo, clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true, aceptoTerminos = true })).EnsureSuccessStatusCode();
 
         Assert.Equal(HttpStatusCode.OK, (await GoogleAsync(Emitir(correo))).StatusCode);   // el verdadero dueño entra con Google
         Assert.Equal(HttpStatusCode.Unauthorized, (await _f.CreateClient().PostAsJsonAsync("/api/v1/auth/login",
@@ -274,7 +274,7 @@ public class GoogleTests : IClassFixture<FabricaApi>
     {
         var correo = Correo();
         var registro = await _f.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar", new
-        { nombreCompleto = "Impostor Prueba", localidad = "Usme", correo, clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true });
+        { nombreCompleto = "Impostor Prueba", localidad = "Usme", correo, clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true, aceptoTerminos = true });
         var tokenImpostor = (await registro.Content.ReadFromJsonAsync<SesionMinDto>())!.Token;
         await ActivarDosFactoresAsync(Api.ConToken(_f, tokenImpostor));
 
@@ -316,7 +316,7 @@ public class GoogleTests : IClassFixture<FabricaApi>
     public async Task Sin_ClientId_configurado_Google_esta_deshabilitado()
     {
         await using var f = new FabricaApi();
-        var r = await f.CreateClient().PostAsJsonAsync("/api/v1/auth/google", new { idToken = "cualquier-token-de-prueba-123", aceptoPoliticaDatos = true, fechaNacimiento = Api.FechaNacimientoAdulta });
+        var r = await f.CreateClient().PostAsJsonAsync("/api/v1/auth/google", new { idToken = "cualquier-token-de-prueba-123", aceptoPoliticaDatos = true, aceptoTerminos = true, fechaNacimiento = Api.FechaNacimientoAdulta });
         Assert.Equal(HttpStatusCode.BadRequest, r.StatusCode);
     }
 }

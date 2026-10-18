@@ -318,3 +318,21 @@
   font-family: var(--font-sans);
   border-radius: inherit;
 }
+
+/* Impresión (páginas legales y constancias): solo el contenido, en blanco y negro legible */
+@media print {
+  app-encabezado,
+  app-pie,
+  app-barra-movil,
+  app-avisos {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  a {
+    color: inherit !important;
+    text-decoration: underline;
+  }
+}

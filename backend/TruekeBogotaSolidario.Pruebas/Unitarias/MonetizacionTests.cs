@@ -346,11 +346,11 @@ public class MonetizacionTests
     }
 
     [Fact]
-    public void Los_dias_habiles_no_cuentan_fines_de_semana()
+    public void Los_dias_habiles_no_cuentan_fines_de_semana_ni_festivos()
     {
         var viernes = new DateTime(2026, 10, 2, 12, 0, 0, DateTimeKind.Utc);
         Assert.Equal(new DateTime(2026, 10, 5, 12, 0, 0, DateTimeKind.Utc), Pqr.SumarDiasHabiles(viernes, 1)); // lunes
-        Assert.Equal(new DateTime(2026, 10, 23, 12, 0, 0, DateTimeKind.Utc), Pqr.SumarDiasHabiles(viernes, 15));
+        Assert.Equal(new DateTime(2026, 10, 26, 12, 0, 0, DateTimeKind.Utc), Pqr.SumarDiasHabiles(viernes, 15)); // el lunes 12 es festivo
     }
 
     // ------------------------------------------------------------------ Ingresos

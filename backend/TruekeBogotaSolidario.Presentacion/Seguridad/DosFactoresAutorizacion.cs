@@ -31,13 +31,22 @@ public sealed class ResultadoAutorizacionHandler : IAuthorizationMiddlewareResul
     public async Task HandleAsync(RequestDelegate next, HttpContext context, AuthorizationPolicy policy, PolicyAuthorizationResult result)
     {
         var fallidos = result.Forbidden ? result.AuthorizationFailure?.FailedRequirements.ToList() ?? [] : [];
-        // La mayoría de edad va primero: sin ella no sirve de nada activar el 2FA.
-        if (fallidos.Count > 0 && fallidos.Any(r => r is MayoriaEdadRequirement)
-            && fallidos.All(r => r is MayoriaEdadRequirement or DosFactoresRequirement))
+        // Los requisitos de la cuenta van primero (mayoría de edad y luego la política y los términos vigentes): sin ellos
+        // no sirve de nada activar el 2FA.
+        var soloRequisitos = fallidos.Count > 0
+            && fallidos.All(r => r is MayoriaEdadRequirement or LegalAlDiaRequirement or DosFactoresRequirement);
+        if (soloRequisitos && fallidos.Any(r => r is MayoriaEdadRequirement))
         {
             await Problemas.EscribirAsync(context, StatusCodes.Status403Forbidden,
                 "Registra tu fecha de nacimiento para seguir: Trueke Bogotá Solidario es solo para personas mayores de 18 años.",
                 codigo: MayoriaEdadRequirement.CodigoError);
+            return;
+        }
+        if (soloRequisitos && fallidos.Any(r => r is LegalAlDiaRequirement))
+        {
+            await Problemas.EscribirAsync(context, StatusCodes.Status403Forbidden,
+                "Actualizamos la política de tratamiento de datos y los términos de uso: léelos y acéptalos para seguir.",
+                codigo: LegalAlDiaRequirement.CodigoError);
             return;
         }
         if (fallidos.Count > 0 && fallidos.All(r => r is DosFactoresRequirement))

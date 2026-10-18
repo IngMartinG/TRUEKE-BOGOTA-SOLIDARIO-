@@ -19,7 +19,7 @@ public class MayoriaEdadTests : IClassFixture<FabricaApi>
 
     private Task<HttpResponseMessage> RegistrarAsync(string correo, string? fechaNacimiento)
         => _f.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar",
-            new { nombreCompleto = "Edad Prueba", localidad = "Teusaquillo", correo, clave = Api.ClaveValida, fechaNacimiento, aceptoPoliticaDatos = true });
+            new { nombreCompleto = "Edad Prueba", localidad = "Teusaquillo", correo, clave = Api.ClaveValida, fechaNacimiento, aceptoPoliticaDatos = true, aceptoTerminos = true });
 
     [Fact]
     public async Task Registro_exige_fecha_y_rechaza_a_menores_sin_guardar_nada()

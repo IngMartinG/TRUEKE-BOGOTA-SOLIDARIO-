@@ -924,6 +924,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
+                    b.Property<string>("CorreoSolicitante")
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)");
+
                     b.Property<string>("Descripcion")
                         .IsRequired()
                         .HasMaxLength(2000)
@@ -942,6 +946,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
                     b.Property<DateTime>("FechaUtc")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("NombreSolicitante")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
 
                     b.Property<string>("PagoReferencia")
                         .HasMaxLength(100)
@@ -971,13 +979,15 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
 
-                    b.Property<Guid>("UsuarioId")
+                    b.Property<Guid?>("UsuarioId")
                         .HasColumnType("uuid");
 
                     b.HasKey("Id");
 
                     b.HasIndex("Radicado")
                         .IsUnique();
+
+                    b.HasIndex("CorreoSolicitante", "FechaUtc");
 
                     b.HasIndex("Estado", "FechaLimiteUtc");
 
@@ -1458,6 +1468,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<DateTime?>("FechaAceptacionPolitica")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("FechaAceptacionTerminos")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("FechaEliminacion")
                         .HasColumnType("timestamp with time zone");
 
@@ -1565,6 +1578,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
                     b.Property<DateTime?>("SuspendidoHasta")
                         .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("TerminosVersion")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("TipoCuenta")
                         .IsRequired()
@@ -1841,8 +1858,7 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
                         .WithMany()
                         .HasForeignKey("UsuarioId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.Restrict);
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Publicacion", b =>

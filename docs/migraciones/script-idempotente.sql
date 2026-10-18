@@ -1195,3 +1195,67 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018094121_AceptacionTerminos') THEN
+    ALTER TABLE "Usuarios" ADD "FechaAceptacionTerminos" timestamp with time zone;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018094121_AceptacionTerminos') THEN
+    ALTER TABLE "Usuarios" ADD "TerminosVersion" character varying(20);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018094121_AceptacionTerminos') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20261018094121_AceptacionTerminos', '10.0.13');
+    END IF;
+END $EF$;
+COMMIT;
+
+START TRANSACTION;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018100428_PqrsPublica') THEN
+    ALTER TABLE "Pqrs" ALTER COLUMN "UsuarioId" DROP NOT NULL;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018100428_PqrsPublica') THEN
+    ALTER TABLE "Pqrs" ADD "CorreoSolicitante" character varying(160);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018100428_PqrsPublica') THEN
+    ALTER TABLE "Pqrs" ADD "NombreSolicitante" character varying(120);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018100428_PqrsPublica') THEN
+    CREATE INDEX "IX_Pqrs_CorreoSolicitante_FechaUtc" ON "Pqrs" ("CorreoSolicitante", "FechaUtc");
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018100428_PqrsPublica') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20261018100428_PqrsPublica', '10.0.13');
+    END IF;
+END $EF$;
+COMMIT;
+

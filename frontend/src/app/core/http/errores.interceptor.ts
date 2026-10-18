@@ -29,8 +29,9 @@ export const erroresInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      if (problema.codigo === 'fecha_nacimiento_requerida') {
-        // Cuenta anterior a la regla: se lleva (una sola vez, sin repetir avisos) a registrar la fecha.
+      if (problema.codigo === 'fecha_nacimiento_requerida' || problema.codigo === 'terminos_desactualizados') {
+        // Cuenta anterior a la regla, o con una versión vieja de la política o los términos: se lleva (una sola vez, sin
+        // repetir avisos) a completar lo que falta.
         if (!router.url.startsWith('/completar-perfil'))
           void router.navigate(['/completar-perfil'], { queryParams: { volver: router.url } });
         return throwError(() => error);

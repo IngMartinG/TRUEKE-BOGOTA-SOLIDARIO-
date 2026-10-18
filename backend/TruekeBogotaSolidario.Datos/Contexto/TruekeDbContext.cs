@@ -58,6 +58,7 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.GoogleSub).HasMaxLength(64).IsUnicode(false);
             e.HasIndex(x => x.GoogleSub).IsUnique().HasFilter("\"GoogleSub\" IS NOT NULL");
             e.Property(x => x.PoliticaDatosVersion).HasMaxLength(20);
+            e.Property(x => x.TerminosVersion).HasMaxLength(20);
             e.Property(x => x.MotivoSuspension).HasMaxLength(300);
             e.Property(x => x.SecretoDosFactoresCifrado).HasMaxLength(200).IsUnicode(false);
             e.Property(x => x.CodigosRecuperacionHash).HasMaxLength(700).IsUnicode(false);
@@ -444,7 +445,10 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.Descripcion).HasMaxLength(Pqr.LongitudMaximaTexto).IsRequired();
             e.Property(x => x.Respuesta).HasMaxLength(Pqr.LongitudMaximaTexto);
             e.Property(x => x.PagoReferencia).HasMaxLength(100);
-            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+            e.Property(x => x.NombreSolicitante).HasMaxLength(120);
+            e.Property(x => x.CorreoSolicitante).HasMaxLength(160);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).IsRequired(false).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.CorreoSolicitante, x.FechaUtc });
             e.HasIndex(x => x.Radicado).IsUnique();
             e.HasIndex(x => new { x.UsuarioId, x.FechaUtc });
             e.HasIndex(x => new { x.Estado, x.FechaLimiteUtc });

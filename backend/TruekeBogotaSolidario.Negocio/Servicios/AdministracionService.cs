@@ -32,6 +32,8 @@ public interface IAdministracionService
     Task<string> ExportarFacturasCsvAsync(Guid actorId, EstadoFacturaDto estado);
     Task<PaginaDto<PqrAdminDto>> ListarPqrAsync(Guid actorId, EstadoPqrDto estado, int pagina, int tamano);
     Task<PqrAdminDto> ResponderPqrAsync(Guid actorId, Guid pqrId, string respuesta);
+    /// <summary>El equipo empezó a revisarla: se le avisa a quien la radicó.</summary>
+    Task<PqrAdminDto> MarcarPqrEnTramiteAsync(Guid actorId, Guid pqrId);
     // Solo SuperUsuario
     Task<UsuarioDto> CambiarRolAsync(Guid actorId, Guid usuarioObjetivoId, RolDto nuevoRol);
     /// <summary>
@@ -260,8 +262,13 @@ public sealed class AdministracionService : IAdministracionService
     // ---------------- PQR ----------------
     private static PqrAdminDto APqrAdmin(Pqr p, Usuario? u, DateTime ahora)
         => new(p.Id, p.Radicado, p.Tipo.ToString(), p.Asunto, p.Descripcion, p.PagoReferencia, p.Estado.ToString(), p.FechaUtc,
-            p.FechaLimiteUtc, p.Estado == EstadoPqr.Abierta && p.FechaLimiteUtc < ahora, p.Respuesta, p.FechaRespuestaUtc,
-            p.UsuarioId, u?.NombreCompleto ?? "Usuario eliminado", u?.Correo ?? "");
+            p.FechaLimiteUtc, p.Pendiente && p.FechaLimiteUtc < ahora, p.Respuesta, p.FechaRespuestaUtc,
+            p.UsuarioId,
+            p.UsuarioId is null ? p.NombreSolicitante ?? "" : u?.NombreCompleto ?? "Usuario eliminado",
+            p.UsuarioId is null ? p.CorreoSolicitante ?? "" : u?.Correo ?? "",
+            p.UsuarioId is null);
+
+    private async Task<Usuario?> AutorAsync(Pqr p) => p.UsuarioId is { } id ? await _usuarios.ObtenerPorIdAsync(id) : null;
 
     public async Task<PaginaDto<PqrAdminDto>> ListarPqrAsync(Guid actorId, EstadoPqrDto estado, int pagina, int tamano)
     {
@@ -269,7 +276,7 @@ public sealed class AdministracionService : IAdministracionService
         var (items, total) = await _pqrs.ListarPorEstadoAsync((EstadoPqr)(int)estado, pagina, tamano);
         var ahora = Ahora;
         var resultado = new List<PqrAdminDto>(items.Count);
-        foreach (var p in items) resultado.Add(APqrAdmin(p, await _usuarios.ObtenerPorIdAsync(p.UsuarioId), ahora));
+        foreach (var p in items) resultado.Add(APqrAdmin(p, await AutorAsync(p), ahora));
         return new PaginaDto<PqrAdminDto>(resultado, total, Math.Max(pagina, 1), Math.Clamp(tamano, 1, 50));
     }
 
@@ -281,7 +288,7 @@ public sealed class AdministracionService : IAdministracionService
         p.Responder(actorId, respuesta, ahora);
         Auditar(actorId, "PQR_RESPONDIDA", "Pqr", p.Id, p.Radicado);
         await _uow.GuardarCambiosAsync();
-        var u = await _usuarios.ObtenerPorIdAsync(p.UsuarioId);
+        var u = await AutorAsync(p);
         if (u is not null && !u.EstaEliminado)
         {
             await NotificarAsync(u.Id, TiposNotificacion.PqrRespondida, $"Respondimos tu solicitud {p.Radicado}.", p.Id);
@@ -289,7 +296,30 @@ public sealed class AdministracionService : IAdministracionService
                 $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:",
                 new[] { $"Asunto: {p.Asunto}", p.Respuesta! }));
         }
+        else if (p.UsuarioId is null && p.CorreoSolicitante is not null)
+        {
+            _correo.Encolar(PlantillaCorreo.Crear(p.CorreoSolicitante, $"Respuesta a tu solicitud {p.Radicado}",
+                $"Hola {p.NombreSolicitante?.Split(' ')[0]}:",
+                new[] { $"Asunto: {p.Asunto}", p.Respuesta! }));
+        }
         return APqrAdmin(p, u, ahora);
+    }
+
+    public async Task<PqrAdminDto> MarcarPqrEnTramiteAsync(Guid actorId, Guid pqrId)
+    {
+        await ExigirRolAsync(actorId, RolUsuarioEnum.Administrador);
+        var p = await _pqrs.ObtenerAsync(pqrId) ?? throw new NoEncontradoException("Solicitud no encontrada.");
+        p.MarcarEnTramite();
+        Auditar(actorId, "PQR_EN_TRAMITE", "Pqr", p.Id, p.Radicado);
+        await _uow.GuardarCambiosAsync();
+        var u = await AutorAsync(p);
+        var aviso = $"Tu solicitud {p.Radicado} está en trámite: ya la estamos revisando. Te responderemos a más tardar el {p.FechaLimiteUtc.AddHours(-5):yyyy-MM-dd}.";
+        if (u is not null && !u.EstaEliminado)
+            await NotificarAsync(u.Id, TiposNotificacion.PqrRespondida, aviso, p.Id);
+        else if (p.UsuarioId is null && p.CorreoSolicitante is not null)
+            _correo.Encolar(PlantillaCorreo.Crear(p.CorreoSolicitante, $"Tu solicitud {p.Radicado} está en trámite",
+                $"Hola {p.NombreSolicitante?.Split(' ')[0]}:", new[] { aviso }));
+        return APqrAdmin(p, u, Ahora);
     }
 
     // ---------------- Ingresos ----------------

@@ -14,7 +14,7 @@ public class CuentaTests : IClassFixture<FabricaApi>
     {
         var correo = $"cuenta{Guid.NewGuid():N}@trueke.test";
         var r = await _fabrica.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar", new
-        { nombreCompleto = "Cuenta Prueba", localidad = "Fontibón", correo, clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true });
+        { nombreCompleto = "Cuenta Prueba", localidad = "Fontibón", correo, clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true, aceptoTerminos = true });
         Assert.Equal(HttpStatusCode.Created, r.StatusCode);
         var sesion = (await r.Content.ReadFromJsonAsync<SesionMinDto>())!;
         return (correo, Api.ConToken(_fabrica, sesion.Token));
