@@ -196,6 +196,13 @@
             }
           },
           {
+            "name": "SoloMenorDetectado",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "Pagina",
             "in": "query",
             "schema": {
@@ -271,6 +278,65 @@
             "application/*\u002Bjson": {
               "schema": {
                 "$ref": "#/components/schemas/SuspenderUsuarioRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioAdminDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/usuarios/{usuarioId}/descartar-menor": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DescartarMenorRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DescartarMenorRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/DescartarMenorRequest"
               }
             }
           }
@@ -6998,6 +7064,20 @@
         },
         "additionalProperties": false
       },
+      "DescartarMenorRequest": {
+        "required": [
+          "motivo"
+        ],
+        "type": "object",
+        "properties": {
+          "motivo": {
+            "maxLength": 300,
+            "minLength": 3,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "DeseoDto": {
         "type": "object",
         "properties": {
@@ -9573,6 +9653,11 @@
           "totalCalificaciones": {
             "type": "integer",
             "format": "int32"
+          },
+          "menorDetectadoUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9713,6 +9798,9 @@
           "terminosVersion": {
             "type": "string",
             "nullable": true
+          },
+          "menorDetectado": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

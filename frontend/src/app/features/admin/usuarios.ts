@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, linkedSignal, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -24,6 +24,7 @@ const TAMANO = 20;
       <form class="flex flex-wrap items-center gap-2" (ngSubmit)="buscar()">
         <input type="search" name="texto" class="entrada w-64" placeholder="Nombre o correo" [(ngModel)]="textoEntrada" aria-label="Buscar usuarios" />
         <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="casilla" name="susp" [(ngModel)]="soloSuspendidos" (ngModelChange)="pagina.set(1)" />Solo suspendidos</label>
+        <label class="flex items-center gap-2 text-sm"><input type="checkbox" class="casilla" name="menor" [(ngModel)]="soloMenor" (ngModelChange)="pagina.set(1)" />En revisión por edad</label>
         <button type="submit" class="btn btn-primario btn-sm"><app-icono nombre="buscar" [tamano]="14" />Buscar</button>
       </form>
     </div>
@@ -70,6 +71,10 @@ const TAMANO = 20;
                 } @else {
                   <span class="insignia-trueke">Activo</span>
                 }
+                @if (u.menorDetectadoUtc) {
+                  <span class="insignia mt-1 bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100">Revisión de edad</span>
+                  <p class="mt-1 text-xs text-tenue">Declaró una fecha de menor el {{ u.menorDetectadoUtc | fecha }}</p>
+                }
                 <p class="mt-1 text-xs text-tenue">{{ u.correoVerificado ? 'Correo verificado' : 'Correo sin verificar' }} · {{ verificacion[u.estadoVerificacion ?? ''] ?? u.estadoVerificacion }}</p>
               </td>
               <td class="px-4 py-3">
@@ -80,6 +85,9 @@ const TAMANO = 20;
               </td>
               <td class="px-4 py-3 text-right">
                 @if (u.id !== sesion.usuario()?.id) {
+                  @if (u.menorDetectadoUtc) {
+                    <button type="button" class="btn btn-secundario btn-sm mb-2" (click)="abrirDescartar(u)">Fue un error</button>
+                  }
                   @if (u.suspendido) {
                     <button type="button" class="btn btn-secundario btn-sm" (click)="reactivar(u)">Reactivar</button>
                   } @else {
@@ -117,6 +125,23 @@ const TAMANO = 20;
         <button type="submit" form="form-suspender" class="btn btn-peligro" [disabled]="motivo().trim().length < 3">Suspender</button>
       </div>
     </app-modal>
+
+    <app-modal [(abierto)]="descartarAbierto" titulo="Descartar la revisión de edad" [subtitulo]="seleccionado()?.nombreCompleto ?? ''">
+      <form id="form-descartar" (ngSubmit)="descartar()" class="space-y-4">
+        <p class="text-sm text-tenue">
+          Hazlo solo si comprobaste que la persona es mayor de edad (por ejemplo, con su documento enviado por PQRS). Podrá
+          registrar su fecha de nuevo y sus publicaciones vuelven al catálogo. Si es menor de edad, suspende la cuenta.
+        </p>
+        <div class="campo">
+          <label for="motivo-descartar" class="etiqueta">Cómo lo comprobaste (queda en la auditoría)</label>
+          <textarea id="motivo-descartar" name="motivo" class="entrada" maxlength="300" required [(ngModel)]="motivo"></textarea>
+        </div>
+      </form>
+      <div pie class="flex justify-end gap-2 border-t border-borde p-4">
+        <button type="button" class="btn btn-fantasma" (click)="descartarAbierto.set(false)">Cancelar</button>
+        <button type="submit" form="form-descartar" class="btn btn-primario" [disabled]="motivo().trim().length < 3">Descartar la revisión</button>
+      </div>
+    </app-modal>
   `,
 })
 export default class Usuarios {
@@ -134,13 +159,17 @@ export default class Usuarios {
   protected readonly textoEntrada = signal('');
   private readonly texto = signal('');
   protected readonly soloSuspendidos = signal(false);
+  /** ?menor=1 (desde el aviso "Una cuenta declaró una fecha de menor de edad"): solo las cuentas en revisión por edad. */
+  readonly menor = input<string>();
+  protected readonly soloMenor = linkedSignal(() => this.menor() === '1');
   protected readonly pagina = signal(1);
   protected readonly recurso = rxResource({
-    params: () => ({ texto: this.texto(), solo: this.soloSuspendidos(), pagina: this.pagina() }),
-    stream: ({ params }) => this.api.usuarios(params.texto, params.solo, params.pagina, TAMANO),
+    params: () => ({ texto: this.texto(), solo: this.soloSuspendidos(), menor: this.soloMenor(), pagina: this.pagina() }),
+    stream: ({ params }) => this.api.usuarios(params.texto, params.solo, params.pagina, TAMANO, params.menor),
   });
 
   protected readonly suspenderAbierto = signal(false);
+  protected readonly descartarAbierto = signal(false);
   protected readonly seleccionado = signal<UsuarioAdminDto | null>(null);
   protected readonly motivo = signal('');
   protected readonly dias = signal<number | null>(7);
@@ -162,6 +191,19 @@ export default class Usuarios {
     if (!u?.id) return;
     await this.correr(() => firstValueFrom(this.api.suspender(u.id!, this.motivo().trim(), this.dias())), 'Cuenta suspendida');
     this.suspenderAbierto.set(false);
+  }
+
+  protected abrirDescartar(u: UsuarioAdminDto): void {
+    this.seleccionado.set(u);
+    this.motivo.set('');
+    this.descartarAbierto.set(true);
+  }
+
+  protected async descartar(): Promise<void> {
+    const u = this.seleccionado();
+    if (!u?.id) return;
+    await this.correr(() => firstValueFrom(this.api.descartarMenor(u.id!, this.motivo().trim())), 'Revisión de edad descartada');
+    this.descartarAbierto.set(false);
   }
 
   protected reactivar(u: UsuarioAdminDto): Promise<void> {

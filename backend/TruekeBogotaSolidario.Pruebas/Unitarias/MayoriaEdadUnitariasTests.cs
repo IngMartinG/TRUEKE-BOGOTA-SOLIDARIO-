@@ -43,4 +43,30 @@ public class MayoriaEdadUnitariasTests
     [Fact]
     public void Hoy_en_Colombia_es_UTC_menos_5()
         => Assert.Equal(new DateOnly(2026, 10, 17), Usuario.HoyEnColombia(new DateTime(2026, 10, 18, 3, 0, 0, DateTimeKind.Utc)));
+
+    [Fact]
+    public void Con_la_marca_de_menor_no_se_registra_ninguna_fecha_hasta_que_la_moderacion_la_descarte()
+    {
+        var u = new Usuario("Ana Pérez", "Chapinero", $"ana{Guid.NewGuid():N}@trueke.test", "Clave12345");
+        var version = u.VersionSeguridad;
+        u.MarcarMenorDetectado(new DateTime(2026, 10, 18, 12, 0, 0, DateTimeKind.Utc));
+        Assert.True(u.MenorDetectado);
+        Assert.True(u.VersionSeguridad > version); // los tokens vigentes se emiten de nuevo con la marca
+        Assert.Throws<ReglaDeNegocioException>(() => u.RegistrarFechaNacimiento(new DateOnly(1990, 5, 20), Hoy));
+        Assert.False(u.MayoriaEdadConfirmada);
+
+        u.DescartarMenorDetectado();
+        Assert.False(u.MenorDetectado);
+        Assert.Throws<ReglaDeNegocioException>(() => u.DescartarMenorDetectado());
+        u.RegistrarFechaNacimiento(new DateOnly(1990, 5, 20), Hoy);
+        Assert.True(u.MayoriaEdadConfirmada);
+        Assert.Throws<ReglaDeNegocioException>(() => u.MarcarMenorDetectado(DateTime.UtcNow)); // ya es mayor de edad registrada
+    }
+
+    [Theory]
+    [InlineData("2008-10-19", true)]  // cumple 18 mañana
+    [InlineData("2008-10-18", false)] // cumple 18 hoy
+    [InlineData("2026-10-19", false)] // futura: es un error de digitación, no un menor
+    public void Fecha_de_menor(string nacimiento, bool esperado)
+        => Assert.Equal(esperado, Usuario.EsFechaDeMenor(DateOnly.Parse(nacimiento), Hoy));
 }

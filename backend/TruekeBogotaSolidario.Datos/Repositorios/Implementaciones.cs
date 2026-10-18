@@ -81,7 +81,7 @@ public sealed class UsuarioRepository : IUsuarioRepository
         => await _db.Usuarios.AsNoTracking().Where(u => u.EstadoVerificacion == estado).OrderBy(u => u.FechaRegistro).Take(200).ToListAsync();
     public Task<int> ContarPorRolAsync(RolUsuarioEnum rol) => _db.Usuarios.CountAsync(u => u.Rol == rol);
 
-    public async Task<(IReadOnlyList<Usuario> Items, int Total)> BuscarAsync(string? texto, bool soloSuspendidos, int pagina, int tamano)
+    public async Task<(IReadOnlyList<Usuario> Items, int Total)> BuscarAsync(string? texto, bool soloSuspendidos, int pagina, int tamano, bool soloMenorDetectado = false)
     {
         pagina = Math.Max(pagina, 1);
         tamano = Math.Clamp(tamano, 1, 50);
@@ -92,6 +92,7 @@ public sealed class UsuarioRepository : IUsuarioRepository
             q = q.Where(u => u.Correo.Contains(t) || u.NombreCompleto.ToLower().Contains(t)); // el correo ya se guarda en minúsculas
         }
         if (soloSuspendidos) q = q.Where(u => u.EstaSuspendido);
+        if (soloMenorDetectado) q = q.Where(u => u.MenorDetectadoUtc != null);
         var total = await q.CountAsync();
         var items = await q.OrderByDescending(u => u.FechaRegistro).Skip((pagina - 1) * tamano).Take(tamano).ToListAsync();
         return (items, total);

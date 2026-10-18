@@ -353,11 +353,41 @@ public class Usuario
     public void RegistrarFechaNacimiento(DateOnly fecha, DateOnly hoy)
     {
         if (FechaNacimiento is not null) throw new ReglaDeNegocioException("La fecha de nacimiento ya está registrada.");
+        if (MenorDetectado) throw new ReglaDeNegocioException("La cuenta está en revisión: declaró una fecha de menor de edad.");
         ValidarFechaNacimiento(fecha, hoy);
         FechaNacimiento = fecha;
     }
 
     public bool MayoriaEdadConfirmada => FechaNacimiento is not null;
+
+    /// <summary>
+    /// Una cuenta ya existente declaró una fecha de nacimiento de menor de edad: queda en revisión y no puede volver a
+    /// intentarlo con otra fecha. Solo conserva su sesión, la exportación y la eliminación de sus datos y la PQRS.
+    /// </summary>
+    public DateTime? MenorDetectadoUtc { get; private set; }
+
+    public bool MenorDetectado => MenorDetectadoUtc is not null;
+
+    /// <summary>Fecha válida (no futura) de alguien que aún no cumple <see cref="EdadMinima"/> años.</summary>
+    public static bool EsFechaDeMenor(DateOnly fecha, DateOnly hoy) => fecha <= hoy && EdadEn(fecha, hoy) < EdadMinima;
+
+    public void MarcarMenorDetectado(DateTime ahoraUtc)
+    {
+        if (MayoriaEdadConfirmada) throw new ReglaDeNegocioException("La cuenta ya registró su fecha de nacimiento.");
+        MenorDetectadoUtc ??= ahoraUtc;
+        VersionSeguridad++; // los tokens vigentes dicen "edad pendiente": se emiten de nuevo con la marca
+    }
+
+    /// <summary>
+    /// La moderación comprobó que fue un error de digitación (por ejemplo, con un documento enviado por PQRS): la cuenta
+    /// puede registrar su fecha de nuevo.
+    /// </summary>
+    public void DescartarMenorDetectado()
+    {
+        if (!MenorDetectado) throw new ReglaDeNegocioException("La cuenta no está en revisión por mayoría de edad.");
+        MenorDetectadoUtc = null;
+        VersionSeguridad++;
+    }
 
     /// <summary>Nombre temporal de una cuenta de Google cuyo nombre no se pudo usar (solo emojis, dígitos…).</summary>
     public const string NombreProvisional = "Usuario Trueke";

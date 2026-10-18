@@ -43,6 +43,18 @@ public sealed class MayoriaEdadRequeridaException : Exception
         : base("Registra tu fecha de nacimiento para seguir: Trueke Bogotá Solidario es solo para personas mayores de 18 años.") { }
 }
 
+/// <summary>
+/// Una cuenta existente declaró una fecha de menor de edad (HTTP 403, codigo "menor_de_edad_detectado"): queda en revisión
+/// y solo puede exportar o eliminar sus datos y radicar PQRS.
+/// </summary>
+public sealed class MenorDeEdadDetectadoException : Exception
+{
+    public const string Codigo = "menor_de_edad_detectado";
+    public const string Mensaje = "Trueke Bogotá Solidario es solo para personas mayores de 18 años. Tu cuenta quedó en revisión: " +
+                                  "puedes descargar o eliminar tus datos, y si fue un error, escríbenos por PQRS.";
+    public MenorDeEdadDetectadoException() : base(Mensaje) { }
+}
+
 /// <summary>Falta el nombre real, nombre y apellido (HTTP 403, codigo "nombre_requerido"): el front lleva al perfil a escribirlo.</summary>
 public sealed class NombreRealRequeridoException : Exception
 {
@@ -68,6 +80,7 @@ public static class TraductorErrores
         DosFactoresRequeridoException e => new(401, e.Message, false, DosFactoresRequeridoException.Codigo),
         FotoPerfilRequeridaException e => new(403, e.Message, false, FotoPerfilRequeridaException.Codigo),
         MayoriaEdadRequeridaException e => new(403, e.Message, false, MayoriaEdadRequeridaException.Codigo),
+        MenorDeEdadDetectadoException e => new(403, e.Message, false, MenorDeEdadDetectadoException.Codigo),
         NombreRealRequeridoException e => new(403, e.Message, false, NombreRealRequeridoException.Codigo),
         AutenticacionException e => new(401, e.Message, false),
         ConflictoDeConcurrenciaException e => new(409, e.Message, false),

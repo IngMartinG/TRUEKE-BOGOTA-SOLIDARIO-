@@ -35,6 +35,12 @@ public sealed class ResultadoAutorizacionHandler : IAuthorizationMiddlewareResul
         // no sirve de nada activar el 2FA.
         var soloRequisitos = fallidos.Count > 0
             && fallidos.All(r => r is MayoriaEdadRequirement or LegalAlDiaRequirement or DosFactoresRequirement);
+        if (soloRequisitos && fallidos.Any(r => r is MayoriaEdadRequirement) && context.User.HasClaim("edad", "menor"))
+        {
+            await Problemas.EscribirAsync(context, StatusCodes.Status403Forbidden, MenorDeEdadDetectadoException.Mensaje,
+                codigo: MenorDeEdadDetectadoException.Codigo);
+            return;
+        }
         if (soloRequisitos && fallidos.Any(r => r is MayoriaEdadRequirement))
         {
             await Problemas.EscribirAsync(context, StatusCodes.Status403Forbidden,
