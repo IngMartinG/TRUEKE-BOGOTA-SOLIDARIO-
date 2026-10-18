@@ -66,9 +66,10 @@ export class Invitar {
   protected readonly puntos = computed(() => this.invitacion.value()?.puntosPorInvitacion ?? this.politica()?.puntosInvitacion ?? 20);
   protected readonly max = computed(() => this.invitacion.value()?.maxPorCiclo ?? this.politica()?.maxInvitacionesRecompensadasPorCiclo ?? 10);
   protected readonly dias = computed(() => this.invitacion.value()?.diasCiclo ?? this.politica()?.diasCicloInvitaciones ?? 30);
+  /** Contra el `<base href>` (no el origen): en GitHub Pages la app vive en una subcarpeta del dominio. */
   protected readonly enlace = computed(() => {
     const c = this.invitacion.value()?.codigo;
-    return c ? `${location.origin}/registro?invita=${encodeURIComponent(c)}` : null;
+    return c ? new URL(`registro?invita=${encodeURIComponent(c)}`, document.baseURI).href : null;
   });
   protected readonly alTope = computed(() => {
     const i = this.invitacion.value();
