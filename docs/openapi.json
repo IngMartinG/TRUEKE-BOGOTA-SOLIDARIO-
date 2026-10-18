@@ -9388,6 +9388,9 @@
             "type": "string",
             "format": "date",
             "nullable": true
+          },
+          "nombreRealPendiente": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

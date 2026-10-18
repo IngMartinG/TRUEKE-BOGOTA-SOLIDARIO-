@@ -5,7 +5,7 @@ import { SesionService } from './sesion.service';
 
 function ejecutar(
   guarda: typeof exigirCorreoVerificado,
-  sesion: { autenticado: boolean; verificado: boolean; moderador?: boolean; foto?: boolean; mayor?: boolean },
+  sesion: { autenticado: boolean; verificado: boolean; moderador?: boolean; foto?: boolean; mayor?: boolean; sinNombre?: boolean },
   url = '/cuenta/perfil',
 ) {
   TestBed.resetTestingModule(); // varias llamadas en la misma prueba
@@ -19,6 +19,7 @@ function ejecutar(
           correoVerificado: () => sesion.verificado,
           esModerador: () => sesion.moderador ?? false,
           tieneFoto: () => sesion.foto ?? true,
+          nombreRealPendiente: () => sesion.sinNombre ?? false,
           usuario: () => (sesion.autenticado ? {} : null),
           mayoriaEdadConfirmada: () => sesion.mayor ?? true,
         },
@@ -52,6 +53,12 @@ describe('exigirModerador', () => {
 });
 
 describe('exigirCuentaCompleta (publicar y editar)', () => {
+  it('sin nombre y apellido reales lleva a escribirlos y luego vuelve', () => {
+    expect(ejecutar(exigirCuentaCompleta, { autenticado: true, verificado: true, sinNombre: true }, '/publicar')).toBe(
+      '/cuenta/perfil?volver=%2Fpublicar#datos',
+    );
+  });
+
   it('sin foto de perfil lleva a subirla', () => {
     expect(ejecutar(exigirCuentaCompleta, { autenticado: true, verificado: true, foto: false })).toBe('/cuenta/perfil?volver=%2Fcuenta%2Fperfil#foto');
   });

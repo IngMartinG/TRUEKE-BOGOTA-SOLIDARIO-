@@ -52,7 +52,7 @@ internal static class Mapeos
             u.DestacadosGratisDisponibles(ahora),
             u.CorreoVerificado, u.TieneClave, u.GoogleSub is not null, u.DosFactoresActivo, u.CodigosRecuperacionRestantes,
             u.MunicipioCodigo, Divipola.NombreCompleto(u.MunicipioCodigo), u.NombreComercial, u.Nit, u.TieneDatosFacturacion, u.FotoUrl,
-            u.MostrarNit, u.FechaNacimiento);
+            u.MostrarNit, u.FechaNacimiento, u.NombreRealPendiente);
     }
 
     public static CategoriaDto ACategoriaDto(Categoria c) => new(c.Id, c.NombreCategoria, c.Descripcion);

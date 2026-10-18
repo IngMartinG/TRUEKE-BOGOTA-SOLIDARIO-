@@ -3,7 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { CODIGO_BOGOTA, LOCALIDADES } from '../../api/tipos';
+import { CODIGO_BOGOTA, LOCALIDADES, NOMBRE_PROVISIONAL } from '../../api/tipos';
 import { CuentaApi } from '../../core/api/cuenta.api';
 import { AvisosService } from '../../core/avisos.service';
 import { erroresDeCampos, mensajeDe } from '../../core/http/problema';
@@ -69,8 +69,14 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
 
       <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-[1fr_20rem]">
         <div class="space-y-6">
-          <form [formGroup]="form" (ngSubmit)="guardar()" class="tarjeta space-y-5 p-6" novalidate>
+          <form id="datos" [formGroup]="form" (ngSubmit)="guardar()" class="tarjeta scroll-mt-24 space-y-5 p-6" novalidate>
             <h2 class="text-lg font-bold">Datos personales</h2>
+            @if (u.nombreRealPendiente) {
+              <p class="flex items-start gap-2 rounded-xl bg-sol-50 p-3 text-sm font-medium dark:bg-sol-500/10" role="status">
+                <app-icono nombre="alerta" [tamano]="18" class="mt-0.5 shrink-0" />
+                <span>Escribe tu <strong>nombre y apellido reales</strong>. Mientras tanto puedes explorar, pero no publicar, solicitar, chatear ni pagar.</span>
+              </p>
+            }
             <div class="campo">
               <label for="nombre" class="etiqueta">Nombre completo</label>
               <input id="nombre" class="entrada" formControlName="nombreCompleto" maxlength="120" autocomplete="name" aria-describedby="nombre-error" />
@@ -212,7 +218,10 @@ export default class Perfil {
       untracked(() => {
         if (u && this.form.pristine) {
           this.municipioCargado = u.municipioCodigo ?? CODIGO_BOGOTA;
-          this.form.reset({ nombreCompleto: u.nombreCompleto ?? '', municipioCodigo: this.municipioCargado, localidad: u.localidad ?? '' });
+          // El nombre provisional de Google no se muestra como si fuera suyo: el campo queda vacío para escribir el real.
+          const nombre = u.nombreCompleto === NOMBRE_PROVISIONAL ? '' : (u.nombreCompleto ?? '');
+          this.form.reset({ nombreCompleto: nombre, municipioCodigo: this.municipioCargado, localidad: u.localidad ?? '' });
+          if (u.nombreRealPendiente) this.form.controls.nombreCompleto.markAsTouched(); // muestra qué le falta
         }
         if (u && this.empresa.pristine) this.empresa.reset({ nombreComercial: u.nombreComercial ?? '', nit: u.nit ?? '', mostrarNit: !!u.mostrarNit });
       });
@@ -238,9 +247,16 @@ export default class Perfil {
       const u = await firstValueFrom(
         this.api.actualizarPerfil({ nombreCompleto: v.nombreCompleto.trim(), localidad: v.localidad.trim(), municipioCodigo: v.municipioCodigo }),
       );
+      const estabaPendiente = this.sesion.usuario()?.nombreRealPendiente;
       this.sesion.actualizarUsuario(u);
       this.form.markAsPristine();
-      this.avisos.exito('Perfil actualizado');
+      const volver = this.volver();
+      if (estabaPendiente && volver) {
+        this.avisos.exito('¡Listo!', 'Ya puedes continuar donde estabas.');
+        await this.router.navigateByUrl(destinoSeguro(volver, '/cuenta/perfil'));
+      } else {
+        this.avisos.exito('Perfil actualizado');
+      }
     } catch (e) {
       if (!aplicarErroresServidor(this.form.controls, erroresDeCampos(e))) this.avisos.error(mensajeDe(e));
     } finally {

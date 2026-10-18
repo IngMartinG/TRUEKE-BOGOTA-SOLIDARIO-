@@ -49,6 +49,9 @@ export const ETIQUETA_CONCEPTO: Record<string, string> = {
 
 export const CODIGO_BOGOTA = '11001';
 
+/** Nombre temporal de una cuenta de Google cuyo nombre no se pudo usar (mismo valor que Usuario.NombreProvisional). */
+export const NOMBRE_PROVISIONAL = 'Usuario Trueke';
+
 /** Cuerpo de error estándar de la API (RFC 7807). `title` es el mensaje mostrable. */
 export interface Problema {
   type?: string;

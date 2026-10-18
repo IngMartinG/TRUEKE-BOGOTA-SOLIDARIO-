@@ -25,11 +25,17 @@ export const exigirCorreoVerificado: CanActivateFn = (_ruta, estado) => {
   return sesion.correoVerificado() ? true : router.createUrlTree(['/verifica-tu-correo']);
 };
 
-/** Publicar y editar exigen además foto de perfil (regla del backend): sin ella se lleva a subirla y luego se vuelve. */
+/**
+ * Publicar y editar exigen además nombre y apellido reales y foto de perfil (reglas del backend): si falta algo se lleva
+ * al perfil a completarlo y luego se vuelve.
+ */
 export const exigirCuentaCompleta: CanActivateFn = (ruta, estado) => {
   const verificado = exigirCorreoVerificado(ruta, estado);
   if (verificado !== true) return verificado;
-  return inject(SesionService).tieneFoto() ? true : inject(Router).createUrlTree(['/cuenta/perfil'], { fragment: 'foto', queryParams: { volver: estado.url } });
+  const sesion = inject(SesionService);
+  if (sesion.nombreRealPendiente())
+    return inject(Router).createUrlTree(['/cuenta/perfil'], { fragment: 'datos', queryParams: { volver: estado.url } });
+  return sesion.tieneFoto() ? true : inject(Router).createUrlTree(['/cuenta/perfil'], { fragment: 'foto', queryParams: { volver: estado.url } });
 };
 
 /** Páginas que una cuenta sin fecha de nacimiento sí puede abrir: registrarla, leer lo legal, pedir ayuda y sus datos. */

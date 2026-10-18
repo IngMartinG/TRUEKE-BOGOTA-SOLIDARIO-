@@ -6234,6 +6234,7 @@ export interface components {
             mostrarNit?: boolean;
             /** Format: date */
             fechaNacimiento?: string | null;
+            nombreRealPendiente?: boolean;
         };
         VerificacionPendienteDto: {
             /** Format: uuid */

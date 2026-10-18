@@ -318,7 +318,13 @@ Tercer y último paso para salir de Azure: ya no queda nada en Azure.
 - Se toleran espacios al inicio, al final y repetidos: se guardan recortados y con un solo espacio.
 - Los datos ya guardados no se rompen: la regla se aplica al guardar. Los datos de facturación guardados se leen con las
   reglas de antes (`DatosComprador.Restaurar`), y el perfil muestra el error cuando la persona lo edita.
-- Google: si el nombre no cumple el formato, la cuenta se crea como "Usuario Trueke" y la persona lo cambia en su perfil.
+- Google: la cuenta se crea con el nombre real, bien escrito: se quitan dígitos y emojis, y cada palabra empieza con
+  mayúscula, salvo las partículas ("MARÍA DE LA TORRE" → "María de la Torre"). Solo si no queda nada usable se usa
+  "Usuario Trueke".
+- **Sin nombre y apellido reales solo se explora:** si falta (nombre provisional, una sola palabra o un nombre guardado
+  antes de la regla), publicar, solicitar, comentar, chatear, denunciar, subir archivos y pagar responden 403
+  `nombre_requerido`. El front lleva a Mi cuenta → Perfil con un aviso y, al guardar, vuelve a donde estaba
+  (`UsuarioDto.nombreRealPendiente`).
 - `TextoSeguro` común para todos los textos libres (títulos, descripciones, comentarios, chat, denuncias, PQRS, deseos…):
   rechaza los caracteres de control (salvo saltos de línea donde se admiten) y los invisibles de engaño (inversión de
   sentido U+202A–202E y U+2066–2069, ancho cero U+200B, U+FEFF, U+2060 y U+180E). Los emojis siguen funcionando.
