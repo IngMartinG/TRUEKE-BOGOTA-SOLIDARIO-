@@ -28,7 +28,7 @@ describe('Invita y ganan los dos', () => {
   it('muestra el enlace con el código y el contador', async () => {
     const { el, texto } = await montar();
     const campo = el.querySelector<HTMLInputElement>('#enlace-invitacion');
-    expect(campo?.value).toBe(`${location.origin}/registro?invita=ABCD1234`);
+    expect(campo?.value).toBe(new URL('registro?invita=ABCD1234', document.baseURI).href);
     expect(campo?.readOnly).toBe(true);
     expect(texto()).toContain('Invita y ganan los dos');
     expect(texto()).toContain('Invitaciones logradas: 3');
@@ -43,9 +43,21 @@ describe('Invita y ganan los dos', () => {
     boton?.click();
     await fixture.whenStable();
     fixture.detectChanges();
-    expect(writeText).toHaveBeenCalledWith(`${location.origin}/registro?invita=ABCD1234`);
+    expect(writeText).toHaveBeenCalledWith(new URL('registro?invita=ABCD1234', document.baseURI).href);
     expect(avisos.exito).toHaveBeenCalled();
     expect(el.querySelector('[aria-live="polite"]')?.textContent).toContain('¡Enlace copiado!');
+  });
+
+  it('con la app en una subcarpeta (GitHub Pages), el enlace queda dentro de ella', async () => {
+    const base = document.createElement('base');
+    base.href = '/repositorio/';
+    document.head.prepend(base);
+    try {
+      const { el } = await montar();
+      expect(el.querySelector<HTMLInputElement>('#enlace-invitacion')?.value).toBe(`${location.origin}/repositorio/registro?invita=ABCD1234`);
+    } finally {
+      base.remove();
+    }
   });
 
   it('al llegar al tope lo explica con calma', async () => {
