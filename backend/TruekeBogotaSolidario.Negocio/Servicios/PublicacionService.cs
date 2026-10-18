@@ -112,12 +112,15 @@ public sealed class PublicacionService : IPublicacionService
     }
 
     /// <summary>
-    /// Estatuto del Consumidor (Ley 1480, art. 53): quien vende de forma habitual por un portal de contacto debe estar
-    /// identificado. Más de N ventas activas exige identidad verificada o plan Empresa (que registra NIT).
+    /// Estatuto del Consumidor (Ley 1480, art. 53): toda venta exige el registro de oferentes (documento, dirección de
+    /// notificaciones y teléfono), y quien vende de forma habitual debe además estar identificado: más de N ventas activas
+    /// exige identidad verificada o plan Empresa (que registra NIT).
     /// </summary>
     private async Task ExigirVendedorIdentificadoAsync(Usuario actor, ModoDto modo, Guid? excepto, DateTime ahora)
     {
-        if (modo != ModoDto.Compra || actor.EsVerificado || actor.EmpresaVigente(ahora)) return;
+        if (modo != ModoDto.Compra) return;
+        Guardas.ExigirRegistroOferente(actor);
+        if (actor.EsVerificado || actor.EmpresaVigente(ahora)) return;
         if (await _pubs.ContarVentasActivasAsync(actor.Id, excepto) >= PoliticaEcoPuntos.MaxVentasActivasSinIdentificar)
             throw new ReglaDeNegocioException(
                 $"Para tener más de {PoliticaEcoPuntos.MaxVentasActivasSinIdentificar} artículos a la venta al mismo tiempo debes verificar tu identidad " +

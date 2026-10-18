@@ -192,6 +192,51 @@ public sealed class DatosFacturacionRequest : IValidatableObject
     }
 }
 
+/// <summary>
+/// Registro de oferentes (Ley 1480, art. 53): se pide una sola vez antes de la primera publicación en modo Compra.
+/// Mismas reglas de documento y nombre que los datos de facturación.
+/// </summary>
+public sealed class DatosOferenteRequest : IValidatableObject
+{
+    [EnumDataType(typeof(TipoDocumentoFiscalDto))] public TipoDocumentoFiscalDto TipoDocumento { get; init; } = TipoDocumentoFiscalDto.CC;
+    [Required(ErrorMessage = "Escribe el número de tu documento."), StringLength(20, MinimumLength = 3)] public string Documento { get; init; } = "";
+    /// <summary>Nombre de la persona (solo letras) o, si el documento es NIT, razón social.</summary>
+    [Required(ErrorMessage = "Escribe tu nombre como aparece en el documento."), StringLength(150, MinimumLength = 3)] public string Nombre { get; init; } = "";
+    /// <summary>Dirección física donde recibir notificaciones.</summary>
+    [Required(ErrorMessage = "Escribe tu dirección de notificaciones."), StringLength(150, MinimumLength = 5),
+     RegularExpression(FormatosTexto.Direccion, ErrorMessage = FormatosTexto.MensajeDireccion)]
+    public string Direccion { get; init; } = "";
+    [Required(ErrorMessage = "Elige el municipio."), RegularExpression(FormatosUbicacion.Municipio, ErrorMessage = "El municipio no es válido.")]
+    public string MunicipioCodigo { get; init; } = "";
+    [Required(ErrorMessage = "Escribe tu teléfono."), StringLength(20, MinimumLength = 10),
+     RegularExpression(FormatosTexto.Telefono, ErrorMessage = FormatosTexto.MensajeTelefono)]
+    public string Telefono { get; init; } = "";
+
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (!Enum.IsDefined(TipoDocumento)) yield break;
+        if (!string.IsNullOrWhiteSpace(Documento))
+        {
+            string? error = null;
+            try { DocumentosFiscales.Normalizar((TipoDocumentoFiscal)(int)TipoDocumento, Documento); }
+            catch (ReglaDeNegocioException ex) { error = ex.Message; }
+            if (error is not null) yield return new ValidationResult(error, new[] { nameof(Documento) });
+        }
+        if (string.IsNullOrWhiteSpace(Nombre)) yield break;
+        if (TipoDocumento == TipoDocumentoFiscalDto.NIT && !FormatosTexto.EsNombreComercial(Nombre))
+            yield return new ValidationResult(FormatosTexto.MensajeRazonSocial, new[] { nameof(Nombre) });
+        else if (TipoDocumento != TipoDocumentoFiscalDto.NIT && !FormatosTexto.EsNombrePersona(Nombre))
+            yield return new ValidationResult(FormatosTexto.MensajeNombrePersona, new[] { nameof(Nombre) });
+    }
+}
+
+/// <summary>El registro de oferente descifrado: solo para el titular y para la moderación con una PQRS vinculada.</summary>
+public sealed record DatosOferenteDto(string TipoDocumento, string Nombre, string Documento, string Direccion, string MunicipioCodigo,
+    string Municipio, string Telefono, DateTime RegistradoUtc);
+
+/// <summary>Quien le vendió al autor de la PQRS en una compra completada (sin datos del registro: se piden aparte y quedan en la auditoría).</summary>
+public sealed record VendedorDePqrDto(Guid UsuarioId, string Nombre, string Publicacion, DateTime FechaUtc, bool TieneRegistro);
+
 public sealed class CrearPublicacionRequest
 {
     [Required, StringLength(120, MinimumLength = 3)] public string Titulo { get; init; } = "";
@@ -571,7 +616,7 @@ public sealed record UsuarioDto(Guid Id, string NombreCompleto, string Localidad
     bool CorreoVerificado, bool TieneClave, bool VinculadoGoogle, bool DosFactoresActivo, int CodigosRecuperacionRestantes,
     string MunicipioCodigo, string Municipio, string? NombreComercial, string? Nit, bool TieneDatosFacturacion, string? FotoUrl = null,
     bool MostrarNit = false, DateOnly? FechaNacimiento = null, bool NombreRealPendiente = false,
-    string? PoliticaDatosVersion = null, string? TerminosVersion = null, bool MenorDetectado = false);
+    string? PoliticaDatosVersion = null, string? TerminosVersion = null, bool MenorDetectado = false, bool RegistroOferente = false);
 
 public sealed record SesionDto(string Token, DateTime ExpiraUtc, UsuarioDto Usuario);
 
@@ -743,7 +788,7 @@ public sealed record DatosPersonalesDto(DateTime GeneradoUtc, UsuarioDto Perfil,
     DatosFacturacionDto DatosFacturacion, IReadOnlyList<FacturaDto> Facturas, IReadOnlyList<PqrDto> Pqrs,
     IReadOnlyList<ApelacionDto> Apelaciones, PreferenciasAvisosDto? PreferenciasAvisos = null, IReadOnlyList<BloqueadoDto>? Bloqueados = null,
     IReadOnlyList<BusquedaGuardadaDto>? BusquedasGuardadas = null, IReadOnlyList<MovimientoEcoPuntosDto>? MovimientosEcoPuntos = null,
-    IReadOnlyList<DeseoDto>? Deseos = null);
+    IReadOnlyList<DeseoDto>? Deseos = null, DatosOferenteDto? RegistroOferente = null);
 
 public sealed record CalificacionExportDto(Guid Id, Guid SolicitudId, int Estrellas, string? Comentario, DateTime FechaUtc);
 

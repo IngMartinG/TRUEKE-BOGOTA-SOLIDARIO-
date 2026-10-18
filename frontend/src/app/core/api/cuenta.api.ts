@@ -39,6 +39,8 @@ import type {
   SolicitarSubidaRequest,
   SubidaArchivoDto,
   UsuarioDto,
+  DatosOferenteDto,
+  DatosOferenteRequest,
 } from '../../api/tipos';
 import { HttpApi, seg } from './http-api';
 
@@ -63,6 +65,10 @@ export class CuentaApi {
   registrarPush = (s: SuscripcionPushRequest) => this.api.put<void>('/push/suscripciones', s, { silencioso: true });
   bajaPush = (endpoint: string) => this.api.post<void>('/push/suscripciones/baja', { endpoint }, { silencioso: true });
   actualizarEmpresa =(r: PerfilEmpresaRequest) => this.api.put<UsuarioDto>('/usuarios/yo/empresa', r, { silencioso: true });
+
+  /** Registro de vendedor (Ley 1480, art. 53); null si aún no lo tiene (204). */
+  miRegistroVendedor = () => this.api.get<DatosOferenteDto | null>('/usuarios/yo/oferente');
+  registrarVendedor = (r: DatosOferenteRequest) => this.api.put<UsuarioDto>('/usuarios/yo/oferente', r, { silencioso: true });
 
   datosFacturacion = () => this.api.get<DatosFacturacionDto>('/cuenta/facturacion');
   guardarFacturacion = (r: DatosFacturacionRequest) =>

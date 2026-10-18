@@ -100,6 +100,16 @@ export const CONOCIMIENTO: readonly EntradaConocimiento[] = [
     respuesta: 'Toca el botón "+" (Publicar), elige si es trueke, venta o donación, cuenta en qué estado está, sube fotos y marca la zona aproximada. Tus fotos se publican sin la ubicación GPS que guarda el celular.',
     accion: { texto: 'Publicar ahora', ruta: '/publicar', conSesion: true },
   },
+  {
+    id: 'registro-vendedor',
+    tema: 'empezar',
+    pregunta: '¿Por qué me piden documento, dirección y teléfono para vender?',
+    variantes: ['registro de vendedor', 'por qué piden mi cédula para vender', 'quién ve mi teléfono', 'datos para vender'],
+    palabrasClave: ['vendedor', 'vender', 'documento', 'cedula', 'telefono', 'direccion', 'registro', 'oferente'],
+    respuesta: 'El Estatuto del Consumidor (Ley 1480, art. 53) nos exige llevar un registro de quienes venden en la plataforma. Lo pedimos una sola vez, antes de tu primera venta; truekes y donaciones no lo necesitan. Guardamos tu documento, tu dirección y tu teléfono cifrados: nadie de la comunidad los ve. Solo los entregamos a quien te compró y presenta un reclamo, o a la autoridad que los pida.',
+    accion: { texto: 'Ir al registro de vendedor', ruta: '/cuenta/vendedor', conSesion: true },
+    tipoPqr: 'Consulta',
+  },
   // ── Intercambios ────────────────────────────────────────────────────────────────────────────────────────────────
   {
     id: 'solicitud',

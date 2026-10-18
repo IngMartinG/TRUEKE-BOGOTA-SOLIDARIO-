@@ -18,7 +18,7 @@ Cada corrección va en su propio PR. Lo que necesita una decisión del dueño, d
 
 | # | Severidad | Hallazgo | Estado |
 |---|---|---|---|
-| 1 | **Alta** (legal) | No existe el registro de oferentes que exige la Ley 1480 a un portal de contacto (art. 53) | Pendiente: decisión del dueño y del abogado |
+| 1 | **Alta** (legal) | No existe el registro de oferentes que exige la Ley 1480 a un portal de contacto (art. 53) | **Corregido** en `feat/registro-oferentes` (texto legal: revisión del abogado) |
 | 2 | Media | Un fragmento JS que no carga hacía fallar el ingreso ("Ocurrió un error inesperado") | **Corregido** en #155 |
 | 3 | Media | La PQRS pública reenviaba a cualquier correo el texto escrito por quien la radicaba | **Corregido** en #156 |
 | 4 | Media | Al enviar un formulario con errores, el foco no iba al primer campo inválido (WCAG 3.3.1 y 2.4.3) | **Corregido** en #157 |
@@ -48,6 +48,8 @@ Hoy el registro de una cuenta pide solo nombre, correo y ubicación. El document
 - Guardarlos cifrados, como ya se hace con los secretos de 2FA.
 - No mostrarlos a nadie. Solo se entregan a quien completó una compra con esa persona y radica una PQRS, o a la autoridad.
 - Anunciarlo en la política de datos.
+
+**Corrección (decisión del dueño: solo para vender en modo Compra):** se pide una sola vez, antes de la primera publicación de venta (403 `datos_oferente_requeridos`). Documento, dirección y teléfono van cifrados con la clave de los secretos de 2FA. Nunca se devuelven a terceros: el titular los ve en su cuenta y en la exportación; la moderación con 2FA los consulta solo desde la PQRS de alguien que completó una compra con esa persona, y cada consulta queda en la auditoría. La política, los términos y el asistente lo explican, y la versión legal sube a `2026-10-19`, lo que pide reaceptarlos. Queda para el abogado: el texto final y la conservación del registro después de eliminar la cuenta.
 
 El abogado debe confirmar si aplica también al **trueke** y a las **donaciones**, donde no hay precio.
 

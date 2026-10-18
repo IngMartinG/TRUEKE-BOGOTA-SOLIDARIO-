@@ -1277,3 +1277,63 @@ BEGIN
 END $EF$;
 COMMIT;
 
+START TRANSACTION;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018175139_RegistroOferentes') THEN
+    ALTER TABLE "Usuarios" ADD "OferenteDireccionCifrada" character varying(800);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018175139_RegistroOferentes') THEN
+    ALTER TABLE "Usuarios" ADD "OferenteDocumentoCifrado" character varying(200);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018175139_RegistroOferentes') THEN
+    ALTER TABLE "Usuarios" ADD "OferenteMunicipioCodigo" character varying(5);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018175139_RegistroOferentes') THEN
+    ALTER TABLE "Usuarios" ADD "OferenteNombre" character varying(150);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018175139_RegistroOferentes') THEN
+    ALTER TABLE "Usuarios" ADD "OferenteRegistradoUtc" timestamp with time zone;
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018175139_RegistroOferentes') THEN
+    ALTER TABLE "Usuarios" ADD "OferenteTelefonoCifrado" character varying(200);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018175139_RegistroOferentes') THEN
+    ALTER TABLE "Usuarios" ADD "OferenteTipoDocumento" character varying(20);
+    END IF;
+END $EF$;
+
+DO $EF$
+BEGIN
+    IF NOT EXISTS(SELECT 1 FROM "__EFMigrationsHistory" WHERE "MigrationId" = '20261018175139_RegistroOferentes') THEN
+    INSERT INTO "__EFMigrationsHistory" ("MigrationId", "ProductVersion")
+    VALUES ('20261018175139_RegistroOferentes', '10.0.13');
+    END IF;
+END $EF$;
+COMMIT;
+

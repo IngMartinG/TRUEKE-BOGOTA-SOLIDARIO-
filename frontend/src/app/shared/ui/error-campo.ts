@@ -48,6 +48,7 @@ export class ErrorCampo {
     if (e['nombreComercial']) return "El nombre comercial solo puede tener letras, números, espacios y & . , - ' ( ).";
     if (e['razonSocial']) return "La razón social solo puede tener letras, números, espacios y & . , - ' ( ).";
     if (e['localidad']) return 'La localidad o barrio solo puede tener letras, números, espacios y # - . °.';
+    if (e['telefono']) return 'Escribe un celular (300 123 4567) o un fijo con indicativo (601 234 5678) de Colombia.';
     if (e['direccion']) return 'La dirección solo puede tener letras, números, espacios y # - . , ° /.';
     if (e['nit']) return 'El NIT debe tener entre 6 y 15 dígitos (puntos opcionales) y, si lo incluyes, el dígito de verificación tras un guion.';
     if (e['nitDv']) return 'El dígito de verificación del NIT no es correcto.';

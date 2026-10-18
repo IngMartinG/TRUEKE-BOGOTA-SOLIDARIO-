@@ -74,6 +74,12 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.FacturacionCorreo).HasMaxLength(160);
             e.Property(x => x.FacturacionDireccion).HasMaxLength(150);
             e.Property(x => x.FacturacionMunicipioCodigo).HasMaxLength(5).IsUnicode(false);
+            e.Property(x => x.OferenteTipoDocumento).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.OferenteNombre).HasMaxLength(150);
+            e.Property(x => x.OferenteDocumentoCifrado).HasMaxLength(200).IsUnicode(false);
+            e.Property(x => x.OferenteDireccionCifrada).HasMaxLength(800).IsUnicode(false);
+            e.Property(x => x.OferenteMunicipioCodigo).HasMaxLength(5).IsUnicode(false);
+            e.Property(x => x.OferenteTelefonoCifrado).HasMaxLength(200).IsUnicode(false);
             e.HasIndex(x => new { x.TipoCuenta, x.FechaVencimientoSuscripcion }); // recordatorios e ingresos recurrentes
             e.Property(x => x.CodigoInvitacion).HasMaxLength(12).IsUnicode(false);
             e.HasIndex(x => x.CodigoInvitacion).IsUnique().HasFilter("\"CodigoInvitacion\" IS NOT NULL");

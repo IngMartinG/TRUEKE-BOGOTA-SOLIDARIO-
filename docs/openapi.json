@@ -718,6 +718,104 @@
         }
       }
     },
+    "/api/v1/admin/pqr/{id}/vendedores": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VendedorDePqrDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VendedorDePqrDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/VendedorDePqrDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/pqr/{id}/vendedores/{usuarioId}/oferente": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          },
+          {
+            "name": "usuarioId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosOferenteDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosOferenteDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosOferenteDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/pqr/{id}/responder": {
       "post": {
         "tags": [
@@ -5143,6 +5241,81 @@
         }
       }
     },
+    "/api/v1/usuarios/yo/oferente": {
+      "get": {
+        "tags": [
+          "Usuarios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosOferenteDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosOferenteDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DatosOferenteDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Usuarios"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatosOferenteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatosOferenteRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/DatosOferenteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/usuarios/{id}/bloqueo": {
       "post": {
         "tags": [
@@ -6772,6 +6945,80 @@
         },
         "additionalProperties": false
       },
+      "DatosOferenteDto": {
+        "type": "object",
+        "properties": {
+          "tipoDocumento": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "documento": {
+            "type": "string"
+          },
+          "direccion": {
+            "type": "string"
+          },
+          "municipioCodigo": {
+            "type": "string"
+          },
+          "municipio": {
+            "type": "string"
+          },
+          "telefono": {
+            "type": "string"
+          },
+          "registradoUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "DatosOferenteRequest": {
+        "required": [
+          "direccion",
+          "documento",
+          "municipioCodigo",
+          "nombre",
+          "telefono"
+        ],
+        "type": "object",
+        "properties": {
+          "tipoDocumento": {
+            "$ref": "#/components/schemas/TipoDocumentoFiscalDto"
+          },
+          "documento": {
+            "maxLength": 20,
+            "minLength": 3,
+            "type": "string"
+          },
+          "nombre": {
+            "maxLength": 150,
+            "minLength": 3,
+            "type": "string"
+          },
+          "direccion": {
+            "maxLength": 150,
+            "minLength": 5,
+            "pattern": "^(?=.*\\p{L}) *[\\p{L}\\p{M}0-9#.,\u00B0\u00BA/-]\u002B(?: \u002B[\\p{L}\\p{M}0-9#.,\u00B0\u00BA/-]\u002B)* *$",
+            "type": "string"
+          },
+          "municipioCodigo": {
+            "minLength": 1,
+            "pattern": "^[0-9]{5}$",
+            "type": "string"
+          },
+          "telefono": {
+            "maxLength": 20,
+            "minLength": 10,
+            "pattern": "^ *(?:\\\u002B *57[ -]*)?(?:3[0-9]{2}|60[1-8])[ -]*[0-9]{3}[ -]*[0-9]{4} *$",
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "DatosPersonalesDto": {
         "type": "object",
         "properties": {
@@ -6903,6 +7150,9 @@
               "$ref": "#/components/schemas/DeseoDto"
             },
             "nullable": true
+          },
+          "registroOferente": {
+            "$ref": "#/components/schemas/DatosOferenteDto"
           }
         },
         "additionalProperties": false
@@ -9800,6 +10050,32 @@
             "nullable": true
           },
           "menorDetectado": {
+            "type": "boolean"
+          },
+          "registroOferente": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "VendedorDePqrDto": {
+        "type": "object",
+        "properties": {
+          "usuarioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "publicacion": {
+            "type": "string"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tieneRegistro": {
             "type": "boolean"
           }
         },

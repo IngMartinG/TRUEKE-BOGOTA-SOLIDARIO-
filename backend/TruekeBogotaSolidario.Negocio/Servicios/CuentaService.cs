@@ -36,6 +36,12 @@ public static class Guardas
         ExigirCorreoVerificado(u);
         if (string.IsNullOrWhiteSpace(u.FotoUrl)) throw new FotoPerfilRequeridaException();
     }
+
+    /// <summary>Vender (modo Compra) exige el registro de oferentes de la Ley 1480, art. 53. Trueke y donación no lo piden.</summary>
+    public static void ExigirRegistroOferente(Usuario u)
+    {
+        if (!u.RegistroOferenteCompleto) throw new DatosOferenteRequeridosException();
+    }
 }
 
 /// <summary>Prepara los correos con enlaces de un solo uso (agrega el token; quien llama guarda y LUEGO encola).</summary>

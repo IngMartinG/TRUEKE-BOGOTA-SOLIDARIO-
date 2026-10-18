@@ -3,7 +3,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { estadoPqr, etiquetaPqr, type EstadoPqrDto, type PqrAdminDto } from '../../api/tipos';
+import { estadoPqr, etiquetaPqr, type DatosOferenteDto, type EstadoPqrDto, type PqrAdminDto, type VendedorDePqrDto } from '../../api/tipos';
 import { AdminApi } from '../../core/api/admin.api';
 import { AvisosService } from '../../core/avisos.service';
 import { mensajeDe } from '../../core/http/problema';
@@ -60,6 +60,37 @@ const TAMANO = 20;
             <p class="mt-2 text-xs">Pago: <span class="font-mono">{{ p.pagoReferencia }}</span></p>
           }
           <p class="mt-2 text-sm whitespace-pre-line">{{ p.descripcion }}</p>
+          @if (!p.publica && p.id) {
+            <!-- Ley 1480, art. 53: el registro de quien le vendió, solo para resolver el reclamo de quien compró -->
+            @if (vendedores()[p.id]; as lista) {
+              <div class="mt-3 rounded-xl border border-borde p-3 text-sm">
+                <p class="font-semibold">Vendedores de sus compras completadas</p>
+                @for (v of lista; track v.usuarioId) {
+                  <div class="mt-2 flex flex-wrap items-center justify-between gap-2">
+                    <span>{{ v.nombre }} · {{ v.publicacion }} · {{ v.fechaUtc | fecha }}</span>
+                    @if (registros()[p.id + v.usuarioId]; as d) {
+                      <dl class="grid w-full grid-cols-[auto_1fr] gap-x-3 gap-y-1 rounded-lg bg-superficie-2 p-3 text-xs">
+                        <dt class="text-tenue">Nombre</dt><dd>{{ d.nombre }}</dd>
+                        <dt class="text-tenue">Documento</dt><dd>{{ d.tipoDocumento }} {{ d.documento }}</dd>
+                        <dt class="text-tenue">Dirección</dt><dd>{{ d.direccion }}, {{ d.municipio }}</dd>
+                        <dt class="text-tenue">Teléfono</dt><dd>{{ d.telefono }}</dd>
+                      </dl>
+                    } @else if (v.tieneRegistro) {
+                      <button type="button" class="btn btn-secundario btn-sm" (click)="verRegistro(p.id, v.usuarioId!)">Ver registro (queda en la auditoría)</button>
+                    } @else {
+                      <span class="text-xs text-tenue">Sin registro de vendedor</span>
+                    }
+                  </div>
+                } @empty {
+                  <p class="mt-1 text-tenue">No tiene compras completadas en la plataforma.</p>
+                }
+              </div>
+            } @else {
+              <button type="button" class="btn btn-fantasma btn-sm mt-2" (click)="cargarVendedores(p.id)">
+                <app-icono nombre="tienda" [tamano]="14" />Datos del vendedor (art. 53)
+              </button>
+            }
+          }
           @if (p.respuesta) {
             <p class="mt-3 rounded-xl bg-bosque-50 p-3 text-sm whitespace-pre-line dark:bg-bosque-950/50">{{ p.respuesta }}</p>
           } @else {
@@ -106,6 +137,26 @@ export default class Pqr {
   protected readonly seleccionada = signal<PqrAdminDto | null>(null);
   protected readonly respuesta = signal('');
   protected readonly error = signal<string | null>(null);
+  protected readonly vendedores = signal<Record<string, VendedorDePqrDto[]>>({});
+  protected readonly registros = signal<Record<string, DatosOferenteDto>>({});
+
+  protected async cargarVendedores(pqrId: string): Promise<void> {
+    try {
+      const lista = await firstValueFrom(this.api.vendedoresDePqr(pqrId));
+      this.vendedores.update((v) => ({ ...v, [pqrId]: lista }));
+    } catch {
+      // El interceptor ya mostró el error.
+    }
+  }
+
+  protected async verRegistro(pqrId: string, usuarioId: string): Promise<void> {
+    try {
+      const d = await firstValueFrom(this.api.registroVendedorDePqr(pqrId, usuarioId));
+      this.registros.update((r) => ({ ...r, [pqrId + usuarioId]: d }));
+    } catch {
+      // El interceptor ya mostró el error.
+    }
+  }
 
   protected abrir(p: PqrAdminDto): void {
     this.seleccionada.set(p);

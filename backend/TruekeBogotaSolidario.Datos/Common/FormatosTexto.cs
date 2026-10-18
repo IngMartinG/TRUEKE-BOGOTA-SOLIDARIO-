@@ -38,6 +38,9 @@ public static class FormatosTexto
     public const string MensajeRazonSocial = "La razón social solo puede tener letras, números, espacios y & . , - ' ( ).";
     public const string MensajeNit = "El NIT solo puede tener números, puntos y el dígito de verificación tras un guion.";
     public const string MensajeDireccion = "La dirección solo puede tener letras, números, espacios y # - . , ° /.";
+    /// <summary>Celular (3XX XXX XXXX) o fijo (60X XXX XXXX) de Colombia, con +57 opcional, espacios o guiones.</summary>
+    public const string Telefono = @"^ *(?:\+ *57[ -]*)?(?:3[0-9]{2}|60[1-8])[ -]*[0-9]{3}[ -]*[0-9]{4} *$";
+    public const string MensajeTelefono = "Escribe un celular (300 123 4567) o un fijo con indicativo (601 234 5678) de Colombia.";
 
     private static readonly TimeSpan Limite = TimeSpan.FromMilliseconds(250);
     private static readonly Regex ReNombrePersona = new(NombrePersona, RegexOptions.CultureInvariant, Limite);

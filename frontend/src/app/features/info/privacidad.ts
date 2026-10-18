@@ -56,6 +56,7 @@ export default class Privacidad {
           'Contenido que publicas: publicaciones, fotos, comentarios, mensajes del chat, calificaciones y denuncias.',
           'Actividad en la plataforma: intercambios, Eco-Puntos, pagos, facturas y solicitudes de soporte.',
           'Datos de facturación, si los registras: tipo y número de documento, nombre o razón social, correo y dirección.',
+          'Registro de vendedor, solo si vendes en modo Compra: nombre o razón social, tipo y número de documento, dirección de notificaciones, municipio y teléfono. El documento, la dirección y el teléfono se guardan cifrados y nunca se muestran a otras personas de la comunidad.',
           'Datos técnicos: dirección IP, tipo de dispositivo y registros de seguridad (inicios de sesión, cambios de contraseña), para proteger tu cuenta y prevenir fraudes.',
         ],
       },
@@ -68,6 +69,7 @@ export default class Privacidad {
           'Otorgar Eco-Puntos y reputación, y prevenir el fraude, la suplantación y el abuso (por ejemplo, cuentas duplicadas).',
           'Procesar los pagos de los servicios opcionales y emitir las facturas electrónicas.',
           'Atender peticiones, quejas, reclamos y solicitudes de retracto, y aplicar la moderación con debido proceso.',
+          'Llevar el registro de quienes venden que exige el Estatuto del Consumidor a un portal de contacto (Ley 1480, art. 53), y entregarlo solo a quien te compró y presenta un reclamo por PQRS, o a la autoridad que lo pida. Cada consulta del equipo queda registrada.',
           'Cumplir obligaciones legales, contables y tributarias, y responder a requerimientos de autoridades competentes.',
           'Opcionales, solo si lo autorizas en tu cuenta: avisos por correo cuando no estás conectado y notificaciones push en tu dispositivo. Puedes desactivarlos cuando quieras.',
         ],
@@ -82,7 +84,7 @@ export default class Privacidad {
       {
         titulo: 'Menores de edad',
         parrafos: [
-          'La plataforma es solo para personas mayores de 18 años y no tratamos datos de niños, niñas ni adolescentes. Si alguien indica una edad menor, no se crea la cuenta ni se guarda su fecha. Si detectamos la cuenta de un menor, la suprimimos junto con sus datos.',
+          'La plataforma es solo para personas mayores de 18 años y no tratamos datos de niños, niñas ni adolescentes. Si alguien indica una edad menor, no se crea la cuenta ni se guarda su fecha. Si una cuenta ya creada registra una fecha de menor de edad, queda en revisión: se ocultan sus publicaciones, no puede usar la plataforma ni cambiar la fecha, y conserva la descarga y la eliminación de sus datos y la PQRS. Si confirmamos que es la cuenta de un menor, la suprimimos junto con sus datos.',
         ],
       },
       {

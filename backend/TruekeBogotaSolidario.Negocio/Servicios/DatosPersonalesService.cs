@@ -49,6 +49,7 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
     private readonly IMovimientoEcoPuntosRepository _movimientos;
     private readonly IDeseoService _deseos;
     private readonly IDeseoRepository _deseosRepo;
+    private readonly IOferenteService _oferentes;
     private readonly ILogger<DatosPersonalesService> _log;
 
     public DatosPersonalesService(IUsuarioRepository usuarios, IPublicacionRepository pubs, ISolicitudRepository solicitudes,
@@ -59,8 +60,9 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         ICalificacionRepository calificaciones, IFavoritoRepository favoritos, IFacturaRepository facturas, IPqrRepository pqrs,
         IBloqueoService bloqueos, ILogger<DatosPersonalesService> log, ISuscripcionPushRepository suscripcionesPush,
         IBusquedaGuardadaService busquedas, IBusquedaGuardadaRepository busquedasRepo, IMovimientoEcoPuntosRepository movimientos,
-        IDeseoService deseos, IDeseoRepository deseosRepo)
+        IDeseoService deseos, IDeseoRepository deseosRepo, IOferenteService oferentes)
     {
+        _oferentes = oferentes;
         _movimientos = movimientos; _deseos = deseos; _deseosRepo = deseosRepo;
         _bloqueos = bloqueos; _suscripcionesPush = suscripcionesPush; _busquedas = busquedas; _busquedasRepo = busquedasRepo;
         _calificaciones = calificaciones; _favoritos = favoritos; _facturas = facturas; _pqrs = pqrs;
@@ -112,7 +114,7 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
             await _bloqueos.PreferenciasAsync(actorId), await _bloqueos.ListarAsync(actorId), await _busquedas.ListarAsync(actorId),
             (await _movimientos.ListarPorUsuarioAsync(actorId, 1, Maximo)).Items
                 .Select(m => new MovimientoEcoPuntosDto(m.Id, m.Concepto.ToString(), m.Puntos, m.Detalle, m.ReferenciaId, m.SaldoResultante, m.FechaUtc)).ToList(),
-            await _deseos.ListarAsync(actorId));
+            await _deseos.ListarAsync(actorId), _oferentes.Descifrar(u));
     }
 
 

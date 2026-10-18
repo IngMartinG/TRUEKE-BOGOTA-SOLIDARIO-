@@ -613,6 +613,85 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/pqr/{id}/vendedores": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["VendedorDePqrDto"][];
+                        "application/json": components["schemas"]["VendedorDePqrDto"][];
+                        "text/json": components["schemas"]["VendedorDePqrDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/pqr/{id}/vendedores/{usuarioId}/oferente": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                    usuarioId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DatosOferenteDto"];
+                        "application/json": components["schemas"]["DatosOferenteDto"];
+                        "text/json": components["schemas"]["DatosOferenteDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/pqr/{id}/responder": {
         parameters: {
             query?: never;
@@ -4620,6 +4699,70 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/usuarios/yo/oferente": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["DatosOferenteDto"];
+                        "application/json": components["schemas"]["DatosOferenteDto"];
+                        "text/json": components["schemas"]["DatosOferenteDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DatosOferenteRequest"];
+                    "text/json": components["schemas"]["DatosOferenteRequest"];
+                    "application/*+json": components["schemas"]["DatosOferenteRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UsuarioDto"];
+                        "application/json": components["schemas"]["UsuarioDto"];
+                        "text/json": components["schemas"]["UsuarioDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/usuarios/{id}/bloqueo": {
         parameters: {
             query?: never;
@@ -5451,6 +5594,25 @@ export interface components {
             direccion: string;
             municipioCodigo: string;
         };
+        DatosOferenteDto: {
+            tipoDocumento?: string;
+            nombre?: string;
+            documento?: string;
+            direccion?: string;
+            municipioCodigo?: string;
+            municipio?: string;
+            telefono?: string;
+            /** Format: date-time */
+            registradoUtc?: string;
+        };
+        DatosOferenteRequest: {
+            tipoDocumento?: components["schemas"]["TipoDocumentoFiscalDto"];
+            documento: string;
+            nombre: string;
+            direccion: string;
+            municipioCodigo: string;
+            telefono: string;
+        };
         DatosPersonalesDto: {
             /** Format: date-time */
             generadoUtc?: string;
@@ -5477,6 +5639,7 @@ export interface components {
             busquedasGuardadas?: components["schemas"]["BusquedaGuardadaDto"][] | null;
             movimientosEcoPuntos?: components["schemas"]["MovimientoEcoPuntosDto"][] | null;
             deseos?: components["schemas"]["DeseoDto"][] | null;
+            registroOferente?: components["schemas"]["DatosOferenteDto"];
         };
         DenunciaAgrupadaDto: {
             /** Format: uuid */
@@ -6490,6 +6653,16 @@ export interface components {
             politicaDatosVersion?: string | null;
             terminosVersion?: string | null;
             menorDetectado?: boolean;
+            registroOferente?: boolean;
+        };
+        VendedorDePqrDto: {
+            /** Format: uuid */
+            usuarioId?: string;
+            nombre?: string;
+            publicacion?: string;
+            /** Format: date-time */
+            fechaUtc?: string;
+            tieneRegistro?: boolean;
         };
         VerificacionPendienteDto: {
             /** Format: uuid */
@@ -6551,6 +6724,8 @@ export type CrearPublicacionRequest = components['schemas']['CrearPublicacionReq
 export type CrearSolicitudRequest = components['schemas']['CrearSolicitudRequest'];
 export type DatosFacturacionDto = components['schemas']['DatosFacturacionDto'];
 export type DatosFacturacionRequest = components['schemas']['DatosFacturacionRequest'];
+export type DatosOferenteDto = components['schemas']['DatosOferenteDto'];
+export type DatosOferenteRequest = components['schemas']['DatosOferenteRequest'];
 export type DatosPersonalesDto = components['schemas']['DatosPersonalesDto'];
 export type DenunciaAgrupadaDto = components['schemas']['DenunciaAgrupadaDto'];
 export type DenunciaCreadaDto = components['schemas']['DenunciaCreadaDto'];
@@ -6644,6 +6819,7 @@ export type TransaccionExportDto = components['schemas']['TransaccionExportDto']
 export type UsuarioAdminDto = components['schemas']['UsuarioAdminDto'];
 export type UsuarioAdminDtoPaginaDto = components['schemas']['UsuarioAdminDtoPaginaDto'];
 export type UsuarioDto = components['schemas']['UsuarioDto'];
+export type VendedorDePqrDto = components['schemas']['VendedorDePqrDto'];
 export type VerificacionPendienteDto = components['schemas']['VerificacionPendienteDto'];
 export type $defs = Record<string, never>;
 export type operations = Record<string, never>;

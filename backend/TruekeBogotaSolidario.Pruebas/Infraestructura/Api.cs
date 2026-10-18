@@ -29,12 +29,30 @@ public static class Api
         return (letras.Length == 0 ? "Persona" : letras) + " Prueba";
     }
 
-    /// <summary>Cuenta lista para operar: correo verificado y foto de perfil (requisitos para publicar, solicitar, chatear y pagar).</summary>
+    /// <summary>
+    /// Cuenta lista para operar: correo verificado, foto de perfil (requisitos para publicar, solicitar, chatear y pagar) y
+    /// registro de vendedor (para publicar en modo Compra; el flujo sin registro se prueba en RegistroOferentesTests).
+    /// </summary>
     public static async Task<SesionMinDto> RegistrarSesionAsync(WebApplicationFactory<Program> f, string nombre)
     {
         var sesion = await RegistrarSesionSinFotoAsync(f, nombre);
         await PonerFotoAsync(f, sesion.Usuario.Id);
+        await RegistrarOferenteAsync(ConToken(f, sesion.Token));
         return sesion;
+    }
+
+    /// <summary>Datos de vendedor válidos (Ley 1480, art. 53).</summary>
+    public static readonly object DatosOferente = new
+    {
+        tipoDocumento = "CC", documento = "1012345678", nombre = "Persona Prueba", direccion = "Calle 45 # 12-30",
+        municipioCodigo = "11001", telefono = "300 123 4567"
+    };
+
+    public static async Task RegistrarOferenteAsync(HttpClient c)
+    {
+        var r = await c.PutAsJsonAsync("/api/v1/usuarios/yo/oferente", DatosOferente);
+        if (r.StatusCode != HttpStatusCode.OK)
+            throw new InvalidOperationException($"Registro de vendedor falló: {(int)r.StatusCode} {await r.Content.ReadAsStringAsync()}");
     }
 
     /// <summary>Correo verificado pero SIN foto de perfil (para probar que la foto es obligatoria).</summary>

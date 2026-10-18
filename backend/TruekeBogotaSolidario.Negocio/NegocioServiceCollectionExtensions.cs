@@ -144,6 +144,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddSingleton<IUbicacionService, UbicacionService>();
         services.AddScoped<IFacturacionService, FacturacionService>();
         services.AddScoped<IPqrService, PqrService>();
+        services.AddScoped<IOferenteService, OferenteService>();
         services.AddSingleton<ResumenPqrPublicas>();
         services.AddHostedService<ResumenPqrPublicasHostedService>();
         services.AddScoped<IBusquedaGuardadaService, BusquedaGuardadaService>();

@@ -45,6 +45,13 @@ export const erroresInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
+      if (problema.codigo === 'datos_oferente_requeridos') {
+        avisos.info('Completa tu registro de vendedor', 'Lo pide la ley para vender (una sola vez). Tu publicación queda guardada como borrador.');
+        if (!router.url.startsWith('/cuenta/vendedor'))
+          void router.navigate(['/cuenta/vendedor'], { queryParams: { volver: router.url } });
+        return throwError(() => error);
+      }
+
       if (problema.codigo === 'foto_requerida') {
         avisos.info('Agrega tu foto de perfil', 'Es necesaria para publicar, solicitar, chatear y pagar: así la comunidad sabe con quién intercambia.');
         void router.navigate(['/cuenta/perfil'], { fragment: 'foto', queryParams: { volver: router.url } });

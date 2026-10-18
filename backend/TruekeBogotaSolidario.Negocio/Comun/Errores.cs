@@ -55,6 +55,18 @@ public sealed class MenorDeEdadDetectadoException : Exception
     public MenorDeEdadDetectadoException() : base(Mensaje) { }
 }
 
+/// <summary>
+/// Publicar en modo Compra exige el registro de oferentes de la Ley 1480, art. 53 (HTTP 403, codigo
+/// "datos_oferente_requeridos"): el front lleva al formulario y vuelve a la publicación.
+/// </summary>
+public sealed class DatosOferenteRequeridosException : Exception
+{
+    public const string Codigo = "datos_oferente_requeridos";
+    public DatosOferenteRequeridosException()
+        : base("Para vender, registra una sola vez tu documento, tu dirección de notificaciones y tu teléfono (Estatuto del Consumidor, " +
+               "art. 53). Nadie más los ve: solo se entregan a quien te compró y reclama, o a la autoridad.") { }
+}
+
 /// <summary>Falta el nombre real, nombre y apellido (HTTP 403, codigo "nombre_requerido"): el front lleva al perfil a escribirlo.</summary>
 public sealed class NombreRealRequeridoException : Exception
 {
@@ -82,6 +94,7 @@ public static class TraductorErrores
         MayoriaEdadRequeridaException e => new(403, e.Message, false, MayoriaEdadRequeridaException.Codigo),
         MenorDeEdadDetectadoException e => new(403, e.Message, false, MenorDeEdadDetectadoException.Codigo),
         NombreRealRequeridoException e => new(403, e.Message, false, NombreRealRequeridoException.Codigo),
+        DatosOferenteRequeridosException e => new(403, e.Message, false, DatosOferenteRequeridosException.Codigo),
         AutenticacionException e => new(401, e.Message, false),
         ConflictoDeConcurrenciaException e => new(409, e.Message, false),
         _ => new(500, "Error interno del servidor.", true)

@@ -61,7 +61,7 @@ public sealed class EntornoNegocio : IDisposable
         await accion(scope.ServiceProvider.GetRequiredService<TServicio>());
     }
 
-    /// <summary>Registra un usuario listo para operar (correo verificado y foto de perfil) y devuelve su sesión.</summary>
+    /// <summary>Registra un usuario listo para operar (correo verificado, foto de perfil y registro de vendedor) y devuelve su sesión.</summary>
     public async Task<SesionDto> RegistrarAsync(string nombre, string? codigoInvitacion = null)
     {
         var r = await EnScopeAsync<IAuthService, ResultadoAutenticacion>(a => a.RegistrarAsync(new RegistroRequest
@@ -71,6 +71,11 @@ public sealed class EntornoNegocio : IDisposable
         }));
         await MarcarCorreoVerificadoAsync(r.Sesion.Usuario.Id);
         await ModificarUsuarioAsync(r.Sesion.Usuario.Id, u => u.CambiarFoto($"https://almacen.test/imagenes/{u.Id:N}/perfil.jpg"));
+        await EnScopeAsync<IOferenteService, UsuarioDto>(o => o.RegistrarAsync(r.Sesion.Usuario.Id, new DatosOferenteRequest
+        {
+            TipoDocumento = TipoDocumentoFiscalDto.CC, Documento = "1012345678", Nombre = Api.NombreDePrueba(nombre),
+            Direccion = "Calle 45 # 12-30", MunicipioCodigo = "11001", Telefono = "3001234567"
+        }));
         return r.Sesion;
     }
 

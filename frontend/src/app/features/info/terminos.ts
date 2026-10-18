@@ -35,7 +35,7 @@ export default class Terminos {
         titulo: 'Qué es la plataforma',
         parrafos: [
           'Es un portal de contacto (Ley 1480 de 2011, art. 53) que conecta a personas en Colombia para intercambiar (trueke), vender de segunda mano o donar objetos. La plataforma no es vendedora, compradora ni intermediaria de los acuerdos entre usuarios: no es dueña de los objetos, no los revisa físicamente ni garantiza su estado.',
-          'Cada persona declara el estado del objeto (nuevo, usado, reparado…) y responde por la veracidad de lo que publica y por cumplir lo que acuerda. Quien vende de forma habitual debe identificarse: para tener más de 5 artículos a la venta al mismo tiempo se exige la identidad verificada o el plan Empresa (con NIT).',
+          'Cada persona declara el estado del objeto (nuevo, usado, reparado…) y responde por la veracidad de lo que publica y por cumplir lo que acuerda. Para vender se exige, una sola vez, el registro de vendedor: nombre, documento, dirección de notificaciones y teléfono (Ley 1480, art. 53). No se muestra a la comunidad; solo se entrega a quien te compró y reclama, o a la autoridad. Quien vende de forma habitual debe además identificarse: para tener más de 5 artículos a la venta al mismo tiempo se exige la identidad verificada o el plan Empresa (con NIT).',
         ],
       },
       {
