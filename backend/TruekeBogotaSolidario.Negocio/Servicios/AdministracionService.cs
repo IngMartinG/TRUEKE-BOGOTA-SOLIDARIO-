@@ -477,6 +477,7 @@ public sealed class AdministracionService : IAdministracionService
         await _uow.GuardarCambiosAsync();
         _sesiones.Invalidar(objetivo.Id);
         _log.LogWarning("Rol de {UsuarioId} cambiado {Anterior}→{Nuevo} por {ActorId}", objetivo.Id, rolAnterior, objetivo.Rol, actorId);
-        return Mapeos.AUsuarioDto(objetivo, _reloj.GetUtcNow().UtcDateTime);
+        // La fecha de nacimiento solo la ve su titular (su finalidad es comprobar la mayoría de edad, no moderar).
+        return Mapeos.AUsuarioDto(objetivo, _reloj.GetUtcNow().UtcDateTime) with { FechaNacimiento = null };
     }
 }

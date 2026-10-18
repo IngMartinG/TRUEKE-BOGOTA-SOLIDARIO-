@@ -87,7 +87,7 @@ public sealed class PqrService : IPqrService
         _pqrs.Agregar(pqr);
         await _uow.GuardarCambiosAsync();
         _log.LogInformation("PQR pública {Radicado} ({Tipo}) radicada", pqr.Radicado, pqr.Tipo);
-        await AvisarRadicadoAsync(pqr, correo, pqr.NombreSolicitante!.Split(' ')[0]);
+        await AvisarRadicadoAsync(pqr, correo, nombre: null);
         return Mapeos.APqrDto(pqr);
     }
 
@@ -101,20 +101,22 @@ public sealed class PqrService : IPqrService
         return Mapeos.APqrDto(pqr);
     }
 
-    /// <summary>Acuse con el radicado y la fecha límite al correo de quien la radicó, y aviso al equipo de moderación.</summary>
-    private async Task AvisarRadicadoAsync(Pqr pqr, string correo, string nombre)
+    /// <summary>
+    /// Acuse con el radicado y la fecha límite al correo de quien la radicó, y aviso al equipo de moderación.
+    /// En el canal público (<paramref name="nombre"/> null) el correo lo escribe cualquiera: el acuse no repite nada de lo
+    /// que escribió quien radicó (nombre ni asunto), para que no sirva para enviar textos ajenos a un buzón de terceros.
+    /// </summary>
+    private async Task AvisarRadicadoAsync(Pqr pqr, string correo, string? nombre)
     {
+        var parrafos = new List<string> { $"Radicamos tu {Etiqueta(pqr.Tipo).ToLowerInvariant()} con el número {pqr.Radicado}." };
+        if (nombre is not null) parrafos.Add($"Asunto: {pqr.Asunto}");
+        parrafos.Add($"Te responderemos a más tardar el {pqr.FechaLimiteUtc.AddHours(-5):yyyy-MM-dd} ({Pqr.DiasHabilesPara(pqr.Tipo)} días hábiles).");
+        parrafos.Add(nombre is null
+            ? "Puedes consultar el estado en la página de PQRS con este radicado y tu correo. Si no enviaste esta solicitud, ignora este mensaje."
+            : "Puedes ver el estado en tu cuenta, en Soporte y PQR.");
         _correo.Encolar(PlantillaCorreo.Crear(correo, $"Recibimos tu solicitud {pqr.Radicado}",
-            $"Hola {nombre}:",
-            new[]
-            {
-                $"Radicamos tu {Etiqueta(pqr.Tipo).ToLowerInvariant()} con el número {pqr.Radicado}.",
-                $"Asunto: {pqr.Asunto}",
-                $"Te responderemos a más tardar el {pqr.FechaLimiteUtc.AddHours(-5):yyyy-MM-dd} ({Pqr.DiasHabilesPara(pqr.Tipo)} días hábiles).",
-                pqr.UsuarioId is null
-                    ? "Puedes consultar el estado en la página de PQRS con este radicado y tu correo."
-                    : "Puedes ver el estado en tu cuenta, en Soporte y PQR."
-            },
+            nombre is null ? "Hola:" : $"Hola {nombre}:",
+            parrafos,
             pie: string.IsNullOrWhiteSpace(_legal.CorreoContacto) ? null : $"También puedes escribirnos a {_legal.CorreoContacto}."));
         foreach (var moderador in await _usuarios.ListarIdsModeradoresAsync())
             await _notificador.NotificarAsync(moderador, TiposNotificacion.PqrNueva, $"Nueva {Etiqueta(pqr.Tipo).ToLowerInvariant()} {pqr.Radicado}: {pqr.Asunto}", pqr.Id);

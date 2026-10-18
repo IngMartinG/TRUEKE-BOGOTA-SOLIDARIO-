@@ -44,8 +44,11 @@ public class AdminCuentasTests : IClassFixture<FabricaApi>
     {
         var super = await SuperAsync();
         var sesAdmin = await Api.RegistrarSesionAsync(_fabrica, "moderadora");
-        (await super.PatchAsJsonAsync($"/api/v1/admin/usuarios/{sesAdmin.Usuario.Id}/rol", new { rol = "Administrador" })).EnsureSuccessStatusCode();
-        var admin = Api.ConToken(_fabrica, await Api.LoginAsync(_fabrica, sesAdmin.Usuario.Correo, Api.ClaveValida));
+        var cambio = await super.PatchAsJsonAsync($"/api/v1/admin/usuarios/{sesAdmin.Usuario.Id}/rol", new { rol = "Administrador" });
+        cambio.EnsureSuccessStatusCode();
+        // La fecha de nacimiento solo la ve su titular, ni siquiera el SuperUsuario.
+        Assert.Equal(JsonValueKind.Null, (await cambio.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("fechaNacimiento").ValueKind);
+        var admin =Api.ConToken(_fabrica, await Api.LoginAsync(_fabrica, sesAdmin.Usuario.Correo, Api.ClaveValida));
         var otroAdmin = await Api.RegistrarSesionAsync(_fabrica, "otroadmin");
         (await super.PatchAsJsonAsync($"/api/v1/admin/usuarios/{otroAdmin.Usuario.Id}/rol", new { rol = "Administrador" })).EnsureSuccessStatusCode();
         var cliente = await Api.RegistrarSesionAsync(_fabrica, "clientito");
