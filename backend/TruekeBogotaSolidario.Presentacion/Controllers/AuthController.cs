@@ -116,10 +116,22 @@ public sealed class UsuariosController : ControllerBase
     private readonly IDatosPersonalesService _datos;
     private readonly IFotoPerfilService _foto;
     private readonly IBloqueoService _bloqueos;
-    public UsuariosController(IAuthService auth, IDatosPersonalesService datos, IFotoPerfilService foto, IBloqueoService bloqueos)
+    private readonly IOferenteService _oferentes;
+    public UsuariosController(IAuthService auth, IDatosPersonalesService datos, IFotoPerfilService foto, IBloqueoService bloqueos,
+        IOferenteService oferentes)
     {
-        _auth = auth; _datos = datos; _foto = foto; _bloqueos = bloqueos;
+        _auth = auth; _datos = datos; _foto = foto; _bloqueos = bloqueos; _oferentes = oferentes;
     }
+
+    /// <summary>Tu registro de vendedor (Ley 1480, art. 53), o 204 si aún no lo tienes. Solo lo ves tú.</summary>
+    [HttpGet("yo/oferente")]
+    public async Task<ActionResult<DatosOferenteDto>> MiRegistroOferente()
+        => await _oferentes.ObtenerMioAsync(User.IdActual()) is { } d ? Ok(d) : NoContent();
+
+    /// <summary>Registra o actualiza los datos de vendedor que exige publicar en modo Compra. Se guardan cifrados.</summary>
+    [HttpPut("yo/oferente"), EnableRateLimiting(Politicas.LimiteEscritura)]
+    public async Task<ActionResult<UsuarioDto>> RegistrarOferente([FromBody] DatosOferenteRequest r)
+        => Ok(await _oferentes.RegistrarAsync(User.IdActual(), r));
 
     /// <summary>Bloquear: ninguno de los dos podrá escribirle al otro ni solicitar sus publicaciones. No se le avisa.</summary>
     [HttpPost("{id:guid}/bloqueo"), EnableRateLimiting(Politicas.LimiteEscritura)]

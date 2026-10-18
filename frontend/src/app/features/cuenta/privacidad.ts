@@ -120,7 +120,14 @@ export default class Privacidad {
     () => this.confirmacion().trim().toUpperCase() === 'ELIMINAR' && (this.tieneClave() ? !!this.clave() : !!this.googleToken()),
   );
 
-  protected readonly bloqueados = rxResource({ stream: () => this.api.bloqueados() });
+  /**
+   * Solo si la cuenta ya puede operar: sin fecha de nacimiento, con la política vieja o en revisión por edad, la API
+   * responde 403 y el interceptor la sacaría de esta página, que debe poder usar siempre (habeas data).
+   */
+  protected readonly bloqueados = rxResource({
+    params: () => (this.sesion.mayoriaEdadConfirmada() && !this.sesion.legalPendiente() ? true : undefined),
+    stream: () => this.api.bloqueados(),
+  });
 
   protected async desbloquear(id: string | undefined): Promise<void> {
     if (!id) return;

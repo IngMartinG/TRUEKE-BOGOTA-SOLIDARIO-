@@ -1540,6 +1540,37 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
+                    b.Property<string>("OferenteDireccionCifrada")
+                        .HasMaxLength(800)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(800)");
+
+                    b.Property<string>("OferenteDocumentoCifrado")
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("OferenteMunicipioCodigo")
+                        .HasMaxLength(5)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(5)");
+
+                    b.Property<string>("OferenteNombre")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTime?>("OferenteRegistradoUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("OferenteTelefonoCifrado")
+                        .HasMaxLength(200)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<string>("OferenteTipoDocumento")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<string>("PoliticaDatosVersion")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");

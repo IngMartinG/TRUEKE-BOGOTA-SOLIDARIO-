@@ -95,6 +95,9 @@ export const nombreComercial = formato(RE_NOMBRE_COMERCIAL, 'nombreComercial');
 export const localidad = formato(RE_LOCALIDAD, 'localidad');
 /** Dirección: letras, dígitos, espacio y # - . , ° / (al menos una letra). */
 export const direccion = formato(RE_DIRECCION, 'direccion');
+/** Celular (3XX) o fijo con indicativo (60X) de Colombia, con +57 opcional, espacios o guiones (Datos/Common/FormatosTexto.cs). */
+export const RE_TELEFONO = /^ *(?:\+ *57[ -]*)?(?:3[0-9]{2}|60[1-8])[ -]*[0-9]{3}[ -]*[0-9]{4} *$/;
+export const telefono = formato(RE_TELEFONO, 'telefono');
 
 const PESOS_NIT = [3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71];
 

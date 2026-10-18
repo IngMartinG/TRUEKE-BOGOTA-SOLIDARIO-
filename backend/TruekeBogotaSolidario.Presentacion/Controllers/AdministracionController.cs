@@ -12,7 +12,8 @@ namespace TruekeBogotaSolidario.Presentacion.Controllers;
 public sealed class AdministracionController : ControllerBase
 {
     private readonly IAdministracionService _admin;
-    public AdministracionController(IAdministracionService admin) => _admin = admin;
+    private readonly IOferenteService _oferentes;
+    public AdministracionController(IAdministracionService admin, IOferenteService oferentes) { _admin = admin; _oferentes = oferentes; }
 
     // ---- Moderación: Administrador y SuperUsuario
     [HttpPost("publicaciones/{id:guid}/ocultar"), Authorize(Policy = Politicas.Moderador)]
@@ -97,6 +98,19 @@ public sealed class AdministracionController : ControllerBase
     [HttpGet("pqr"), Authorize(Policy = Politicas.Moderador)]
     public async Task<ActionResult<PaginaDto<PqrAdminDto>>> Pqr([FromQuery] FiltroPqrAdminRequest f)
         => Ok(await _admin.ListarPqrAsync(User.IdActual(), f.Estado, f.Pagina, f.Tamano));
+
+    /// <summary>Quienes le vendieron al autor de la PQRS en compras completadas (sin sus datos de registro).</summary>
+    [HttpGet("pqr/{id:guid}/vendedores"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<IReadOnlyList<VendedorDePqrDto>>> VendedoresDePqr(Guid id)
+        => Ok(await _oferentes.ListarVendedoresDePqrAsync(User.IdActual(), id));
+
+    /// <summary>
+    /// Registro de oferente (Ley 1480, art. 53) de quien le vendió al autor de la PQRS, para resolver su reclamo. Exige una
+    /// compra completada entre los dos y queda en la auditoría.
+    /// </summary>
+    [HttpGet("pqr/{id:guid}/vendedores/{usuarioId:guid}/oferente"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<DatosOferenteDto>> OferenteDePqr(Guid id, Guid usuarioId)
+        => Ok(await _oferentes.ConsultarParaPqrAsync(User.IdActual(), id, usuarioId));
 
     [HttpPost("pqr/{id:guid}/responder"), Authorize(Policy = Politicas.Moderador)]
     public async Task<ActionResult<PqrAdminDto>> ResponderPqr(Guid id, [FromBody] ResponderPqrRequest r)

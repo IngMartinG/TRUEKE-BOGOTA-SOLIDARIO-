@@ -21,6 +21,8 @@ import type {
   UsuarioAdminDtoPaginaDto,
   UsuarioDto,
   VerificacionPendienteDto,
+  DatosOferenteDto,
+  VendedorDePqrDto,
 } from '../../api/tipos';
 import { HttpApi, seg } from './http-api';
 
@@ -76,6 +78,10 @@ export class AdminApi {
 
   pqr = (estado: EstadoPqrDto, pagina = 1, tamano = 20) =>
     this.api.get<PqrAdminDtoPaginaDto>('/admin/pqr', { params: { estado, pagina, tamano } });
+  /** Quienes le vendieron al autor de la PQRS (sin sus datos) y, aparte, el registro de uno (queda en la auditoría). */
+  vendedoresDePqr = (id: string) => this.api.get<VendedorDePqrDto[]>(`/admin/pqr/${seg(id)}/vendedores`);
+  registroVendedorDePqr = (id: string, usuarioId: string) =>
+    this.api.get<DatosOferenteDto>(`/admin/pqr/${seg(id)}/vendedores/${seg(usuarioId)}/oferente`);
   pqrEnTramite = (id: string) => this.api.post<PqrAdminDto>(`/admin/pqr/${seg(id)}/en-tramite`, {});
   responderPqr = (id: string, respuesta: string) =>
     this.api.post<PqrAdminDto>(`/admin/pqr/${seg(id)}/responder`, { respuesta }, { silencioso: true });

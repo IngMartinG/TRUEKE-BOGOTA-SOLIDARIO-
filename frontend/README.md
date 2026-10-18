@@ -59,6 +59,7 @@ Flujos cubiertos (`e2e/*.spec.ts`):
 1. **Visitante:** portada, búsqueda sin tildes con sugerencias, detalle, "ingresa para proponer" y la vista previa para compartir.
 2. **Cuenta nueva:** registro, enlace de verificación que llega por correo, foto de perfil obligatoria, publicar con foto en 5 pasos y verla en el catálogo con su miniatura.
 3. **Trueke completo entre dos personas:** proponer, aceptar, chat en tiempo real (SignalR) en ambos sentidos, confirmar la entrega y ganar los Eco-Puntos.
+4. **Primera venta:** publicar en modo Compra pide el registro de vendedor (Ley 1480, art. 53), el foco va al error del formulario y, al guardarlo, se retoma el borrador y se publica.
 
 ```
 npm run e2e                                   # construye, levanta el ambiente, prueba y lo baja (~5 min la primera vez)

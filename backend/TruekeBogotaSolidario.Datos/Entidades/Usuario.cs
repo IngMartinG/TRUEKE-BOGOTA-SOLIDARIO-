@@ -258,6 +258,50 @@ public class Usuario
         FacturacionMunicipioCodigo = null;
     }
 
+    // ---------------- Registro de oferentes (Ley 1480, art. 53) ----------------
+    // El portal de contacto lleva un registro de quienes venden: nombre, documento, dirección de notificaciones y teléfono.
+    // Documento, dirección y teléfono se guardan cifrados (los cifra Negocio con Seguridad:ClaveCifrado). Nunca se muestran a
+    // terceros: solo al titular y a la moderación al resolver la PQRS de alguien que le compró.
+    public TipoDocumentoFiscal? OferenteTipoDocumento { get; private set; }
+    public string? OferenteNombre { get; private set; }
+    public string? OferenteDocumentoCifrado { get; private set; }
+    public string? OferenteDireccionCifrada { get; private set; }
+    public string? OferenteMunicipioCodigo { get; private set; }
+    public string? OferenteTelefonoCifrado { get; private set; }
+    public DateTime? OferenteRegistradoUtc { get; private set; }
+
+    /// <summary>Puede publicar en modo Compra: registró sus datos de oferente.</summary>
+    public bool RegistroOferenteCompleto => OferenteRegistradoUtc is not null && OferenteTipoDocumento is not null
+        && !string.IsNullOrWhiteSpace(OferenteDocumentoCifrado) && !string.IsNullOrWhiteSpace(OferenteDireccionCifrada)
+        && !string.IsNullOrWhiteSpace(OferenteTelefonoCifrado);
+
+    /// <summary>Los valores ya vienen validados y cifrados. Se puede actualizar; la fecha es la del primer registro.</summary>
+    public void RegistrarOferente(TipoDocumentoFiscal tipo, string nombre, string documentoCifrado, string direccionCifrada,
+        string municipioCodigo, string telefonoCifrado, DateTime ahoraUtc)
+    {
+        if (string.IsNullOrWhiteSpace(nombre) || string.IsNullOrWhiteSpace(documentoCifrado) || string.IsNullOrWhiteSpace(direccionCifrada)
+            || string.IsNullOrWhiteSpace(municipioCodigo) || string.IsNullOrWhiteSpace(telefonoCifrado))
+            throw new ReglaDeNegocioException("Completa todos los datos del registro de vendedor.");
+        OferenteTipoDocumento = tipo;
+        OferenteNombre = FormatosTexto.Compactar(nombre);
+        OferenteDocumentoCifrado = documentoCifrado;
+        OferenteDireccionCifrada = direccionCifrada;
+        OferenteMunicipioCodigo = municipioCodigo;
+        OferenteTelefonoCifrado = telefonoCifrado;
+        OferenteRegistradoUtc ??= ahoraUtc;
+    }
+
+    public void BorrarRegistroOferente()
+    {
+        OferenteTipoDocumento = null;
+        OferenteNombre = null;
+        OferenteDocumentoCifrado = null;
+        OferenteDireccionCifrada = null;
+        OferenteMunicipioCodigo = null;
+        OferenteTelefonoCifrado = null;
+        OferenteRegistradoUtc = null;
+    }
+
     // ---------------- Contraseña y bloqueo ----------------
     public void EstablecerClave(string claveEnClaro)
     {
@@ -459,6 +503,7 @@ public class Usuario
         Nit = null;
         MostrarNit = false;
         BorrarDatosFacturacion();
+        BorrarRegistroOferente();
         DocumentoVerificacionUrl = null;
         MotivoRechazoVerificacion = null;
         FotoUrl = null;

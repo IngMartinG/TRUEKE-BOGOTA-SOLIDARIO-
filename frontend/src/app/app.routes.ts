@@ -87,6 +87,7 @@ const paginas: Routes = [
       { path: 'perfil', title: 'Mi cuenta', loadComponent: () => import('./features/cuenta/perfil') },
       { path: 'seguridad', title: 'Seguridad', loadComponent: () => import('./features/cuenta/seguridad') },
       { path: 'facturacion', title: 'Pagos y facturas', loadComponent: () => import('./features/cuenta/facturacion') },
+      { path: 'vendedor', title: 'Registro de vendedor', loadComponent: () => import('./features/cuenta/vendedor') },
       { path: 'soporte', title: 'Soporte y PQR', loadComponent: () => import('./features/cuenta/soporte') },
       { path: 'reportes', title: 'Reportes sobre ti', loadComponent: () => import('./features/cuenta/reportes') },
       { path: 'avisos', title: 'Avisos y notificaciones', loadComponent: () => import('./features/cuenta/avisos') },

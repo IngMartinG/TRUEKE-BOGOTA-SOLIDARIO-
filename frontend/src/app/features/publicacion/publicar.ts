@@ -136,6 +136,15 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
                     </label>
                   }
                 </div>
+                @if (modoActual() === 'Compra' && !sesion.usuario()?.registroOferente) {
+                  <p class="mt-4 flex items-start gap-2 rounded-xl bg-cielo-50 p-3 text-sm text-cielo-700 dark:bg-cielo-700/20 dark:text-cielo-100" role="status">
+                    <app-icono nombre="info" [tamano]="18" class="mt-0.5 shrink-0" />
+                    <span>
+                      Para vender, la ley pide registrar una sola vez tu documento, tu dirección y tu teléfono. Nadie de la comunidad los ve.
+                      <a routerLink="/cuenta/vendedor" [queryParams]="{ volver: '/publicar' }" class="enlace font-semibold">Hacer el registro</a>
+                    </span>
+                  </p>
+                }
               </fieldset>
             }
 
@@ -413,7 +422,7 @@ export default class Publicar {
   private readonly subidas = inject(SubidasService);
   private readonly avisos = inject(AvisosService);
   private readonly router = inject(Router);
-  private readonly sesion = inject(SesionService);
+  protected readonly sesion = inject(SesionService);
   protected readonly config = inject(ConfigService);
 
   /** Presente al editar (`/publicacion/:id/editar`). */

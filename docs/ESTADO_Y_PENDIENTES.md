@@ -399,13 +399,26 @@ Informe completo, con los hallazgos por severidad, en `docs/AUDITORIA_2026-10-18
   saldo de Eco-Puntos queda congelado porque no puede operar. La moderación la encuentra con el filtro "En revisión por
   edad" y, si comprueba que fue un error de digitación, la descarta (`POST /admin/usuarios/{id}/descartar-menor`, con
   motivo en la auditoría); si es menor, la suspende. En el front, la fecha de menor se envía solo después de confirmarla.
+- **#161, registro de oferentes** (Ley 1480, art. 53; decisión del dueño del 2026-10-18: solo para vender en modo Compra):
+  publicar o editar en Compra sin el registro responde 403 `datos_oferente_requeridos` y el front lleva a
+  `/cuenta/vendedor` (el borrador de la publicación se conserva). `PUT /usuarios/yo/oferente` guarda nombre, documento
+  (validado con `DocumentosFiscales`), dirección de notificaciones, municipio y teléfono de Colombia; documento, dirección y
+  teléfono van cifrados con `Seguridad:ClaveCifrado` (migración `RegistroOferentes`). Nunca se devuelve a terceros: el
+  titular lo ve en `/cuenta/vendedor` y en la exportación; la moderación (con 2FA) lo consulta solo desde una PQRS de
+  alguien que completó una compra con esa persona (`GET /admin/pqr/{id}/vendedores` y `.../{usuarioId}/oferente`), y cada
+  consulta queda en la auditoría (`OFERENTE_CONSULTADO`). Se borra al eliminar la cuenta. Política de datos, términos y
+  asistente actualizados; **versión legal `2026-10-19`**, que pide reaceptar a todos.
 
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
-- **Registro de oferentes** (Ley 1480, art. 53) para quien vende en modo Compra: decidir con el abogado. Prioridad alta.
+- **Registro de oferentes:** que el abogado revise el texto de la política y los términos (versión `2026-10-19`), si el
+  registro debe conservarse un tiempo tras eliminar la cuenta, y si las ventas publicadas antes del registro deben pedirlo
+  (hoy se pide al crear o editar una venta).
 - **Producto:** `robots.txt` y `sitemap.xml`, y un monitor externo de `/health/ready`.
 
 **Despliegue y operación:**
+- **Versión legal en Render:** si `Legal__VersionPoliticaDatos`, `Legal__VersionTerminos` o `Legal__FechaVigencia` están
+  definidas allí, cambiarlas a `2026-10-19` al desplegar el registro de oferentes (si no, se usa la de `appsettings.json`).
 - **Configurar en Render** `Legal__ResponsableNombre`, `Legal__Domicilio`, `Legal__CorreoContacto` y `Legal__Telefono` (y, si
   se quiere, `Legal__ResponsableDocumento`) **antes** de desplegar la fase legal: sin ellos la API no arranca.
 - **Cuando exista la SAS** (Cámara de Comercio y RUT): cambiar las variables `Legal__*` a la razón social, el NIT y la dirección
