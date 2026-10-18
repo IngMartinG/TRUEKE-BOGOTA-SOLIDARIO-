@@ -8,7 +8,7 @@ Staging es una **copia separada de producción**: mismo código, mismas imágene
 - mostrar algo a alguien sin tocar los datos reales;
 - correr el escaneo de seguridad **OWASP ZAP** (`.github/workflows/zap-staging.yml`), que está pensado para correr contra staging y **nunca** contra producción.
 
-**No reemplaza** a las pruebas automáticas: las E2E (`npm run e2e`) ya prueban cada PR con las imágenes de producción. Staging agrega lo que las E2E no pueden: Supabase real, Azure real (Blob, Communication Services), Wompi sandbox real, Google y el servicio de push real.
+**No reemplaza** a las pruebas automáticas: las E2E (`npm run e2e`) ya prueban cada PR con las imágenes de producción. Staging agrega lo que las E2E no pueden: Supabase real (base y Storage), Brevo real, Wompi sandbox real, Google y el servicio de push real.
 
 **Cuándo vale la pena:**
 - antes de pasar Wompi a producción (dinero real);
@@ -25,9 +25,9 @@ Mientras el equipo sea una persona y el tráfico sea de amistades, **las E2E en 
 | API | Render Free, servicio `trueke-api` | Render Free, servicio `trueke-api-staging` en **otro workspace** (ver costos) |
 | Base | Supabase, proyecto `trueke` (Free) | Supabase, proyecto **`trueke-staging`** (el segundo proyecto gratis) |
 | Fotos | La cuenta de Storage de producción | **Otra cuenta de Storage** (p. ej. `truekefotosstaging…`), para que nunca se mezclen ni se borren fotos reales |
-| Correo | Azure Communication Services | El mismo recurso (10 correos/hora compartidos) o uno propio |
+| Correo | Brevo (300 correos al día) | Otra clave API de la misma cuenta (comparte los 300 al día) o una cuenta propia |
 | Pagos | Wompi **sandbox** (por ahora) | Wompi **sandbox, siempre**. Nunca llaves de producción. |
-| Monitoreo | App Insights `trueke-monitoreo` | Opcional: otro recurso o el mismo con `Monitoreo` separado por rol |
+| Monitoreo | Logs de Render | Logs de Render |
 | Rama | `main` | `staging` (o despliegue manual de un PR) |
 
 ## Costos

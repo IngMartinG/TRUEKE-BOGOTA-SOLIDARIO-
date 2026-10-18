@@ -36,7 +36,7 @@
 - verificaciones y roles.
 
 **Operación:**
-- Application Insights (OpenTelemetry);
+- correo por la API HTTPS de Brevo (o SMTP con TLS);
 - correos HTML;
 - tarea horaria de cierre y purga;
 - pruebas contra la base real (Testcontainers; hoy PostgreSQL) obligatorias en el CI.
@@ -115,7 +115,7 @@
 - El botón *Compartir* del detalle usa ese enlace. `Urls__Api` en `render.yaml`. Costo $0.
 - 286 pruebas del backend y 30 del front.
 
-## Hecho el 2026-10-10 — monitoreo
+## Hecho el 2026-10-10 — monitoreo (quitado el 2026-10-18 al salir de Azure)
 - `Presentacion/Monitoreo/Telemetria.cs`: Application Insights (OpenTelemetry, `Azure.Monitor.OpenTelemetry.AspNetCore` 1.6.0) con rol `trueke-api`, sin `/health`, logs del framework desde Warning, muestreo configurable (`Monitoreo:Muestreo`) y un procesador que quita la query string de todas las URLs (token del hub, llaves de terceros).
 - `APPLICATIONINSIGHTS_CONNECTION_STRING` como secreto en `render.yaml`. Guía del portal con tope diario de 0,15 GB (nunca pasa los 5 GB gratis) y alertas en `docs/DESPLIEGUE.md` §7.1.
 - Decisión: **sin chequeo de disponibilidad en la fase gratis** (mantendría despierta la API y agotaría la cuota de Azure SQL en 1-2 días). Listo para el plan pago en §7.2.
@@ -288,11 +288,20 @@ Segundo paso para salir de Azure: Azure Blob se reemplazó por **Supabase Storag
 - **CSP:** GitHub Pages permite `https://*.supabase.co` o, con la variable del repo `STORAGE_ORIGEN`, solo el proyecto. En nginx se usa `CSP_IMG_EXTRA`/`CSP_CONNECT_EXTRA` con el origen del proyecto.
 - **Guía:** `docs/DESPLIEGUE.md` §3.
 
+## Hecho el 2026-10-18 — correo con Brevo y fin de Azure
+Tercer y último paso para salir de Azure: ya no queda nada en Azure.
+- **Correo:** Azure Communication Services se reemplazó por **Brevo** (`TransporteCorreoBrevo`): `POST https://api.brevo.com/v3/smtp/email` con la cabecera `api-key`. El plan gratis da 300 correos al día y no exige dominio propio; Render gratis bloquea el SMTP, por eso va por HTTPS. Se quitó el paquete `Azure.Communication.Email`.
+  - Configuración: `Correo__Proveedor=Brevo`, `Correo__Brevo__ClaveApi` (secreto) y `Correo__Remitente` (remitente verificado en Brevo). Sin la clave, la API no arranca.
+  - Cliente HTTP con nombre, timeout de 15 s y sin seguir redirecciones (la clave solo viaja a Brevo). Si Brevo responde un error, se lanza solo con el código HTTP (la respuesta puede traer el destinatario) y el worker reintenta 3 veces, como con SMTP.
+  - Se conservan `Smtp` (E2E con Mailpit, plan pago) y `Simulado` (desarrollo).
+  - Pruebas: `CorreoBrevoTests` con un `HttpMessageHandler` falso (URL, cabecera, JSON, errores 4xx/5xx y arranque sin clave).
+- **Monitoreo:** se quitaron Application Insights y OpenTelemetry (`Azure.Monitor.OpenTelemetry.AspNetCore`, `Telemetria.cs` y `APPLICATIONINSIGHTS_CONNECTION_STRING`). Los errores quedan en los logs de Render.
+- **Guía:** `docs/DESPLIEGUE.md` §5.1 (cuenta, remitente verificado, clave API e IPs autorizadas de Brevo).
+
 ## Pendiente
 **Despliegue y operación:**
-- **Salir de Azure (la cuenta gratuita vence hacia el 2026-11-09):**
-  - correo: Azure Communication Services → Brevo (API HTTPS, 300 correos al día gratis);
-  - monitoreo: Application Insights se apaga dejando vacía `APPLICATIONINSIGHTS_CONNECTION_STRING`.
+- **Brevo con un Gmail como remitente:** algunos correos pueden caer en spam. Con dominio propio, autenticarlo en Brevo (DKIM y DMARC) y usar `no-responder@tudominio`.
+- **Monitoreo de errores:** solo hay logs de Render. Si hace falta más, un servicio de errores con plan gratis.
 - **Supabase Free pausa el proyecto tras 7 días sin actividad:** se reactiva con *Restore project* (los datos no se pierden). Un monitor de `/health/ready` lo evita (`docs/DESPLIEGUE.md` §7.2).
 - **Dominio propio:**
   - resuelve la cookie de sesión entre sitios distintos (Safari/iPhone);

@@ -63,9 +63,6 @@ builder.WebHost.ConfigureKestrel(k =>
     k.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(15);
 });
 
-// ---------- Monitoreo (Azure Application Insights vía OpenTelemetry): solo si hay cadena de conexión ----------
-var monitoreoActivo = TruekeBogotaSolidario.Presentacion.Monitoreo.Telemetria.Configurar(builder);
-
 // ---------- Negocio (que internamente registra Datos) ----------
 builder.Services.AddNegocio(config);
 builder.Services.AddAutenticacionJwt();
@@ -247,8 +244,6 @@ if (esProduccion)
         app.Logger.LogWarning("Urls:HostsPermitidosDocumentos está vacío: configura el host de Supabase Storage para los documentos de verificación.");
     if (origenes.Length == 0)
         app.Logger.LogWarning("Cors:Origenes está vacío: el front Angular no podrá llamar a la API desde el navegador.");
-    if (!monitoreoActivo)
-        app.Logger.LogWarning("APPLICATIONINSIGHTS_CONNECTION_STRING no está definida: no habrá monitoreo de errores ni rendimiento.");
     if (config.GetValue<bool>("Proxy:Confiar") && redesConfiables.Length == 0 && proxiesConfiables.Length == 0)
         app.Logger.LogWarning("Proxy:Confiar=true sin Proxy:RedesConfiables: asegúrate de que la API solo sea alcanzable a través del proxy " +
                               "(restricciones de acceso de App Service), o se podrá falsificar X-Forwarded-For.");

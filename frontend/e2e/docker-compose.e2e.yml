@@ -2,7 +2,7 @@
 #   docker compose -p trueke-e2e --project-directory ../backend -f ../backend/docker-compose.yml -f e2e/docker-compose.e2e.yml up -d --build
 # (lo hace solo `npm run e2e`). Nada de esto se despliega: la app es la MISMA imagen de producción (API + front con nginx,
 # PostgreSQL con migraciones, Redis). Solo se reemplazan los servicios externos:
-#   - Azure Communication Services → Mailpit, por SMTP con STARTTLS real (certificado de una CA creada aquí, que solo
+#   - Brevo → Mailpit, por SMTP con STARTTLS real (certificado de una CA creada aquí, que solo
 #     confía el contenedor de la API).
 #   - Supabase Storage → el mismo servidor que corre Supabase (supabase/storage-api, archivos en memoria) detrás de una
 #     "puerta" nginx que, como el gateway de Supabase, lo publica bajo /storage/v1 con CORS. La puerta escucha en 127.0.0.2

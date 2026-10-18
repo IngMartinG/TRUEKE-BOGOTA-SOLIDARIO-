@@ -19,10 +19,7 @@ Guía para publicar la plataforma completa. Hay dos fases: **gratis** (para la c
 ## 1. Antes de empezar
 - Cuenta de **Supabase** para la base de datos (§2): gratis y sin tarjeta.
 - Cuenta de **Supabase** también para las fotos (§3): es el mismo proyecto de la base.
-- Cuenta de **Azure**, por ahora solo para el correo (§5.1). Se está saliendo de Azure: el correo pasa a Brevo (ver `docs/ESTADO_Y_PENDIENTES.md`). Una de estas dos:
-  - **Azure for Students** ([azure.microsoft.com/free/students](https://azure.microsoft.com/free/students)) con el correo de la universidad: sin tarjeta, US$100 de crédito. Si dice *"No se puede renovar Azure for Students"*, no hay forma de reactivarla desde la web; usar la otra opción.
-  - **Cuenta gratuita** ([azure.microsoft.com/free](https://azure.microsoft.com/free)): pide una tarjeta solo para verificar identidad (puede aparecer un cobro de verificación que se devuelve) y da US$200 por 30 días. Al terminar, Azure apaga los recursos salvo que se pase a *pago por uso*.
-- **Alerta de presupuesto (hacerla primero):** portal → **Administración de costos** → **Presupuestos** → *Agregar*: monto mensual **US$1**, alerta al 100 % al correo del equipo. Así nada se cobra sin que se enteren.
+- Cuenta de **Brevo** para el correo (§5.1): gratis y sin tarjeta. Ya no hace falta cuenta de Azure.
 - Cuenta de **Render**: [render.com](https://render.com) → *Get started* → **con GitHub** (así ve el repositorio).
 - Para generar claves aleatorias sirve cualquier terminal con Git Bash: `openssl rand -base64 32`.
 
@@ -87,25 +84,24 @@ Después de esto, **cada merge a `main` se despliega solo** cuando pasan los che
 | Servicio | Dónde | Variables |
 |---|---|---|
 | reCAPTCHA v3 | [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin) → nuevo sitio → **v3** → dominios `ingmarting.github.io` y `localhost` | `Captcha__ClaveSitio`, `Captcha__ClaveSecreta` |
-| Correo (Azure) | Ver §5.1 | `Correo__Azure__CadenaConexion`, `Correo__Remitente` |
+| Correo (Brevo) | Ver §5.1 | `Correo__Brevo__ClaveApi`, `Correo__Remitente` |
 | Wompi (sandbox) | [comercios.wompi.co](https://comercios.wompi.co) → *Desarrolladores* → llaves de **prueba** (`pub_test_…`, `prv_test_…`, integridad, eventos) | `Pagos__Wompi__*` · URL de eventos: `https://<api>/api/v1/pagos/wompi/eventos` |
 | Google (opcional) | Ver `backend/README.md` §7.1; origen autorizado `https://ingmarting.github.io` | `Google__ClientId` |
 
 Más detalle de cada llave: [`backend/README.md` §7.1](../backend/README.md).
 
-### 5.1 Correo con Azure Communication Services
-Render gratis **bloquea el SMTP** (puertos 25, 465 y 587), así que Gmail por SMTP no funciona ahí. La API envía por la API HTTPS de Azure (`Correo__Proveedor=AzureCommunication`, ya fijado en `render.yaml`). Cuesta unos US$0,00025 por correo.
-1. Portal → buscar **Email Communication Services** → *Crear*: grupo `trueke`, nombre (p. ej. `trueke-correo`), **ubicación de datos: United States**.
-2. Al terminar: el recurso → **Aprovisionar dominios** → **Agregar dominio gratuito de Azure** (Azure subdomain). Tarda 1-2 minutos. Queda un dominio como `xxxx.azurecomm.net`.
-3. Abrir ese dominio → **Direcciones MailFrom**: viene `DoNotReply@xxxx.azurecomm.net`. Ese es el **remitente** → `Correo__Remitente`. Ahí mismo se puede poner el nombre visible: *Trueke Bogotá Solidario*.
-4. Portal → buscar **Communication Services** (otro recurso, sin "Email") → *Crear*: grupo `trueke`, nombre (p. ej. `trueke-comunicaciones`), ubicación de datos **United States**.
-5. Ese recurso → **Correo electrónico → Dominios** → **Conectar dominio** → elegir el de los pasos 1-2.
-6. Ese recurso → **Configuración → Claves** → copiar la **Cadena de conexión** principal (`endpoint=https://…;accesskey=…`) → `Correo__Azure__CadenaConexion`.
-7. En Render → *Environment*, poner `Correo__Azure__CadenaConexion` y cambiar `Correo__Remitente` por la dirección del paso 3. **Si falta la cadena, la API no arranca** (avisa en los logs cuál falta).
+### 5.1 Correo con Brevo (gratis: 300 correos al día)
+Render gratis **bloquea el SMTP** (puertos 25, 465 y 587), así que Gmail por SMTP no funciona ahí. La API envía por la **API HTTPS de Brevo** (`Correo__Proveedor=Brevo`, ya fijado en `render.yaml`). El plan gratis da 300 correos al día, sin tarjeta y sin dominio propio.
+1. **Cuenta:** [brevo.com](https://www.brevo.com) → *Sign up free* → confirmar el correo y completar el perfil (nombre de la organización, país). Elegir el plan **Free**.
+2. **Remitente verificado:** menú del perfil → **Senders, Domains & Dedicated IPs** → **Senders** → *Add a sender*: nombre `Trueke Bogotá Solidario` y la dirección desde la que saldrán los correos (puede ser un Gmail del equipo). Brevo manda un código a esa dirección; escribirlo para verificarla. Esa dirección es `Correo__Remitente`. **Si el remitente no está verificado, Brevo rechaza cada envío.**
+3. **Clave API:** menú del perfil → **SMTP & API** → pestaña **API Keys** → *Generate a new API key* → nombre `trueke-api` → copiar la clave (`xkeysib-…`). Solo se muestra una vez. Es secreta: no va al repositorio ni a chats.
+4. **IPs autorizadas:** las cuentas nuevas de Brevo bloquean las llamadas desde IPs desconocidas, y Render gratis cambia de IP. Menú del perfil → **Security** → **Authorised IPs** → desactivar el bloqueo (la clave sigue protegiendo la cuenta). Alternativa más estricta: autorizar los rangos de salida que Render muestra en *trueke-api → Connect → Outbound*.
+5. **Render** → *trueke-api* → *Environment*: `Correo__Brevo__ClaveApi` = la clave del paso 3 y `Correo__Remitente` = la dirección del paso 2 → *Save, rebuild, and deploy*. **Si falta la clave, la API no arranca** (avisa en los logs cuál falta).
+6. **Probar:** registrar una cuenta o pedir "olvidé mi contraseña". El envío se ve en Brevo → **Transactional** → *Logs*. Si en los logs de Render sale `Brevo rechazó el correo (HTTP 401)`, revisar la clave y el paso 4; con `HTTP 400`, el remitente del paso 2.
 
-**Límite del dominio gratuito de Azure: 10 correos por hora** (5 por minuto) y no se puede subir. Alcanza para la demostración, no para usuarios reales. Con **dominio propio** verificado en el mismo recurso (paso 2 → *Agregar dominio personalizado*, con los registros DNS que pide Azure) el límite pasa a 100 por hora y se puede ampliar, y los correos salen desde `no-responder@tudominio`. Fuente: [límites de Azure Communication Services](https://learn.microsoft.com/azure/communication-services/concepts/service-limits).
+**Con un Gmail como remitente**, Brevo puede cambiar el dominio del remitente por `brevosend.com` para cumplir las reglas de Gmail y Yahoo (DMARC), y algunos correos pueden caer en spam. Con **dominio propio** (§8): Brevo → *Domains* → *Add a domain* → publicar los registros DNS (DKIM y DMARC) que pide → remitente `no-responder@tudominio`. Si 300 al día no alcanzan, el plan Starter de Brevo sube el límite sin cambiar el código.
 
-En un plan pago de Render se puede volver a Gmail u otro SMTP: `Correo__Proveedor=Smtp` en `render.yaml` y `Correo__Smtp__Host=smtp.gmail.com`, `Correo__Smtp__Usuario`, `Correo__Smtp__Clave` (contraseña de aplicación de Google) y `Correo__Remitente` = ese Gmail.
+En un plan pago de Render se puede usar también cualquier SMTP: `Correo__Proveedor=Smtp` en `render.yaml` y `Correo__Smtp__Host`, `Correo__Smtp__Usuario`, `Correo__Smtp__Clave` (por ejemplo Gmail con contraseña de aplicación) y `Correo__Remitente` = esa cuenta.
 
 ## 6. Conectar el front con la API
 1. GitHub → repositorio → **Settings** → **Secrets and variables** → **Actions** → pestaña **Variables** → *New repository variable*: `API_URL` = la URL de Render (sin `/` al final). No es secreta: el navegador la ve igual.
@@ -139,20 +135,11 @@ En un plan pago de Render se puede volver a Gmail u otro SMTP: `Correo__Proveedo
 - Sin Redis: el límite de intentos es por instancia (correcto mientras haya una sola).
 - **Sin chequeo de disponibilidad por ahora:** un monitor cada 5 min mantendría despierta la API de Render (750 horas gratis al mes alcanzan para una sola instancia encendida siempre) y, de paso, evitaría la pausa de Supabase. Se puede activar ya con UptimeRobot (§7.2).
 
-### 7.1 Monitoreo con Application Insights (gratis hasta 5 GB/mes)
-La API envía errores, peticiones lentas, consultas a la base (sin el texto ni los parámetros) y logs solo si existe la variable `APPLICATIONINSIGHTS_CONNECTION_STRING`. Nunca envía cuerpos de peticiones, contraseñas ni la query string (allí viaja el token del chat en tiempo real). Los `/health` no se registran.
-1. Portal → **Application Insights** → *Crear*: grupo `trueke`, nombre `trueke-monitoreo`, región **Central US**. Se crea también un *área de trabajo de Log Analytics*, que es donde se cobra por datos.
-2. **Tope para no pagar nunca:** área de trabajo de Log Analytics → *Uso y costos estimados* → **Límite diario** = `0.15` GB/día (≈4,5 GB/mes, por debajo de los 5 GB gratis). Si se llega al tope, ese día deja de llegar telemetría, pero la app sigue funcionando.
-3. Application Insights → *Información general* → copiar la **Cadena de conexión** → en Render → *Environment* → `APPLICATIONINSIGHTS_CONNECTION_STRING` → *Save* (Render redespliega). Al arrancar ya no sale el aviso "no habrá monitoreo" en los logs.
-4. **Alertas:**
-   - *Detección inteligente → Anomalías de errores* viene activa y es gratis: avisa por correo a los dueños de la suscripción cuando sube el porcentaje de peticiones fallidas.
-   - Opcional (≈US$0,10/mes): *Alertas → Crear regla de alerta* → señal **Excepciones** → mayor que 5 en 15 min → *Grupo de acciones* con tu correo.
-5. Dónde mirar: **Errores** (excepciones con su traza), **Rendimiento** (endpoints lentos y consultas a la base), **Mapa de aplicación** (`trueke-api` → PostgreSQL, Storage, Wompi) y **Métricas en vivo**.
-6. **Costo:** con el tráfico actual, muy por debajo de los 5 GB. Si un mes se acerca al tope, bajar el muestreo con la variable `Monitoreo__Muestreo=0.25` (envía 1 de cada 4 peticiones; los errores siguen visibles en proporción).
+### 7.1 Monitoreo
+Application Insights se quitó al salir de Azure. Los errores quedan en los **logs de Render** (*trueke-api → Logs*; el plan gratis guarda los últimos días). El chequeo de disponibilidad (§7.2) avisa si la API se cae.
 
 ### 7.2 Chequeo de disponibilidad (cuando haya plan pago)
 - **Gratis:** [UptimeRobot](https://uptimerobot.com) (cuenta propia) → monitor HTTP(s) a `https://<API>/health/live` cada 5 min, con aviso por correo. `/health/live` no toca la base; `/health/ready` sí.
-- **En Azure:** Application Insights → *Disponibilidad* → *Prueba estándar* a la misma URL, con alerta. Cobra por ejecución: revisar la calculadora de precios de Azure antes de activarla.
 - Con Supabase ya no hay cuota de cómputo que cuidar: se puede activar en la fase gratis. Usar `/health/ready` si además se quiere mantener activa la base.
 
 ## 8. Pasar a pago (producción real)
@@ -160,7 +147,7 @@ La API envía errores, peticiones lentas, consultas a la base (sin el texto ni l
 2. **API sin arranque en frío:** en `render.yaml` cambiar `plan: free` → `plan: starter`, o mover la misma imagen a **Azure App Service B1** (Linux, contenedor) con Key Vault para los secretos. Ver `backend/README.md` §9.
 3. **Base de datos:** Supabase **Pro** (US$25/mes): sin pausa por inactividad, backups diarios y más conexiones. Alternativa: cualquier PostgreSQL administrado (Azure Database for PostgreSQL, Neon, Render Postgres) con la misma cadena de conexión.
 4. **Pagos reales:** cuando Wompi apruebe el comercio, usar las llaves `pub_prod_…` y cambiar `Pagos__Wompi__BaseUrl` a `https://production.wompi.co/v1` **en `render.yaml`** (si se cambia solo en el panel, la sincronización del Blueprint lo devuelve a sandbox). Con eso desaparece sola la franja "Sitio de demostración". **Antes**, borrar los datos de prueba (la app promete a los testers que los beneficios de prueba se borran): lo más limpio es una base nueva vacía (`Database__Inicializacion=Migrate` crea las tablas).
-5. **Monitoreo:** Application Insights ya funciona en la fase gratis (§7.1); con plan pago, activar el chequeo de disponibilidad (§7.2).
+5. **Monitoreo:** activar el chequeo de disponibilidad (§7.2) y, si hace falta más detalle que los logs de Render, un servicio de errores con plan gratis.
 6. **Más de una instancia:** Azure Cache for Redis (`Redis__Habilitado=true`, `Redis__Conexion`).
 7. **Ambiente de staging** antes de los pagos reales: guía y costos en `docs/STAGING.md` (gratis si va en otro workspace de Render).
 8. **Analítica de visitas** sin cookies y métricas del negocio desde la base: `docs/ANALITICA.md`.
