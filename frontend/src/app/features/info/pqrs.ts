@@ -12,6 +12,7 @@ import { SesionService } from '../../core/sesion.service';
 import { CaptchaService } from '../../core/terceros/captcha.service';
 import { FechaPipe } from '../../shared/pipes';
 import { CampoAccesible } from '../../shared/ui/campo-accesible';
+import { EnfocarError } from '../../shared/ui/enfocar-error';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
 import { Icono } from '../../shared/ui/icono';
 import { Volver } from '../../shared/ui/volver';
@@ -28,7 +29,7 @@ const RE_RADICADO = /^ *[Pp][Qq][Rr]-\d{8}-[0-9A-Fa-f]{6} *$/;
  * datos, y consulta su estado con el radicado y el correo. Tiene captcha y límite por IP y por correo.
  */
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, ErrorCampo, CampoAccesible, Icono, FechaPipe, Volver],
+  imports: [ReactiveFormsModule, RouterLink, ErrorCampo, CampoAccesible, EnfocarError, Icono, FechaPipe, Volver],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor max-w-3xl py-6 sm:py-10">
@@ -90,7 +91,7 @@ const RE_RADICADO = /^ *[Pp][Qq][Rr]-\d{8}-[0-9A-Fa-f]{6} *$/;
                 </div>
                 <div class="campo">
                   <label for="pqrs-correo" class="etiqueta">Correo para la respuesta</label>
-                  <input id="pqrs-correo" type="email" class="entrada" formControlName="correo" maxlength="160" autocomplete="email" inputmode="email" />
+                  <input id="pqrs-correo" type="email" spellcheck="false" class="entrada" formControlName="correo" maxlength="160" autocomplete="email" inputmode="email" />
                   <app-error-campo [control]="form.controls.correo" etiqueta="El correo" idError="pqrs-correo-error" />
                 </div>
               </div>
@@ -126,12 +127,12 @@ const RE_RADICADO = /^ *[Pp][Qq][Rr]-\d{8}-[0-9A-Fa-f]{6} *$/;
             <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div class="campo">
                 <label for="pqrs-radicado" class="etiqueta">Radicado</label>
-                <input id="pqrs-radicado" class="entrada font-mono uppercase" formControlName="radicado" maxlength="30" placeholder="PQR-20261018-A1B2C3" autocomplete="off" />
+                <input id="pqrs-radicado" class="entrada font-mono uppercase" formControlName="radicado" maxlength="30" placeholder="PQR-20261018-A1B2C3" autocomplete="off" spellcheck="false" />
                 <app-error-campo [control]="consulta.controls.radicado" etiqueta="El radicado" idError="pqrs-radicado-error" />
               </div>
               <div class="campo">
                 <label for="pqrs-correo-consulta" class="etiqueta">Correo con el que la radicaste</label>
-                <input id="pqrs-correo-consulta" type="email" class="entrada" formControlName="correo" maxlength="160" autocomplete="email" inputmode="email" />
+                <input id="pqrs-correo-consulta" type="email" spellcheck="false" class="entrada" formControlName="correo" maxlength="160" autocomplete="email" inputmode="email" />
                 <app-error-campo [control]="consulta.controls.correo" etiqueta="El correo" idError="pqrs-correo-consulta-error" />
               </div>
             </div>

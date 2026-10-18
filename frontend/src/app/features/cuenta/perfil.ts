@@ -16,11 +16,12 @@ import { filtrarNumerico, localidad, nit, nombreComercial, nombreCompleto } from
 import { Avatar } from '../../shared/ui/avatar';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
 import { CampoAccesible } from '../../shared/ui/campo-accesible';
+import { EnfocarError } from '../../shared/ui/enfocar-error';
 import { Icono } from '../../shared/ui/icono';
 import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, ErrorCampo, CampoAccesible, Icono, NumeroPipe, FechaPipe, SelectorMunicipio, Avatar],
+  imports: [ReactiveFormsModule, RouterLink, ErrorCampo, CampoAccesible, EnfocarError, Icono, NumeroPipe, FechaPipe, SelectorMunicipio, Avatar],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="text-2xl font-extrabold">Mi cuenta</h1>

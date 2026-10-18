@@ -7,11 +7,12 @@ import { mensajeDe } from '../../core/http/problema';
 import { CaptchaService } from '../../core/terceros/captcha.service';
 import { ErrorCampo } from '../../shared/ui/error-campo';
 import { CampoAccesible } from '../../shared/ui/campo-accesible';
+import { EnfocarError } from '../../shared/ui/enfocar-error';
 import { Icono } from '../../shared/ui/icono';
 import { MarcoAuth } from './marco-auth';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, ErrorCampo, CampoAccesible, Icono],
+  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, ErrorCampo, CampoAccesible, EnfocarError, Icono],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-marco-auth [conCaptcha]="true" titulo="¿Olvidaste tu contraseña?" subtitulo="Te enviaremos un enlace para crear una nueva.">
@@ -29,7 +30,7 @@ import { MarcoAuth } from './marco-auth';
         <form [formGroup]="form" (ngSubmit)="enviar()" class="space-y-5" novalidate>
           <div class="campo">
             <label class="etiqueta" for="correo">Correo de tu cuenta</label>
-            <input id="correo" type="email" class="entrada" formControlName="correo" autocomplete="email" inputmode="email" aria-describedby="correo-error" />
+            <input id="correo" type="email" spellcheck="false" class="entrada" formControlName="correo" autocomplete="email" inputmode="email" aria-describedby="correo-error" />
             <app-error-campo [control]="form.controls.correo" etiqueta="El correo" idError="correo-error" />
           </div>
           @if (error()) {

@@ -12,11 +12,12 @@ import { CopPipe, FechaPipe } from '../../shared/pipes';
 import { direccion, documentoSegunTipo, filtrarNumerico } from '../../shared/validadores';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
 import { CampoAccesible } from '../../shared/ui/campo-accesible';
+import { EnfocarError } from '../../shared/ui/enfocar-error';
 import { Icono } from '../../shared/ui/icono';
 import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, ErrorCampo, CampoAccesible, Icono, CopPipe, FechaPipe, SelectorMunicipio],
+  imports: [ReactiveFormsModule, RouterLink, ErrorCampo, CampoAccesible, EnfocarError, Icono, CopPipe, FechaPipe, SelectorMunicipio],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="text-2xl font-extrabold">Pagos y facturas</h1>
@@ -153,7 +154,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div class="campo">
           <label for="correo-fact" class="etiqueta">Correo para recibir la factura</label>
-          <input id="correo-fact" type="email" class="entrada" formControlName="correo" maxlength="160" autocomplete="email" />
+          <input id="correo-fact" type="email" spellcheck="false" class="entrada" formControlName="correo" maxlength="160" autocomplete="email" />
           <app-error-campo [control]="form.controls.correo" etiqueta="El correo" idError="correo-fact-error" />
         </div>
         <div class="campo">

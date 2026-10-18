@@ -9,6 +9,8 @@ import { mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
 import { descargar } from '../../shared/descargar';
 import { CopPipe, FechaPipe } from '../../shared/pipes';
+import { CampoAccesible } from '../../shared/ui/campo-accesible';
+import { EnfocarError } from '../../shared/ui/enfocar-error';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
 import { Paginador } from '../../shared/ui/paginador';
@@ -21,7 +23,7 @@ const TAMANO = 20;
  * portal de la DIAN o en su proveedor tecnológico (con los datos del CSV) y registra aquí el número y el CUFE.
  */
 @Component({
-  imports: [FormsModule, ReactiveFormsModule, Icono, Modal, Paginador, SelectorMunicipio, CopPipe, FechaPipe],
+  imports: [FormsModule, ReactiveFormsModule, CampoAccesible, EnfocarError, Icono, Modal, Paginador, SelectorMunicipio, CopPipe, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="flex flex-wrap items-end justify-between gap-3">
@@ -142,7 +144,7 @@ const TAMANO = 20;
         <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div class="campo">
             <label for="corr-correo" class="etiqueta">Correo</label>
-            <input id="corr-correo" type="email" class="entrada" formControlName="correo" maxlength="160" />
+            <input id="corr-correo" type="email" spellcheck="false" class="entrada" formControlName="correo" maxlength="160" />
           </div>
           <div class="campo">
             <label for="corr-dir" class="etiqueta">Dirección</label>

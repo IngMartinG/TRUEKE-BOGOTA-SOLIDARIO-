@@ -95,7 +95,7 @@ type Paso2fa = 'inicio' | 'escanear' | 'codigos';
               <li>Si no puedes escanear, escribe esta clave: <code class="rounded bg-superficie-2 px-1.5 py-0.5 font-mono text-xs break-all select-all">{{ secreto() }}</code></li>
               <li>Escribe el código de 6 dígitos que muestra la app.</li>
             </ol>
-            <input name="codigo" class="entrada max-w-48 text-center font-mono text-xl tracking-[0.3em]" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
+            <input name="codigo" spellcheck="false" class="entrada max-w-48 text-center font-mono text-xl tracking-[0.3em]" inputmode="numeric" maxlength="6" autocomplete="one-time-code"
               placeholder="000000" aria-label="Código de 6 dígitos" [(ngModel)]="codigo" />
             @if (error2fa()) {
               <p class="error-campo" role="alert">{{ error2fa() }}</p>
@@ -145,7 +145,7 @@ type Paso2fa = 'inicio' | 'escanear' | 'codigos';
       subtitulo="Confirma con un código de tu app autenticadora.">
       <form id="form-codigo" (ngSubmit)="confirmarCodigo()" class="campo">
         <label for="codigo-confirmar" class="etiqueta">Código</label>
-        <input id="codigo-confirmar" name="codigo" class="entrada text-center font-mono text-xl tracking-[0.3em]" maxlength="20" autocomplete="one-time-code" [(ngModel)]="codigo" />
+        <input id="codigo-confirmar" name="codigo" spellcheck="false" class="entrada text-center font-mono text-xl tracking-[0.3em]" maxlength="20" autocomplete="one-time-code" [(ngModel)]="codigo" />
         @if (error2fa()) {
           <p class="error-campo" role="alert">{{ error2fa() }}</p>
         }

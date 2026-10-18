@@ -11,12 +11,13 @@ import { FechaPipe } from '../../shared/pipes';
 import { textoSeguro } from '../../shared/validadores';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
 import { CampoAccesible } from '../../shared/ui/campo-accesible';
+import { EnfocarError } from '../../shared/ui/enfocar-error';
 import { Icono } from '../../shared/ui/icono';
 import { BorradorPqrs, type Borrador } from '../ayuda/borrador-pqrs';
 import { esTipoPqr } from '../ayuda/motor';
 
 @Component({
-  imports: [ReactiveFormsModule, ErrorCampo, CampoAccesible, Icono, FechaPipe],
+  imports: [ReactiveFormsModule, ErrorCampo, CampoAccesible, EnfocarError, Icono, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="text-2xl font-extrabold">Soporte y PQR</h1>

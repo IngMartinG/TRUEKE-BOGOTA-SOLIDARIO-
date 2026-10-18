@@ -12,6 +12,7 @@ import { CaptchaService } from '../../core/terceros/captcha.service';
 import { CampoClave } from '../../shared/ui/campo-clave';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
 import { CampoAccesible } from '../../shared/ui/campo-accesible';
+import { EnfocarError } from '../../shared/ui/enfocar-error';
 import { Icono } from '../../shared/ui/icono';
 import { CasillasLegales } from '../../shared/ui/casillas-legales';
 import { Modal } from '../../shared/ui/modal';
@@ -22,7 +23,7 @@ import { MarcoAuth } from './marco-auth';
 import { destinoSeguro } from './redireccion';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, CampoAccesible, Icono, BotonGoogle, Modal, CampoFechaNacimiento, CasillasLegales],
+  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, CampoAccesible, EnfocarError, Icono, BotonGoogle, Modal, CampoFechaNacimiento, CasillasLegales],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-marco-auth [conCaptcha]="true"
@@ -33,7 +34,7 @@ import { destinoSeguro } from './redireccion';
         @if (!pedirCodigo()) {
           <div class="campo">
             <label class="etiqueta" for="correo">Correo electrónico</label>
-            <input id="correo" type="email" class="entrada" formControlName="correo" autocomplete="email" inputmode="email" aria-describedby="correo-error" />
+            <input id="correo" type="email" spellcheck="false" class="entrada" formControlName="correo" autocomplete="email" inputmode="email" aria-describedby="correo-error" />
             <app-error-campo [control]="form.controls.correo" etiqueta="El correo" idError="correo-error" />
           </div>
           <app-campo-clave [control]="form.controls.clave">
@@ -43,7 +44,7 @@ import { destinoSeguro } from './redireccion';
           <div class="campo">
             <label class="etiqueta" for="codigo">Código de verificación</label>
             <input id="codigo" class="entrada text-center font-mono text-2xl tracking-[0.4em]" formControlName="codigoDosFactores"
-              autocomplete="one-time-code" inputmode="text" maxlength="20" placeholder="000000" aria-describedby="codigo-error" />
+              autocomplete="one-time-code" inputmode="text" spellcheck="false" maxlength="20" placeholder="000000" aria-describedby="codigo-error" />
             <app-error-campo [control]="form.controls.codigoDosFactores" etiqueta="El código" idError="codigo-error" />
           </div>
         }
