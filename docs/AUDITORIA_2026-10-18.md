@@ -23,7 +23,7 @@ Cada corrección va en su propio PR. Lo que necesita una decisión del dueño, d
 | 3 | Media | La PQRS pública reenviaba a cualquier correo el texto escrito por quien la radicaba | **Corregido** en #156 |
 | 4 | Media | Al enviar un formulario con errores, el foco no iba al primer campo inválido (WCAG 3.3.1 y 2.4.3) | **Corregido** en #157 |
 | 5 | Media | Una cuenta antigua que declara una fecha de menor de edad puede reintentar con otra fecha | Pendiente: decisión del dueño |
-| 6 | Media-baja | La PQRS pública comparte el límite por IP con el ingreso y avisa a la moderación sin tope global | **Corregido** en `fix/limite-pqrs-publica` |
+| 6 | Media-baja | La PQRS pública comparte el límite por IP con el ingreso y avisa a la moderación sin tope global | **Corregido** en #159 |
 | 7 | Baja | Cambiar el rol de una cuenta devolvía su fecha de nacimiento | **Corregido** en #156 |
 | 8 | Baja | Facturas de administración sin `aria-invalid`; correctores ortográficos en correos y códigos; el indicador "buscando" del asistente no se anunciaba | **Corregido** en #157 |
 | 9 | Baja | La documentación seguía mencionando Application Insights y el despliegue en Azure | **Corregido** en este PR |

@@ -388,7 +388,7 @@ Informe completo, con los hallazgos por severidad, en `docs/AUDITORIA_2026-10-18
 - Se actualizaron las menciones viejas a Application Insights y Azure en la documentación.
 
 ## Hecho el 2026-10-18 — pendientes de la auditoría integral
-- **PQRS pública con límite propio:** `POST /pqr/publica` y `/pqr/consultar` usan la política `pqr-publica`, solo por IP,
+- **#159, PQRS pública con límite propio:** `POST /pqr/publica` y `/pqr/consultar` usan la política `pqr-publica`, solo por IP,
   con 3 por minuto y 10 por hora (`RateLimiting__PqrPublicaPorMinuto` y `RateLimiting__PqrPublicaPorHora`), también en el
   limitador de Redis. Ya no comparten el límite del ingreso. Las PQRS públicas avisan a la moderación en un resumen cada
   10 minutos ("N PQRS públicas nuevas"); las de usuarios con cuenta siguen avisando una por una.
