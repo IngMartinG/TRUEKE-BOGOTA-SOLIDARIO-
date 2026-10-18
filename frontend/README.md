@@ -31,7 +31,7 @@ npm start
 
 - Los **correos** (verificación, recuperación) se imprimen en la consola de la API: copia el enlace en el navegador.
 - Los **pagos** usan la pasarela simulada: la página del pago muestra los botones "Aprobar / Rechazar".
-- Las **fotos** requieren Azure Blob (o Azurite); sin él, la interfaz lo indica y permite publicar sin fotos.
+- Las **fotos** requieren Supabase Storage: un proyecto de Supabase o el Storage local (`cd backend && docker compose -f docker-compose.storage.yml up -d`; ver `backend/README.md`). Sin él, la interfaz lo indica y permite publicar sin fotos.
 - **Google** y **reCAPTCHA** se activan solos cuando la API publica `googleClientId` / `captchaClaveSitio` en `GET /configuracion`.
 - Para probar la moderación en local, define `Bootstrap__SuperUsuarioCorreo` y `Bootstrap__SuperUsuarioClave` (user-secrets o variables de entorno): la API crea ese SuperUsuario al arrancar si no existe.
 
@@ -52,7 +52,7 @@ Si la API cambia: en `backend/` ejecuta `ACTUALIZAR_OPENAPI=1 dotnet test --filt
 ### Pruebas de punta a punta (Playwright)
 Un Chromium real recorre la app en **PC y celular** contra las **mismas imágenes Docker de producción**: API, front con nginx (cabeceras y CSP incluidas), PostgreSQL con las migraciones y Redis. Solo se reemplazan los servicios externos, y la app no tiene ningún modo especial para pruebas (`e2e/docker-compose.e2e.yml`):
 - **Correo:** Mailpit, por SMTP con STARTTLS real. Lo firma una CA creada en cada corrida que publica su lista de revocación, porque la API valida cadena y revocación.
-- **Fotos:** Azurite (el emulador de Azure Blob), con subidas directas por SAS como en producción.
+- **Fotos:** el servidor de Storage de Supabase (`supabase/storage-api`) detrás de una puerta nginx con CORS, como el gateway de Supabase, con subidas directas por URL firmada como en producción.
 - **Pagos:** simulados.
 
 Flujos cubiertos (`e2e/*.spec.ts`):
@@ -92,7 +92,7 @@ src/app/
   - Nunca guarda la API ni `config.json`.
   - Las versiones nuevas se usan al volver a abrir la app.
   - `PwaService` ofrece instalarla y `NotificacionesPushService` activa las notificaciones push por dispositivo; al cerrar sesión, ese dispositivo se da de baja.
-- **Fotos:** se reducen en el navegador (≤1600 px, WebP) y se **elimina el EXIF** (ubicación GPS) antes de subirlas directo a Blob con la URL SAS que entrega la API.
+- **Fotos:** se reducen en el navegador (≤1600 px, WebP) y se **elimina el EXIF** (ubicación GPS) antes de subirlas directo a Supabase Storage con la URL firmada que entrega la API.
 - **Privacidad:** el mapa público muestra solo una zona aproximada; los textos de usuarios se pintan siempre con interpolación de Angular (nunca `innerHTML`) y los enlaces de correo borran el token de la URL con `history.replaceState`.
 
 ## Producción
@@ -113,14 +113,14 @@ La imagen sirve el build con **nginx sin root** (puerto 8080), fallback de SPA, 
 | `API_UPSTREAM` | `http://api:8080` | Dirección interna de la API para el proxy |
 | `API_URL` | *(vacío)* | Solo si la API está en otro dominio (p. ej. `https://api.trueke.co`); se añade a la CSP con su variante `wss://` |
 | `NGINX_RESOLVER` | `127.0.0.11` | DNS para resolver `API_UPSTREAM` (el de Docker); en Azure, `168.63.129.16` |
-| `CSP_IMG_EXTRA` | *(vacío)* | Hosts extra para imágenes, p. ej. `https://tucuenta.blob.core.windows.net` |
-| `CSP_CONNECT_EXTRA` | *(vacío)* | Hosts extra para conexiones, p. ej. el mismo Blob (subidas con SAS) |
+| `CSP_IMG_EXTRA` | *(vacío)* | Hosts extra para imágenes, p. ej. `https://tuproyecto.supabase.co` (Supabase Storage) |
+| `CSP_CONNECT_EXTRA` | *(vacío)* | Hosts extra para conexiones, p. ej. el mismo Storage (subidas con URL firmada) |
 | `MAPA_TESELAS` / `MAPA_ATRIBUCION` | OpenStreetMap | Proveedor de mapas para tráfico alto (OSM pide no abusar de sus servidores) |
 
 ### Lista de verificación antes de salir a producción
 
 1. API con `Urls__Frontend` = URL https del front y, si van en dominios distintos, `Cors__Origenes__0` igual a esa URL.
-2. `CSP_IMG_EXTRA` y `CSP_CONNECT_EXTRA` con el host de Azure Blob; regla CORS del Blob que permita `PUT` desde el dominio del front.
+2. `CSP_IMG_EXTRA` y `CSP_CONNECT_EXTRA` con el origen del proyecto de Supabase (`https://<proyecto>.supabase.co`); Supabase ya responde con CORS a las subidas firmadas.
 3. Google Client ID y claves de reCAPTCHA v3 cargados en la API (los lee el front desde `/configuracion`); autorizar el dominio del front en ambos paneles.
 4. Wompi en producción: el front redirige al Web Checkout y vuelve a `/pagos/{referencia}`; el beneficio se aplica por el webhook del backend.
 5. Revisar los textos legales (`features/info/privacidad.ts` y `terminos.ts`) con el responsable del tratamiento de datos.

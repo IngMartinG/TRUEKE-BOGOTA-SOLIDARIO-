@@ -7,7 +7,7 @@ Guía para publicar la plataforma completa. Hay dos fases: **gratis** (para la c
 | Front (Angular) | GitHub Pages (ya publicado) | GitHub Pages o Azure Static Web Apps, con dominio propio |
 | API (.NET 10, Docker) | Render Free | Render Starter (~US$7/mes) o Azure App Service B1 |
 | Base de datos (PostgreSQL) | Supabase Free (500 MB) | Supabase Pro (US$25/mes: sin pausa, backups diarios) |
-| Fotos | Azure Blob Storage (centavos al mes) | Igual |
+| Fotos | Supabase Storage Free (1 GB), mismo proyecto que la base | Supabase Pro (100 GB incluidos) |
 | Tiempo real entre instancias | No hace falta (1 instancia) | Azure Cache for Redis si hay más de una instancia |
 
 **Modelo de nube:** todo es **PaaS**. Nosotros ponemos el contenedor y la configuración; el proveedor administra servidores, sistema operativo y parches.
@@ -18,7 +18,8 @@ Guía para publicar la plataforma completa. Hay dos fases: **gratis** (para la c
 
 ## 1. Antes de empezar
 - Cuenta de **Supabase** para la base de datos (§2): gratis y sin tarjeta.
-- Cuenta de **Azure**, por ahora solo para fotos (§3) y correo (§5.1). Se está saliendo de Azure: las fotos pasan a Supabase Storage y el correo a Brevo (ver `docs/ESTADO_Y_PENDIENTES.md`). Una de estas dos:
+- Cuenta de **Supabase** también para las fotos (§3): es el mismo proyecto de la base.
+- Cuenta de **Azure**, por ahora solo para el correo (§5.1). Se está saliendo de Azure: el correo pasa a Brevo (ver `docs/ESTADO_Y_PENDIENTES.md`). Una de estas dos:
   - **Azure for Students** ([azure.microsoft.com/free/students](https://azure.microsoft.com/free/students)) con el correo de la universidad: sin tarjeta, US$100 de crédito. Si dice *"No se puede renovar Azure for Students"*, no hay forma de reactivarla desde la web; usar la otra opción.
   - **Cuenta gratuita** ([azure.microsoft.com/free](https://azure.microsoft.com/free)): pide una tarjeta solo para verificar identidad (puede aparecer un cobro de verificación que se devuelve) y da US$200 por 30 días. Al terminar, Azure apaga los recursos salvo que se pase a *pago por uso*.
 - **Alerta de presupuesto (hacerla primero):** portal → **Administración de costos** → **Presupuestos** → *Agregar*: monto mensual **US$1**, alerta al 100 % al correo del equipo. Así nada se cobra sin que se enteren.
@@ -49,23 +50,27 @@ El plan Free de Supabase no vence: da 500 MB de base, no pide tarjeta y no mide 
    - **No usar el Transaction pooler (puerto 6543):** no conserva la sesión entre consultas y obligaría a desactivar las sentencias preparadas (`No Reset On Close=true`).
 6. Si la clave tiene `;` o comillas, generar otra (*Project Settings → Database → Reset database password*). Esos caracteres rompen la cadena.
 
-## 3. Fotos: Azure Blob Storage
-1. Portal → **Cuentas de almacenamiento** → *Crear*: grupo `trueke`, nombre único en minúsculas (p. ej. `truekefotos<algo>`), región **Central US**, rendimiento **Estándar**, redundancia **LRS** (la más barata).
-2. *Configuración* → **Permitir el acceso anónimo de blobs: Habilitado**. Solo el contenedor `imagenes` es público (de solo lectura); `documentos` y `subidas` quedan privados. La API crea los tres contenedores sola.
-3. *Uso compartido de recursos (CORS)* → pestaña **Blob service** → agregar una regla:
-   - Orígenes permitidos: `https://ingmarting.github.io`
-   - Métodos: `PUT`, `GET`, `HEAD`, `OPTIONS`
-   - Encabezados permitidos: `content-type,x-ms-blob-type`
-   - Encabezados expuestos: `*` · Antigüedad máxima: `3600`
-4. *Seguridad y redes* → **Claves de acceso** → *Mostrar* → copiar la **cadena de conexión** → `Almacenamiento__CadenaConexion`.
-5. El host `truekefotos<algo>.blob.core.windows.net` va en `Urls__HostsPermitidosImagenes__0` y `Urls__HostsPermitidosDocumentos__0`.
+## 3. Fotos: Supabase Storage (gratis)
+Las fotos y los documentos de verificación van en **Supabase Storage**, dentro del mismo proyecto de la base (§2). El plan Free incluye 1 GB de archivos y algo de transferencia mensual (ver los límites vigentes en *Usage*); cada foto pesa unos cientos de KB y su miniatura unas decenas.
+
+1. No hay que crear nada a mano: **la API crea sola los tres buckets** al arrancar y les fija la configuración:
+   - `imagenes`: **público, de solo lectura** (cualquiera ve las fotos; solo la API escribe).
+   - `documentos` y `subidas`: **privados**. Los moderadores ven un documento con un enlace firmado que dura 5 minutos.
+   - Los tres rechazan por sí mismos archivos de más de 5 MB y tipos que no sean JPG, PNG, WEBP (o PDF en documentos y subidas).
+2. *Project Settings* → **API Keys** → **Secret keys** → copiar la llave secreta (`sb_secret_…`; la `service_role` antigua también sirve) → `Almacenamiento__LlaveServicio`. **Es la llave maestra del proyecto:** solo va en Render, nunca en el front ni en el repositorio.
+3. `Almacenamiento__Url` = `https://<ref>.supabase.co/storage/v1` (el `<ref>` aparece en *Project Settings → General → Project ID*, y también en la URL del panel).
+4. El host `<ref>.supabase.co` va en `Urls__HostsPermitidosImagenes__0` y `Urls__HostsPermitidosDocumentos__0`.
+5. **No crear políticas en *Storage → Policies*.** Sin políticas, la llave pública no puede subir ni borrar nada: todo pasa por la API. Tampoco hace falta CORS: Supabase ya lo responde para las subidas desde el navegador.
+6. (Opcional) En GitHub → *Settings → Secrets and variables → Actions → Variables*, crear `STORAGE_ORIGEN` = `https://<ref>.supabase.co`: la CSP de GitHub Pages permite entonces solo ese proyecto en lugar de cualquier `*.supabase.co`.
+
+**Cómo funciona la subida:** la API pide a Supabase una URL firmada (`createSignedUploadUrl`) para **un** archivo nuevo, con nombre elegido por el servidor, en el bucket privado `subidas`. El navegador sube el archivo directo con esa URL (no pasa por Render) y no puede reemplazarlo después. Al usarlo, la API lo revisa (dueño, tamaño, tipo real), quita GPS y metadatos, publica una copia limpia con otro nombre en `imagenes` y borra la subida. Lo que nadie usa se borra pasada una hora. La URL firmada de Supabase vence a las 2 horas (no se puede acortar); como sirve para un solo archivo privado que nunca se publica tal cual, eso no abre ningún riesgo.
+
+**Desarrollo y pruebas:** `backend/docker-compose.storage.yml` levanta el mismo servidor de Storage que usa Supabase (`supabase/storage-api`) en `http://127.0.0.1:8082/storage/v1`, con llaves de demostración. Las pruebas de .NET y las de punta a punta lo usan.
 
 ### 3.1 Miniaturas y CDN
-- **Miniaturas (sin costo extra):** cada foto se publica con una miniatura WEBP de 640 px (`…/abc.jpg` → `…/abc.min.webp`) que usan el catálogo, las listas y los avatares. Pesa unas decenas de KB, contra cientos de KB de la foto grande. Al arrancar, la API crea sola las miniaturas que falten (fotos anteriores). No hay que configurar nada.
-- **CDN (opcional, apagada):** con `Almacenamiento__CdnUrl` (https, p. ej. `https://fotos.midominio.co`) y `Almacenamiento__ServicioUrl` (la URL de la cuenta), el front descarga las fotos desde la CDN. La base y la API siguen usando las URLs de Blob, así que se puede apagar en cualquier momento quitando la variable. Si el front corre en el contenedor nginx, agregar el host de la CDN a `CSP_IMG_EXTRA`.
-  - **Gratis:** Cloudflare (plan Free) delante del dominio propio: un subdominio `fotos` en modo proxy apuntando a `truekefotos<algo>.blob.core.windows.net` (con regla de *Host header* hacia la cuenta). Requiere el dominio propio.
-  - **De pago:** Azure Front Door Standard (~US$35/mes + tráfico). La CDN "clásica" de Azure ya no admite perfiles nuevos.
-  - Las fotos y miniaturas ya salen con `Cache-Control: public, max-age=31536000, immutable`, así que cualquier CDN las guarda un año sin configuración extra.
+- **Miniaturas (sin costo extra):** cada foto se publica con una miniatura WEBP de 640 px (`…/abc.jpg` → `…/abc.min.webp`) que usan el catálogo, las listas y los avatares. Pesa unas decenas de KB, contra cientos de KB de la foto grande. Al arrancar, la API crea sola las miniaturas que falten. No hay que configurar nada.
+- **CDN:** Supabase ya sirve los buckets públicos a través de su CDN. Las fotos y miniaturas salen con `Cache-Control: public, max-age=31536000, immutable` (el nombre nunca se reutiliza), así que cualquier CDN las guarda un año.
+- **Dominio propio para las fotos (opcional, apagado):** con `Almacenamiento__CdnUrl` (https, p. ej. `https://fotos.midominio.co`, que reenvía a `https://<ref>.supabase.co/storage/v1/object/public/`), el front descarga las fotos desde ese dominio. La base y la API siguen usando las URLs de Supabase, así que se puede apagar en cualquier momento quitando la variable. Si el front corre en el contenedor nginx, agregar ese host a `CSP_IMG_EXTRA`. Gratis con Cloudflare (plan Free) delante del dominio propio.
 
 ## 4. API en Render
 1. Render → **New** → **Blueprint** → elegir el repositorio `TRUEKE-BOGOTA-SOLIDARIO-`. Render lee [`render.yaml`](../render.yaml) y muestra el servicio `trueke-api`.
@@ -142,7 +147,7 @@ La API envía errores, peticiones lentas, consultas a la base (sin el texto ni l
 4. **Alertas:**
    - *Detección inteligente → Anomalías de errores* viene activa y es gratis: avisa por correo a los dueños de la suscripción cuando sube el porcentaje de peticiones fallidas.
    - Opcional (≈US$0,10/mes): *Alertas → Crear regla de alerta* → señal **Excepciones** → mayor que 5 en 15 min → *Grupo de acciones* con tu correo.
-5. Dónde mirar: **Errores** (excepciones con su traza), **Rendimiento** (endpoints lentos y consultas a la base), **Mapa de aplicación** (`trueke-api` → PostgreSQL, Blob, Wompi) y **Métricas en vivo**.
+5. Dónde mirar: **Errores** (excepciones con su traza), **Rendimiento** (endpoints lentos y consultas a la base), **Mapa de aplicación** (`trueke-api` → PostgreSQL, Storage, Wompi) y **Métricas en vivo**.
 6. **Costo:** con el tráfico actual, muy por debajo de los 5 GB. Si un mes se acerca al tope, bajar el muestreo con la variable `Monitoreo__Muestreo=0.25` (envía 1 de cada 4 peticiones; los errores siguen visibles en proporción).
 
 ### 7.2 Chequeo de disponibilidad (cuando haya plan pago)
@@ -151,8 +156,8 @@ La API envía errores, peticiones lentas, consultas a la base (sin el texto ni l
 - Con Supabase ya no hay cuota de cómputo que cuidar: se puede activar en la fase gratis. Usar `/health/ready` si además se quiere mantener activa la base.
 
 ## 8. Pasar a pago (producción real)
-1. **Dominio propio** (p. ej. `trueke.co`, ~US$15-30/año en un registrador o en Cloudflare): `trueke.co` → front y `api.trueke.co` → API. Al quedar en el mismo sitio, cambiar `Auth__CookieSameSite` a `Strict`, y `Cors__Origenes__0` / `Urls__Frontend` al dominio nuevo. Agregar el dominio en reCAPTCHA, en el CORS del Storage y en Google.
-2. **API sin arranque en frío:** en `render.yaml` cambiar `plan: free` → `plan: starter`, o mover la misma imagen a **Azure App Service B1** (Linux, contenedor) con Managed Identity (`Almacenamiento__ServicioUrl` en lugar de la cadena de conexión) y Key Vault. Ver `backend/README.md` §9.
+1. **Dominio propio** (p. ej. `trueke.co`, ~US$15-30/año en un registrador o en Cloudflare): `trueke.co` → front y `api.trueke.co` → API. Al quedar en el mismo sitio, cambiar `Auth__CookieSameSite` a `Strict`, y `Cors__Origenes__0` / `Urls__Frontend` al dominio nuevo. Agregar el dominio en reCAPTCHA y en Google.
+2. **API sin arranque en frío:** en `render.yaml` cambiar `plan: free` → `plan: starter`, o mover la misma imagen a **Azure App Service B1** (Linux, contenedor) con Key Vault para los secretos. Ver `backend/README.md` §9.
 3. **Base de datos:** Supabase **Pro** (US$25/mes): sin pausa por inactividad, backups diarios y más conexiones. Alternativa: cualquier PostgreSQL administrado (Azure Database for PostgreSQL, Neon, Render Postgres) con la misma cadena de conexión.
 4. **Pagos reales:** cuando Wompi apruebe el comercio, usar las llaves `pub_prod_…` y cambiar `Pagos__Wompi__BaseUrl` a `https://production.wompi.co/v1` **en `render.yaml`** (si se cambia solo en el panel, la sincronización del Blueprint lo devuelve a sandbox). Con eso desaparece sola la franja "Sitio de demostración". **Antes**, borrar los datos de prueba (la app promete a los testers que los beneficios de prueba se borran): lo más limpio es una base nueva vacía (`Database__Inicializacion=Migrate` crea las tablas).
 5. **Monitoreo:** Application Insights ya funciona en la fase gratis (§7.1); con plan pago, activar el chequeo de disponibilidad (§7.2).

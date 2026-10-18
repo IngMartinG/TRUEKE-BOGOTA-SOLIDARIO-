@@ -41,13 +41,13 @@ flowchart TB
 flowchart TB
     U(["👤 Navegador o celular"]):::persona
 
-    subgraph SYS["Trueke Bogotá Solidario (GitHub Pages · Render · Supabase · Azure Blob)"]
+    subgraph SYS["Trueke Bogotá Solidario (GitHub Pages · Render · Supabase)"]
         direction TB
         FE["🖥️ Front-end<br/>Angular 22 (signals, Tailwind)<br/>nginx sin root · CSP"]:::contenedor
         API["⚙️ API<br/>ASP.NET Core 10 (C#)<br/>REST /api/v1 + SignalR /hubs/notificaciones"]:::contenedor
         DB[("🗄️ PostgreSQL (Supabase)<br/>EF Core 10 + Npgsql · migraciones<br/>concurrencia con xmin")]:::datos
         REDIS[("⚡ Redis<br/>backplane SignalR · presencia<br/>límite de peticiones")]:::datos
-        BLOB["☁️ Azure Blob Storage<br/>imagenes (público) · documentos (privado)<br/>subida directa con SAS"]:::contenedor
+        STORAGE["☁️ Supabase Storage<br/>imagenes (público) · documentos y subidas (privados)<br/>subida directa con URL firmada"]:::contenedor
     end
 
     WOMPI["💳 Wompi"]:::externo
@@ -55,11 +55,11 @@ flowchart TB
     SMTP["✉️ SMTP"]:::externo
 
     U -->|"HTTPS"| FE
-    U -->|"PUT de fotos con URL firmada"| BLOB
+    U -->|"PUT de fotos con URL firmada"| STORAGE
     FE -->|"REST JSON + JWT · WebSocket"| API
     API --> DB
     API --> REDIS
-    API -->|"Valida y limpia (sin GPS/EXIF)"| BLOB
+    API -->|"Valida y limpia (sin GPS/EXIF)"| STORAGE
     API --> WOMPI
     API --> GOOGLE
     API --> SMTP
