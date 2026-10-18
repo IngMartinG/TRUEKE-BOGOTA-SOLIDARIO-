@@ -24,7 +24,12 @@ public class PqrsPublicaTests : IClassFixture<FabricaApi>
         var pqr = await r.Content.ReadFromJsonAsync<JsonElement>();
         var radicado = pqr.GetProperty("radicado").GetString()!;
         Assert.Equal("Consulta", pqr.GetProperty("tipo").GetString());
-        Assert.Contains(Api.Correos(_f).Para(correo), m => m.Asunto.Contains(radicado) && m.Texto.Contains("10 días hábiles"));
+        var acuse = Assert.Single(Api.Correos(_f).Para(correo), m => m.Asunto.Contains(radicado));
+        Assert.Contains("10 días hábiles", acuse.Texto);
+        // Cualquiera puede escribir el correo de otra persona: el acuse no repite el texto de quien radicó.
+        Assert.DoesNotContain("No puedo crear mi cuenta", acuse.Texto);
+        Assert.DoesNotContain("María", acuse.Texto);
+        Assert.Contains("Si no enviaste esta solicitud", acuse.Texto);
 
         var anonimo = _f.CreateClient();
         var ok = await anonimo.PostAsJsonAsync("/api/v1/pqr/consultar", new { radicado = radicado.ToLowerInvariant(), correo = correo.ToUpperInvariant() });
