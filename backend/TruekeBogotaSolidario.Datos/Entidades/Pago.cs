@@ -75,7 +75,7 @@ public class Pago
 
     /// <summary>Los datos copiados al elegir "a mi nombre", o null.</summary>
     public DatosComprador? DatosCompradorElegidos => FacturaANombre == true && CompradorTipoDocumento is { } t
-        ? DatosComprador.Crear(t, CompradorDocumento, CompradorNombre, CompradorCorreo, CompradorDireccion, CompradorMunicipioCodigo)
+        ? DatosComprador.Restaurar(t, CompradorDocumento, CompradorNombre, CompradorCorreo, CompradorDireccion, CompradorMunicipioCodigo)
         : null;
 
     public void Aprobar(string? transaccionId, DateTime ahoraUtc)

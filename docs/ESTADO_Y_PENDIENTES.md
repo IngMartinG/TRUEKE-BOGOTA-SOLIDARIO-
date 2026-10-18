@@ -1,4 +1,4 @@
-# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-17)
+# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-18)
 
 ## Hecho — backend completo para conectar el front
 **Base:**
@@ -304,6 +304,25 @@ Tercer y último paso para salir de Azure: ya no queda nada en Azure.
   `edad`, la política de autorización por defecto lo exige y la API responde 403 `fecha_nacimiento_requerida`. Siguen
   abiertos la sesión, la seguridad de la cuenta, los avisos, la PQR y exportar o eliminar los datos.
 - La fecha se registra una sola vez, sale en la exportación de datos y nunca en el perfil público.
+
+## Hecho el 2026-10-18 — cada campo acepta solo lo que le corresponde
+- Catálogo único de formatos en `Datos/Common/FormatosTexto.cs`, usado por los DTO (`[RegularExpression]`, error por campo)
+  y por las entidades (nada entra por otra vía). El front repite las reglas en `shared/validadores.ts`:
+  - nombre de persona: solo letras (con tildes, ñ y diéresis), espacio, apóstrofo, guion y punto; en registro y perfil, nombre y apellido;
+  - nombre comercial o razón social: letras, dígitos, espacio y `& . , - ' ( )` ("3M");
+  - localidad o barrio: letras, dígitos, espacio y `# - . °`, con al menos una letra ("20 de Julio");
+  - NIT: dígitos y puntos con el DV opcional tras un guion (el DV se comprueba con el módulo 11 en el front y en la API);
+  - documento de facturación según el tipo (CC solo dígitos; CE y Pasaporte letras y dígitos) y nombre de la factura
+    como persona o, si es NIT, como razón social;
+  - dirección: letras, dígitos, espacio y `# - . , ° /`.
+- Se toleran espacios al inicio, al final y repetidos: se guardan recortados y con un solo espacio.
+- Los datos ya guardados no se rompen: la regla se aplica al guardar. Los datos de facturación guardados se leen con las
+  reglas de antes (`DatosComprador.Restaurar`), y el perfil muestra el error cuando la persona lo edita.
+- Google: si el nombre no cumple el formato, la cuenta se crea como "Usuario Trueke" y la persona lo cambia en su perfil.
+- `TextoSeguro` común para todos los textos libres (títulos, descripciones, comentarios, chat, denuncias, PQRS, deseos…):
+  rechaza los caracteres de control (salvo saltos de línea donde se admiten) y los invisibles de engaño (inversión de
+  sentido U+202A–202E y U+2066–2069, ancho cero U+200B, U+FEFF, U+2060 y U+180E). Los emojis siguen funcionando.
+- En el front: teclado numérico y filtro al escribir o pegar en la CC y el NIT, y mensajes claros por campo.
 
 ## Pendiente
 **Despliegue y operación:**

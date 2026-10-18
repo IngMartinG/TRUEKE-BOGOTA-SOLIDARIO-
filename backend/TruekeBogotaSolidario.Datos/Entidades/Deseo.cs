@@ -48,7 +48,7 @@ public class Deseo
         texto = (texto ?? "").Trim();
         if (texto.Length is < 3 or > LongitudMaxima)
             throw new ReglaDeNegocioException($"Cuenta lo que buscas en 3 a {LongitudMaxima} caracteres.");
-        if (texto.Any(char.IsControl)) throw new ReglaDeNegocioException("El texto contiene caracteres no permitidos.");
+        if (!TextoSeguro.EsSeguro(texto)) throw new ReglaDeNegocioException("El texto contiene caracteres no permitidos.");
         if (Common.TextoBusqueda.Terminos(texto).Count == 0)
             throw new ReglaDeNegocioException("Usa al menos una palabra que describa lo que buscas (por ejemplo: «bicicleta»).");
         Texto = texto;

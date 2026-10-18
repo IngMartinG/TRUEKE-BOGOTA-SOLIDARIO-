@@ -131,7 +131,7 @@ public class Factura
     private void RegistrarCorreccion(Guid superUsuarioId, string motivo, DateTime ahoraUtc)
     {
         var m = (motivo ?? "").Trim();
-        if (m.Length is < 10 or > 300 || m.Any(char.IsControl))
+        if (m.Length is < 10 or > 300 || !TextoSeguro.EsSeguro(m))
             throw new ReglaDeNegocioException("Explica el motivo de la corrección (entre 10 y 300 caracteres): queda en la auditoría.");
         CorregidaPorId = superUsuarioId;
         FechaCorreccionUtc = ahoraUtc;
@@ -174,7 +174,7 @@ public class Factura
         if (Estado != EstadoFactura.Pendiente) throw new ReglaDeNegocioException("La factura ya fue emitida o anulada.");
         var numero = (numeroDian ?? "").Trim();
         var codigo = (cufe ?? "").Trim();
-        if (numero.Length is < 1 or > 50 || numero.Any(char.IsControl)) throw new ReglaDeNegocioException("El número de la factura no es válido.");
+        if (numero.Length is < 1 or > 50 || !TextoSeguro.EsSeguro(numero)) throw new ReglaDeNegocioException("El número de la factura no es válido.");
         if (codigo.Length is < 10 or > 120 || !codigo.All(char.IsAsciiLetterOrDigit)) throw new ReglaDeNegocioException("El CUFE no es válido.");
         NumeroDian = numero;
         Cufe = codigo;

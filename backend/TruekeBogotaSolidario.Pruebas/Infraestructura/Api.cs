@@ -20,6 +20,13 @@ public static class Api
     /// <summary>Mayor de edad: toda cuenta de prueba la registra (la plataforma es solo para mayores de 18 años).</summary>
     public const string FechaNacimientoAdulta = "1990-05-20";
 
+    /// <summary>Nombre completo válido a partir del alias de la prueba ("u1" → "u Prueba"): el nombre solo admite letras.</summary>
+    public static string NombreDePrueba(string alias)
+    {
+        var letras = new string(alias.Where(char.IsLetter).ToArray());
+        return (letras.Length == 0 ? "Persona" : letras) + " Prueba";
+    }
+
     /// <summary>Cuenta lista para operar: correo verificado y foto de perfil (requisitos para publicar, solicitar, chatear y pagar).</summary>
     public static async Task<SesionMinDto> RegistrarSesionAsync(WebApplicationFactory<Program> f, string nombre)
     {
@@ -33,7 +40,7 @@ public static class Api
     {
         var correo = $"{nombre}-{Guid.NewGuid():N}@trueke.test";
         var resp = await f.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar",
-            new { nombreCompleto = $"{nombre} Prueba", localidad = "Chapinero", correo, clave = ClaveValida, fechaNacimiento = FechaNacimientoAdulta, aceptoPoliticaDatos = true });
+            new { nombreCompleto = NombreDePrueba(nombre), localidad = "Chapinero", correo, clave = ClaveValida, fechaNacimiento = FechaNacimientoAdulta, aceptoPoliticaDatos = true });
         if (resp.StatusCode != HttpStatusCode.Created)
             throw new InvalidOperationException($"Registro falló: {(int)resp.StatusCode} {await resp.Content.ReadAsStringAsync()}");
         await VerificarCorreoAsync(f, correo);

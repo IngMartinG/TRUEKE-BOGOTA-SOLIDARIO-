@@ -19,7 +19,7 @@ public class Denuncia
         if (!Enum.IsDefined(tipo) || !Enum.IsDefined(motivo)) throw new ReglaDeNegocioException("Denuncia no válida.");
         detalle = string.IsNullOrWhiteSpace(detalle) ? null : detalle.Trim();
         if (detalle is { Length: > 500 }) throw new ReglaDeNegocioException("El detalle admite como máximo 500 caracteres.");
-        if (detalle is not null && detalle.Any(c => char.IsControl(c) && c is not '\n' and not '\r'))
+        if (detalle is not null && !TextoSeguro.EsSeguro(detalle, multilinea: true))
             throw new ReglaDeNegocioException("El detalle contiene caracteres no permitidos.");
         if (motivo == MotivoDenuncia.Otro && detalle is null) throw new ReglaDeNegocioException("Describe el motivo de la denuncia.");
 

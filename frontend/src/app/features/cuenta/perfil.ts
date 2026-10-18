@@ -12,6 +12,7 @@ import { SubidasService } from '../../core/subidas.service';
 import { destinoSeguro } from '../auth/redireccion';
 import { comprimirImagen } from '../../shared/imagenes';
 import { FechaPipe, NumeroPipe } from '../../shared/pipes';
+import { filtrarNumerico, localidad, nit, nombreComercial, nombreCompleto } from '../../shared/validadores';
 import { Avatar } from '../../shared/ui/avatar';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
 import { CampoAccesible } from '../../shared/ui/campo-accesible';
@@ -90,7 +91,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
                 </select>
               } @else {
                 <label for="localidad" class="etiqueta">Barrio o sector</label>
-                <input id="localidad" class="entrada" formControlName="localidad" maxlength="60" />
+                <input id="localidad" class="entrada" formControlName="localidad" maxlength="60" autocomplete="address-level3" />
               }
               <app-error-campo [control]="form.controls.localidad" etiqueta="La localidad" idError="localidad-error" />
               <p class="ayuda">Tus publicaciones nuevas usan esta ubicación por defecto.</p>
@@ -127,7 +128,8 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
               </div>
               <div class="campo">
                 <label for="nit" class="etiqueta">NIT</label>
-                <input id="nit" class="entrada" formControlName="nit" maxlength="20" inputmode="numeric" placeholder="900123456 o 900.123.456-8" />
+                <input id="nit" class="entrada" formControlName="nit" maxlength="20" inputmode="numeric" autocomplete="off" placeholder="900123456 o 900.123.456-8"
+                  (input)="filtrar($event, empresa.controls.nit)" />
                 <p class="ayuda">Si no escribes el dígito de verificación, lo calculamos.</p>
                 <app-error-campo [control]="empresa.controls.nit" etiqueta="El NIT" idError="nit-error" />
               </div>
@@ -188,13 +190,14 @@ export default class Perfil {
   /** A dónde volver después de subir la foto, cuando se llegó aquí porque hacía falta (?volver=...). */
   readonly volver = input<string>();
   protected readonly form = this.fb.group({
-    nombreCompleto: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120)]],
+    nombreCompleto: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120), nombreCompleto]],
     municipioCodigo: [CODIGO_BOGOTA, [Validators.required, Validators.pattern(/^\d{5}$/)]],
-    localidad: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
+    localidad: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60), localidad]],
   });
+  protected readonly filtrar = filtrarNumerico;
   protected readonly empresa = this.fb.group({
-    nombreComercial: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120)]],
-    nit: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(20)]],
+    nombreComercial: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120), nombreComercial]],
+    nit: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(20), nit]],
     mostrarNit: [false],
   });
   private readonly municipio = toSignal(this.form.controls.municipioCodigo.valueChanges, { initialValue: CODIGO_BOGOTA });

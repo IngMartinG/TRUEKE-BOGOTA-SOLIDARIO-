@@ -66,7 +66,7 @@ public sealed class EntornoNegocio : IDisposable
     {
         var r = await EnScopeAsync<IAuthService, ResultadoAutenticacion>(a => a.RegistrarAsync(new RegistroRequest
         {
-            NombreCompleto = nombre + " Prueba", Localidad = "Kennedy", Correo = $"{nombre}{Guid.NewGuid():N}@t.co",
+            NombreCompleto = Api.NombreDePrueba(nombre), Localidad = "Kennedy", Correo = $"{nombre}{Guid.NewGuid():N}@t.co",
             Clave = "Clave12345", FechaNacimiento = new DateOnly(1990, 5, 20), AceptoPoliticaDatos = true, CodigoInvitacion = codigoInvitacion
         }));
         await MarcarCorreoVerificadoAsync(r.Sesion.Usuario.Id);

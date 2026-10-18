@@ -16,7 +16,7 @@ import { CampoClave } from '../../shared/ui/campo-clave';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
 import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { Icono } from '../../shared/ui/icono';
-import { claveSegura, mayorDeEdad } from '../../shared/validadores';
+import { claveSegura, localidad, mayorDeEdad, nombreCompleto } from '../../shared/validadores';
 import { CampoFechaNacimiento } from '../../shared/ui/campo-fecha-nacimiento';
 import { BotonGoogle } from './boton-google';
 import { MarcoAuth } from './marco-auth';
@@ -37,7 +37,7 @@ import { destinoSeguro } from './redireccion';
         <div class="campo">
           <label class="etiqueta" for="nombre">Nombre completo</label>
           <input id="nombre" class="entrada" formControlName="nombreCompleto" autocomplete="name" maxlength="120" aria-describedby="nombre-ayuda" />
-          <p id="nombre-ayuda" class="ayuda">En público se muestra abreviado (por ejemplo, "María R.").</p>
+          <p id="nombre-ayuda" class="ayuda">Nombre y apellido, solo con letras. En público se muestra abreviado (por ejemplo, "María R.").</p>
           <app-error-campo [control]="form.controls.nombreCompleto" etiqueta="El nombre" idError="nombre-error" />
         </div>
         <div>
@@ -120,9 +120,9 @@ export default class Registro {
   protected readonly error = signal<string | null>(null);
 
   protected readonly form = this.fb.group({
-    nombreCompleto: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120)]],
+    nombreCompleto: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120), nombreCompleto]],
     municipioCodigo: [CODIGO_BOGOTA, [Validators.required, Validators.pattern(/^\d{5}$/)]],
-    localidad: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
+    localidad: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60), localidad]],
     correo: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
     fechaNacimiento: ['', [Validators.required, mayorDeEdad]],
     clave: ['', [Validators.required, claveSegura]],
