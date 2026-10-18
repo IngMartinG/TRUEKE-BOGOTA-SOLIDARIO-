@@ -49,7 +49,7 @@ services:
         condition: service_healthy
 
   puerta:
-    image: nginxinc/nginx-unprivileged:1.30-alpine@sha256:15c994d10d6d78658721c3bcafff14cb281fba2a4bdf9d5ba92c416a472516e3
+    image: nginxinc/nginx-unprivileged:1.31-alpine@sha256:378d0c32f6562f7fd9629170797f57d2b953aa09be983b3daaf4809bb039ca00
     ports:
       - "127.0.0.1:8082:8082"
     volumes:
