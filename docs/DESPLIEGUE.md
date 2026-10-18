@@ -94,10 +94,15 @@ Más detalle de cada llave: [`backend/README.md` §7.1](../backend/README.md).
 Render gratis **bloquea el SMTP** (puertos 25, 465 y 587), así que Gmail por SMTP no funciona ahí. La API envía por la **API HTTPS de Brevo** (`Correo__Proveedor=Brevo`, ya fijado en `render.yaml`). El plan gratis da 300 correos al día, sin tarjeta y sin dominio propio.
 1. **Cuenta:** [brevo.com](https://www.brevo.com) → *Sign up free* → confirmar el correo y completar el perfil (nombre de la organización, país). Elegir el plan **Free**.
 2. **Remitente verificado:** menú del perfil → **Senders, Domains & Dedicated IPs** → **Senders** → *Add a sender*: nombre `Trueke Bogotá Solidario` y la dirección desde la que saldrán los correos (puede ser un Gmail del equipo). Brevo manda un código a esa dirección; escribirlo para verificarla. Esa dirección es `Correo__Remitente`. **Si el remitente no está verificado, Brevo rechaza cada envío.**
-3. **Clave API:** menú del perfil → **SMTP & API** → pestaña **API Keys** → *Generate a new API key* → nombre `trueke-api` → copiar la clave (`xkeysib-…`). Solo se muestra una vez. Es secreta: no va al repositorio ni a chats.
+3. **Clave API:** menú del perfil → **SMTP & API** → pestaña **API Keys** (no la pestaña *SMTP*) → *Generate a new API key*:
+   - nombre `trueke-api`; vencimiento *Sin vencimiento* (igual caduca tras 90 días seguidos sin uso);
+   - acceso **Restringido**, con un solo permiso: **Emails transaccionales → Todos** (con *Leer* no puede enviar) y todo lo demás en *Ninguno*;
+   - copiar la clave: empieza por **`xkeysib-`** y solo se muestra una vez. Es secreta: no va al repositorio ni a chats.
+
+   **No sirve la clave SMTP** (`xsmtpsib-…`, pestaña *SMTP*): con ella Brevo responde 401.
 4. **IPs autorizadas:** las cuentas nuevas de Brevo bloquean las llamadas desde IPs desconocidas, y Render gratis cambia de IP. Menú del perfil → **Security** → **Authorised IPs** → desactivar el bloqueo (la clave sigue protegiendo la cuenta). Alternativa más estricta: autorizar los rangos de salida que Render muestra en *trueke-api → Connect → Outbound*.
 5. **Render** → *trueke-api* → *Environment*: `Correo__Brevo__ClaveApi` = la clave del paso 3 y `Correo__Remitente` = la dirección del paso 2 → *Save, rebuild, and deploy*. **Si falta la clave, la API no arranca** (avisa en los logs cuál falta).
-6. **Probar:** registrar una cuenta o pedir "olvidé mi contraseña". El envío se ve en Brevo → **Transactional** → *Logs*. Si en los logs de Render sale `Brevo rechazó el correo (HTTP 401)`, revisar la clave y el paso 4; con `HTTP 400`, el remitente del paso 2.
+6. **Probar:** registrar una cuenta o pedir "olvidé mi contraseña". El envío se ve en Brevo → **Transactional** → *Logs*. Si en los logs de Render sale `Brevo rechazó el correo (HTTP 401)`, revisar que la clave sea la API key `xkeysib-` con el permiso del paso 3, y el paso 4; con `HTTP 400`, el remitente del paso 2.
 
 **Con un Gmail como remitente**, Brevo puede cambiar el dominio del remitente por `brevosend.com` para cumplir las reglas de Gmail y Yahoo (DMARC), y algunos correos pueden caer en spam. Con **dominio propio** (§8): Brevo → *Domains* → *Add a domain* → publicar los registros DNS (DKIM y DMARC) que pide → remitente `no-responder@tudominio`. Si 300 al día no alcanzan, el plan Starter de Brevo sube el límite sin cambiar el código.
 
