@@ -22,6 +22,8 @@ public interface IAuthService
     Task CerrarSesionAsync(string? tokenRefresco);
     Task<UsuarioDto> ObtenerPerfilAsync(Guid actorId);
     Task<UsuarioDto> ActualizarPerfilAsync(Guid actorId, ActualizarPerfilRequest r);
+    /// <summary>Cuentas anteriores a la regla de mayoría de edad: registran su fecha una sola vez. Luego hay que refrescar el token.</summary>
+    Task<UsuarioDto> RegistrarFechaNacimientoAsync(Guid actorId, FechaNacimientoRequest r);
     /// <summary>Nombre comercial y NIT (solo con plan Empresa vigente).</summary>
     Task<UsuarioDto> ActualizarPerfilEmpresaAsync(Guid actorId, PerfilEmpresaRequest r);
     /// <summary>Revoca todas las sesiones y devuelve una nueva para el dispositivo actual.</summary>
@@ -77,6 +79,8 @@ public sealed class AuthService : IAuthService
 
         // Los Eco-Puntos de bienvenida se entregan al confirmar el correo (no al registrarse).
         var usuario = new Usuario(r.NombreCompleto, r.Localidad, correo, r.Clave, r.MunicipioCodigo);
+        // A un menor de edad no se le crea la cuenta (y su fecha no se guarda en ninguna parte).
+        usuario.RegistrarFechaNacimiento(r.FechaNacimiento!.Value, Usuario.HoyEnColombia(Ahora));
         usuario.AceptarPoliticaDatos(_legal.VersionPoliticaDatos, Ahora);
         await RegistrarInvitadorAsync(usuario, r.CodigoInvitacion);
         _usuarios.Agregar(usuario);
@@ -171,7 +175,10 @@ public sealed class AuthService : IAuthService
             {
                 if (!r.AceptoPoliticaDatos)
                     throw new ReglaDeNegocioException("Para crear tu cuenta debes aceptar la política de tratamiento de datos personales.");
+                if (r.FechaNacimiento is not { } nacimiento)
+                    throw new ReglaDeNegocioException("Para crear tu cuenta indica tu fecha de nacimiento: la plataforma es solo para mayores de 18 años.");
                 usuario = Usuario.CrearDesdeGoogle(id.Nombre ?? "", id.Correo, id.Sub, ahora); // correo verificado por Google: recibe el bono
+                usuario.RegistrarFechaNacimiento(nacimiento, Usuario.HoyEnColombia(ahora));
                 usuario.AceptarPoliticaDatos(_legal.VersionPoliticaDatos, ahora);
                 await RegistrarInvitadorAsync(usuario, r.CodigoInvitacion);
                 _usuarios.Agregar(usuario);
@@ -287,6 +294,15 @@ public sealed class AuthService : IAuthService
         var u = await CargarAsync(actorId);
         u.ActualizarPerfil(r.NombreCompleto, r.Localidad, r.MunicipioCodigo);
         await _uow.GuardarCambiosAsync();
+        return Mapeos.AUsuarioDto(u, Ahora);
+    }
+
+    public async Task<UsuarioDto> RegistrarFechaNacimientoAsync(Guid actorId, FechaNacimientoRequest r)
+    {
+        var u = await CargarAsync(actorId);
+        u.RegistrarFechaNacimiento(r.FechaNacimiento!.Value, Usuario.HoyEnColombia(Ahora));
+        await _uow.GuardarCambiosAsync();
+        _log.LogInformation("Mayoría de edad registrada {UsuarioId}", u.Id);
         return Mapeos.AUsuarioDto(u, Ahora);
     }
 

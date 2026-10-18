@@ -10,6 +10,7 @@ namespace TruekeBogotaSolidario.Presentacion.Controllers;
 /// <summary>Bandeja de notificaciones del usuario actual (las mismas que llegan en tiempo real por el hub).</summary>
 [ApiController]
 [Authorize]
+[PermitirSinFechaNacimiento] // solo los avisos propios (moderación, PQR)
 [Route("api/v1/notificaciones")]
 public sealed class NotificacionesController : ControllerBase
 {

@@ -1,4 +1,4 @@
-import { effect, inject, Injectable, signal, untracked } from '@angular/core';
+import { computed, effect, inject, Injectable, signal, untracked } from '@angular/core';
 import { Router } from '@angular/router';
 import type { HubConnection } from '@microsoft/signalr';
 import { firstValueFrom, Subject } from 'rxjs';
@@ -63,23 +63,25 @@ export class TiempoRealService {
   private ultimoAvisoEscribiendo = new Map<string, number>();
   /** Emite tras reconectar: las pantallas abiertas recargan sus datos. */
   readonly resincronizar$ = new Subject<void>();
+  /** Sin la mayoría de edad registrada la API rechaza el hub y los contadores: no se intenta hasta registrarla. */
+  private readonly puedeConectar = computed(() => this.sesion.autenticado() && this.sesion.mayoriaEdadConfirmada());
 
   constructor() {
     effect(() => {
-      const autenticado = this.sesion.autenticado();
+      const autenticado = this.puedeConectar();
       untracked(() => (autenticado ? void this.conectar() : void this.desconectar()));
     });
     effect(() => {
       const conectado = this.conectado();
       untracked(() => {
         clearTimeout(this.temporizadorSinConexion);
-        if (conectado || !this.sesion.autenticado()) this.sinConexion.set(false);
-        else this.temporizadorSinConexion = setTimeout(() => this.sinConexion.set(!this.conectado() && this.sesion.autenticado()), 5000);
+        if (conectado || !this.puedeConectar()) this.sinConexion.set(false);
+        else this.temporizadorSinConexion = setTimeout(() => this.sinConexion.set(!this.conectado() && this.puedeConectar()), 5000);
       });
     });
     // Al volver a la pestaña (o recuperar internet) se reconecta enseguida, sin esperar el próximo reintento.
     const alVolver = () => {
-      if (document.visibilityState !== 'visible' || !this.sesion.autenticado() || this.conexion) return;
+      if (document.visibilityState !== 'visible' || !this.puedeConectar() || this.conexion) return;
       clearTimeout(this.reintento);
       void this.conectar();
     };
@@ -88,7 +90,7 @@ export class TiempoRealService {
   }
 
   async sincronizarContadores(): Promise<void> {
-    if (!this.sesion.autenticado()) return;
+    if (!this.puedeConectar()) return;
     try {
       const [total, conversaciones] = await Promise.all([
         firstValueFrom(this.cuentaApi.totalNoLeidas()),
@@ -108,7 +110,7 @@ export class TiempoRealService {
     const { HubConnectionBuilder, HttpTransportType, LogLevel } = await import('@microsoft/signalr').finally(
       () => (this.conectando = false),
     );
-    if (this.conexion || !this.sesion.autenticado()) return;
+    if (this.conexion || !this.puedeConectar()) return;
     const conexion = new HubConnectionBuilder()
       .withUrl(hubUrl(), {
         // El servidor cierra el hub cuando vence el JWT: al (re)conectar se usa uno que dure.
@@ -138,7 +140,7 @@ export class TiempoRealService {
     conexion.onclose(() => {
       this.conectado.set(false);
       // El servidor cierra la conexión cuando vence el JWT con que se abrió: se reabre con el nuevo.
-      if (this.conexion === conexion && this.sesion.autenticado()) {
+      if (this.conexion === conexion && this.puedeConectar()) {
         this.conexion = null;
         clearTimeout(this.reintento);
         this.reintento = setTimeout(() => void this.conectar(), 1500);
@@ -157,7 +159,7 @@ export class TiempoRealService {
     } catch {
       if (this.conexion === conexion) {
         this.conexion = null;
-        if (this.sesion.autenticado()) {
+        if (this.puedeConectar()) {
           clearTimeout(this.reintento);
           this.reintento = setTimeout(() => void this.conectar(), 10_000);
         }

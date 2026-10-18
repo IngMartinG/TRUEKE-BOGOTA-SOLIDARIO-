@@ -17,6 +17,8 @@ public static class Guardas
     {
         if (!u.CorreoVerificado)
             throw new AccesoDenegadoException("Verifica tu correo para realizar esta acción. Revisa tu bandeja de entrada o solicita un nuevo enlace.");
+        // Defensa en profundidad: la API ya lo exige en la autorización (claim "edad").
+        if (!u.MayoriaEdadConfirmada) throw new MayoriaEdadRequeridaException();
     }
 
     /// <summary>

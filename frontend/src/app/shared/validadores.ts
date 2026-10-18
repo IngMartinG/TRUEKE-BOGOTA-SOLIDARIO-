@@ -32,3 +32,36 @@ export function requisitosClave(v: string): { texto: string; ok: boolean }[] {
     { texto: 'Un número', ok: /\d/.test(v) },
   ];
 }
+
+/** Misma regla que el backend (Usuario.EdadMinima): la plataforma es solo para mayores de edad. */
+export const EDAD_MINIMA = 18;
+const EDAD_MAXIMA = 120;
+
+/** Fecha de hoy en Colombia ("yyyy-MM-dd"): siempre UTC-5, no hay horario de verano. */
+export function hoyEnColombia(ahora = Date.now()): string {
+  return new Date(ahora - 5 * 3_600_000).toISOString().slice(0, 10);
+}
+
+/** Resta años a una fecha "yyyy-MM-dd" (un 29 de febrero pasa al 28 en años no bisiestos, como en el backend). */
+export function restarAnios(fecha: string, anios: number): string {
+  const [a, m, d] = fecha.split('-').map(Number) as [number, number, number];
+  const destino = a - anios;
+  const ultimoDia = new Date(Date.UTC(destino, m, 0)).getUTCDate();
+  return `${destino}-${String(m).padStart(2, '0')}-${String(Math.min(d, ultimoDia)).padStart(2, '0')}`;
+}
+
+/** Fecha de nacimiento más reciente permitida: quien cumple 18 hoy ya puede. */
+export const fechaMaximaNacimiento = (ahora = Date.now()) => restarAnios(hoyEnColombia(ahora), EDAD_MINIMA);
+
+/** Valida una fecha de nacimiento "yyyy-MM-dd": real, no futura, de 18 años o más y no absurda. */
+export const mayorDeEdad: ValidatorFn = (c: AbstractControl): ValidationErrors | null => {
+  const v = String(c.value ?? '');
+  if (!v) return null;
+  const fecha = new Date(`${v}T00:00:00Z`);
+  // Descarta formatos raros y fechas inexistentes (31 de febrero se convertiría en marzo).
+  const valida = /^\d{4}-\d{2}-\d{2}$/.test(v) && !Number.isNaN(fecha.getTime()) && fecha.toISOString().slice(0, 10) === v;
+  if (!valida) return { fechaInvalida: true };
+  const hoy = hoyEnColombia();
+  if (v > hoy || v < restarAnios(hoy, EDAD_MAXIMA)) return { fechaInvalida: true };
+  return v > fechaMaximaNacimiento() ? { menorDeEdad: true } : null;
+};

@@ -120,6 +120,11 @@ public class Usuario
     public string? GoogleSub { get; private set; }
     public string? PoliticaDatosVersion { get; private set; }
     public DateTime? FechaAceptacionPolitica { get; private set; }
+    /// <summary>
+    /// Solo se usa para comprobar la mayoría de edad (la plataforma es para mayores de 18). Nunca se muestra a otras personas.
+    /// null = cuenta anterior a la regla: no puede actuar hasta registrarla.
+    /// </summary>
+    public DateOnly? FechaNacimiento { get; private set; }
     public bool EstaEliminado { get; private set; }
     public DateTime? FechaEliminacion { get; private set; }
 
@@ -302,6 +307,39 @@ public class Usuario
         PoliticaDatosVersion = version;
         FechaAceptacionPolitica = ahoraUtc;
     }
+
+    /// <summary>Edad mínima para usar la plataforma (términos de uso).</summary>
+    public const int EdadMinima = 18;
+    /// <summary>Más que esto es casi seguro un error de digitación.</summary>
+    public const int EdadMaxima = 120;
+
+    /// <summary>Colombia no tiene horario de verano: la fecha local es siempre UTC-5.</summary>
+    public static DateOnly HoyEnColombia(DateTime ahoraUtc) => DateOnly.FromDateTime(ahoraUtc.AddHours(-5));
+
+    public static int EdadEn(DateOnly nacimiento, DateOnly hoy)
+    {
+        var edad = hoy.Year - nacimiento.Year;
+        if (hoy < nacimiento.AddYears(edad)) edad--; // aún no cumple años este año (quien nació un 29 de febrero cumple el 28 en años no bisiestos)
+        return edad;
+    }
+
+    /// <summary>Rechaza a menores de edad y fechas imposibles. Una vez registrada no se cambia (evita "corregirla" para pasar el filtro).</summary>
+    public static void ValidarFechaNacimiento(DateOnly fecha, DateOnly hoy)
+    {
+        if (fecha > hoy) throw new ReglaDeNegocioException("La fecha de nacimiento no puede ser futura.");
+        var edad = EdadEn(fecha, hoy);
+        if (edad > EdadMaxima) throw new ReglaDeNegocioException("Revisa la fecha de nacimiento: no parece correcta.");
+        if (edad < EdadMinima) throw new ReglaDeNegocioException($"Trueke Bogotá Solidario es solo para personas mayores de {EdadMinima} años.");
+    }
+
+    public void RegistrarFechaNacimiento(DateOnly fecha, DateOnly hoy)
+    {
+        if (FechaNacimiento is not null) throw new ReglaDeNegocioException("La fecha de nacimiento ya está registrada.");
+        ValidarFechaNacimiento(fecha, hoy);
+        FechaNacimiento = fecha;
+    }
+
+    public bool MayoriaEdadConfirmada => FechaNacimiento is not null;
 
     /// <summary>Cuenta creada con Google: sin contraseña (no se puede entrar con clave hasta que el usuario cree una) y correo ya verificado.</summary>
     public static Usuario CrearDesdeGoogle(string nombre, string correo, string googleSub, DateTime ahoraUtc)

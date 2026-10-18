@@ -35,7 +35,7 @@ public class SeguridadTests : IClassFixture<FabricaApi>
         var correo = $"bloqueo-{Guid.NewGuid():N}@trueke.test";
         var anonimo = _fabrica.CreateClient();
         (await anonimo.PostAsJsonAsync("/api/v1/auth/registrar",
-            new { nombreCompleto = "Bloqueo Prueba", localidad = "Suba", correo, clave = Api.ClaveValida, aceptoPoliticaDatos = true })).EnsureSuccessStatusCode();
+            new { nombreCompleto = "Bloqueo Prueba", localidad = "Suba", correo, clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true })).EnsureSuccessStatusCode();
 
         for (var i = 0; i < 5; i++)
             Assert.Equal(HttpStatusCode.Unauthorized, (await anonimo.PostAsJsonAsync("/api/v1/auth/login", new { correo, clave = "Incorrecta1" })).StatusCode);

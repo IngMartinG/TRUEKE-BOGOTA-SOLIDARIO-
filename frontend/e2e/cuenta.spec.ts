@@ -11,6 +11,7 @@ test('cuenta nueva: registro, correo de verificación, foto obligatoria y primer
     await page.getByLabel('Nombre completo').fill('Carla Pruebas Gómez');
     await page.getByLabel('Localidad donde vives').selectOption('Chapinero');
     await page.getByLabel('Correo electrónico').fill(correo);
+    await page.getByLabel('Fecha de nacimiento').fill('1990-05-20');
     await page.getByLabel('Contraseña', { exact: true }).fill(CLAVE);
     await page.getByRole('checkbox').check();
     await page.getByRole('button', { name: 'Crear mi cuenta' }).click();

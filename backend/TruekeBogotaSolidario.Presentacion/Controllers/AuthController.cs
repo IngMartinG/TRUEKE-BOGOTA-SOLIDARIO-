@@ -9,6 +9,7 @@ namespace TruekeBogotaSolidario.Presentacion.Controllers;
 
 [ApiController]
 [Authorize]
+[PermitirSinFechaNacimiento] // sesión, verificación del correo y contraseña: necesarios para llegar a registrar la fecha
 [Route("api/v1/auth")]
 public sealed class AuthController : ControllerBase
 {
@@ -155,14 +156,14 @@ public sealed class UsuariosController : ControllerBase
     public async Task<ActionResult<UsuarioDto>> QuitarFoto() => Ok(await _foto.QuitarAsync(User.IdActual()));
 
     /// <summary>Ley 1581 — derecho de acceso: todos tus datos en JSON.</summary>
-    [HttpGet("yo/datos"), EnableRateLimiting(Politicas.LimiteAuth)]
+    [HttpGet("yo/datos"), EnableRateLimiting(Politicas.LimiteAuth), PermitirSinFechaNacimiento]
     public async Task<ActionResult<DatosPersonalesDto>> MisDatos() => Ok(await _datos.ExportarAsync(User.IdActual()));
 
     /// <summary>
     /// Ley 1581 — derecho de supresión: anonimiza la cuenta (irreversible). Exige "ELIMINAR" y la contraseña (o un ID token
     /// de Google reciente si la cuenta no tiene clave). Pagos y transacciones se conservan anonimizados por obligación contable.
     /// </summary>
-    [HttpPost("yo/eliminar"), EnableRateLimiting(Politicas.LimiteAuth)]
+    [HttpPost("yo/eliminar"), EnableRateLimiting(Politicas.LimiteAuth), PermitirSinFechaNacimiento]
     public async Task<IActionResult> EliminarCuenta([FromBody] EliminarCuentaRequest r)
     {
         await _datos.EliminarCuentaAsync(User.IdActual(), r);
@@ -170,8 +171,16 @@ public sealed class UsuariosController : ControllerBase
         return NoContent();
     }
 
-    [HttpGet("yo")]
+    [HttpGet("yo"), PermitirSinFechaNacimiento]
     public async Task<ActionResult<UsuarioDto>> Yo() => Ok(await _auth.ObtenerPerfilAsync(User.IdActual()));
+
+    /// <summary>
+    /// Mayoría de edad (cuentas creadas antes de exigirla): se registra una sola vez y no se puede cambiar. Después el front
+    /// refresca la sesión para recibir un token con el claim "edad".
+    /// </summary>
+    [HttpPut("yo/fecha-nacimiento"), EnableRateLimiting(Politicas.LimiteAuth), PermitirSinFechaNacimiento]
+    public async Task<ActionResult<UsuarioDto>> RegistrarFechaNacimiento([FromBody] FechaNacimientoRequest r)
+        => Ok(await _auth.RegistrarFechaNacimientoAsync(User.IdActual(), r));
 
     [HttpPut("yo")]
     public async Task<ActionResult<UsuarioDto>> ActualizarYo([FromBody] ActualizarPerfilRequest r)

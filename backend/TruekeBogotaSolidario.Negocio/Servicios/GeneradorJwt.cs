@@ -40,6 +40,8 @@ public sealed class GeneradorJwt : IGeneradorToken
             ["role"] = usuario.Rol.ToString(),
             ["sv"] = usuario.VersionSeguridad,
             ["amr"] = conDosFactores ? "mfa" : "pwd", // método de autenticación (RFC 8176)
+            // Mayoría de edad registrada: sin esto la API solo deja completar el perfil, gestionar la cuenta y radicar PQR.
+            ["edad"] = usuario.MayoriaEdadConfirmada ? "ok" : "pendiente",
             ["jti"] = Guid.NewGuid().ToString("N"),
             ["iss"] = _jwt.Issuer,
             ["aud"] = _jwt.Audience,

@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using TruekeBogotaSolidario.Datos.Contexto;
 using TruekeBogotaSolidario.Negocio.Correo;
@@ -16,6 +17,8 @@ public sealed record SesionMinDto(string Token, UsuarioMinDto Usuario);
 public static class Api
 {
     public const string ClaveValida = "Clave12345";
+    /// <summary>Mayor de edad: toda cuenta de prueba la registra (la plataforma es solo para mayores de 18 años).</summary>
+    public const string FechaNacimientoAdulta = "1990-05-20";
 
     /// <summary>Cuenta lista para operar: correo verificado y foto de perfil (requisitos para publicar, solicitar, chatear y pagar).</summary>
     public static async Task<SesionMinDto> RegistrarSesionAsync(WebApplicationFactory<Program> f, string nombre)
@@ -30,7 +33,7 @@ public static class Api
     {
         var correo = $"{nombre}-{Guid.NewGuid():N}@trueke.test";
         var resp = await f.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar",
-            new { nombreCompleto = $"{nombre} Prueba", localidad = "Chapinero", correo, clave = ClaveValida, aceptoPoliticaDatos = true });
+            new { nombreCompleto = $"{nombre} Prueba", localidad = "Chapinero", correo, clave = ClaveValida, fechaNacimiento = FechaNacimientoAdulta, aceptoPoliticaDatos = true });
         if (resp.StatusCode != HttpStatusCode.Created)
             throw new InvalidOperationException($"Registro falló: {(int)resp.StatusCode} {await resp.Content.ReadAsStringAsync()}");
         await VerificarCorreoAsync(f, correo);
@@ -43,6 +46,21 @@ public static class Api
         using var scope = f.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<TruekeDbContext>();
         (await db.Usuarios.FindAsync(usuarioId))!.CambiarFoto($"{AlmacenFalso.Base}imagenes/{usuarioId:N}/perfil.jpg");
+        await db.SaveChangesAsync();
+    }
+
+    /// <summary>
+    /// Atajo: la cuenta sembrada por configuración (SuperUsuario) nace sin fecha de nacimiento, como las cuentas anteriores a la
+    /// regla. Para las pruebas que no tratan de eso se registra directo en la base (el flujo real se prueba en MayoriaEdadTests).
+    /// </summary>
+    public static async Task AsegurarMayoriaEdadAsync(WebApplicationFactory<Program> f, string correo)
+    {
+        using var scope = f.Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<TruekeDbContext>();
+        var normalizado = Datos.Entidades.Usuario.NormalizarCorreo(correo);
+        var u = await db.Usuarios.FirstOrDefaultAsync(x => x.Correo == normalizado);
+        if (u is null || u.MayoriaEdadConfirmada) return;
+        u.RegistrarFechaNacimiento(DateOnly.Parse(FechaNacimientoAdulta), DateOnly.FromDateTime(DateTime.UtcNow));
         await db.SaveChangesAsync();
     }
 
@@ -70,6 +88,7 @@ public static class Api
 
     public static async Task<string> LoginAsync(WebApplicationFactory<Program> f, string correo, string clave)
     {
+        await AsegurarMayoriaEdadAsync(f, correo);
         var resp = await f.CreateClient().PostAsJsonAsync("/api/v1/auth/login", new { correo, clave });
         resp.EnsureSuccessStatusCode();
         return (await resp.Content.ReadFromJsonAsync<SesionMinDto>())!.Token;

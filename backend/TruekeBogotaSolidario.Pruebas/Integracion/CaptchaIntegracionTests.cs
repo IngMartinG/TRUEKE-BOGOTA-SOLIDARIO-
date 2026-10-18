@@ -33,7 +33,7 @@ public class CaptchaIntegracionTests : IClassFixture<FabricaApi>
         });
 
     private static object Registro(string correo, string? captcha)
-        => new { nombreCompleto = "Captcha Prueba", localidad = "Suba", correo, clave = Api.ClaveValida, aceptoPoliticaDatos = true, captchaToken = captcha };
+        => new { nombreCompleto = "Captcha Prueba", localidad = "Suba", correo, clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true, captchaToken = captcha };
 
     [Fact]
     public async Task Registro_login_y_olvide_clave_exigen_captcha_valido_de_su_accion()

@@ -4808,6 +4808,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/usuarios/yo/fecha-nacimiento": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["FechaNacimientoRequest"];
+                    "text/json": components["schemas"]["FechaNacimientoRequest"];
+                    "application/*+json": components["schemas"]["FechaNacimientoRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UsuarioDto"];
+                        "application/json": components["schemas"]["UsuarioDto"];
+                        "text/json": components["schemas"]["UsuarioDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/usuarios/yo/empresa": {
         parameters: {
             query?: never;
@@ -5425,6 +5468,10 @@ export interface components {
             /** Format: date-time */
             fechaEleccionUtc?: string | null;
         };
+        FechaNacimientoRequest: {
+            /** Format: date */
+            fechaNacimiento: string;
+        };
         GananciaDto: {
             modo?: string;
             /** Format: int32 */
@@ -5435,6 +5482,8 @@ export interface components {
         GoogleLoginRequest: {
             idToken: string;
             aceptoPoliticaDatos?: boolean;
+            /** Format: date */
+            fechaNacimiento?: string | null;
             codigoDosFactores?: string | null;
             codigoInvitacion?: string | null;
         };
@@ -5994,6 +6043,8 @@ export interface components {
             /** Format: email */
             correo: string;
             clave: string;
+            /** Format: date */
+            fechaNacimiento: string;
             aceptoPoliticaDatos?: boolean;
             captchaToken?: string | null;
             codigoInvitacion?: string | null;
@@ -6181,6 +6232,8 @@ export interface components {
             tieneDatosFacturacion?: boolean;
             fotoUrl?: string | null;
             mostrarNit?: boolean;
+            /** Format: date */
+            fechaNacimiento?: string | null;
         };
         VerificacionPendienteDto: {
             /** Format: uuid */
@@ -6261,6 +6314,7 @@ export type EstadoPqrDto = components['schemas']['EstadoPqrDto'];
 export type FacturaAdminDto = components['schemas']['FacturaAdminDto'];
 export type FacturaAdminDtoPaginaDto = components['schemas']['FacturaAdminDtoPaginaDto'];
 export type FacturaDto = components['schemas']['FacturaDto'];
+export type FechaNacimientoRequest = components['schemas']['FechaNacimientoRequest'];
 export type GananciaDto = components['schemas']['GananciaDto'];
 export type GoogleLoginRequest = components['schemas']['GoogleLoginRequest'];
 export type GuardarBusquedaRequest = components['schemas']['GuardarBusquedaRequest'];

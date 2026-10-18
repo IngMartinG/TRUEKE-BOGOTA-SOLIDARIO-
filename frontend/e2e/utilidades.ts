@@ -89,7 +89,7 @@ export async function cuentaLista(page: Page, nombre: string, conFoto = true): P
   const api = page.request;
   const correo = correoUnico(nombre.toLowerCase());
   const registro = await api.post('/api/v1/auth/registrar', {
-    data: { nombreCompleto: `${nombre} Pruebas`, municipioCodigo: '11001', localidad: 'Chapinero', correo, clave: CLAVE, aceptoPoliticaDatos: true },
+    data: { nombreCompleto: `${nombre} Pruebas`, municipioCodigo: '11001', localidad: 'Chapinero', correo, clave: CLAVE, fechaNacimiento: '1990-05-20', aceptoPoliticaDatos: true },
   });
   expect(registro.status(), await registro.text()).toBe(201);
   const sesion = (await registro.json()) as { token: string; usuario: { id: string } };

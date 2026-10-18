@@ -30,8 +30,17 @@ public sealed class ResultadoAutorizacionHandler : IAuthorizationMiddlewareResul
 
     public async Task HandleAsync(RequestDelegate next, HttpContext context, AuthorizationPolicy policy, PolicyAuthorizationResult result)
     {
-        if (result.Forbidden && result.AuthorizationFailure?.FailedRequirements.Any() == true
-            && result.AuthorizationFailure.FailedRequirements.All(r => r is DosFactoresRequirement))
+        var fallidos = result.Forbidden ? result.AuthorizationFailure?.FailedRequirements.ToList() ?? [] : [];
+        // La mayoría de edad va primero: sin ella no sirve de nada activar el 2FA.
+        if (fallidos.Count > 0 && fallidos.Any(r => r is MayoriaEdadRequirement)
+            && fallidos.All(r => r is MayoriaEdadRequirement or DosFactoresRequirement))
+        {
+            await Problemas.EscribirAsync(context, StatusCodes.Status403Forbidden,
+                "Registra tu fecha de nacimiento para seguir: Trueke Bogotá Solidario es solo para personas mayores de 18 años.",
+                codigo: MayoriaEdadRequirement.CodigoError);
+            return;
+        }
+        if (fallidos.Count > 0 && fallidos.All(r => r is DosFactoresRequirement))
         {
             await Problemas.EscribirAsync(context, StatusCodes.Status403Forbidden,
                 "Activa la verificación en dos pasos y vuelve a iniciar sesión con tu código para usar las funciones de administración.",

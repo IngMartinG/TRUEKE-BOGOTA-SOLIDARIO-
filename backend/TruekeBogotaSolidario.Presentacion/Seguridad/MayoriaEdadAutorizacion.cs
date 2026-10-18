@@ -1,0 +1,35 @@
+using Microsoft.AspNetCore.Authorization;
+
+namespace TruekeBogotaSolidario.Presentacion.Seguridad;
+
+/// <summary>
+/// La plataforma es solo para mayores de 18 años: toda acción con sesión exige el claim "edad" = "ok" (la persona registró su
+/// fecha de nacimiento). Las cuentas anteriores a la regla solo pueden lo marcado con <see cref="PermitirSinFechaNacimientoAttribute"/>.
+/// </summary>
+public sealed class MayoriaEdadRequirement : IAuthorizationRequirement
+{
+    public const string CodigoError = "fecha_nacimiento_requerida";
+}
+
+/// <summary>
+/// Lo que una cuenta sin fecha de nacimiento sí puede hacer: registrarla, gestionar su sesión y su seguridad, ver sus avisos,
+/// radicar PQR y ejercer el habeas data (exportar o eliminar sus datos nunca se bloquea).
+/// </summary>
+[AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
+public sealed class PermitirSinFechaNacimientoAttribute : Attribute;
+
+public sealed class MayoriaEdadHandler : AuthorizationHandler<MayoriaEdadRequirement>
+{
+    protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, MayoriaEdadRequirement requirement)
+    {
+        var endpoint = context.Resource switch
+        {
+            HttpContext http => http.GetEndpoint(),
+            Endpoint e => e,
+            _ => null
+        };
+        if (context.User.HasClaim("edad", "ok") || endpoint?.Metadata.GetMetadata<PermitirSinFechaNacimientoAttribute>() is not null)
+            context.Succeed(requirement);
+        return Task.CompletedTask;
+    }
+}

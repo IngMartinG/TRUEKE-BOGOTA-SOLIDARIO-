@@ -15,7 +15,7 @@ public class HabeasDataTests : IClassFixture<FabricaApi>
     public async Task Registrarse_sin_aceptar_la_politica_es_400()
     {
         var r = await _fabrica.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar", new
-        { nombreCompleto = "Sin Consentimiento", localidad = "Bosa", correo = $"nc{Guid.NewGuid():N}@trueke.test", clave = Api.ClaveValida, aceptoPoliticaDatos = false });
+        { nombreCompleto = "Sin Consentimiento", localidad = "Bosa", correo = $"nc{Guid.NewGuid():N}@trueke.test", clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = false });
         Assert.Equal(HttpStatusCode.BadRequest, r.StatusCode);
         Assert.Contains("política de tratamiento de datos", await r.Content.ReadAsStringAsync());
     }
@@ -84,7 +84,7 @@ public class HabeasDataTests : IClassFixture<FabricaApi>
 
         // el correo queda libre para una cuenta nueva
         var nueva = await _fabrica.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar", new
-        { nombreCompleto = "Vuelvo Despues", localidad = "Suba", correo = ses.Usuario.Correo, clave = Api.ClaveValida, aceptoPoliticaDatos = true });
+        { nombreCompleto = "Vuelvo Despues", localidad = "Suba", correo = ses.Usuario.Correo, clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true });
         Assert.Equal(HttpStatusCode.Created, nueva.StatusCode);
     }
 

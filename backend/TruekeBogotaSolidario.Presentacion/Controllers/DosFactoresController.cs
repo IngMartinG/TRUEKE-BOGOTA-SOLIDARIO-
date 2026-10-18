@@ -14,6 +14,7 @@ namespace TruekeBogotaSolidario.Presentacion.Controllers;
 /// </summary>
 [ApiController]
 [Authorize]
+[PermitirSinFechaNacimiento] // seguridad de la propia cuenta
 [Route("api/v1/auth/2fa")]
 public sealed class DosFactoresController : ControllerBase
 {

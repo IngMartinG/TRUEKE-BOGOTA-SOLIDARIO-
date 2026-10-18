@@ -165,7 +165,7 @@ public class ImagenesTests : IClassFixture<FabricaApi>
             new { tipo = "Imagen", contentType = "image/png", tamanoBytes = 100 })).StatusCode);
 
         var r = await _f.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar", new
-        { nombreCompleto = "Sin Verificar", localidad = "Bosa", correo = $"sv{Guid.NewGuid():N}@trueke.test", clave = Api.ClaveValida, aceptoPoliticaDatos = true });
+        { nombreCompleto = "Sin Verificar", localidad = "Bosa", correo = $"sv{Guid.NewGuid():N}@trueke.test", clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true });
         var token = (await r.Content.ReadFromJsonAsync<SesionMinDto>())!.Token;
         Assert.Equal(HttpStatusCode.Forbidden, (await Api.ConToken(_f, token).PostAsJsonAsync("/api/v1/archivos/subidas",
             new { tipo = "Imagen", contentType = "image/png", tamanoBytes = 100 })).StatusCode);

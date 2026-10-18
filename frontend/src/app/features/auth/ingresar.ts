@@ -14,12 +14,14 @@ import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo'
 import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
+import { CampoFechaNacimiento } from '../../shared/ui/campo-fecha-nacimiento';
+import { mayorDeEdad } from '../../shared/validadores';
 import { BotonGoogle } from './boton-google';
 import { MarcoAuth } from './marco-auth';
 import { destinoSeguro } from './redireccion';
 
 @Component({
-  imports: [ReactiveFormsModule, FormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, CampoAccesible, Icono, BotonGoogle, Modal],
+  imports: [ReactiveFormsModule, FormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, CampoAccesible, Icono, BotonGoogle, Modal, CampoFechaNacimiento],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-marco-auth [conCaptcha]="true"
@@ -68,7 +70,8 @@ import { destinoSeguro } from './redireccion';
     </app-marco-auth>
 
     <app-modal [(abierto)]="consentimientoAbierto" titulo="Crear tu cuenta con Google" subtitulo="Es la primera vez que ingresas con esta cuenta de Google.">
-      <label class="flex cursor-pointer items-start gap-3">
+      <app-campo-fecha-nacimiento [control]="fechaGoogle" idCampo="fecha-google" />
+      <label class="mt-4 flex cursor-pointer items-start gap-3">
         <input type="checkbox" class="casilla mt-0.5" [(ngModel)]="aceptaPolitica" />
         <span class="text-sm">
           Autorizo el tratamiento de mis datos personales según la
@@ -77,7 +80,7 @@ import { destinoSeguro } from './redireccion';
       </label>
       <div pie class="flex justify-end gap-2 border-t border-borde p-4">
         <button type="button" class="btn btn-fantasma" (click)="consentimientoAbierto.set(false)">Cancelar</button>
-        <button type="button" class="btn btn-primario" [disabled]="!aceptaPolitica() || enviando()" (click)="conGoogle(idTokenGoogle!, true)">Crear mi cuenta</button>
+        <button type="button" class="btn btn-primario" [disabled]="!aceptaPolitica() || enviando()" (click)="crearConGoogle()">Crear mi cuenta</button>
       </div>
     </app-modal>
   `,
@@ -99,6 +102,8 @@ export default class Ingresar {
   protected readonly consentimientoAbierto = signal(false);
   protected readonly aceptaPolitica = signal(false);
   protected idTokenGoogle: string | null = null;
+  /** Solo para cuentas nuevas con Google: la plataforma es para mayores de 18 años. */
+  protected readonly fechaGoogle = this.fb.control('', [Validators.required, mayorDeEdad]);
   private viaGoogle = false;
 
   constructor() {
@@ -145,13 +150,20 @@ export default class Ingresar {
     try {
       const codigo = this.form.controls.codigoDosFactores.value.trim() || null;
       const invita = codigoInvitacionGuardado();
-      const sesion = await firstValueFrom(this.authApi.google({ idToken, aceptoPoliticaDatos, codigoDosFactores: codigo, ...(invita ? { codigoInvitacion: invita } : {}) }));
+      const fechaNacimiento = aceptoPoliticaDatos ? this.fechaGoogle.value : null;
+      const sesion = await firstValueFrom(
+        this.authApi.google({ idToken, aceptoPoliticaDatos, fechaNacimiento, codigoDosFactores: codigo, ...(invita ? { codigoInvitacion: invita } : {}) }),
+      );
       this.consentimientoAbierto.set(false);
       await this.exito(sesion);
     } catch (e) {
       const p = problemaDe(e);
       if (p.status === 400 && p.title?.toLowerCase().includes('política') && !aceptoPoliticaDatos) {
         this.consentimientoAbierto.set(true);
+      } else if (p.status === 400 && aceptoPoliticaDatos && this.consentimientoAbierto()) {
+        // Menor de edad o fecha no válida: se muestra junto al campo y el diálogo sigue abierto.
+        this.fechaGoogle.setErrors({ servidor: p.title ?? 'Revisa la fecha de nacimiento.' });
+        this.fechaGoogle.markAsTouched();
       } else {
         this.consentimientoAbierto.set(false);
         this.manejarError(e);
@@ -159,6 +171,12 @@ export default class Ingresar {
     } finally {
       this.enviando.set(false);
     }
+  }
+
+  protected async crearConGoogle(): Promise<void> {
+    this.fechaGoogle.markAsTouched();
+    if (this.fechaGoogle.invalid || !this.idTokenGoogle) return;
+    await this.conGoogle(this.idTokenGoogle, true);
   }
 
   protected volverAtras(): void {

@@ -71,13 +71,18 @@ public static class AutenticacionJwt
 
         services.AddAuthorization(o =>
         {
-            // Seguro por defecto: todo exige sesión salvo lo marcado [AllowAnonymous].
-            o.FallbackPolicy = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build();
+            // Seguro por defecto: todo exige sesión (y mayoría de edad registrada) salvo lo marcado [AllowAnonymous].
+            var conSesion = new AuthorizationPolicyBuilder().RequireAuthenticatedUser().AddRequirements(new MayoriaEdadRequirement()).Build();
+            o.DefaultPolicy = conSesion;
+            o.FallbackPolicy = conSesion;
             // Jerarquía SuperUsuario ⊃ Administrador ⊃ Cliente; además, sesión con verificación en dos pasos
-            o.AddPolicy(Politicas.Moderador, p => p.RequireRole("Administrador", "SuperUsuario").AddRequirements(new DosFactoresRequirement()));
-            o.AddPolicy(Politicas.SuperUsuario, p => p.RequireRole("SuperUsuario").AddRequirements(new DosFactoresRequirement()));
+            o.AddPolicy(Politicas.Moderador, p => p.RequireRole("Administrador", "SuperUsuario")
+                .AddRequirements(new DosFactoresRequirement(), new MayoriaEdadRequirement()));
+            o.AddPolicy(Politicas.SuperUsuario, p => p.RequireRole("SuperUsuario")
+                .AddRequirements(new DosFactoresRequirement(), new MayoriaEdadRequirement()));
         });
         services.AddSingleton<IAuthorizationHandler, DosFactoresHandler>();
+        services.AddSingleton<IAuthorizationHandler, MayoriaEdadHandler>();
         services.AddSingleton<Microsoft.AspNetCore.Authorization.IAuthorizationMiddlewareResultHandler, ResultadoAutorizacionHandler>();
         return services;
     }

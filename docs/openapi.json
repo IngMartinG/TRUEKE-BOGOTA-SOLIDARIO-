@@ -5308,6 +5308,54 @@
         }
       }
     },
+    "/api/v1/usuarios/yo/fecha-nacimiento": {
+      "put": {
+        "tags": [
+          "Usuarios"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FechaNacimientoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FechaNacimientoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/FechaNacimientoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UsuarioDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/usuarios/yo/empresa": {
       "put": {
         "tags": [
@@ -7163,6 +7211,19 @@
         },
         "additionalProperties": false
       },
+      "FechaNacimientoRequest": {
+        "required": [
+          "fechaNacimiento"
+        ],
+        "type": "object",
+        "properties": {
+          "fechaNacimiento": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "additionalProperties": false
+      },
       "GananciaDto": {
         "type": "object",
         "properties": {
@@ -7193,6 +7254,11 @@
           },
           "aceptoPoliticaDatos": {
             "type": "boolean"
+          },
+          "fechaNacimiento": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
           },
           "codigoDosFactores": {
             "maxLength": 20,
@@ -8693,6 +8759,7 @@
         "required": [
           "clave",
           "correo",
+          "fechaNacimiento",
           "localidad",
           "nombreCompleto"
         ],
@@ -8723,6 +8790,10 @@
             "maxLength": 128,
             "minLength": 8,
             "type": "string"
+          },
+          "fechaNacimiento": {
+            "type": "string",
+            "format": "date"
           },
           "aceptoPoliticaDatos": {
             "type": "boolean"
@@ -9304,6 +9375,11 @@
           },
           "mostrarNit": {
             "type": "boolean"
+          },
+          "fechaNacimiento": {
+            "type": "string",
+            "format": "date",
+            "nullable": true
           }
         },
         "additionalProperties": false

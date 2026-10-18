@@ -31,6 +31,8 @@ public sealed class RegistroRequest
     [RegularExpression(FormatosUbicacion.Municipio, ErrorMessage = "El municipio no es válido.")] public string? MunicipioCodigo { get; init; }
     [Required, EmailAddress, MaxLength(160)] public string Correo { get; init; } = "";
     [Required, StringLength(128, MinimumLength = 8)] public string Clave { get; init; } = "";
+    /// <summary>"yyyy-MM-dd". La plataforma es solo para mayores de 18 años (se valida en el servidor).</summary>
+    [Required(ErrorMessage = "Indica tu fecha de nacimiento.")] public DateOnly? FechaNacimiento { get; init; }
     /// <summary>Ley 1581 de 2012: autorización expresa para el tratamiento de datos personales.</summary>
     [Range(typeof(bool), "true", "true", ErrorMessage = "Debes aceptar la política de tratamiento de datos personales.")]
     public bool AceptoPoliticaDatos { get; init; }
@@ -51,6 +53,8 @@ public sealed class GoogleLoginRequest
     [Required, StringLength(4096, MinimumLength = 20)] public string IdToken { get; init; } = "";
     /// <summary>Obligatorio solo si la cuenta es nueva (Ley 1581).</summary>
     public bool AceptoPoliticaDatos { get; init; }
+    /// <summary>"yyyy-MM-dd". Obligatoria solo si la cuenta es nueva: la plataforma es para mayores de 18 años.</summary>
+    public DateOnly? FechaNacimiento { get; init; }
     /// <summary>Solo si la cuenta tiene verificación en dos pasos: 6 dígitos de la app o un código de recuperación.</summary>
     [MaxLength(20)] public string? CodigoDosFactores { get; init; }
     /// <summary>Código de quien invitó: solo cuenta si con este ingreso se crea la cuenta.</summary>
@@ -99,6 +103,13 @@ public sealed class RestablecerClaveRequest
 {
     [Required, StringLength(100, MinimumLength = 20)] public string Token { get; init; } = "";
     [Required, StringLength(128, MinimumLength = 8)] public string ClaveNueva { get; init; } = "";
+}
+
+/// <summary>Cuentas creadas antes de exigir la mayoría de edad: la registran una sola vez.</summary>
+public sealed class FechaNacimientoRequest
+{
+    /// <summary>"yyyy-MM-dd".</summary>
+    [Required(ErrorMessage = "Indica tu fecha de nacimiento.")] public DateOnly? FechaNacimiento { get; init; }
 }
 
 public sealed class ActualizarPerfilRequest
@@ -470,7 +481,7 @@ public sealed record UsuarioDto(Guid Id, string NombreCompleto, string Localidad
     int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas, int DestacadosGratisRestantes,
     bool CorreoVerificado, bool TieneClave, bool VinculadoGoogle, bool DosFactoresActivo, int CodigosRecuperacionRestantes,
     string MunicipioCodigo, string Municipio, string? NombreComercial, string? Nit, bool TieneDatosFacturacion, string? FotoUrl = null,
-    bool MostrarNit = false);
+    bool MostrarNit = false, DateOnly? FechaNacimiento = null);
 
 public sealed record SesionDto(string Token, DateTime ExpiraUtc, UsuarioDto Usuario);
 

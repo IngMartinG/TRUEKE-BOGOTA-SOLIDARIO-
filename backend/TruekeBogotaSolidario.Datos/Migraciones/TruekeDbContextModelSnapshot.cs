@@ -1461,6 +1461,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<DateTime?>("FechaEliminacion")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateOnly?>("FechaNacimiento")
+                        .HasColumnType("date");
+
                     b.Property<DateTime>("FechaRegistro")
                         .HasColumnType("timestamp with time zone");
 

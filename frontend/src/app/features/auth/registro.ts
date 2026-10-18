@@ -16,13 +16,14 @@ import { CampoClave } from '../../shared/ui/campo-clave';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
 import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { Icono } from '../../shared/ui/icono';
-import { claveSegura } from '../../shared/validadores';
+import { claveSegura, mayorDeEdad } from '../../shared/validadores';
+import { CampoFechaNacimiento } from '../../shared/ui/campo-fecha-nacimiento';
 import { BotonGoogle } from './boton-google';
 import { MarcoAuth } from './marco-auth';
 import { destinoSeguro } from './redireccion';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, CampoAccesible, Icono, BotonGoogle, SelectorMunicipio],
+  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, CampoAccesible, Icono, BotonGoogle, SelectorMunicipio, CampoFechaNacimiento],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-marco-auth [conCaptcha]="true" titulo="Crea tu cuenta" subtitulo="Únete gratis y recibe Eco-Puntos de bienvenida." lema="Cada objeto que circula es un residuo menos en los rellenos sanitarios.">
@@ -64,6 +65,7 @@ import { destinoSeguro } from './redireccion';
           <input id="correo" type="email" class="entrada" formControlName="correo" autocomplete="email" inputmode="email" maxlength="254" aria-describedby="correo-error" />
           <app-error-campo [control]="form.controls.correo" etiqueta="El correo" idError="correo-error" />
         </div>
+        <app-campo-fecha-nacimiento [control]="form.controls.fechaNacimiento" />
         <app-campo-clave [control]="form.controls.clave" autocompletar="new-password" [mostrarRequisitos]="true" />
 
         <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-borde p-3 transition hover:bg-superficie-2"
@@ -88,9 +90,9 @@ import { destinoSeguro } from './redireccion';
         </button>
       </form>
 
-      <app-boton-google texto="signup_with" [deshabilitado]="!aceptoPolitica()" (token)="conGoogle($event)" />
-      @if (!aceptoPolitica()) {
-        <p class="mt-2 text-center text-xs text-tenue">Marca la autorización de datos para continuar con Google.</p>
+      <app-boton-google texto="signup_with" [deshabilitado]="!listoParaGoogle()" (token)="conGoogle($event)" />
+      @if (!listoParaGoogle()) {
+        <p class="mt-2 text-center text-xs text-tenue">Escribe tu fecha de nacimiento y marca la autorización de datos para continuar con Google.</p>
       }
 
       <p class="mt-8 text-center text-sm text-tenue">
@@ -122,10 +124,17 @@ export default class Registro {
     municipioCodigo: [CODIGO_BOGOTA, [Validators.required, Validators.pattern(/^\d{5}$/)]],
     localidad: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
     correo: ['', [Validators.required, Validators.email, Validators.maxLength(254)]],
+    fechaNacimiento: ['', [Validators.required, mayorDeEdad]],
     clave: ['', [Validators.required, claveSegura]],
     aceptoPoliticaDatos: [false, [Validators.requiredTrue]],
   });
   protected readonly aceptoPolitica = toSignal(this.form.controls.aceptoPoliticaDatos.valueChanges, { initialValue: false });
+  private readonly fechaNacimiento = toSignal(this.form.controls.fechaNacimiento.valueChanges, { initialValue: '' });
+  /** Google crea la cuenta sin pasar por el formulario: antes deben estar la fecha (mayor de edad) y la autorización. */
+  protected readonly listoParaGoogle = computed(() => {
+    this.fechaNacimiento();
+    return this.aceptoPolitica() && !!this.form.controls.fechaNacimiento.value && this.form.controls.fechaNacimiento.valid;
+  });
   private readonly municipio = toSignal(this.form.controls.municipioCodigo.valueChanges, { initialValue: CODIGO_BOGOTA });
   protected readonly esBogota = computed(() => this.municipio() === CODIGO_BOGOTA);
 
@@ -156,6 +165,7 @@ export default class Registro {
           localidad: v.localidad.trim(),
           correo: v.correo.trim(),
           clave: v.clave,
+          fechaNacimiento: v.fechaNacimiento,
           aceptoPoliticaDatos: true,
           captchaToken,
           ...this.cuerpoInvitacion(),
@@ -175,7 +185,7 @@ export default class Registro {
     this.enviando.set(true);
     this.error.set(null);
     try {
-      const sesion = await firstValueFrom(this.authApi.google({ idToken, aceptoPoliticaDatos: true, ...this.cuerpoInvitacion() }));
+      const sesion = await firstValueFrom(this.authApi.google({ idToken, aceptoPoliticaDatos: true, fechaNacimiento: this.form.controls.fechaNacimiento.value, ...this.cuerpoInvitacion() }));
       await this.exito(sesion, false);
     } catch (e) {
       const p = problemaDe(e);

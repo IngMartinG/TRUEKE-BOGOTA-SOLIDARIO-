@@ -102,7 +102,7 @@ public class ListaDeDeseosTests : IClassFixture<FabricaApi>
         var r = await _f.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar", new
         {
             nombreCompleto = "Sin Verificar", localidad = "Chapinero", correo = $"sinverif-{Guid.NewGuid():N}@trueke.test",
-            clave = Api.ClaveValida, aceptoPoliticaDatos = true
+            clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true
         });
         Assert.True(r.IsSuccessStatusCode, await r.Content.ReadAsStringAsync());
         var token = (await r.Content.ReadFromJsonAsync<SesionMinDto>())!.Token;
