@@ -252,7 +252,7 @@ const SIN_LANZADOR = /^\/(mensajes\/[^/]+|publicar|publicacion\/[^/]+\/editar)(\
               <span class="sr-only">Tú: </span>{{ t.pregunta }}
             </p>
             @if (t.cargando) {
-              <p class="burbuja flex w-fit gap-1 rounded-2xl rounded-tl-md bg-superficie-2 px-4 py-3" aria-label="Buscando la respuesta">
+              <p class="burbuja flex w-fit gap-1 rounded-2xl rounded-tl-md bg-superficie-2 px-4 py-3" role="status" aria-label="Buscando la respuesta…">
                 <span class="punto size-1.5 rounded-full bg-tenue"></span><span class="punto size-1.5 rounded-full bg-tenue"></span><span class="punto size-1.5 rounded-full bg-tenue"></span>
               </p>
             } @else {
@@ -311,7 +311,7 @@ const SIN_LANZADOR = /^\/(mensajes\/[^/]+|publicar|publicacion\/[^/]+\/editar)(\
             id="asistente-pregunta"
             class="entrada flex-1 rounded-full"
             name="pregunta"
-            placeholder="Ej.: no veo mi recarga"
+            placeholder="Ej.: no veo mi recarga…"
             autocomplete="off"
             enterkeyhint="send"
             maxlength="300"

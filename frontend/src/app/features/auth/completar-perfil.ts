@@ -10,6 +10,7 @@ import { SesionService } from '../../core/sesion.service';
 import { CampoFechaNacimiento } from '../../shared/ui/campo-fecha-nacimiento';
 import { aplicarErroresServidor } from '../../shared/ui/error-campo';
 import { CasillasLegales } from '../../shared/ui/casillas-legales';
+import { EnfocarError } from '../../shared/ui/enfocar-error';
 import { Icono } from '../../shared/ui/icono';
 import { mayorDeEdad } from '../../shared/validadores';
 import { MarcoAuth } from './marco-auth';
@@ -21,7 +22,7 @@ import { destinoSeguro } from './redireccion';
  * cambian). Mientras tanto la API solo deja gestionar la cuenta, exportar o eliminar los datos y radicar PQR.
  */
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, CampoFechaNacimiento, CasillasLegales, Icono],
+  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, CampoFechaNacimiento, CasillasLegales, EnfocarError, Icono],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-marco-auth [titulo]="pideFecha() ? 'Confirma tu mayoría de edad' : 'Actualizamos nuestras condiciones'"
