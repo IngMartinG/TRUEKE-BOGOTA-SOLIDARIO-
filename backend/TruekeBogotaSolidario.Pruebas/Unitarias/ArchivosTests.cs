@@ -1,6 +1,4 @@
-using System.Web;
-using Microsoft.Extensions.Logging.Abstractions;
-using Microsoft.Extensions.Options;
+using System.Text;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Dtos;
@@ -9,7 +7,7 @@ namespace TruekeBogotaSolidario.Pruebas.Unitarias;
 
 public class ArchivosTests
 {
-    private static readonly Uri Contenedor = new("https://cuenta.blob.core.windows.net/imagenes");
+    private static readonly Uri Contenedor = new("https://proyecto.supabase.co/storage/v1/object/public/imagenes");
     private static readonly Guid Yo = Guid.NewGuid();
 
     [Theory]
@@ -54,8 +52,8 @@ public class ArchivosTests
         var otro = ReglasArchivos.NuevoNombre(Guid.NewGuid(), "jpg");
         Assert.Null(ReglasArchivos.AnalizarUrl($"{Contenedor}/{otro}", Contenedor, Yo));                                       // de otro usuario
         Assert.Null(ReglasArchivos.AnalizarUrl($"https://malicioso.example/imagenes/{nombre}", Contenedor, Yo));               // otro host
-        Assert.Null(ReglasArchivos.AnalizarUrl($"https://cuenta.blob.core.windows.net/documentos/{nombre}", Contenedor, Yo));  // otro contenedor
-        Assert.Null(ReglasArchivos.AnalizarUrl($"{Contenedor}/{nombre}?sv=2024&sig=x", Contenedor, Yo));                       // con SAS
+        Assert.Null(ReglasArchivos.AnalizarUrl($"https://proyecto.supabase.co/storage/v1/object/authenticated/documentos/{nombre}", Contenedor, Yo)); // otro bucket
+        Assert.Null(ReglasArchivos.AnalizarUrl($"{Contenedor}/{nombre}?token=x", Contenedor, Yo));                                   // con firma
         Assert.Null(ReglasArchivos.AnalizarUrl($"{Contenedor}/{Yo:N}/../{otro}", Contenedor, Yo));                             // rutas raras
         Assert.Null(ReglasArchivos.AnalizarUrl($"{Contenedor}/{Yo:N}/foto.exe", Contenedor, Yo));
     }
@@ -73,34 +71,51 @@ public class ArchivosTests
     }
 
     [Fact]
-    public void La_CDN_es_opcional_pero_si_se_configura_debe_ser_https_y_tener_cuenta()
+    public void La_CDN_es_opcional_pero_si_se_configura_debe_ser_https_y_tener_Storage()
     {
+        const string storage = "https://proyecto.supabase.co/storage/v1";
         Assert.True(new AlmacenamientoOpciones().CdnValida);
-        Assert.True(new AlmacenamientoOpciones { ServicioUrl = "https://cuenta.blob.core.windows.net", CdnUrl = "https://fotos.trueke.co" }.CdnValida);
-        Assert.False(new AlmacenamientoOpciones { ServicioUrl = "https://cuenta.blob.core.windows.net", CdnUrl = "http://fotos.trueke.co" }.CdnValida);
-        Assert.False(new AlmacenamientoOpciones { ServicioUrl = "https://cuenta.blob.core.windows.net", CdnUrl = "https://fotos.trueke.co/?x=1" }.CdnValida);
-        Assert.False(new AlmacenamientoOpciones { CadenaConexion = "UseDevelopmentStorage=true", CdnUrl = "https://fotos.trueke.co" }.CdnValida);
+        Assert.True(new AlmacenamientoOpciones { Url = storage, CdnUrl = "https://fotos.trueke.co" }.CdnValida);
+        Assert.False(new AlmacenamientoOpciones { Url = storage, CdnUrl = "http://fotos.trueke.co" }.CdnValida);
+        Assert.False(new AlmacenamientoOpciones { Url = storage, CdnUrl = "https://fotos.trueke.co/?x=1" }.CdnValida);
+        Assert.False(new AlmacenamientoOpciones { CdnUrl = "https://fotos.trueke.co" }.CdnValida);
+        Assert.Equal($"{storage}/object/public/", new AlmacenamientoOpciones { Url = storage + "/" }.OrigenPublico);
     }
 
-    /// <summary>Firma real del SDK de Azure con la llave pública del emulador (no hace llamadas de red).</summary>
+    [Theory]
+    [InlineData("https://proyecto.supabase.co/storage/v1", true)]
+    [InlineData("http://127.0.0.1:8082/storage/v1", true)]   // Storage local en Docker
+    [InlineData("http://proyecto.supabase.co/storage/v1", false)] // la llave secreta nunca viaja sin TLS
+    [InlineData("https://proyecto.supabase.co/storage/v1?x=1", false)]
+    [InlineData("https://usuario:clave@proyecto.supabase.co/storage/v1", false)]
+    public void La_URL_de_Storage_es_https_o_local(string url, bool valida)
+        => Assert.Equal(valida, new AlmacenamientoOpciones { Url = url, LlaveServicio = "sb_secret_x" }.UrlValida);
+
     [Fact]
-    public async Task La_SAS_es_de_un_solo_blob_nuevo_en_el_contenedor_privado_de_subidas_y_dura_5_minutos()
+    public void El_vencimiento_de_la_URL_firmada_se_lee_del_token()
     {
-        var opciones = Options.Create(new AlmacenamientoOpciones { CadenaConexion = "UseDevelopmentStorage=true" });
-        var almacen = new AlmacenBlobAzure(opciones, TimeProvider.System, NullLogger<AlmacenBlobAzure>.Instance);
+        static string B64(string s) => Convert.ToBase64String(Encoding.UTF8.GetBytes(s)).TrimEnd('=').Replace('+', '-').Replace('/', '_');
+        var token = $"{B64("{\"alg\":\"HS256\"}")}.{B64("{\"url\":\"subidas/a/b.png\",\"exp\":1792300000}")}.firma";
 
-        var s = await almacen.ConstruirSubidaAsync(Yo, TipoArchivoDto.Imagen, "image/png", "png", CancellationToken.None);
-        var url = new Uri(s.UrlSubida);
-        var q = HttpUtility.ParseQueryString(url.Query);
+        Assert.Equal(DateTimeOffset.FromUnixTimeSeconds(1792300000).UtcDateTime, AlmacenSupabase.Vencimiento(token));
+        Assert.Null(AlmacenSupabase.Vencimiento(null));
+        Assert.Null(AlmacenSupabase.Vencimiento("no-es-un-token"));
+        Assert.Null(AlmacenSupabase.Vencimiento("a.%%%.c"));
+    }
 
-        Assert.Equal("c", q["sp"]);    // solo crear: no puede sobrescribir lo ya subido, ni leer, listar ni borrar
-        Assert.Equal("b", q["sr"]);    // un solo blob
-        var duracion = DateTimeOffset.Parse(q["se"]!) - DateTimeOffset.Parse(q["st"]!);
-        Assert.InRange(duracion.TotalMinutes, 5, 6.1);
-        Assert.Contains($"/subidas/{Yo:N}/", s.UrlArchivo); // privado: lo publicado es siempre una copia del servidor
-        Assert.StartsWith(s.UrlArchivo, s.UrlSubida);
-        Assert.Equal("PUT", s.Metodo);
-        Assert.Equal("BlockBlob", s.Cabeceras["x-ms-blob-type"]);
-        Assert.NotNull(ReglasArchivos.AnalizarUrl(s.UrlArchivo, new Uri(s.UrlArchivo[..s.UrlArchivo.IndexOf($"/{Yo:N}/", StringComparison.Ordinal)]), Yo));
+    [Theory]
+    [InlineData("sb_secret_abc123", false)] // llave nueva: solo en la cabecera apikey
+    [InlineData("eyJhbGciOiJIUzI1NiJ9.eyJyb2xlIjoic2VydmljZV9yb2xlIn0.firma", true)] // service_role antigua (JWT)
+    public void Solo_las_llaves_JWT_van_como_Bearer(string llave, bool jwt) => Assert.Equal(jwt, AlmacenSupabase.EsJwt(llave));
+
+    [Fact]
+    public void Solo_se_reconocen_documentos_con_nombre_del_servidor()
+    {
+        var documentos = new Uri("https://proyecto.supabase.co/storage/v1/object/authenticated/documentos");
+        var nombre = ReglasArchivos.NuevoNombre(Guid.NewGuid(), "pdf");
+        Assert.Equal(nombre, ReglasArchivos.NombreArchivo($"{documentos}/{nombre}", documentos));
+        Assert.Null(ReglasArchivos.NombreArchivo($"{documentos}/{nombre}?token=x", documentos));
+        Assert.Null(ReglasArchivos.NombreArchivo($"{documentos}/../imagenes/{nombre}", documentos));
+        Assert.Null(ReglasArchivos.NombreFotoPublicada($"{Contenedor}/{nombre}", Contenedor)); // un PDF nunca es una foto
     }
 }

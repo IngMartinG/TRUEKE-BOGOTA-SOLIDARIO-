@@ -87,7 +87,7 @@ public sealed class UrlsOpciones
     /// (og:image debe ser absoluta). Vacía = se toma del request (con X-Forwarded-Proto de un proxy confiable).
     /// </summary>
     public string Api { get; set; } = "";
-    /// <summary>Hosts https permitidos para imágenes de publicaciones (p. ej. tucuenta.blob.core.windows.net). Vacío = cualquier https.</summary>
+    /// <summary>Hosts https permitidos para imágenes de publicaciones (p. ej. tuproyecto.supabase.co). Vacío = cualquier https.</summary>
     public List<string> HostsPermitidosImagenes { get; set; } = new();
     /// <summary>Hosts https permitidos para documentos de verificación de identidad.</summary>
     public List<string> HostsPermitidosDocumentos { get; set; } = new();

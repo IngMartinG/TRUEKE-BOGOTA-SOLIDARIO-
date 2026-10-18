@@ -14,7 +14,7 @@ public interface IFotoPerfilService
 }
 
 /// <summary>
-/// Foto de perfil: misma ruta que las fotos de publicaciones (subida directa con SAS, validación de que el archivo es
+/// Foto de perfil: misma ruta que las fotos de publicaciones (subida directa con URL firmada, validación de que el archivo es
 /// del usuario y copia limpia sin GPS ni metadatos). La foto anterior se borra del almacenamiento.
 /// </summary>
 public sealed class FotoPerfilService : IFotoPerfilService

@@ -4,7 +4,7 @@ using TruekeBogotaSolidario.Negocio.Dtos;
 
 namespace TruekeBogotaSolidario.Negocio.Archivos;
 
-/// <summary>Reglas puras (sin Azure) para subir y aceptar archivos. Las usa el almacén real y las pruebas.</summary>
+/// <summary>Reglas puras (sin red) para subir y aceptar archivos. Las usa el almacén real y las pruebas.</summary>
 public static partial class ReglasArchivos
 {
     public const long TamanoMaximoBytes = 5 * 1024 * 1024;
@@ -56,18 +56,24 @@ public static partial class ReglasArchivos
     public static string NuevoNombre(Guid usuarioId, string extension) => $"{usuarioId:N}/{Guid.NewGuid():N}.{extension}";
 
     /// <summary>
-    /// Nombre del blob si <paramref name="url"/> es una foto publicada en <paramref name="contenedor"/> (de cualquier usuario),
+    /// Nombre del archivo si <paramref name="url"/> es una foto publicada en <paramref name="contenedor"/> (de cualquier usuario),
     /// o null. Sirve para leer fotos públicas en el servidor sin seguir URLs arbitrarias (SSRF).
     /// </summary>
     public static string? NombreFotoPublicada(string url, Uri contenedor)
+        => NombreArchivo(url, contenedor) is { } nombre && !nombre.EndsWith(".pdf", StringComparison.Ordinal) ? nombre : null;
+
+    /// <summary>
+    /// Nombre "{usuario}/{aleatorio}.{ext}" si <paramref name="url"/> es un archivo de <paramref name="contenedor"/> (de
+    /// cualquier usuario) con un nombre que asignó el servidor, o null (otro host, otro bucket, query, rutas raras).
+    /// </summary>
+    public static string? NombreArchivo(string url, Uri contenedor)
     {
         if (!Uri.TryCreate(url, UriKind.Absolute, out var u) || !string.IsNullOrEmpty(u.Query) || !string.IsNullOrEmpty(u.Fragment)
             || !string.IsNullOrEmpty(u.UserInfo)) return null;
         var baseContenedor = contenedor.AbsoluteUri.TrimEnd('/') + "/";
         if (!u.AbsoluteUri.StartsWith(baseContenedor, StringComparison.Ordinal)) return null;
         var nombre = u.AbsoluteUri[baseContenedor.Length..];
-        var m = NombreBlob().Match(nombre);
-        return m.Success && m.Groups["ext"].Value != "pdf" ? nombre : null;
+        return NombreBlob().IsMatch(nombre) ? nombre : null;
     }
 
     /// <summary>Sufijo de las miniaturas. El front aplica la misma regla (shared/imagenes.ts → miniatura()).</summary>

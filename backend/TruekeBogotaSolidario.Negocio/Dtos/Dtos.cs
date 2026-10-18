@@ -366,7 +366,7 @@ public enum TipoArchivoDto { Imagen = 1, Documento = 2 }
 
 public sealed class SolicitarSubidaRequest
 {
-    /// <summary>Imagen (publicaciones, contenedor público) o Documento (verificación de identidad, contenedor PRIVADO).</summary>
+    /// <summary>Imagen (publicaciones, bucket público) o Documento (verificación de identidad, bucket PRIVADO).</summary>
     [EnumDataType(typeof(TipoArchivoDto))] public TipoArchivoDto Tipo { get; init; } = TipoArchivoDto.Imagen;
     [Required, StringLength(50)] public string ContentType { get; init; } = "";
     [Range(1, 5 * 1024 * 1024)] public long TamanoBytes { get; init; }
@@ -592,7 +592,7 @@ public sealed record ConversacionDto(Guid Id, Guid SolicitudId, Guid Publicacion
     bool ContraparteEnLinea = false, bool YoBloquee = false);
 
 /// <summary>
-/// Autorización de subida directa a Azure Blob: el navegador hace PUT del archivo a <see cref="UrlSubida"/> con
+/// Autorización de subida directa a Supabase Storage (URL firmada): el navegador hace PUT del archivo a <see cref="UrlSubida"/> con
 /// <see cref="Cabeceras"/> antes de <see cref="ExpiraUtc"/>, y luego envía <see cref="UrlArchivo"/> a la API.
 /// </summary>
 public sealed record SubidaArchivoDto(string UrlSubida, string UrlArchivo, string Metodo, IReadOnlyDictionary<string, string> Cabeceras, DateTime ExpiraUtc);

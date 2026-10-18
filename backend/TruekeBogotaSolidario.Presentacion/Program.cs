@@ -36,8 +36,8 @@ if (esProduccion)
         throw new InvalidOperationException("Database:Provider=InMemory no está permitido en Producción.");
     if (config["Jwt:Key"]?.Contains("CAMBIAR", StringComparison.OrdinalIgnoreCase) == true)
         throw new InvalidOperationException("Jwt:Key es un placeholder. Define una clave real por variable de entorno o gestor de secretos.");
-    if (string.IsNullOrWhiteSpace(config["Almacenamiento:ServicioUrl"]) && string.IsNullOrWhiteSpace(config["Almacenamiento:CadenaConexion"]))
-        throw new InvalidOperationException("Configura Almacenamiento:ServicioUrl (Azure Blob con Managed Identity) para la subida de imágenes.");
+    if (string.IsNullOrWhiteSpace(config["Almacenamiento:Url"]) || string.IsNullOrWhiteSpace(config["Almacenamiento:LlaveServicio"]))
+        throw new InvalidOperationException("Configura Almacenamiento:Url y Almacenamiento:LlaveServicio (Supabase Storage) para la subida de imágenes.");
     if (string.IsNullOrWhiteSpace(config["Seguridad:ClaveCifrado"]))
         throw new InvalidOperationException("Configura Seguridad:ClaveCifrado (32 bytes en base64: openssl rand -base64 32) para cifrar los secretos de 2FA.");
     if (string.IsNullOrWhiteSpace(config["Captcha:ClaveSecreta"]) || string.IsNullOrWhiteSpace(config["Captcha:ClaveSitio"]))
@@ -242,9 +242,9 @@ if (esProduccion)
 {
     // Sin lista de hosts, se acepta CUALQUIER URL https como imagen/documento (píxeles de rastreo que filtran la IP de quien navega).
     if ((config.GetSection("Urls:HostsPermitidosImagenes").Get<string[]>() ?? Array.Empty<string>()).Length == 0)
-        app.Logger.LogWarning("Urls:HostsPermitidosImagenes está vacío: configura el host de Azure Blob Storage (p. ej. tucuenta.blob.core.windows.net).");
+        app.Logger.LogWarning("Urls:HostsPermitidosImagenes está vacío: configura el host de Supabase Storage (p. ej. tuproyecto.supabase.co).");
     if ((config.GetSection("Urls:HostsPermitidosDocumentos").Get<string[]>() ?? Array.Empty<string>()).Length == 0)
-        app.Logger.LogWarning("Urls:HostsPermitidosDocumentos está vacío: configura el host de Azure Blob Storage para los documentos de verificación.");
+        app.Logger.LogWarning("Urls:HostsPermitidosDocumentos está vacío: configura el host de Supabase Storage para los documentos de verificación.");
     if (origenes.Length == 0)
         app.Logger.LogWarning("Cors:Origenes está vacío: el front Angular no podrá llamar a la API desde el navegador.");
     if (!monitoreoActivo)
@@ -302,6 +302,6 @@ app.Run();
 
 public partial class Program
 {
-    /// <summary>1 MB: la API solo recibe JSON pequeño (las imágenes van a Blob Storage, aquí llega su URL).</summary>
+    /// <summary>1 MB: la API solo recibe JSON pequeño (las imágenes van a Supabase Storage, aquí llega su URL).</summary>
     public const long TamanoMaximoCuerpo = 1_048_576;
 }

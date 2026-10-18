@@ -75,7 +75,7 @@ public sealed class PublicacionService : IPublicacionService
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
     /// <summary>
-    /// Cada foto NUEVA debe ser un archivo propio subido con SAS (o, sin almacenamiento, de un host permitido).
+    /// Cada foto NUEVA debe ser un archivo propio subido con URL firmada (o, sin almacenamiento, de un host permitido).
     /// Devuelve la lista final de URLs: las fotos nuevas se reemplazan por su copia limpia (sin GPS ni metadatos).
     /// </summary>
     private async Task<List<string>> ValidarImagenesAsync(Guid actorId, IReadOnlyList<string> imagenes, IEnumerable<string> yaAceptadas)
