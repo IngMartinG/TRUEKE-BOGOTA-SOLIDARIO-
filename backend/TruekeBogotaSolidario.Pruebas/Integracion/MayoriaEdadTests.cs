@@ -71,9 +71,10 @@ public class MayoriaEdadTests : IClassFixture<FabricaApi>
         Assert.Equal(HttpStatusCode.OK, (await cliente.GetAsync("/api/v1/usuarios/yo/datos")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await cliente.GetAsync("/api/v1/notificaciones")).StatusCode);
 
-        // Un menor no pasa; una fecha válida sí, y no se puede cambiar después
+        // Una fecha imposible no pasa (y no marca la cuenta); una válida sí, y no se puede cambiar después.
+        // La fecha de menor de edad deja la cuenta en revisión: ver Cuenta_existente_que_declara_ser_menor_queda_en_revision.
         Assert.Equal(HttpStatusCode.BadRequest,
-            (await cliente.PutAsJsonAsync("/api/v1/usuarios/yo/fecha-nacimiento", new { fechaNacimiento = Hoy(-10) })).StatusCode);
+            (await cliente.PutAsJsonAsync("/api/v1/usuarios/yo/fecha-nacimiento", new { fechaNacimiento = Hoy(sumarDias: 1) })).StatusCode);
         var registrar = await cliente.PutAsJsonAsync("/api/v1/usuarios/yo/fecha-nacimiento", new { fechaNacimiento = "1985-03-02" });
         Assert.Equal(HttpStatusCode.OK, registrar.StatusCode);
         Assert.Equal(HttpStatusCode.BadRequest,
@@ -92,5 +93,103 @@ public class MayoriaEdadTests : IClassFixture<FabricaApi>
         var perfil = await _f.CreateClient().GetStringAsync($"/api/v1/usuarios/{ses.Usuario.Id}/perfil");
         Assert.DoesNotContain("1990-05-20", perfil);
         Assert.DoesNotContain("nacimiento", perfil, StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>Cuenta creada antes de la regla (sin fecha de nacimiento), con una publicación activa, y su sesión.</summary>
+    private async Task<(HttpClient Cliente, Guid UsuarioId, string Correo, Guid PublicacionId)> CuentaAntiguaAsync(string nombre)
+    {
+        var ses = await Api.RegistrarSesionAsync(_f, nombre);
+        var pub = await Api.CrearPublicacionAsync(Api.ConToken(_f, ses.Token));
+        using (var scope = _f.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<TruekeDbContext>();
+            var u = await db.Usuarios.SingleAsync(x => x.Id == ses.Usuario.Id);
+            db.Entry(u).Property(x => x.FechaNacimiento).CurrentValue = null;
+            await db.SaveChangesAsync();
+        }
+        return (await IngresarAsync(ses.Usuario.Correo), ses.Usuario.Id, ses.Usuario.Correo, pub);
+    }
+
+    private async Task<HttpClient> IngresarAsync(string correo)
+    {
+        var login = await _f.CreateClient().PostAsJsonAsync("/api/v1/auth/login", new { correo, clave = Api.ClaveValida });
+        return Api.ConToken(_f, (await login.Content.ReadFromJsonAsync<SesionMinDto>())!.Token);
+    }
+
+    private static async Task<string?> CodigoAsync(HttpResponseMessage r)
+        => (await r.Content.ReadFromJsonAsync<JsonElement>()).TryGetProperty("codigo", out var c) ? c.GetString() : null;
+
+    [Fact]
+    public async Task Cuenta_existente_que_declara_ser_menor_queda_en_revision()
+    {
+        var (cliente, id, correo, pub) = await CuentaAntiguaAsync("menor");
+
+        // Primer intento con fecha de menor: 403 con código estable, y la fecha no se guarda
+        var menor = await cliente.PutAsJsonAsync("/api/v1/usuarios/yo/fecha-nacimiento", new { fechaNacimiento = Hoy(-15) });
+        Assert.Equal(HttpStatusCode.Forbidden, menor.StatusCode);
+        Assert.Equal("menor_de_edad_detectado", await CodigoAsync(menor));
+
+        // La marca invalida el token vigente (dice "edad pendiente"): el front refresca y recibe uno con "edad menor"
+        Assert.Equal(HttpStatusCode.Unauthorized, (await cliente.GetAsync("/api/v1/usuarios/yo")).StatusCode);
+        var nueva = await IngresarAsync(correo);
+
+        // El reintento con una fecha adulta también responde 403: ya no se puede "corregir" para pasar el filtro
+        var adulta = await nueva.PutAsJsonAsync("/api/v1/usuarios/yo/fecha-nacimiento", new { fechaNacimiento = "1990-01-01" });
+        Assert.Equal(HttpStatusCode.Forbidden, adulta.StatusCode);
+        Assert.Equal("menor_de_edad_detectado", await CodigoAsync(adulta));
+
+        using (var scope = _f.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<TruekeDbContext>();
+            var u = await db.Usuarios.AsNoTracking().SingleAsync(x => x.Id == id);
+            Assert.NotNull(u.MenorDetectadoUtc);
+            Assert.Null(u.FechaNacimiento);
+            Assert.True((await db.Publicaciones.AsNoTracking().SingleAsync(p => p.Id == pub)).EstaOculta); // fuera del catálogo
+        }
+
+        // La moderación recibe el aviso y la encuentra con el filtro
+        var super = Api.ConToken(_f, await Api.LoginAsync(_f, FabricaApi.CorreoSuper, FabricaApi.ClaveSuper));
+        var avisos = await super.GetStringAsync("/api/v1/notificaciones");
+        Assert.Contains("MenorDetectado", avisos);
+        Assert.Contains(id.ToString(), avisos);
+        var lista = await super.GetFromJsonAsync<JsonElement>("/api/v1/admin/usuarios?soloMenorDetectado=true&tamano=50");
+        var fila = lista.GetProperty("items").EnumerateArray().Single(i => i.GetProperty("id").GetGuid() == id);
+        Assert.NotEqual(JsonValueKind.Null, fila.GetProperty("menorDetectadoUtc").ValueKind);
+
+        // Lo demás responde el código nuevo; habeas data y PQRS siguen funcionando
+        var bloqueada = await nueva.GetAsync("/api/v1/usuarios/yo/bloqueados");
+        Assert.Equal(HttpStatusCode.Forbidden, bloqueada.StatusCode);
+        Assert.Equal("menor_de_edad_detectado", await CodigoAsync(bloqueada));
+        Assert.True((await nueva.GetFromJsonAsync<JsonElement>("/api/v1/usuarios/yo")).GetProperty("menorDetectado").GetBoolean());
+        Assert.Contains("\"menorDetectado\":true", await nueva.GetStringAsync("/api/v1/usuarios/yo/datos"));
+        Assert.Equal(HttpStatusCode.Created, (await nueva.PostAsJsonAsync("/api/v1/pqr",
+            new { tipo = "Consulta", asunto = "Quiero borrar mis datos", descripcion = "Por favor eliminen mi cuenta y mis datos." })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await nueva.PostAsJsonAsync("/api/v1/usuarios/yo/eliminar", new { confirmacion = "ELIMINAR", clave = Api.ClaveValida })).StatusCode);
+    }
+
+    [Fact]
+    public async Task La_moderacion_descarta_la_marca_si_fue_un_error_y_la_cuenta_registra_su_fecha()
+    {
+        var (cliente, id, correo, pub) = await CuentaAntiguaAsync("digito");
+        Assert.Equal(HttpStatusCode.Forbidden,
+            (await cliente.PutAsJsonAsync("/api/v1/usuarios/yo/fecha-nacimiento", new { fechaNacimiento = Hoy(-12) })).StatusCode);
+
+        var super = Api.ConToken(_f, await Api.LoginAsync(_f, FabricaApi.CorreoSuper, FabricaApi.ClaveSuper));
+        Assert.Equal(HttpStatusCode.BadRequest,
+            (await super.PostAsJsonAsync($"/api/v1/admin/usuarios/{id}/descartar-menor", new { motivo = "" })).StatusCode);
+        var descartar = await super.PostAsJsonAsync($"/api/v1/admin/usuarios/{id}/descartar-menor",
+            new { motivo = "Envió su cédula por PQRS: digitó mal el año." });
+        Assert.Equal(HttpStatusCode.OK, descartar.StatusCode);
+        Assert.Equal(JsonValueKind.Null, (await descartar.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("menorDetectadoUtc").ValueKind);
+        using (var scope = _f.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<TruekeDbContext>();
+            Assert.False((await db.Publicaciones.AsNoTracking().SingleAsync(p => p.Id == pub)).EstaOculta);
+        }
+
+        var nueva = await IngresarAsync(correo);
+        Assert.Equal(HttpStatusCode.OK,
+            (await nueva.PutAsJsonAsync("/api/v1/usuarios/yo/fecha-nacimiento", new { fechaNacimiento = "1991-07-30" })).StatusCode);
     }
 }

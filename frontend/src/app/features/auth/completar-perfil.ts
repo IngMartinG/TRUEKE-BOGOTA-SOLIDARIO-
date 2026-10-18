@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
@@ -20,11 +20,41 @@ import { destinoSeguro } from './redireccion';
  * Lo que una cuenta debe completar antes de seguir: la fecha de nacimiento (cuentas creadas antes de pedirla; la plataforma
  * es solo para mayores de 18 años) y la aceptación de las versiones vigentes de la política de datos y los términos (cuando
  * cambian). Mientras tanto la API solo deja gestionar la cuenta, exportar o eliminar los datos y radicar PQR.
+ *
+ * Si una cuenta existente declara una fecha de menor de edad, queda en revisión (403 "menor_de_edad_detectado") y ya no
+ * puede intentarlo con otra fecha: la pantalla lo explica y deja solo la privacidad de sus datos, la PQRS y salir. Como no
+ * tiene vuelta atrás, la fecha de menor se envía solo después de confirmarla.
  */
 @Component({
   imports: [ReactiveFormsModule, RouterLink, MarcoAuth, CampoFechaNacimiento, CasillasLegales, EnfocarError, Icono],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    @if (enRevision()) {
+      <app-marco-auth titulo="Tu cuenta está en revisión"
+        subtitulo="Trueke Bogotá Solidario es solo para personas mayores de 18 años y la fecha que registraste es de una persona menor de edad."
+        lema="Intercambios entre personas adultas que se hacen responsables de lo que acuerdan.">
+        <div class="space-y-5">
+          <div class="flex items-start gap-2 rounded-xl bg-tierra-50 p-3 text-sm text-tierra-700 dark:bg-tierra-700/20 dark:text-tierra-100" role="alert">
+            <app-icono nombre="alerta" [tamano]="18" class="mt-0.5 shrink-0" />
+            <span>
+              Ocultamos tus publicaciones y nuestro equipo revisará la cuenta. Mientras tanto no puedes publicar, intercambiar ni
+              registrar otra fecha.
+            </span>
+          </div>
+          <ul class="space-y-3 text-sm">
+            <li>
+              <a routerLink="/cuenta/privacidad" class="enlace font-semibold">Privacidad y datos</a>:
+              descarga una copia de tus datos o elimina tu cuenta cuando quieras.
+            </li>
+            <li>
+              <a routerLink="/cuenta/soporte" class="enlace font-semibold">Crear una PQRS</a>:
+              si fue un error al escribir la fecha, cuéntanos y lo revisamos.
+            </li>
+          </ul>
+          <button type="button" class="btn btn-fantasma w-full" (click)="salir()">Salir de mi cuenta</button>
+        </div>
+      </app-marco-auth>
+    } @else {
     <app-marco-auth [titulo]="pideFecha() ? 'Confirma tu mayoría de edad' : 'Actualizamos nuestras condiciones'"
       [subtitulo]="pideFecha()
         ? 'Trueke Bogotá Solidario es solo para personas mayores de 18 años. Registra tu fecha de nacimiento una sola vez para seguir.'
@@ -41,10 +71,16 @@ import { destinoSeguro } from './redireccion';
         @if (esMenor()) {
           <div class="flex items-start gap-2 rounded-xl bg-tierra-50 p-3 text-sm text-tierra-700 dark:bg-tierra-700/20 dark:text-tierra-100" role="alert">
             <app-icono nombre="alerta" [tamano]="18" class="mt-0.5 shrink-0" />
-            <span>
-              Si eres menor de edad no puedes usar la plataforma. Puedes descargar o eliminar tu cuenta y tus datos en
-              <a routerLink="/cuenta/privacidad" class="enlace">Privacidad y datos</a>.
-            </span>
+            <div class="space-y-3">
+              <p>
+                Revisa la fecha: es de una persona menor de edad. Si es correcta, no puedes usar la plataforma y, al confirmarla,
+                tu cuenta queda en revisión y ya no podrás cambiarla. Puedes descargar o eliminar tus datos en
+                <a routerLink="/cuenta/privacidad" class="enlace">Privacidad y datos</a>.
+              </p>
+              <button type="button" class="btn btn-secundario btn-sm" [disabled]="enviando()" (click)="confirmarFechaDeMenor()">
+                La fecha es correcta
+              </button>
+            </div>
           </div>
         }
         @if (error()) {
@@ -65,6 +101,7 @@ import { destinoSeguro } from './redireccion';
         <button type="button" class="btn btn-fantasma w-full" (click)="salir()">Salir de mi cuenta</button>
       </form>
     </app-marco-auth>
+    }
   `,
 })
 export default class CompletarPerfil {
@@ -78,6 +115,9 @@ export default class CompletarPerfil {
   protected readonly enviando = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly esMenor = signal(false);
+  /** La cuenta declaró una fecha de menor (ahora o antes): ya no se pide la fecha. */
+  private readonly marcadaAhora = signal(false);
+  protected readonly enRevision = computed(() => this.marcadaAhora() || this.sesion.usuario()?.menorDetectado === true);
 
   /** Se calcula una vez al entrar: al guardar la fecha no debe desaparecer el campo mientras se envía. */
   protected readonly pideFecha = signal(!this.sesion.mayoriaEdadConfirmada());
@@ -117,11 +157,38 @@ export default class CompletarPerfil {
     } catch (e) {
       if (!aplicarErroresServidor(this.form.controls, erroresDeCampos(e))) {
         const p = problemaDe(e);
-        if (p.title?.includes('mayores de 18')) this.esMenor.set(true);
+        if (p.codigo === 'menor_de_edad_detectado') await this.marcarEnRevision();
+        else if (p.title?.includes('mayores de 18')) this.esMenor.set(true);
         else this.error.set(p.title ?? 'No pudimos guardar los datos. Inténtalo de nuevo.');
       }
     } finally {
       this.enviando.set(false);
+    }
+  }
+
+  /** Envía la fecha de menor ya confirmada: la API deja la cuenta en revisión y responde 403 "menor_de_edad_detectado". */
+  protected async confirmarFechaDeMenor(): Promise<void> {
+    this.enviando.set(true);
+    this.error.set(null);
+    try {
+      await firstValueFrom(this.cuentaApi.registrarFechaNacimiento({ fechaNacimiento: this.form.controls.fechaNacimiento.value }));
+    } catch (e) {
+      const p = problemaDe(e);
+      if (p.codigo === 'menor_de_edad_detectado') await this.marcarEnRevision();
+      else this.error.set(p.title ?? 'No pudimos guardar los datos. Inténtalo de nuevo.');
+    } finally {
+      this.enviando.set(false);
+    }
+  }
+
+  /** La marca cambia la sesión en el servidor: se pide un token nuevo y el perfil actualizado. */
+  private async marcarEnRevision(): Promise<void> {
+    this.marcadaAhora.set(true);
+    try {
+      await firstValueFrom(this.sesion.refrescar());
+      this.sesion.actualizarUsuario(await firstValueFrom(this.cuentaApi.yo()));
+    } catch {
+      // La pantalla ya muestra la cuenta en revisión.
     }
   }
 

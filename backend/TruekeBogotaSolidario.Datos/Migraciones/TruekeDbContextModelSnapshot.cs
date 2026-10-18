@@ -1506,6 +1506,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(60)
                         .HasColumnType("character varying(60)");
 
+                    b.Property<DateTime?>("MenorDetectadoUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("MostrarNit")
                         .HasColumnType("boolean");
 

@@ -205,6 +205,7 @@ export interface paths {
                 query?: {
                     Texto?: string;
                     SoloSuspendidos?: boolean;
+                    SoloMenorDetectado?: boolean;
                     Pagina?: number;
                     Tamano?: number;
                 };
@@ -258,6 +259,51 @@ export interface paths {
                     "application/json": components["schemas"]["SuspenderUsuarioRequest"];
                     "text/json": components["schemas"]["SuspenderUsuarioRequest"];
                     "application/*+json": components["schemas"]["SuspenderUsuarioRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["UsuarioAdminDto"];
+                        "application/json": components["schemas"]["UsuarioAdminDto"];
+                        "text/json": components["schemas"]["UsuarioAdminDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/usuarios/{usuarioId}/descartar-menor": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    usuarioId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["DescartarMenorRequest"];
+                    "text/json": components["schemas"]["DescartarMenorRequest"];
+                    "application/*+json": components["schemas"]["DescartarMenorRequest"];
                 };
             };
             responses: {
@@ -5489,6 +5535,9 @@ export interface components {
             codigo?: string;
             nombre?: string;
         };
+        DescartarMenorRequest: {
+            motivo: string;
+        };
         DeseoDto: {
             /** Format: uuid */
             id?: string;
@@ -6386,6 +6435,8 @@ export interface components {
             calificacionPromedio?: number | null;
             /** Format: int32 */
             totalCalificaciones?: number;
+            /** Format: date-time */
+            menorDetectadoUtc?: string | null;
         };
         UsuarioAdminDtoPaginaDto: {
             items?: components["schemas"]["UsuarioAdminDto"][];
@@ -6438,6 +6489,7 @@ export interface components {
             nombreRealPendiente?: boolean;
             politicaDatosVersion?: string | null;
             terminosVersion?: string | null;
+            menorDetectado?: boolean;
         };
         VerificacionPendienteDto: {
             /** Format: uuid */
@@ -6505,6 +6557,7 @@ export type DenunciaCreadaDto = components['schemas']['DenunciaCreadaDto'];
 export type DenunciaExportDto = components['schemas']['DenunciaExportDto'];
 export type DenunciaRecibidaDto = components['schemas']['DenunciaRecibidaDto'];
 export type DepartamentoDto = components['schemas']['DepartamentoDto'];
+export type DescartarMenorRequest = components['schemas']['DescartarMenorRequest'];
 export type DeseoDto = components['schemas']['DeseoDto'];
 export type DeseoPublicoDto = components['schemas']['DeseoPublicoDto'];
 export type EcoPuntosResumenDto = components['schemas']['EcoPuntosResumenDto'];

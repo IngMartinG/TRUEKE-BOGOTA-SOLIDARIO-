@@ -32,6 +32,8 @@ public static class TiposNotificacion
     public const string DenunciaRecibida = "DenunciaRecibida";
     public const string ApelacionResuelta = "ApelacionResuelta";
     public const string EntregaConfirmada = "EntregaConfirmada";
+    /// <summary>La moderación revisó la cuenta en revisión por mayoría de edad y descartó la marca.</summary>
+    public const string CuentaRevisada = "CuentaRevisada";
     public const string IntercambioCompletado = "IntercambioCompletado";
     /// <summary>Invita y ganan los dos: a ambos, cuando la persona invitada completa su primer intercambio.</summary>
     public const string InvitacionRecompensada = "InvitacionRecompensada";
@@ -48,6 +50,8 @@ public static class TiposNotificacion
     public const string AlertaPagoEnRevision = "AlertaPagoEnRevision";
     public const string PqrNueva = "PqrNueva";
     public const string ApelacionNueva = "ApelacionNueva";
+    /// <summary>Una cuenta existente declaró una fecha de menor de edad (RecursoId = UsuarioId): revisarla.</summary>
+    public const string MenorDetectado = "MenorDetectado";
 }
 
 /// <summary>Carga mínima: el front pide el detalle al API (con su JWT) si lo necesita. Nunca datos de terceros.</summary>

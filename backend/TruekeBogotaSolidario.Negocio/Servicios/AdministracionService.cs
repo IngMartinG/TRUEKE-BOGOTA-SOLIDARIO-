@@ -22,6 +22,11 @@ public interface IAdministracionService
     /// <summary>Un Administrador suspende Clientes; solo un SuperUsuario suspende Administradores; a un SuperUsuario no se le suspende.</summary>
     Task<UsuarioAdminDto> SuspenderAsync(Guid actorId, Guid usuarioId, string motivo, int? dias);
     Task<UsuarioAdminDto> ReactivarAsync(Guid actorId, Guid usuarioId);
+    /// <summary>
+    /// La cuenta declaró una fecha de menor de edad pero se comprobó que fue un error de digitación: puede registrar su fecha
+    /// de nuevo y sus publicaciones vuelven al catálogo. Si de verdad es menor, se suspende (y la persona puede eliminar sus datos).
+    /// </summary>
+    Task<UsuarioAdminDto> DescartarMenorDetectadoAsync(Guid actorId, Guid usuarioId, string motivo);
     Task<PaginaDto<PagoAdminDto>> ListarPagosAsync(Guid actorId, EstadoPagoDto estado, int pagina, int tamano);
     // Facturación y PQR (Administrador y SuperUsuario)
     Task<PaginaDto<FacturaAdminDto>> ListarFacturasAsync(Guid actorId, EstadoFacturaDto estado, int pagina, int tamano);
@@ -85,7 +90,8 @@ public sealed class AdministracionService : IAdministracionService
     public static UsuarioAdminDto AUsuarioAdmin(Usuario u, DateTime ahora)
         => new(u.Id, u.NombreCompleto, u.Correo, u.Localidad, u.Rol.ToString(), u.FechaRegistro, u.CorreoVerificado,
             u.EstadoVerificacion.ToString(), u.SuspensionVigente(ahora), u.SuspensionVigente(ahora) ? u.SuspendidoHasta : null,
-            u.SuspensionVigente(ahora) ? u.MotivoSuspension : null, u.DosFactoresActivo, u.Reputacion, u.CalificacionPromedio, u.CalificacionesTotal);
+            u.SuspensionVigente(ahora) ? u.MotivoSuspension : null, u.DosFactoresActivo, u.Reputacion, u.CalificacionPromedio, u.CalificacionesTotal,
+            u.MenorDetectadoUtc);
 
     private static PagoAdminDto APagoAdmin(Pago p)
         => new(p.Referencia, p.UsuarioId, p.Concepto.ToString(), p.MontoCop, p.PuntosCanjeados, p.Estado.ToString(), p.FechaUtc,
@@ -94,7 +100,7 @@ public sealed class AdministracionService : IAdministracionService
     public async Task<PaginaDto<UsuarioAdminDto>> BuscarUsuariosAsync(Guid actorId, BuscarUsuariosRequest r)
     {
         await ExigirRolAsync(actorId, RolUsuarioEnum.Administrador);
-        var (items, total) = await _usuarios.BuscarAsync(r.Texto, r.SoloSuspendidos, r.Pagina, r.Tamano);
+        var (items, total) = await _usuarios.BuscarAsync(r.Texto, r.SoloSuspendidos, r.Pagina, r.Tamano, r.SoloMenorDetectado);
         var ahora = Ahora;
         return new PaginaDto<UsuarioAdminDto>(items.Select(u => AUsuarioAdmin(u, ahora)).ToList(), total, Math.Max(r.Pagina, 1), Math.Clamp(r.Tamano, 1, 50));
     }
@@ -129,6 +135,20 @@ public sealed class AdministracionService : IAdministracionService
             new[] { $"Tu cuenta fue suspendida {hasta}.", $"Motivo: {u.MotivoSuspension}" },
             pie: "Si crees que es un error, responde a este correo y lo revisaremos."));
         return AUsuarioAdmin(u, ahora);
+    }
+
+    public async Task<UsuarioAdminDto> DescartarMenorDetectadoAsync(Guid actorId, Guid usuarioId, string motivo)
+    {
+        var (_, u) = await CargarParaModerarCuentaAsync(actorId, usuarioId);
+        u.DescartarMenorDetectado();
+        foreach (var p in await _pubs.ListarActivasParaActualizarAsync(u.Id))
+            if (p.EstaOculta && p.MotivoOcultamiento == AuthService.MotivoOcultamientoMenor) p.Mostrar();
+        Auditar(actorId, "MENOR_DETECTADO_DESCARTADO", "Usuario", u.Id, motivo.Trim());
+        await _uow.GuardarCambiosAsync();
+        _sesiones.Invalidar(u.Id);
+        await _notificador.NotificarAsync(u.Id, TiposNotificacion.CuentaRevisada,
+            "Revisamos tu cuenta: ya puedes registrar tu fecha de nacimiento de nuevo.");
+        return AUsuarioAdmin(u, Ahora);
     }
 
     public async Task<UsuarioAdminDto> ReactivarAsync(Guid actorId, Guid usuarioId)

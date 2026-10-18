@@ -57,6 +57,11 @@ public sealed class AdministracionController : ControllerBase
     public async Task<ActionResult<UsuarioAdminDto>> Suspender(Guid usuarioId, [FromBody] SuspenderUsuarioRequest r)
         => Ok(await _admin.SuspenderAsync(User.IdActual(), usuarioId, r.Motivo, r.Dias));
 
+    /// <summary>La cuenta declaró una fecha de menor de edad por error (comprobado por la moderación): puede registrarla de nuevo.</summary>
+    [HttpPost("usuarios/{usuarioId:guid}/descartar-menor"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<UsuarioAdminDto>> DescartarMenor(Guid usuarioId, [FromBody] DescartarMenorRequest r)
+        => Ok(await _admin.DescartarMenorDetectadoAsync(User.IdActual(), usuarioId, r.Motivo));
+
     [HttpPost("usuarios/{usuarioId:guid}/reactivar"), Authorize(Policy = Politicas.Moderador)]
     public async Task<ActionResult<UsuarioAdminDto>> Reactivar(Guid usuarioId) => Ok(await _admin.ReactivarAsync(User.IdActual(), usuarioId));
 

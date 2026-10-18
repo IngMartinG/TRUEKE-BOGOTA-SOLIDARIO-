@@ -43,7 +43,8 @@ public sealed class GeneradorJwt : IGeneradorToken
             ["sv"] = usuario.VersionSeguridad,
             ["amr"] = conDosFactores ? "mfa" : "pwd", // método de autenticación (RFC 8176)
             // Mayoría de edad registrada: sin esto la API solo deja completar el perfil, gestionar la cuenta y radicar PQR.
-            ["edad"] = usuario.MayoriaEdadConfirmada ? "ok" : "pendiente",
+            // "menor": declaró una fecha de menor de edad y la cuenta está en revisión (mismas exenciones que "pendiente").
+            ["edad"] = usuario.MayoriaEdadConfirmada ? "ok" : usuario.MenorDetectado ? "menor" : "pendiente",
             // Aceptó las versiones vigentes de la política de datos y los términos: si cambian, debe aceptarlas de nuevo.
             ["legal"] = usuario.LegalAlDia(_legal.VersionPoliticaDatos, _legal.VersionTerminos) ? "ok" : "pendiente",
             ["jti"] = Guid.NewGuid().ToString("N"),

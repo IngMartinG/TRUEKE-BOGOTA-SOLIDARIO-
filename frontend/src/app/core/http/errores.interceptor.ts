@@ -29,9 +29,10 @@ export const erroresInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
-      if (problema.codigo === 'fecha_nacimiento_requerida' || problema.codigo === 'terminos_desactualizados') {
+      if (problema.codigo === 'fecha_nacimiento_requerida' || problema.codigo === 'terminos_desactualizados'
+        || problema.codigo === 'menor_de_edad_detectado') {
         // Cuenta anterior a la regla, o con una versión vieja de la política o los términos: se lleva (una sola vez, sin
-        // repetir avisos) a completar lo que falta.
+        // repetir avisos) a completar lo que falta. Si declaró una fecha de menor, esa pantalla muestra la cuenta en revisión.
         if (!router.url.startsWith('/completar-perfil'))
           void router.navigate(['/completar-perfil'], { queryParams: { volver: router.url } });
         return throwError(() => error);

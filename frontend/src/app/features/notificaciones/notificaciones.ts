@@ -22,6 +22,8 @@ function destino(n: NotificacionDto): { icono: string; color: string; ruta: unkn
     return { icono: t === 'CalificacionRecibida' ? 'estrella' : 'checkCirculo', color: 'bg-sol-100 text-sol-600 dark:bg-sol-500/20 dark:text-sol-300', ruta: ['/intercambios'] };
   if (t === 'AlertaPagoEnRevision') return { icono: 'alerta', color: 'bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100', ruta: ['/admin/pagos'] };
   if (t === 'PqrNueva') return { icono: 'soporte', color: 'bg-agua-100 text-agua-700 dark:bg-agua-700/30 dark:text-agua-100', ruta: ['/admin/pqr'] };
+  if (t === 'MenorDetectado') return { icono: 'alerta', color: 'bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100', ruta: ['/admin/usuarios'], query: { menor: '1' } };
+  if (t === 'CuentaRevisada') return { icono: 'checkCirculo', color: 'bg-bosque-100 text-bosque-700 dark:bg-bosque-900 dark:text-bosque-200', ruta: ['/completar-perfil'] };
   if (t === 'ApelacionNueva') return { icono: 'balanza', color: 'bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100', ruta: ['/admin/apelaciones'] };
   if (t === 'DenunciaRecibida' || t === 'ApelacionResuelta')
     return { icono: 'balanza', color: 'bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100', ruta: ['/cuenta/reportes'], ...(n.recursoId ? { query: { r: n.recursoId } } : {}) };

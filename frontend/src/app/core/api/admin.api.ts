@@ -28,10 +28,12 @@ import { HttpApi, seg } from './http-api';
 export class AdminApi {
   private readonly api = inject(HttpApi);
 
-  usuarios = (texto: string, soloSuspendidos: boolean, pagina = 1, tamano = 20) =>
+  usuarios = (texto: string, soloSuspendidos: boolean, pagina = 1, tamano = 20, soloMenorDetectado = false) =>
     this.api.get<UsuarioAdminDtoPaginaDto>('/admin/usuarios', {
-      params: { texto, soloSuspendidos: soloSuspendidos || undefined, pagina, tamano },
+      params: { texto, soloSuspendidos: soloSuspendidos || undefined, soloMenorDetectado: soloMenorDetectado || undefined, pagina, tamano },
     });
+  descartarMenor = (id: string, motivo: string) =>
+    this.api.post<UsuarioAdminDto>(`/admin/usuarios/${seg(id)}/descartar-menor`, { motivo });
   suspender = (id: string, motivo: string, dias: number | null) =>
     this.api.post<UsuarioAdminDto>(`/admin/usuarios/${seg(id)}/suspender`, { motivo, dias });
   reactivar = (id: string) => this.api.post<UsuarioAdminDto>(`/admin/usuarios/${seg(id)}/reactivar`);

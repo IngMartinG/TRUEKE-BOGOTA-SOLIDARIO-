@@ -21,6 +21,7 @@ public static class Guardas
         if (!u.CorreoVerificado)
             throw new AccesoDenegadoException("Verifica tu correo para realizar esta acción. Revisa tu bandeja de entrada o solicita un nuevo enlace.");
         // Defensa en profundidad: la API ya lo exige en la autorización (claim "edad").
+        if (u.MenorDetectado) throw new MenorDeEdadDetectadoException();
         if (!u.MayoriaEdadConfirmada) throw new MayoriaEdadRequeridaException();
         // Sin nombre y apellido reales (nombre provisional de Google o guardado antes de la regla) solo se explora.
         if (u.NombreRealPendiente) throw new NombreRealRequeridoException();

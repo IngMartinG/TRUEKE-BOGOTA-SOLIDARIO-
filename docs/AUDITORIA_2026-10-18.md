@@ -22,7 +22,7 @@ Cada corrección va en su propio PR. Lo que necesita una decisión del dueño, d
 | 2 | Media | Un fragmento JS que no carga hacía fallar el ingreso ("Ocurrió un error inesperado") | **Corregido** en #155 |
 | 3 | Media | La PQRS pública reenviaba a cualquier correo el texto escrito por quien la radicaba | **Corregido** en #156 |
 | 4 | Media | Al enviar un formulario con errores, el foco no iba al primer campo inválido (WCAG 3.3.1 y 2.4.3) | **Corregido** en #157 |
-| 5 | Media | Una cuenta antigua que declara una fecha de menor de edad puede reintentar con otra fecha | Pendiente: decisión del dueño |
+| 5 | Media | Una cuenta antigua que declara una fecha de menor de edad puede reintentar con otra fecha | **Corregido** en #160 |
 | 6 | Media-baja | La PQRS pública comparte el límite por IP con el ingreso y avisa a la moderación sin tope global | **Corregido** en #159 |
 | 7 | Baja | Cambiar el rol de una cuenta devolvía su fecha de nacimiento | **Corregido** en #156 |
 | 8 | Baja | Facturas de administración sin `aria-invalid`; correctores ortográficos en correos y códigos; el indicador "buscando" del asistente no se anunciaba | **Corregido** en #157 |
@@ -86,6 +86,8 @@ Solo la pantalla de publicar llevaba el foco al campo con error.
 `PUT /auth/yo/fecha-nacimiento` rechaza una fecha de menor y no la guarda, pero la persona puede volver a intentarlo con otra fecha. La política dice que si se detecta un menor, la cuenta se suprime.
 
 **Propuesta:** al primer intento con una fecha de menor en una cuenta **existente**, marcar la cuenta para revisión y no aceptar más intentos. La persona conserva la exportación y la eliminación de sus datos. Necesita una migración y la decisión del dueño sobre qué pasa con sus publicaciones y su saldo.
+
+**Corrección (decisión del dueño: marcar y revisar):** el primer intento marca la cuenta (`MenorDetectadoUtc`), no guarda la fecha, oculta sus publicaciones activas y avisa a la moderación. Los reintentos responden 403 `menor_de_edad_detectado`. Conserva la sesión, la exportación y la eliminación de sus datos y la PQRS. El saldo queda congelado. La moderación descarta la marca si comprueba un error de digitación, con el motivo en la auditoría, o suspende la cuenta.
 
 ### 6. Límites de la PQRS pública (media-baja, pendiente)
 `POST /pqr/publica` usa la misma política de límite por IP que el ingreso (10 por minuto). Desde una IP compartida, como una universidad o una red móvil con NAT, el abuso de un tercero puede dejar sin ingreso a los demás. Además, cada radicación avisa a todos los moderadores.

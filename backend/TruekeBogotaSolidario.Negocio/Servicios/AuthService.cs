@@ -56,9 +56,9 @@ public sealed class AuthService : IAuthService
         ISesionService sesiones, IOptions<SeguridadOpciones> seg, IOptions<LegalOpciones> legal, CorreosCuenta correos,
         ICorreoSaliente salida, IValidadorGoogle google, IVerificadorCaptcha captcha, VerificadorDosFactores dosFactores,
         TimeProvider reloj, ILogger<AuthService> log, IImportadorFotoPerfil importadorFoto, ISuscripcionPushRepository suscripcionesPush,
-        ConfirmadorIdentidad confirmador)
+        ConfirmadorIdentidad confirmador, IPublicacionRepository publicaciones, INotificador notificador)
     {
-        _confirmador = confirmador;
+        _confirmador = confirmador; _publicaciones = publicaciones; _notificador = notificador;
         _usuarios = usuarios; _refrescos = refrescos; _uow = uow; _emisor = emisor; _sesiones = sesiones; _seg = seg.Value;
         _legal = legal.Value; _correos = correos; _salida = salida; _google = google; _captcha = captcha; _dosFactores = dosFactores;
         _reloj = reloj; _log = log; _importadorFoto = importadorFoto; _suscripcionesPush = suscripcionesPush;
@@ -66,6 +66,11 @@ public sealed class AuthService : IAuthService
 
     private readonly IImportadorFotoPerfil _importadorFoto;
     private readonly ISuscripcionPushRepository _suscripcionesPush;
+    private readonly IPublicacionRepository _publicaciones;
+    private readonly INotificador _notificador;
+
+    /// <summary>Motivo con que se ocultan las publicaciones de una cuenta en revisión por mayoría de edad.</summary>
+    public const string MotivoOcultamientoMenor = "Cuenta en revisión por mayoría de edad.";
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
@@ -306,10 +311,34 @@ public sealed class AuthService : IAuthService
     public async Task<UsuarioDto> RegistrarFechaNacimientoAsync(Guid actorId, FechaNacimientoRequest r)
     {
         var u = await CargarAsync(actorId);
-        u.RegistrarFechaNacimiento(r.FechaNacimiento!.Value, Usuario.HoyEnColombia(Ahora));
+        if (u.MenorDetectado) throw new MenorDeEdadDetectadoException();
+        var fecha = r.FechaNacimiento!.Value;
+        if (!u.MayoriaEdadConfirmada && Usuario.EsFechaDeMenor(fecha, Usuario.HoyEnColombia(Ahora)))
+        {
+            await MarcarMenorDetectadoAsync(u);
+            throw new MenorDeEdadDetectadoException();
+        }
+        u.RegistrarFechaNacimiento(fecha, Usuario.HoyEnColombia(Ahora));
         await _uow.GuardarCambiosAsync();
         _log.LogInformation("Mayoría de edad registrada {UsuarioId}", u.Id);
         return Mapeos.AUsuarioDto(u, Ahora);
+    }
+
+    /// <summary>
+    /// La política dice que una cuenta de menor se suprime: aquí queda marcada (sin más intentos con otra fecha), sus
+    /// publicaciones activas se ocultan y la moderación la revisa. La fecha declarada no se guarda (minimización).
+    /// </summary>
+    private async Task MarcarMenorDetectadoAsync(Usuario u)
+    {
+        u.MarcarMenorDetectado(Ahora);
+        foreach (var p in await _publicaciones.ListarActivasParaActualizarAsync(u.Id))
+            if (!p.EstaOculta) p.Ocultar(MotivoOcultamientoMenor);
+        await _uow.GuardarCambiosAsync();
+        _sesiones.Invalidar(u.Id);
+        _log.LogWarning("Cuenta {UsuarioId} en revisión: declaró una fecha de menor de edad", u.Id);
+        foreach (var moderador in await _usuarios.ListarIdsModeradoresAsync())
+            await _notificador.NotificarAsync(moderador, TiposNotificacion.MenorDetectado,
+                "Una cuenta declaró una fecha de menor de edad: revísala en Usuarios.", u.Id);
     }
 
     public async Task<UsuarioDto> AceptarLegalAsync(Guid actorId, AceptarLegalRequest r)

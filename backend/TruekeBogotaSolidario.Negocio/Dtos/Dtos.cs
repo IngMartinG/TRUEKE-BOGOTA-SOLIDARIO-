@@ -519,6 +519,12 @@ public sealed class EliminarCuentaRequest
 }
 
 // ---------------- Administración ----------------
+/// <summary>Cómo se comprobó que la fecha de menor fue un error (queda en la auditoría).</summary>
+public sealed class DescartarMenorRequest
+{
+    [Required, StringLength(300, MinimumLength = 3), TextoLimpio] public string Motivo { get; init; } = "";
+}
+
 public sealed class SuspenderUsuarioRequest
 {
     [Required, StringLength(300, MinimumLength = 3)] public string Motivo { get; init; } = "";
@@ -530,6 +536,8 @@ public sealed class BuscarUsuariosRequest
 {
     [MaxLength(100)] public string? Texto { get; init; }
     public bool SoloSuspendidos { get; init; }
+    /// <summary>Solo las cuentas en revisión porque declararon una fecha de menor de edad.</summary>
+    public bool SoloMenorDetectado { get; init; }
     [Range(1, 10_000)] public int Pagina { get; init; } = 1;
     [Range(1, 50)] public int Tamano { get; init; } = 20;
 }
@@ -563,7 +571,7 @@ public sealed record UsuarioDto(Guid Id, string NombreCompleto, string Localidad
     bool CorreoVerificado, bool TieneClave, bool VinculadoGoogle, bool DosFactoresActivo, int CodigosRecuperacionRestantes,
     string MunicipioCodigo, string Municipio, string? NombreComercial, string? Nit, bool TieneDatosFacturacion, string? FotoUrl = null,
     bool MostrarNit = false, DateOnly? FechaNacimiento = null, bool NombreRealPendiente = false,
-    string? PoliticaDatosVersion = null, string? TerminosVersion = null);
+    string? PoliticaDatosVersion = null, string? TerminosVersion = null, bool MenorDetectado = false);
 
 public sealed record SesionDto(string Token, DateTime ExpiraUtc, UsuarioDto Usuario);
 
@@ -693,7 +701,7 @@ public sealed record SubidaArchivoDto(string UrlSubida, string UrlArchivo, strin
 /// <summary>Vista de administración (incluye el correo: solo la reciben moderadores).</summary>
 public sealed record UsuarioAdminDto(Guid Id, string NombreCompleto, string Correo, string Localidad, string Rol, DateTime FechaRegistro,
     bool CorreoVerificado, string EstadoVerificacion, bool Suspendido, DateTime? SuspendidoHasta, string? MotivoSuspension,
-    bool DosFactoresActivo, decimal Reputacion, decimal? CalificacionPromedio, int TotalCalificaciones);
+    bool DosFactoresActivo, decimal Reputacion, decimal? CalificacionPromedio, int TotalCalificaciones, DateTime? MenorDetectadoUtc = null);
 
 public sealed record PagoAdminDto(string Referencia, Guid UsuarioId, string Concepto, int MontoCop, int PuntosCanjeados, string Estado,
     DateTime FechaUtc, DateTime? FechaResolucionUtc, string? ProveedorTransaccionId, string? NotaInterna);

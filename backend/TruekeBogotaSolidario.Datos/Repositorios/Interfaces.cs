@@ -58,7 +58,7 @@ public interface IUsuarioRepository
     Task<IReadOnlyList<Usuario>> ObtenerPorVerificacionAsync(EstadoVerificacion estado);
     Task<int> ContarPorRolAsync(RolUsuarioEnum rol);
     /// <summary>Búsqueda para administración por nombre o correo (contiene). Más recientes primero.</summary>
-    Task<(IReadOnlyList<Usuario> Items, int Total)> BuscarAsync(string? texto, bool soloSuspendidos, int pagina, int tamano);
+    Task<(IReadOnlyList<Usuario> Items, int Total)> BuscarAsync(string? texto, bool soloSuspendidos, int pagina, int tamano, bool soloMenorDetectado = false);
     /// <summary>Consulta ligera (sin tracking) para validar sesiones JWT. Null si el usuario no existe.</summary>
     Task<int?> ObtenerVersionSeguridadAsync(Guid id);
     void Agregar(Usuario usuario);
