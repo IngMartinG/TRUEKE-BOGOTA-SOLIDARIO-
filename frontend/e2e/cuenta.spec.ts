@@ -13,7 +13,8 @@ test('cuenta nueva: registro, correo de verificación, foto obligatoria y primer
     await page.getByLabel('Correo electrónico').fill(correo);
     await page.getByLabel('Fecha de nacimiento').fill('1990-05-20');
     await page.getByLabel('Contraseña', { exact: true }).fill(CLAVE);
-    await page.getByRole('checkbox').check();
+    await page.getByRole('checkbox', { name: /Autorizo el tratamiento/ }).check();
+    await page.getByRole('checkbox', { name: /Acepto los términos/ }).check();
     await page.getByRole('button', { name: 'Crear mi cuenta' }).click();
     await expect(page.getByRole('heading', { name: 'Confirma tu correo' })).toBeVisible();
   });

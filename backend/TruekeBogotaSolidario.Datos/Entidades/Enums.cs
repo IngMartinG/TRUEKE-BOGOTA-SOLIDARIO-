@@ -34,9 +34,11 @@ public enum TipoDocumentoFiscal { CC = 1, CE = 2, NIT = 3, Pasaporte = 4 }
 public enum EstadoFactura { Pendiente = 1, Emitida = 2, Anulada = 3, Reemplazada = 4 }
 
 /// <summary>PQR (Ley 1480 de 2011 y Ley 1755 de 2015). Retracto y ReversionPago se asocian a un pago propio.</summary>
-public enum TipoPqr { Peticion = 1, Queja = 2, Reclamo = 3, Sugerencia = 4, Retracto = 5, ReversionPago = 6 }
+/// <summary>Consulta = acceso a los datos personales (Ley 1581, art. 14: 10 días hábiles); las demás, 15 días hábiles.</summary>
+public enum TipoPqr { Peticion = 1, Queja = 2, Reclamo = 3, Sugerencia = 4, Retracto = 5, ReversionPago = 6, Consulta = 7 }
 
-public enum EstadoPqr { Abierta = 1, Respondida = 2 }
+/// <summary>EnTramite: el equipo ya la está revisando (se le avisa a quien la radicó).</summary>
+public enum EstadoPqr { Abierta = 1, Respondida = 2, EnTramite = 3 }
 
 /// <summary>Por qué cambió el saldo de Eco-Puntos (historial de la persona).</summary>
 public enum ConceptoEcoPuntos

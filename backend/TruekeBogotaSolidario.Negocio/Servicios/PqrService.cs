@@ -17,6 +17,10 @@ public interface IPqrService
 {
     Task<PqrDto> CrearAsync(Guid actorId, CrearPqrRequest r);
     Task<IReadOnlyList<PqrDto>> ListarMiasAsync(Guid actorId);
+    /// <summary>Canal público, sin cuenta: captcha, límite diario por correo y acuse con el radicado al correo.</summary>
+    Task<PqrDto> CrearPublicaAsync(CrearPqrPublicaRequest r);
+    /// <summary>Estado de una PQRS pública con su radicado y el correo con que se radicó (si no coinciden: 404 genérico).</summary>
+    Task<PqrDto> ConsultarAsync(ConsultarPqrRequest r);
 }
 
 public sealed class PqrService : IPqrService
@@ -28,14 +32,15 @@ public sealed class PqrService : IPqrService
     private readonly INotificador _notificador;
     private readonly ICorreoSaliente _correo;
     private readonly LegalOpciones _legal;
+    private readonly IVerificadorCaptcha _captcha;
     private readonly TimeProvider _reloj;
     private readonly ILogger<PqrService> _log;
 
     public PqrService(IPqrRepository pqrs, IPagoRepository pagos, IUsuarioRepository usuarios, IUnidadDeTrabajo uow, INotificador notificador,
-        ICorreoSaliente correo, IOptions<LegalOpciones> legal, TimeProvider reloj, ILogger<PqrService> log)
+        ICorreoSaliente correo, IOptions<LegalOpciones> legal, IVerificadorCaptcha captcha, TimeProvider reloj, ILogger<PqrService> log)
     {
         _pqrs = pqrs; _pagos = pagos; _usuarios = usuarios; _uow = uow; _notificador = notificador; _correo = correo;
-        _legal = legal.Value; _reloj = reloj; _log = log;
+        _legal = legal.Value; _captcha = captcha; _reloj = reloj; _log = log;
     }
 
     public async Task<PqrDto> CrearAsync(Guid actorId, CrearPqrRequest r)
@@ -67,19 +72,52 @@ public sealed class PqrService : IPqrService
         _pqrs.Agregar(pqr);
         await _uow.GuardarCambiosAsync();
         _log.LogInformation("PQR {Radicado} ({Tipo}) creada por {UsuarioId}", pqr.Radicado, pqr.Tipo, actorId);
+        await AvisarRadicadoAsync(pqr, u.Correo, Mapeos.NombrePublico(u.NombreCompleto));
+        return Mapeos.APqrDto(pqr);
+    }
 
-        _correo.Encolar(PlantillaCorreo.Crear(u.Correo, $"Recibimos tu solicitud {pqr.Radicado}",
-            $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:",
+    public async Task<PqrDto> CrearPublicaAsync(CrearPqrPublicaRequest r)
+    {
+        await _captcha.ExigirAsync(r.CaptchaToken, AccionesCaptcha.Pqr);
+        var ahora = _reloj.GetUtcNow().UtcDateTime;
+        var correo = Usuario.NormalizarCorreo(r.Correo);
+        if (await _pqrs.ContarPublicasDelCorreoDesdeAsync(correo, ahora.AddDays(-1)) >= Limites.MaxPqrPorDia)
+            throw new ReglaDeNegocioException("Ya enviaste varias solicitudes hoy desde este correo. Te responderemos pronto.");
+        var pqr = Pqr.CrearPublica(r.Nombre, correo, (TipoPqr)(int)r.Tipo, r.Asunto, r.Descripcion, ahora);
+        _pqrs.Agregar(pqr);
+        await _uow.GuardarCambiosAsync();
+        _log.LogInformation("PQR pública {Radicado} ({Tipo}) radicada", pqr.Radicado, pqr.Tipo);
+        await AvisarRadicadoAsync(pqr, correo, pqr.NombreSolicitante!.Split(' ')[0]);
+        return Mapeos.APqrDto(pqr);
+    }
+
+    public async Task<PqrDto> ConsultarAsync(ConsultarPqrRequest r)
+    {
+        await _captcha.ExigirAsync(r.CaptchaToken, AccionesCaptcha.Pqr);
+        var pqr = await _pqrs.ObtenerPorRadicadoAsync(r.Radicado.Trim().ToUpperInvariant());
+        // Mismo mensaje si no existe o si el correo no coincide: no se revela qué radicados existen.
+        if (pqr is null || pqr.CorreoSolicitante is null || pqr.CorreoSolicitante != Usuario.NormalizarCorreo(r.Correo))
+            throw new NoEncontradoException("No encontramos una solicitud con ese radicado y ese correo.");
+        return Mapeos.APqrDto(pqr);
+    }
+
+    /// <summary>Acuse con el radicado y la fecha límite al correo de quien la radicó, y aviso al equipo de moderación.</summary>
+    private async Task AvisarRadicadoAsync(Pqr pqr, string correo, string nombre)
+    {
+        _correo.Encolar(PlantillaCorreo.Crear(correo, $"Recibimos tu solicitud {pqr.Radicado}",
+            $"Hola {nombre}:",
             new[]
             {
-                $"Radicamos tu {Etiqueta(tipo).ToLowerInvariant()} con el número {pqr.Radicado}.",
+                $"Radicamos tu {Etiqueta(pqr.Tipo).ToLowerInvariant()} con el número {pqr.Radicado}.",
                 $"Asunto: {pqr.Asunto}",
-                $"Te responderemos a más tardar el {pqr.FechaLimiteUtc:yyyy-MM-dd} ({Pqr.DiasHabilesRespuesta} días hábiles)."
+                $"Te responderemos a más tardar el {pqr.FechaLimiteUtc.AddHours(-5):yyyy-MM-dd} ({Pqr.DiasHabilesPara(pqr.Tipo)} días hábiles).",
+                pqr.UsuarioId is null
+                    ? "Puedes consultar el estado en la página de PQRS con este radicado y tu correo."
+                    : "Puedes ver el estado en tu cuenta, en Soporte y PQR."
             },
             pie: string.IsNullOrWhiteSpace(_legal.CorreoContacto) ? null : $"También puedes escribirnos a {_legal.CorreoContacto}."));
         foreach (var moderador in await _usuarios.ListarIdsModeradoresAsync())
-            await _notificador.NotificarAsync(moderador, TiposNotificacion.PqrNueva, $"Nueva {Etiqueta(tipo).ToLowerInvariant()} {pqr.Radicado}: {pqr.Asunto}", pqr.Id);
-        return Mapeos.APqrDto(pqr);
+            await _notificador.NotificarAsync(moderador, TiposNotificacion.PqrNueva, $"Nueva {Etiqueta(pqr.Tipo).ToLowerInvariant()} {pqr.Radicado}: {pqr.Asunto}", pqr.Id);
     }
 
     public async Task<IReadOnlyList<PqrDto>> ListarMiasAsync(Guid actorId)
@@ -93,6 +131,7 @@ public sealed class PqrService : IPqrService
         TipoPqr.Sugerencia => "Sugerencia",
         TipoPqr.Retracto => "Solicitud de retracto",
         TipoPqr.ReversionPago => "Solicitud de reversión del pago",
+        TipoPqr.Consulta => "Consulta sobre tus datos personales",
         _ => t.ToString()
     };
 }

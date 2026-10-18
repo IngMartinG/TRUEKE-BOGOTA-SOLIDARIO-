@@ -103,7 +103,7 @@ public class AntiFarmeoTests
         using var e = new EntornoNegocio();
         var r = await e.EnScopeAsync<IAuthService, ResultadoAutenticacion>(a => a.RegistrarAsync(new RegistroRequest
         {
-            NombreCompleto = "Sin Verificar", Localidad = "Kennedy", Correo = $"nuevo{Guid.NewGuid():N}@t.co", Clave = "Clave12345", FechaNacimiento = new DateOnly(1990, 5, 20), AceptoPoliticaDatos = true
+            NombreCompleto = "Sin Verificar", Localidad = "Kennedy", Correo = $"nuevo{Guid.NewGuid():N}@t.co", Clave = "Clave12345", FechaNacimiento = new DateOnly(1990, 5, 20), AceptoPoliticaDatos = true, AceptoTerminos = true
         }));
         var id = r.Sesion.Usuario.Id;
         Assert.Equal(0, r.Sesion.Usuario.SaldoEcoPuntos);
@@ -123,7 +123,7 @@ public class AntiFarmeoTests
         using var e = new EntornoNegocio();
         RegistroRequest Registro(string correo) => new()
         {
-            NombreCompleto = "Persona Prueba", Localidad = "Kennedy", Correo = correo, Clave = "Clave12345", FechaNacimiento = new DateOnly(1990, 5, 20), AceptoPoliticaDatos = true
+            NombreCompleto = "Persona Prueba", Localidad = "Kennedy", Correo = correo, Clave = "Clave12345", FechaNacimiento = new DateOnly(1990, 5, 20), AceptoPoliticaDatos = true, AceptoTerminos = true
         };
         await e.EnScopeAsync<IAuthService, ResultadoAutenticacion>(a => a.RegistrarAsync(Registro(original)));
         var ex = await Assert.ThrowsAsync<ReglaDeNegocioException>(() =>
@@ -141,7 +141,7 @@ public class AntiFarmeoTests
         using var e = new EntornoNegocio();
         var ex = await Assert.ThrowsAsync<ReglaDeNegocioException>(() => e.EnScopeAsync<IAuthService, ResultadoAutenticacion>(a => a.RegistrarAsync(new RegistroRequest
         {
-            NombreCompleto = "Farmer Falso", Localidad = "Kennedy", Correo = "x123@mailinator.com", Clave = "Clave12345", FechaNacimiento = new DateOnly(1990, 5, 20), AceptoPoliticaDatos = true
+            NombreCompleto = "Farmer Falso", Localidad = "Kennedy", Correo = "x123@mailinator.com", Clave = "Clave12345", FechaNacimiento = new DateOnly(1990, 5, 20), AceptoPoliticaDatos = true, AceptoTerminos = true
         })));
         Assert.Contains("desechables", ex.Message);
     }

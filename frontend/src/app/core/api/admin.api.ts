@@ -74,6 +74,7 @@ export class AdminApi {
 
   pqr = (estado: EstadoPqrDto, pagina = 1, tamano = 20) =>
     this.api.get<PqrAdminDtoPaginaDto>('/admin/pqr', { params: { estado, pagina, tamano } });
+  pqrEnTramite = (id: string) => this.api.post<PqrAdminDto>(`/admin/pqr/${seg(id)}/en-tramite`, {});
   responderPqr = (id: string, respuesta: string) =>
     this.api.post<PqrAdminDto>(`/admin/pqr/${seg(id)}/responder`, { respuesta }, { silencioso: true });
 

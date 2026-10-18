@@ -21,11 +21,13 @@ public sealed class GeneradorJwt : IGeneradorToken
 {
     private static readonly byte[] CabeceraB64 = Encoding.UTF8.GetBytes("{\"alg\":\"HS256\",\"typ\":\"JWT\"}");
     private readonly JwtOpciones _jwt;
+    private readonly LegalOpciones _legal;
     private readonly TimeProvider _reloj;
 
-    public GeneradorJwt(IOptions<JwtOpciones> jwt, TimeProvider reloj)
+    public GeneradorJwt(IOptions<JwtOpciones> jwt, IOptions<LegalOpciones> legal, TimeProvider reloj)
     {
         _jwt = jwt.Value;
+        _legal = legal.Value;
         _reloj = reloj;
     }
 
@@ -42,6 +44,8 @@ public sealed class GeneradorJwt : IGeneradorToken
             ["amr"] = conDosFactores ? "mfa" : "pwd", // método de autenticación (RFC 8176)
             // Mayoría de edad registrada: sin esto la API solo deja completar el perfil, gestionar la cuenta y radicar PQR.
             ["edad"] = usuario.MayoriaEdadConfirmada ? "ok" : "pendiente",
+            // Aceptó las versiones vigentes de la política de datos y los términos: si cambian, debe aceptarlas de nuevo.
+            ["legal"] = usuario.LegalAlDia(_legal.VersionPoliticaDatos, _legal.VersionTerminos) ? "ok" : "pendiente",
             ["jti"] = Guid.NewGuid().ToString("N"),
             ["iss"] = _jwt.Issuer,
             ["aud"] = _jwt.Audience,

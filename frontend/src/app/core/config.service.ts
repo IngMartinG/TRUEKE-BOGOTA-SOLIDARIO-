@@ -23,6 +23,8 @@ export class ConfigService {
   readonly pagosDePrueba = computed(() => this._config().pagosDePrueba === true);
   /** Llave pública VAPID para las notificaciones push (null = apagadas en el servidor). */
   readonly pushClavePublica = computed(() => this._config().pushClavePublica ?? null);
+  /** Versiones vigentes de la política y los términos, y datos del responsable del tratamiento (null si la API no respondió). */
+  readonly legal = computed(() => this._config().legal ?? null);
 
   async cargar(): Promise<void> {
     try {

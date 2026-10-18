@@ -29,13 +29,21 @@ export const TIPOS_DOCUMENTO: readonly { valor: TipoDocumentoFiscalDto; etiqueta
 
 export const TIPOS_PQR: readonly { valor: TipoPqrDto; etiqueta: string; descripcion: string; conPago: boolean }[] = [
   { valor: 'Peticion', etiqueta: 'Petición', descripcion: 'Solicitar información o un trámite.', conPago: false },
+  { valor: 'Consulta', etiqueta: 'Consulta de mis datos', descripcion: 'Saber qué datos personales tenemos y cómo los usamos (respuesta en 10 días hábiles).', conPago: false },
   { valor: 'Queja', etiqueta: 'Queja', descripcion: 'Inconformidad con la atención o el comportamiento de alguien.', conPago: false },
-  { valor: 'Reclamo', etiqueta: 'Reclamo', descripcion: 'Un servicio pagado no funcionó como se ofreció.', conPago: false },
+  { valor: 'Reclamo', etiqueta: 'Reclamo', descripcion: 'Un servicio pagado no funcionó como se ofreció, o quieres corregir o suprimir tus datos.', conPago: false },
   { valor: 'Sugerencia', etiqueta: 'Sugerencia', descripcion: 'Una idea para mejorar la plataforma.', conPago: false },
   { valor: 'Retracto', etiqueta: 'Retracto', descripcion: 'Desistir de una compra dentro de los 5 días hábiles siguientes (Ley 1480, art. 47).', conPago: true },
   { valor: 'ReversionPago', etiqueta: 'Reversión del pago', descripcion: 'Pago no autorizado, fraude o servicio no prestado (Ley 1480, art. 51).', conPago: true },
 ];
 export const etiquetaPqr = (t: string | null | undefined) => TIPOS_PQR.find((x) => x.valor === t)?.etiqueta ?? t ?? '';
+/** Estado de una PQRS para mostrar, con su insignia. */
+export const estadoPqr = (e: string | null | undefined): { texto: string; clase: string } =>
+  e === 'Respondida'
+    ? { texto: 'Respondida', clase: 'insignia-trueke' }
+    : e === 'EnTramite'
+      ? { texto: 'En trámite', clase: 'insignia-agua' }
+      : { texto: 'Recibida', clase: 'insignia-sol' };
 
 export const ETIQUETA_CONCEPTO: Record<string, string> = {
   Destacar: 'Destacar publicación',

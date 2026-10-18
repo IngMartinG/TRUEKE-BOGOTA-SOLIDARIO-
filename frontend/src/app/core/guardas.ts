@@ -39,15 +39,16 @@ export const exigirCuentaCompleta: CanActivateFn = (ruta, estado) => {
 };
 
 /** Páginas que una cuenta sin fecha de nacimiento sí puede abrir: registrarla, leer lo legal, pedir ayuda y sus datos. */
-const LIBRES_SIN_FECHA = ['/completar-perfil', '/privacidad', '/terminos', '/accesibilidad', '/ayuda', '/cuenta/privacidad', '/cuenta/soporte', '/verificar-correo', '/verifica-tu-correo'];
+const LIBRES_SIN_FECHA = ['/completar-perfil', '/privacidad', '/terminos', '/accesibilidad', '/ayuda', '/pqrs', '/cuenta/privacidad', '/cuenta/soporte', '/verificar-correo', '/verifica-tu-correo'];
 
 /**
- * Se aplica a TODAS las rutas: con sesión pero sin la mayoría de edad registrada (cuentas creadas antes de pedirla),
- * solo se puede completar el perfil. Sin sesión no hace nada (el catálogo es público).
+ * Se aplica a TODAS las rutas: con sesión pero sin la mayoría de edad registrada (cuentas creadas antes de pedirla) o sin
+ * aceptar las versiones vigentes de la política y los términos, solo se puede completar el perfil. Sin sesión no hace nada
+ * (el catálogo es público).
  */
 export const exigirMayoriaEdad: CanActivateFn = (_ruta, estado) => {
   const sesion = inject(SesionService);
-  if (!sesion.autenticado() || !sesion.usuario() || sesion.mayoriaEdadConfirmada()) return true;
+  if (!sesion.autenticado() || !sesion.usuario() || (sesion.mayoriaEdadConfirmada() && !sesion.legalPendiente())) return true;
   const ruta = estado.url.split(/[?#]/)[0] ?? '';
   if (LIBRES_SIN_FECHA.some((r) => ruta === r || ruta.startsWith(`${r}/`))) return true;
   return inject(Router).createUrlTree(['/completar-perfil'], { queryParams: { volver: estado.url } });

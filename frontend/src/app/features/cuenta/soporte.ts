@@ -3,7 +3,7 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { etiquetaPqr, TIPOS_PQR, type TipoPqrDto } from '../../api/tipos';
+import { estadoPqr, etiquetaPqr, TIPOS_PQR, type TipoPqrDto } from '../../api/tipos';
 import { CuentaApi } from '../../core/api/cuenta.api';
 import { AvisosService } from '../../core/avisos.service';
 import { erroresDeCampos, mensajeDe } from '../../core/http/problema';
@@ -19,7 +19,8 @@ import { Icono } from '../../shared/ui/icono';
   template: `
     <h1 class="text-2xl font-extrabold">Soporte y PQR</h1>
     <p class="mt-1 text-tenue">
-      Peticiones, quejas, reclamos y sugerencias. Te entregamos un número de radicado y respondemos por escrito en máximo 15 días hábiles.
+      Peticiones, quejas, reclamos, sugerencias y consultas sobre tus datos. Te entregamos un número de radicado y respondemos por escrito
+      en máximo 10 días hábiles las consultas de datos y en 15 lo demás.
     </p>
 
     <form [formGroup]="form" (ngSubmit)="enviar()" class="tarjeta mt-6 space-y-5 p-6" novalidate>
@@ -72,7 +73,7 @@ import { Icono } from '../../shared/ui/icono';
           <li class="tarjeta p-5">
             <div class="flex flex-wrap items-center justify-between gap-2">
               <p class="font-semibold">{{ p.asunto }}</p>
-              <span [class]="p.estado === 'Respondida' ? 'insignia-trueke' : 'insignia-sol'">{{ p.estado === 'Respondida' ? 'Respondida' : 'En trámite' }}</span>
+              <span [class]="estadoDe(p.estado).clase">{{ estadoDe(p.estado).texto }}</span>
             </div>
             <p class="mt-1 text-xs text-tenue">{{ etiqueta(p.tipo) }} · Radicado <span class="font-mono">{{ p.radicado }}</span> · {{ p.fechaUtc | fecha }}
               @if (p.estado !== 'Respondida') { · respuesta a más tardar el {{ p.fechaLimiteUtc | fecha }} }
@@ -97,6 +98,7 @@ export default class Soporte {
   private readonly ruta = inject(ActivatedRoute);
   protected readonly tipos = TIPOS_PQR;
   protected readonly etiqueta = etiquetaPqr;
+  protected readonly estadoDe = estadoPqr;
   protected readonly enviando = signal(false);
   protected readonly mias = rxResource({ stream: () => this.api.misPqr() });
 

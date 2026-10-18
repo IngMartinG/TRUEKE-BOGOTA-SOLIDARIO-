@@ -33,7 +33,7 @@ public class CaptchaIntegracionTests : IClassFixture<FabricaApi>
         });
 
     private static object Registro(string correo, string? captcha)
-        => new { nombreCompleto = "Captcha Prueba", localidad = "Suba", correo, clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true, captchaToken = captcha };
+        => new { nombreCompleto = "Captcha Prueba", localidad = "Suba", correo, clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true, aceptoTerminos = true, captchaToken = captcha };
 
     [Fact]
     public async Task Registro_login_y_olvide_clave_exigen_captcha_valido_de_su_accion()
@@ -61,6 +61,6 @@ public class CaptchaIntegracionTests : IClassFixture<FabricaApi>
         var cfg = JsonDocument.Parse(texto).RootElement;
         Assert.Equal("clave-publica-de-sitio", cfg.GetProperty("captchaClaveSitio").GetString());
         Assert.Equal(5, cfg.GetProperty("maxImagenesPorPublicacion").GetInt32());
-        Assert.Equal("2026-10", cfg.GetProperty("versionPoliticaDatos").GetString());
+        Assert.Equal("2026-10-18", cfg.GetProperty("versionPoliticaDatos").GetString());
     }
 }

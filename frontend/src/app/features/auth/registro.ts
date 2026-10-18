@@ -18,12 +18,13 @@ import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { Icono } from '../../shared/ui/icono';
 import { claveSegura, localidad, mayorDeEdad, nombreCompleto } from '../../shared/validadores';
 import { CampoFechaNacimiento } from '../../shared/ui/campo-fecha-nacimiento';
+import { CasillasLegales } from '../../shared/ui/casillas-legales';
 import { BotonGoogle } from './boton-google';
 import { MarcoAuth } from './marco-auth';
 import { destinoSeguro } from './redireccion';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, CampoAccesible, Icono, BotonGoogle, SelectorMunicipio, CampoFechaNacimiento],
+  imports: [ReactiveFormsModule, RouterLink, MarcoAuth, CampoClave, ErrorCampo, CampoAccesible, Icono, BotonGoogle, SelectorMunicipio, CampoFechaNacimiento, CasillasLegales],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <app-marco-auth [conCaptcha]="true" titulo="Crea tu cuenta" subtitulo="Únete gratis y recibe Eco-Puntos de bienvenida." lema="Cada objeto que circula es un residuo menos en los rellenos sanitarios.">
@@ -68,16 +69,7 @@ import { destinoSeguro } from './redireccion';
         <app-campo-fecha-nacimiento [control]="form.controls.fechaNacimiento" />
         <app-campo-clave [control]="form.controls.clave" autocompletar="new-password" [mostrarRequisitos]="true" />
 
-        <label class="flex cursor-pointer items-start gap-3 rounded-xl border border-borde p-3 transition hover:bg-superficie-2"
-          [class.!border-tierra-500]="form.controls.aceptoPoliticaDatos.invalid && form.controls.aceptoPoliticaDatos.touched">
-          <input type="checkbox" class="casilla mt-0.5" formControlName="aceptoPoliticaDatos" aria-describedby="politica-error" />
-          <span class="text-sm">
-            Autorizo el tratamiento de mis datos personales según la
-            <a routerLink="/privacidad" target="_blank" class="enlace">política de tratamiento de datos<span class="sr-only"> (abre otra pestaña)</span></a> y acepto los
-            <a routerLink="/terminos" target="_blank" class="enlace">términos de uso<span class="sr-only"> (abre otra pestaña)</span></a>.
-          </span>
-        </label>
-        <app-error-campo [control]="form.controls.aceptoPoliticaDatos" idError="politica-error" />
+        <app-casillas-legales [datos]="form.controls.aceptoPoliticaDatos" [terminos]="form.controls.aceptoTerminos" prefijo="registro" />
 
         @if (error()) {
           <div class="flex items-start gap-2 rounded-xl bg-tierra-50 p-3 text-sm text-tierra-700 dark:bg-tierra-700/20 dark:text-tierra-100" role="alert">
@@ -92,7 +84,7 @@ import { destinoSeguro } from './redireccion';
 
       <app-boton-google texto="signup_with" [deshabilitado]="!listoParaGoogle()" (token)="conGoogle($event)" />
       @if (!listoParaGoogle()) {
-        <p class="mt-2 text-center text-xs text-tenue">Escribe tu fecha de nacimiento y marca la autorización de datos para continuar con Google.</p>
+        <p class="mt-2 text-center text-xs text-tenue">Escribe tu fecha de nacimiento y marca las dos casillas para continuar con Google.</p>
       }
 
       <p class="mt-8 text-center text-sm text-tenue">
@@ -127,13 +119,15 @@ export default class Registro {
     fechaNacimiento: ['', [Validators.required, mayorDeEdad]],
     clave: ['', [Validators.required, claveSegura]],
     aceptoPoliticaDatos: [false, [Validators.requiredTrue]],
+    aceptoTerminos: [false, [Validators.requiredTrue]],
   });
   protected readonly aceptoPolitica = toSignal(this.form.controls.aceptoPoliticaDatos.valueChanges, { initialValue: false });
+  protected readonly aceptoTerminos = toSignal(this.form.controls.aceptoTerminos.valueChanges, { initialValue: false });
   private readonly fechaNacimiento = toSignal(this.form.controls.fechaNacimiento.valueChanges, { initialValue: '' });
-  /** Google crea la cuenta sin pasar por el formulario: antes deben estar la fecha (mayor de edad) y la autorización. */
+  /** Google crea la cuenta sin pasar por el formulario: antes deben estar la fecha (mayor de edad) y las dos casillas. */
   protected readonly listoParaGoogle = computed(() => {
     this.fechaNacimiento();
-    return this.aceptoPolitica() && !!this.form.controls.fechaNacimiento.value && this.form.controls.fechaNacimiento.valid;
+    return this.aceptoPolitica() && this.aceptoTerminos() && !!this.form.controls.fechaNacimiento.value && this.form.controls.fechaNacimiento.valid;
   });
   private readonly municipio = toSignal(this.form.controls.municipioCodigo.valueChanges, { initialValue: CODIGO_BOGOTA });
   protected readonly esBogota = computed(() => this.municipio() === CODIGO_BOGOTA);
@@ -167,6 +161,7 @@ export default class Registro {
           clave: v.clave,
           fechaNacimiento: v.fechaNacimiento,
           aceptoPoliticaDatos: true,
+          aceptoTerminos: true,
           captchaToken,
           ...this.cuerpoInvitacion(),
         }),
@@ -185,7 +180,7 @@ export default class Registro {
     this.enviando.set(true);
     this.error.set(null);
     try {
-      const sesion = await firstValueFrom(this.authApi.google({ idToken, aceptoPoliticaDatos: true, fechaNacimiento: this.form.controls.fechaNacimiento.value, ...this.cuerpoInvitacion() }));
+      const sesion = await firstValueFrom(this.authApi.google({ idToken, aceptoPoliticaDatos: true, aceptoTerminos: true, fechaNacimiento: this.form.controls.fechaNacimiento.value, ...this.cuerpoInvitacion() }));
       await this.exito(sesion, false);
     } catch (e) {
       const p = problemaDe(e);

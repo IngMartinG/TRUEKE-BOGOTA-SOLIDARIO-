@@ -24,6 +24,8 @@ public interface IAuthService
     Task<UsuarioDto> ActualizarPerfilAsync(Guid actorId, ActualizarPerfilRequest r);
     /// <summary>Cuentas anteriores a la regla de mayoría de edad: registran su fecha una sola vez. Luego hay que refrescar el token.</summary>
     Task<UsuarioDto> RegistrarFechaNacimientoAsync(Guid actorId, FechaNacimientoRequest r);
+    /// <summary>Acepta las versiones vigentes de la política de datos y de los términos (cuando cambian).</summary>
+    Task<UsuarioDto> AceptarLegalAsync(Guid actorId, AceptarLegalRequest r);
     /// <summary>Nombre comercial y NIT (solo con plan Empresa vigente).</summary>
     Task<UsuarioDto> ActualizarPerfilEmpresaAsync(Guid actorId, PerfilEmpresaRequest r);
     /// <summary>Revoca todas las sesiones y devuelve una nueva para el dispositivo actual.</summary>
@@ -82,6 +84,7 @@ public sealed class AuthService : IAuthService
         // A un menor de edad no se le crea la cuenta (y su fecha no se guarda en ninguna parte).
         usuario.RegistrarFechaNacimiento(r.FechaNacimiento!.Value, Usuario.HoyEnColombia(Ahora));
         usuario.AceptarPoliticaDatos(_legal.VersionPoliticaDatos, Ahora);
+        usuario.AceptarTerminos(_legal.VersionTerminos, Ahora);
         await RegistrarInvitadorAsync(usuario, r.CodigoInvitacion);
         _usuarios.Agregar(usuario);
         var sesion = _emisor.Emitir(usuario);
@@ -175,11 +178,14 @@ public sealed class AuthService : IAuthService
             {
                 if (!r.AceptoPoliticaDatos)
                     throw new ReglaDeNegocioException("Para crear tu cuenta debes aceptar la política de tratamiento de datos personales.");
+                if (!r.AceptoTerminos)
+                    throw new ReglaDeNegocioException("Para crear tu cuenta debes aceptar los términos de uso y declarar que eres mayor de 18 años.");
                 if (r.FechaNacimiento is not { } nacimiento)
                     throw new ReglaDeNegocioException("Para crear tu cuenta indica tu fecha de nacimiento: la plataforma es solo para mayores de 18 años.");
                 usuario = Usuario.CrearDesdeGoogle(id.Nombre ?? "", id.Correo, id.Sub, ahora); // correo verificado por Google: recibe el bono
                 usuario.RegistrarFechaNacimiento(nacimiento, Usuario.HoyEnColombia(ahora));
                 usuario.AceptarPoliticaDatos(_legal.VersionPoliticaDatos, ahora);
+                usuario.AceptarTerminos(_legal.VersionTerminos, ahora);
                 await RegistrarInvitadorAsync(usuario, r.CodigoInvitacion);
                 _usuarios.Agregar(usuario);
                 creada = true;
@@ -303,6 +309,16 @@ public sealed class AuthService : IAuthService
         u.RegistrarFechaNacimiento(r.FechaNacimiento!.Value, Usuario.HoyEnColombia(Ahora));
         await _uow.GuardarCambiosAsync();
         _log.LogInformation("Mayoría de edad registrada {UsuarioId}", u.Id);
+        return Mapeos.AUsuarioDto(u, Ahora);
+    }
+
+    public async Task<UsuarioDto> AceptarLegalAsync(Guid actorId, AceptarLegalRequest r)
+    {
+        var u = await CargarAsync(actorId);
+        u.AceptarPoliticaDatos(_legal.VersionPoliticaDatos, Ahora);
+        u.AceptarTerminos(_legal.VersionTerminos, Ahora);
+        await _uow.GuardarCambiosAsync();
+        _log.LogInformation("Política {Politica} y términos {Terminos} aceptados {UsuarioId}", _legal.VersionPoliticaDatos, _legal.VersionTerminos, u.Id);
         return Mapeos.AUsuarioDto(u, Ahora);
     }
 

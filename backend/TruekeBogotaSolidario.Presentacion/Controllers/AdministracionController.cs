@@ -97,6 +97,11 @@ public sealed class AdministracionController : ControllerBase
     public async Task<ActionResult<PqrAdminDto>> ResponderPqr(Guid id, [FromBody] ResponderPqrRequest r)
         => Ok(await _admin.ResponderPqrAsync(User.IdActual(), id, r.Respuesta));
 
+    /// <summary>Avisa a quien la radicó que su solicitud ya se está revisando.</summary>
+    [HttpPost("pqr/{id:guid}/en-tramite"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<PqrAdminDto>> PqrEnTramite(Guid id)
+        => Ok(await _admin.MarcarPqrEnTramiteAsync(User.IdActual(), id));
+
     // ---- Solo SuperUsuario: finanzas
     [HttpGet("ingresos"), Authorize(Policy = Politicas.SuperUsuario)]
     public async Task<ActionResult<IngresosDto>> Ingresos([FromQuery] RangoFechasRequest r) => Ok(await _admin.ObtenerIngresosAsync(User.IdActual(), r));

@@ -5,6 +5,7 @@ import { finalize, firstValueFrom, from, Observable, shareReplay } from 'rxjs';
 import type { SesionDto, UsuarioDto } from '../api/tipos';
 import { AuthApi } from './api/auth.api';
 import { CuentaApi } from './api/cuenta.api';
+import { ConfigService } from './config.service';
 
 /** Marca "este navegador tuvo sesión": solo un 1, nunca el token ni datos personales. */
 const MARCA_SESION = 'trueke.sesion';
@@ -30,6 +31,7 @@ export class SesionService {
   private readonly authApi = inject(AuthApi);
   private readonly cuentaApi = inject(CuentaApi);
   private readonly router = inject(Router);
+  private readonly config = inject(ConfigService);
 
   private readonly _token = signal<string | null>(null);
   private readonly _usuario = signal<UsuarioDto | null>(null);
@@ -57,6 +59,15 @@ export class SesionService {
    * registrarla antes de hacer cualquier otra cosa (la API responde 403 "fecha_nacimiento_requerida").
    */
   readonly mayoriaEdadConfirmada = computed(() => !!this._usuario()?.fechaNacimiento);
+  /**
+   * Cambió la versión de la política de datos o de los términos y la persona aceptó una anterior: debe aceptar las vigentes
+   * antes de seguir (la API responde 403 "terminos_desactualizados"). Sin configuración cargada no se bloquea nada.
+   */
+  readonly legalPendiente = computed(() => {
+    const u = this._usuario();
+    const legal = this.config.legal();
+    return !!u && !!legal && (u.politicaDatosVersion !== legal.versionPoliticaDatos || u.terminosVersion !== legal.versionTerminos);
+  });
   /** Falta el nombre y apellido reales (nombre provisional de Google o anterior a la regla): solo puede explorar. */
   readonly nombreRealPendiente = computed(() => this._usuario()?.nombreRealPendiente === true);
   readonly primerNombre = computed(() => this._usuario()?.nombreCompleto?.split(' ')[0] ?? '');

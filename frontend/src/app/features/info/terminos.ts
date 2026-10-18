@@ -1,62 +1,137 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { ConfigService } from '../../core/config.service';
 import { DocumentoLegal, type SeccionLegal } from './documento-legal';
+import { datosResponsable } from './responsable';
 
+/** Términos de uso. Los datos del prestador llegan de la configuración de la API (el repositorio es público). */
 @Component({
   imports: [DocumentoLegal],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<app-documento-legal titulo="Términos de uso" subtitulo="Reglas de convivencia de la comunidad Trueke Bogotá Solidario" [secciones]="secciones" />`,
+  template: `
+    <app-documento-legal
+      titulo="Términos de uso"
+      subtitulo="Reglas para usar Trueke Bogotá Solidario y convivir en la comunidad"
+      [version]="legal()?.versionTerminos"
+      [vigenteDesde]="legal()?.fechaVigencia"
+      [secciones]="secciones()"
+    />
+  `,
 })
 export default class Terminos {
-  protected readonly secciones: SeccionLegal[] = [
-    {
-      titulo: 'Objeto',
-      parrafos: [
-        'Trueke Bogotá Solidario es un portal de contacto que conecta a personas de Colombia para intercambiar, vender de segunda mano o donar objetos. La plataforma no es parte de los acuerdos entre usuarios ni garantiza el estado de los objetos: cada persona declara el estado (nuevo, usado, reparado…) y responde por la veracidad de lo que publica.',
-      ],
-    },
-    {
-      titulo: 'Cuentas',
-      parrafos: [
-        'Solo pueden usar la plataforma personas mayores de 18 años. Al crear la cuenta registras tu fecha de nacimiento y declaras que es verdadera; las cuentas creadas antes de esta regla deben registrarla para seguir usándola. Debes dar información veraz y mantener la confidencialidad de tu contraseña. Eres responsable de la actividad realizada desde tu cuenta.',
-      ],
-    },
-    {
-      titulo: 'Publicaciones permitidas',
-      parrafos: [
-        'Solo puedes publicar objetos propios, legales y en el estado que describes. Si el objeto tiene detalles, fue reparado o solo sirve para repuestos, debes indicarlo. Están prohibidos los artículos ilegales, armas, medicamentos, animales, contenido ofensivo y cualquier publicación engañosa.',
-        'Quien venda de forma habitual debe identificarse (Ley 1480 de 2011, art. 53): para tener más de 5 artículos a la venta al mismo tiempo se exige identidad verificada o el plan Empresa (con NIT).',
-        'El equipo de moderación puede ocultar contenido que incumpla estas reglas y suspender cuentas que reincidan.',
-      ],
-    },
-    {
-      titulo: 'Eco-Puntos',
-      parrafos: [
-        'Los Eco-Puntos son un crédito de servicios dentro de la plataforma: no se pueden retirar, transferir ni convertir en dinero. Se ganan cuando ambas partes confirman la entrega de un intercambio (máximo 5 al día y una vez cada 30 días con la misma persona) y al confirmar el correo de una cuenta nueva.',
-        'Invita y ganan los dos: cada persona tiene un enlace de invitación. Cuando quien se registró con ese enlace completa su primer intercambio, ambas ganan 20 Eco-Puntos. No cuenta si ese primer intercambio es con quien la invitó, y quien invita puede recibir puntos por un máximo de 10 invitaciones recompensadas cada 30 días.',
-        'Se usan para impulsar publicaciones y para obtener descuentos en los servicios pagos. Crear varias cuentas o simular intercambios para obtener puntos o reputación es causa de suspensión.',
-      ],
-    },
-    {
-      titulo: 'Pagos, facturación y planes',
-      parrafos: [
-        'Los servicios opcionales (destacar, verificar la identidad, planes Premium y Empresa y recargas de Eco-Puntos) se pagan con Wompi. Destacar y verificar también se pueden pagar, en parte o del todo, con Eco-Puntos (1 punto = $100), solo si la persona lo elige; las recargas parten de $5.000 y los paquetes de $10.000, $20.000 y $50.000 suman Eco-Puntos de bono (un monto distinto se recarga sin bono); lo pagado del todo con puntos no genera cobro ni factura. Los precios están en pesos colombianos e incluyen el IVA. La plataforma nunca procesa pagos entre usuarios: los acuerdos de compra se pagan directamente entre las partes.',
-        'Cada pago aprobado genera una factura electrónica. Puedes registrar tus datos de facturación en tu cuenta; si no lo haces, la factura se emite a "consumidor final".',
-        'Los planes Premium y Empresa se pueden pagar por 30 días o, con el plan anual, por 365 días en un solo pago. No se renuevan automáticamente: te avisamos antes del vencimiento. Si renuevas antes, los días se suman al periodo actual y conservas tus destacados gratis, que se reponen cada 30 días mientras el plan esté vigente (no se acumulan).',
-      ],
-    },
-    {
-      titulo: 'Retracto, reversión del pago y garantía',
-      parrafos: [
-        'Derecho de retracto (Ley 1480, art. 47): puedes desistir de una compra dentro de los 5 días hábiles siguientes. No aplica a servicios cuya prestación ya comenzó con tu consentimiento (por ejemplo, un destacado ya activo o una verificación ya resuelta). Si procede, devolvemos el dinero y se retira el beneficio.',
-        'Reversión del pago (Ley 1480, art. 51): si el pago fue por fraude, no autorizado, o el servicio no se prestó, puedes solicitar la reversión. También puedes pedirla al emisor de tu medio de pago.',
-        'Estas solicitudes, y cualquier petición, queja o reclamo, se radican en Cuenta → Soporte y PQR. Respondemos por escrito en máximo 15 días hábiles.',
-      ],
-    },
-    {
-      titulo: 'Conducta',
-      parrafos: [
-        'Trata a los demás con respeto, cumple los acuerdos y usa el chat interno para coordinar. Reporta cualquier comportamiento sospechoso. Recomendamos realizar las entregas en lugares públicos.',
-      ],
-    },
-  ];
+  private readonly config = inject(ConfigService);
+  protected readonly legal = this.config.legal;
+
+  protected readonly secciones = computed<SeccionLegal[]>(() => {
+    const r = datosResponsable(this.legal());
+    return [
+      {
+        titulo: 'Quién presta el servicio',
+        parrafos: [
+          `Trueke Bogotá Solidario es un servicio prestado por ${r.identificacion}, con domicilio en ${r.domicilio}. Contacto: ${r.correo}${r.telefono ? ` · ${r.telefono}` : ''} y el formulario de PQRS de la plataforma.`,
+          'Al crear tu cuenta aceptas estos términos. La autorización para tratar tus datos personales se da por separado, en la política de tratamiento de datos.',
+        ],
+      },
+      {
+        titulo: 'Qué es la plataforma',
+        parrafos: [
+          'Es un portal de contacto (Ley 1480 de 2011, art. 53) que conecta a personas en Colombia para intercambiar (trueke), vender de segunda mano o donar objetos. La plataforma no es vendedora, compradora ni intermediaria de los acuerdos entre usuarios: no es dueña de los objetos, no los revisa físicamente ni garantiza su estado.',
+          'Cada persona declara el estado del objeto (nuevo, usado, reparado…) y responde por la veracidad de lo que publica y por cumplir lo que acuerda. Quien vende de forma habitual debe identificarse: para tener más de 5 artículos a la venta al mismo tiempo se exige la identidad verificada o el plan Empresa (con NIT).',
+        ],
+      },
+      {
+        titulo: 'Solo para mayores de 18 años',
+        parrafos: [
+          'Solo pueden usar la plataforma personas mayores de 18 años. Al crear la cuenta registras tu fecha de nacimiento y declaras que es verdadera. Las cuentas de menores de edad se suprimen.',
+        ],
+      },
+      {
+        titulo: 'Tu cuenta y su seguridad',
+        parrafos: [
+          'Debes dar información veraz (nombre y apellido reales) y mantenerla actualizada. Cada persona puede tener una sola cuenta. Cuida tu contraseña, activa la verificación en dos pasos y avísanos si sospechas que alguien entró a tu cuenta: eres responsable de lo que se haga desde ella.',
+          'Para publicar, solicitar, chatear y pagar se exige el correo verificado y una foto de perfil donde se vea tu cara.',
+        ],
+      },
+      {
+        titulo: 'Publicaciones prohibidas',
+        parrafos: ['Solo puedes publicar objetos propios, legales y en el estado que describes. Está prohibido publicar:'],
+        lista: [
+          'Armas, municiones, explosivos y sus partes.',
+          'Medicamentos, sustancias controladas, drogas y productos de uso médico que requieran registro sanitario o fórmula.',
+          'Animales vivos.',
+          'Alimentos perecederos o preparados.',
+          'Productos ilegales, robados, de contrabando, falsificados o que infrinjan derechos de autor o marcas.',
+          'Datos personales de terceros (documentos, fotos o información de otras personas sin su autorización).',
+          'Contenido sexual, violento, discriminatorio u ofensivo, y publicaciones engañosas o de estafa.',
+          'Servicios, inmuebles o cualquier cosa que no sea un objeto que puedas entregar.',
+        ],
+      },
+      {
+        titulo: 'Eco-Puntos',
+        parrafos: [
+          'Los Eco-Puntos son un crédito de servicios dentro de la plataforma, sin valor monetario: no se pueden retirar, transferir, vender ni convertir en dinero, y no se reembolsan en dinero. Si cierras tu cuenta o es suspendida por fraude, se pierden.',
+          'Se ganan cuando ambas partes confirman la entrega de un intercambio (máximo 5 al día y una vez cada 30 días con la misma persona), al confirmar el correo de una cuenta nueva y al invitar a alguien que completa su primer intercambio (20 Eco-Puntos para cada persona; no cuenta si ese primer intercambio es con quien invitó, y quien invita recibe puntos por máximo 10 invitaciones cada 30 días). Las recargas compran Eco-Puntos con dinero (100 pesos = 1 Eco-Punto).',
+          'Se usan para impulsar publicaciones y para obtener descuentos en los servicios pagos. Crear varias cuentas o simular intercambios para obtener puntos o reputación es causa de suspensión y de la pérdida de los puntos.',
+        ],
+      },
+      {
+        titulo: 'Pagos, facturación y planes',
+        parrafos: [
+          'Los servicios opcionales (destacar, verificar la identidad, planes Premium y Empresa y recargas de Eco-Puntos) se pagan con Wompi. Destacar y verificar también se pueden pagar, en parte o del todo, con Eco-Puntos (1 punto = 100 pesos), solo si la persona lo elige. Las recargas parten de 5.000 pesos, y los paquetes de 10.000, 20.000 y 50.000 pesos suman Eco-Puntos de bono. Lo pagado del todo con puntos no genera cobro ni factura.',
+          'Los precios están en pesos colombianos e incluyen el IVA. Cada pago aprobado genera una factura electrónica: puedes registrar tus datos de facturación en tu cuenta; si no lo haces, se emite a "consumidor final".',
+          'La plataforma nunca procesa pagos entre usuarios: los acuerdos de compra se pagan directamente entre las partes, que acuerdan el medio de pago y la entrega.',
+          'Los planes Premium y Empresa se pagan por 30 días o, con el plan anual, por 365 días en un solo pago. No se renuevan automáticamente: te avisamos antes del vencimiento. Si renuevas antes, los días se suman al periodo actual.',
+        ],
+      },
+      {
+        titulo: 'Retracto y reversión del pago',
+        parrafos: [
+          'Derecho de retracto (Ley 1480, art. 47): puedes desistir de un servicio pagado dentro de los 5 días hábiles siguientes a la compra. No aplica a servicios cuya prestación ya comenzó con tu consentimiento (por ejemplo, un destacado ya activo o una verificación ya resuelta). Si procede, devolvemos el dinero y se retira el beneficio.',
+          'Reversión del pago (Ley 1480, art. 51): si el pago fue por fraude, no lo autorizaste o el servicio no se prestó, puedes pedir la reversión dentro de los 5 días hábiles siguientes a la fecha en que conociste el problema. También puedes pedirla al emisor de tu medio de pago.',
+          'El retracto y la reversión se piden en Cuenta → Soporte y PQR, indicando el pago. Cualquier petición, queja o reclamo también se puede radicar, sin cuenta, en la página de PQRS. Respondemos por escrito en máximo 15 días hábiles.',
+        ],
+      },
+      {
+        titulo: 'Tu contenido y nuestra marca',
+        parrafos: [
+          'Lo que publicas (fotos, textos, comentarios) sigue siendo tuyo. Al publicarlo nos das una licencia gratuita y no exclusiva para mostrarlo, adaptarlo al formato de la plataforma (por ejemplo, reducir el tamaño de las fotos) y compartir su vista previa en redes, mientras esté publicado. Declaras que tienes derecho a publicarlo.',
+          'El nombre, el logo, el diseño y el código de Trueke Bogotá Solidario pertenecen a su titular y no pueden usarse sin autorización.',
+        ],
+      },
+      {
+        titulo: 'Conducta, moderación y debido proceso',
+        parrafos: [
+          'Trata a los demás con respeto, cumple lo que acuerdas y usa el chat interno para coordinar: no compartas datos personales ni pidas pagos por fuera de lo acordado. Te recomendamos hacer las entregas en lugares públicos y seguros.',
+          'Cualquier persona puede denunciar una publicación, un comentario, un mensaje o una cuenta. El equipo de moderación revisa la denuncia y puede ocultar el contenido o suspender la cuenta. A la persona denunciada se le avisa la decisión sin revelar quién la denunció, y puede apelar dentro de los 15 días siguientes; la apelación la resuelve un moderador distinto.',
+          'Las infracciones graves (estafa, suplantación, contenido ilegal) o repetidas pueden llevar a la suspensión definitiva de la cuenta.',
+        ],
+      },
+      {
+        titulo: 'Responsabilidad',
+        parrafos: [
+          'Respondemos por los servicios que prestamos y cobramos directamente (destacados, verificación, planes y recargas) y por el funcionamiento de la plataforma conforme a la ley.',
+          'Como portal de contacto, no respondemos por el estado, la calidad, la legalidad o la entrega de los objetos acordados entre usuarios, ni por el incumplimiento de esos acuerdos. Sí colaboramos con las autoridades y con las personas afectadas, entregando la información que la ley permita, y retiramos el contenido que incumpla estos términos.',
+          'Nada de lo anterior limita los derechos que la ley te reconoce como consumidor.',
+        ],
+      },
+      {
+        titulo: 'Comercio electrónico',
+        parrafos: [
+          'Los mensajes de datos, aceptaciones electrónicas (como marcar una casilla) y registros de la plataforma tienen validez y fuerza probatoria (Ley 527 de 1999). Guardamos la versión de estos términos y de la política que aceptaste y la fecha en que lo hiciste.',
+        ],
+      },
+      {
+        titulo: 'Cambios a estos términos',
+        parrafos: [
+          'Podemos actualizar estos términos para reflejar cambios en el servicio o en la ley. Publicaremos la nueva versión con su fecha de vigencia y te pediremos aceptarla antes de seguir usando la plataforma. Si no estás de acuerdo, puedes descargar tus datos y eliminar tu cuenta.',
+        ],
+      },
+      {
+        titulo: 'Ley aplicable y jurisdicción',
+        parrafos: [
+          'Estos términos se rigen por la ley colombiana. Las controversias se resolverán ante los jueces de Bogotá D.C., sin perjuicio de tu derecho como consumidor a acudir a la Superintendencia de Industria y Comercio o a los jueces de tu domicilio.',
+          `Versión ${r.versionTerminos}, vigente desde el ${r.vigencia}.`,
+        ],
+      },
+    ];
+  });
 }

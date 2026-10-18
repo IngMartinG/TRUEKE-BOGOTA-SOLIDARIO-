@@ -35,7 +35,7 @@ public class SeguridadTests : IClassFixture<FabricaApi>
         var correo = $"bloqueo-{Guid.NewGuid():N}@trueke.test";
         var anonimo = _fabrica.CreateClient();
         (await anonimo.PostAsJsonAsync("/api/v1/auth/registrar",
-            new { nombreCompleto = "Bloqueo Prueba", localidad = "Suba", correo, clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true })).EnsureSuccessStatusCode();
+            new { nombreCompleto = "Bloqueo Prueba", localidad = "Suba", correo, clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true, aceptoTerminos = true })).EnsureSuccessStatusCode();
 
         for (var i = 0; i < 5; i++)
             Assert.Equal(HttpStatusCode.Unauthorized, (await anonimo.PostAsJsonAsync("/api/v1/auth/login", new { correo, clave = "Incorrecta1" })).StatusCode);
@@ -138,9 +138,24 @@ public class SeguridadTests : IClassFixture<FabricaApi>
             ("Almacenamiento:Url", "https://proyecto.supabase.co/storage/v1"), ("Almacenamiento:LlaveServicio", "sb_secret_x"), ("Seguridad:ClaveCifrado", FabricaApi.ClaveCifradoPruebas),
             ("Captcha:ClaveSecreta", "x"), ("Captcha:ClaveSitio", "x"), ("Correo:Proveedor", "Smtp"),
             ("Urls:Frontend", "https://front.trueke.test"), ("Urls:Api", "https://api.trueke.test"), ("Facturacion:Modo", "Manual"),
+            ("Legal:ResponsableNombre", "Responsable Prueba"), ("Legal:Domicilio", "Bogotá D.C., Colombia"), ("Legal:CorreoContacto", "contacto@trueke.test"),
             ("Seguridad:ExigirDosFactoresModeradores", "false"));
         var ex = Assert.ThrowsAny<Exception>(() => f.CreateClient());
         Assert.Contains("ExigirDosFactoresModeradores", ex.ToString());
+    }
+
+    [Fact]
+    public void En_produccion_no_arranca_sin_identificar_al_responsable_del_tratamiento()
+    {
+        using var f = new FabricaEnEntorno("Production",
+            ("Pagos:Proveedor", "Wompi"), ("Pagos:Wompi:LlavePublica", "pub_test_x"), ("Pagos:Wompi:LlavePrivada", "prv_test_x"),
+            ("Pagos:Wompi:SecretoIntegridad", "i"), ("Pagos:Wompi:SecretoEventos", "e"), ("Database:Provider", "PostgreSQL"),
+            ("Almacenamiento:Url", "https://proyecto.supabase.co/storage/v1"), ("Almacenamiento:LlaveServicio", "sb_secret_x"), ("Seguridad:ClaveCifrado", FabricaApi.ClaveCifradoPruebas),
+            ("Captcha:ClaveSecreta", "x"), ("Captcha:ClaveSitio", "x"), ("Correo:Proveedor", "Smtp"),
+            ("Urls:Frontend", "https://front.trueke.test"), ("Urls:Api", "https://api.trueke.test"), ("Facturacion:Modo", "Manual"),
+            ("Legal:ResponsableNombre", "Responsable Prueba"), ("Legal:CorreoContacto", "contacto@trueke.test"));
+        var ex = Assert.ThrowsAny<Exception>(() => f.CreateClient());
+        Assert.Contains("Legal:Domicilio", ex.ToString());
     }
 
     [Fact]

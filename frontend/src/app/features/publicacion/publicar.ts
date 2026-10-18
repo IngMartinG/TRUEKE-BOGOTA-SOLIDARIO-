@@ -374,6 +374,17 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
             }
           }
 
+          @if (paso() === pasos.length - 1) {
+            <p class="mt-8 flex items-start gap-2 rounded-xl bg-superficie-2 p-3 text-sm text-tenue">
+              <app-icono nombre="escudo" [tamano]="18" class="mt-0.5 shrink-0" />
+              <span>
+                Al publicar confirmas que el objeto es tuyo, es legal y no está en la
+                <a routerLink="/terminos" fragment="seccion-5" class="enlace">lista de prohibidos</a>
+                (armas, medicamentos, animales, alimentos perecederos, falsificaciones…).
+              </span>
+            </p>
+          }
+
           <!-- Navegación -->
           <div class="sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] z-10 mt-10 flex items-center justify-between gap-3 border-t border-borde bg-fondo/90 py-4 backdrop-blur lg:bottom-0">
             @if (paso() > 0) {

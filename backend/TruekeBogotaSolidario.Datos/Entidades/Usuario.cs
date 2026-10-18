@@ -119,6 +119,9 @@ public class Usuario
     /// <summary>Identificador estable de la cuenta de Google ("sub"), si se vinculó.</summary>
     public string? GoogleSub { get; private set; }
     public string? PoliticaDatosVersion { get; private set; }
+    /// <summary>Versión de los términos de uso aceptada y cuándo.</summary>
+    public string? TerminosVersion { get; private set; }
+    public DateTime? FechaAceptacionTerminos { get; private set; }
     public DateTime? FechaAceptacionPolitica { get; private set; }
     /// <summary>
     /// Solo se usa para comprobar la mayoría de edad (la plataforma es para mayores de 18). Nunca se muestra a otras personas.
@@ -310,6 +313,18 @@ public class Usuario
         PoliticaDatosVersion = version;
         FechaAceptacionPolitica = ahoraUtc;
     }
+
+    /// <summary>Aceptación de los términos de uso (separada de la autorización de datos, como exige la Ley 1581).</summary>
+    public void AceptarTerminos(string version, DateTime ahoraUtc)
+    {
+        if (string.IsNullOrWhiteSpace(version) || version.Length > 20) throw new ReglaDeNegocioException("Versión de términos no válida.");
+        TerminosVersion = version;
+        FechaAceptacionTerminos = ahoraUtc;
+    }
+
+    /// <summary>Aceptó las versiones vigentes de la política de datos y de los términos.</summary>
+    public bool LegalAlDia(string versionPolitica, string versionTerminos)
+        => PoliticaDatosVersion == versionPolitica && TerminosVersion == versionTerminos;
 
     /// <summary>Edad mínima para usar la plataforma (términos de uso).</summary>
     public const int EdadMinima = 18;

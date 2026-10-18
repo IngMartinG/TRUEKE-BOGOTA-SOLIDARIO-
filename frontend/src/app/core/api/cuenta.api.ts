@@ -16,6 +16,9 @@ import type {
   DatosFacturacionRequest,
   DatosPersonalesDto,
   FacturaDto,
+  AceptarLegalRequest,
+  ConsultarPqrRequest,
+  CrearPqrPublicaRequest,
   FechaNacimientoRequest,
   PerfilEmpresaRequest,
   PqrDto,
@@ -47,6 +50,7 @@ export class CuentaApi {
 
   yo = () => this.api.get<UsuarioDto>('/usuarios/yo');
   registrarFechaNacimiento = (r: FechaNacimientoRequest) => this.api.put<UsuarioDto>('/usuarios/yo/fecha-nacimiento', r, { silencioso: true });
+  aceptarLegal = (r: AceptarLegalRequest) => this.api.put<UsuarioDto>('/usuarios/yo/aceptar-legal', r, { silencioso: true });
   actualizarPerfil = (r: ActualizarPerfilRequest) => this.api.put<UsuarioDto>('/usuarios/yo', r, { silencioso: true });
   bloquear = (id: string) => this.api.post<void>(`/usuarios/${seg(id)}/bloqueo`, {});
   desbloquear = (id: string) => this.api.delete<void>(`/usuarios/${seg(id)}/bloqueo`);
@@ -68,6 +72,9 @@ export class CuentaApi {
 
   crearPqr = (r: CrearPqrRequest) => this.api.post<PqrDto>('/pqr', r, { silencioso: true });
   misPqr = () => this.api.get<PqrDto[]>('/pqr/mias');
+  /** PQRS pública, sin cuenta (con captcha). */
+  crearPqrPublica = (r: CrearPqrPublicaRequest) => this.api.post<PqrDto>('/pqr/publica', r, { silencioso: true });
+  consultarPqr = (r: ConsultarPqrRequest) => this.api.post<PqrDto>('/pqr/consultar', r, { silencioso: true });
   misDatos = () => this.api.get<DatosPersonalesDto>('/usuarios/yo/datos');
   eliminarCuenta = (r: EliminarCuentaRequest) => this.api.post<void>('/usuarios/yo/eliminar', r, { silencioso: true });
 

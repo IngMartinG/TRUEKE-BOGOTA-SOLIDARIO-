@@ -195,10 +195,13 @@ public interface IPqrRepository
 {
     Task<Pqr?> ObtenerAsync(Guid id);
     Task<IReadOnlyList<Pqr>> ListarPorUsuarioAsync(Guid usuarioId, int maximo);
-    /// <summary>Las de plazo más próximo primero.</summary>
+    /// <summary>Las de plazo más próximo primero. "Abierta" incluye las que están en trámite (pendientes de respuesta).</summary>
     Task<(IReadOnlyList<Pqr> Items, int Total)> ListarPorEstadoAsync(EstadoPqr estado, int pagina, int tamano);
     Task<bool> ExisteAbiertaParaPagoAsync(string pagoReferencia);
     Task<int> ContarDelUsuarioDesdeAsync(Guid usuarioId, DateTime desdeUtc);
+    /// <summary>Canal público: cuántas radicó ese correo desde la fecha (límite diario por correo).</summary>
+    Task<int> ContarPublicasDelCorreoDesdeAsync(string correo, DateTime desdeUtc);
+    Task<Pqr?> ObtenerPorRadicadoAsync(string radicado);
     void Agregar(Pqr pqr);
 }
 

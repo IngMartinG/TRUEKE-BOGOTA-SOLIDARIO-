@@ -36,7 +36,7 @@ public class HabeasDataTests : IClassFixture<FabricaApi>
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
         var d = await r.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal(ses.Usuario.Correo, d.GetProperty("perfil").GetProperty("correo").GetString());
-        Assert.Equal("2026-10", d.GetProperty("politicaDatosVersion").GetString());
+        Assert.Equal("2026-10-18", d.GetProperty("politicaDatosVersion").GetString());
         Assert.Single(d.GetProperty("publicaciones").EnumerateArray());
         Assert.Single(d.GetProperty("solicitudesEnviadas").EnumerateArray());
         Assert.Equal("Comentario mío", Assert.Single(d.GetProperty("comentarios").EnumerateArray()).GetProperty("texto").GetString());
@@ -84,7 +84,7 @@ public class HabeasDataTests : IClassFixture<FabricaApi>
 
         // el correo queda libre para una cuenta nueva
         var nueva = await _fabrica.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar", new
-        { nombreCompleto = "Vuelvo Despues", localidad = "Suba", correo = ses.Usuario.Correo, clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true });
+        { nombreCompleto = "Vuelvo Despues", localidad = "Suba", correo = ses.Usuario.Correo, clave = Api.ClaveValida, fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true, aceptoTerminos = true });
         Assert.Equal(HttpStatusCode.Created, nueva.StatusCode);
     }
 

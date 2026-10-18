@@ -4,7 +4,9 @@ using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using TruekeBogotaSolidario.Datos.Contexto;
+using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Correo;
 
 namespace TruekeBogotaSolidario.Pruebas.Infraestructura;
@@ -40,7 +42,7 @@ public static class Api
     {
         var correo = $"{nombre}-{Guid.NewGuid():N}@trueke.test";
         var resp = await f.CreateClient().PostAsJsonAsync("/api/v1/auth/registrar",
-            new { nombreCompleto = NombreDePrueba(nombre), localidad = "Chapinero", correo, clave = ClaveValida, fechaNacimiento = FechaNacimientoAdulta, aceptoPoliticaDatos = true });
+            new { nombreCompleto = NombreDePrueba(nombre), localidad = "Chapinero", correo, clave = ClaveValida, fechaNacimiento = FechaNacimientoAdulta, aceptoPoliticaDatos = true, aceptoTerminos = true });
         if (resp.StatusCode != HttpStatusCode.Created)
             throw new InvalidOperationException($"Registro falló: {(int)resp.StatusCode} {await resp.Content.ReadAsStringAsync()}");
         await VerificarCorreoAsync(f, correo);
@@ -57,17 +59,24 @@ public static class Api
     }
 
     /// <summary>
-    /// Atajo: la cuenta sembrada por configuración (SuperUsuario) nace sin fecha de nacimiento, como las cuentas anteriores a la
-    /// regla. Para las pruebas que no tratan de eso se registra directo en la base (el flujo real se prueba en MayoriaEdadTests).
+    /// Atajo: la cuenta sembrada por configuración (SuperUsuario) nace sin fecha de nacimiento y sin aceptar la política y los
+    /// términos, como las cuentas anteriores a esas reglas. Para las pruebas que no tratan de eso se registra directo en la base
+    /// (los flujos reales se prueban en MayoriaEdadTests y LegalTests).
     /// </summary>
     public static async Task AsegurarMayoriaEdadAsync(WebApplicationFactory<Program> f, string correo)
     {
         using var scope = f.Services.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<TruekeDbContext>();
+        var legal = scope.ServiceProvider.GetRequiredService<IOptions<LegalOpciones>>().Value;
         var normalizado = Datos.Entidades.Usuario.NormalizarCorreo(correo);
         var u = await db.Usuarios.FirstOrDefaultAsync(x => x.Correo == normalizado);
-        if (u is null || u.MayoriaEdadConfirmada) return;
-        u.RegistrarFechaNacimiento(DateOnly.Parse(FechaNacimientoAdulta), DateOnly.FromDateTime(DateTime.UtcNow));
+        if (u is null) return;
+        if (!u.MayoriaEdadConfirmada) u.RegistrarFechaNacimiento(DateOnly.Parse(FechaNacimientoAdulta), DateOnly.FromDateTime(DateTime.UtcNow));
+        if (!u.LegalAlDia(legal.VersionPoliticaDatos, legal.VersionTerminos))
+        {
+            u.AceptarPoliticaDatos(legal.VersionPoliticaDatos, DateTime.UtcNow);
+            u.AceptarTerminos(legal.VersionTerminos, DateTime.UtcNow);
+        }
         await db.SaveChangesAsync();
     }
 

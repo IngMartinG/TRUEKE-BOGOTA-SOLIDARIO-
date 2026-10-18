@@ -68,7 +68,7 @@ public partial class ContratoAngularTests : IClassFixture<FabricaApi>
         var registro = await ProblemaAsync(await anonimo.PostAsJsonAsync("/api/v1/auth/registrar", new
         {
             nombreCompleto = "Ana2", localidad = "123", correo = $"fmt{Guid.NewGuid():N}@trueke.test", clave = Api.ClaveValida,
-            fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true
+            fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true, aceptoTerminos = true
         }), HttpStatusCode.BadRequest);
         var errores = registro.GetProperty("errors");
         Assert.Contains("nombre y apellido", errores.GetProperty("nombreCompleto")[0].GetString());

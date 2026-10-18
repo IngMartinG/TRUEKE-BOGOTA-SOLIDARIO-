@@ -330,8 +330,36 @@ Tercer y último paso para salir de Azure: ya no queda nada en Azure.
   sentido U+202A–202E y U+2066–2069, ancho cero U+200B, U+FEFF, U+2060 y U+180E). Los emojis siguen funcionando.
 - En el front: teclado numérico y filtro al escribir o pegar en la CC y el NIT, y mensajes claros por campo.
 
+## Hecho el 2026-10-18 — legal a fondo y aplicado en la app
+- **Responsable del tratamiento configurable** (el repositorio es público): `Legal__ResponsableNombre`, `Legal__Domicilio`
+  y `Legal__CorreoContacto` son obligatorios en producción (la API no arranca sin ellos); `Legal__ResponsableDocumento` y
+  `Legal__Telefono` son opcionales. Se publican en `GET /configuracion` (`legal`) junto con las versiones vigentes.
+- **Política de tratamiento de datos** reescrita (Ley 1581 y Decreto 1377, compilado en el 1074 de 2015): responsable,
+  datos por categoría, finalidades necesarias y opcionales, datos sensibles, menores, encargados y transferencias
+  internacionales (Supabase, Render, GitHub Pages, Brevo, Wompi y Google), derechos, consultas (10 días hábiles + 5) y
+  reclamos (15 + 8), conservación, cookies, seguridad, vigencia y nota del RNBD.
+- **Términos de uso** reescritos: prestador, portal de contacto (Ley 1480, art. 53), mayoría de edad, lista de
+  publicaciones prohibidas, Eco-Puntos sin valor monetario, pagos, retracto y reversión, licencia sobre el contenido,
+  moderación con debido proceso, responsabilidad, Ley 527, cambios con aviso y ley colombiana.
+- **Declaración de accesibilidad** con estado (cumplimiento parcial de WCAG 2.2 AA), método y fecha de evaluación,
+  limitaciones reales y canal con plazo. Plantilla legal con versión, vigencia, índice con anclas e impresión.
+- **Dos casillas separadas** al registrarse y al crear la cuenta con Google: autorización de datos y aceptación de los
+  términos con la declaración de mayoría de edad. Se guardan `TerminosVersion` y `FechaAceptacionTerminos`
+  (migración `AceptacionTerminos`).
+- **Cambio de versión:** si cambia `Legal__VersionPoliticaDatos` o `Legal__VersionTerminos`, el token lleva el claim
+  `legal=pendiente` y la API responde 403 `terminos_desactualizados` (salvo lo exento: sesión, perfil, habeas data y PQRS).
+  El front lleva a `/completar-perfil`, que muestra las dos casillas (`PUT /usuarios/yo/aceptar-legal`).
+- **Avisos contextuales** con enlace: dato sensible al subir la foto y el documento, prohibidos al publicar, retracto al
+  pagar y no compartir datos en el chat. El pie muestra el responsable y el enlace a PQRS.
+- **PQRS pública** (autorizada por el dueño el 2026-10-18): `/pqrs` sin cuenta, con captcha, límite por IP y por correo
+  (`POST /pqr/publica`) y consulta con radicado + correo (`POST /pqr/consultar`, 404 genérico si no coinciden). Tipo
+  nuevo `Consulta` (10 días hábiles) y estado `EnTramite` (el equipo lo marca y se le avisa a quien la radicó). Los plazos
+  se cuentan en **días hábiles colombianos**, sin festivos (fijos, ley Emiliani y los de Pascua). Migración `PqrsPublica`.
+
 ## Pendiente
 **Despliegue y operación:**
+- **Configurar en Render** `Legal__ResponsableNombre`, `Legal__Domicilio` y `Legal__CorreoContacto` (y, si se quiere,
+  `Legal__ResponsableDocumento` y `Legal__Telefono`) **antes** de desplegar la fase legal: sin ellos la API no arranca.
 - **Brevo con un Gmail como remitente:** algunos correos pueden caer en spam. Con dominio propio, autenticarlo en Brevo (DKIM y DMARC) y usar `no-responder@tudominio`.
 - **Monitoreo de errores:** solo hay logs de Render. Si hace falta más, un servicio de errores con plan gratis.
 - **Supabase Free pausa el proyecto tras 7 días sin actividad:** se reactiva con *Restore project* (los datos no se pierden). Un monitor de `/health/ready` lo evita (`docs/DESPLIEGUE.md` §7.2).
@@ -353,7 +381,8 @@ Tercer y último paso para salir de Azure: ya no queda nada en Azure.
   - confirmar el régimen de IVA (`Facturacion:ResponsableIva`);
   - el tratamiento tributario de las recargas de Eco-Puntos;
   - la resolución de facturación de la DIAN;
-  - el texto final de los términos y de la política de datos.
+  - el texto final de los términos, la política de datos y la declaración de accesibilidad (versión 2026-10-18);
+  - si el responsable debe inscribir las bases de datos en el RNBD (hoy no, por ser persona natural).
 - **Cuando haya contratos:** cobro recurrente con fuentes de pago de Wompi y factura electrónica automática con un proveedor.
 
 **Producto (por decidir):**
