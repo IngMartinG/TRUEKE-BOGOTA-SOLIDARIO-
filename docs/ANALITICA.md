@@ -20,7 +20,7 @@ Trueke maneja datos personales (Ley 1581 de 2012) y la confianza es el producto.
 | Personas activas en 30 días | Si vuelven (retención) | Base (`Publicaciones` + `Solicitudes`) |
 | Visitas, páginas más vistas, de dónde llegan, dispositivo | Si la difusión funciona (WhatsApp, redes) | Herramienta de visitas |
 | Velocidad de carga real (Core Web Vitals) | Si el celular promedio la siente rápida | Herramienta de visitas |
-| Errores y lentitud de la API | Salud técnica | Application Insights (ya activo) |
+| Errores y lentitud de la API | Salud técnica | Logs de Render (Application Insights se quitó el 2026-10-18 al salir de Azure) |
 
 ## Consultas para la base (PostgreSQL en Supabase)
 Se corren en Supabase → proyecto → **SQL Editor**.
@@ -72,7 +72,7 @@ Si un día se quiere verlas en la app, el paso natural es una pantalla de **Admi
 |---|---|---|---|---|
 | **Cloudflare Web Analytics** | Gratis | Según Cloudflare, sin cookies ni localStorage y sin huella por IP o navegador ([fuente](https://www.cloudflare.com/web-analytics/)); hay revisiones independientes que discuten el detalle ([ejemplo](https://www.ctrl.blog/entry/review-cloudflare-analytics/)) | Visitas, páginas, procedencia, países, dispositivos, Core Web Vitals | **Recomendada para empezar.** No exige cambiar el DNS ni usar el proxy de Cloudflare. |
 | Plausible | De pago (revisar el precio vigente) | Sin cookies | Lo mismo, con mejor detalle y eventos | Buena opción si se quiere pagar |
-| Application Insights (navegador) | Dentro de los 5 GB gratis | Usa cookies (`ai_user`, `ai_session`) salvo que se desactiven | Rendimiento y errores del front | Útil para errores del front, no para visitas |
+| Application Insights (navegador) | Descartada: se salió de Azure el 2026-10-18 | Usa cookies (`ai_user`, `ai_session`) | Rendimiento y errores del front | No aplica |
 | Google Analytics 4 | Gratis | Cookies y envío de datos a Google: exige **banner de consentimiento** | Muy completo | **No recomendada:** pone en riesgo la promesa de privacidad |
 | Microsoft Clarity / grabación de sesiones | Gratis | Graba lo que ve la persona | Mapas de calor y grabaciones | **No usar:** capturaría chats, formularios y fotos |
 

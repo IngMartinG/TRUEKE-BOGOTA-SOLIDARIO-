@@ -39,7 +39,7 @@ TruekeBogotaSolidario.sln
 | Eco-Puntos y pagos | Política pública, cotización con descuentos, pagos Wompi (destacar, verificar, Premium, Empresa, recarga) |
 | Moderación | Denuncias (publicaciones, comentarios, mensajes, calificaciones, usuarios), ocultar contenido, **suspender/reactivar cuentas**, **buscar usuarios**, verificación de identidad, **pagos en revisión y reembolsos**, roles |
 | Habeas Data | Exportar todos mis datos y eliminar mi cuenta (Ley 1581 de 2012) |
-| Operación | Health checks, Application Insights, purga y cierre automático periódicos |
+| Operación | Health checks, logs estructurados, purga y cierre automático periódicos |
 
 ## 3. Roles
 
@@ -249,9 +249,9 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
   - cierra automáticamente los intercambios vencidos;
   - purga refrescos y enlaces vencidos y las notificaciones leídas de más de 90 días.
 
-## 9. Despliegue en Azure
+## 9. Topología a gran escala (referencia en Azure)
 
-> Fase gratuita (Render + Supabase gratis) y cómo pasar a pago, paso a paso: [`docs/DESPLIEGUE.md`](../docs/DESPLIEGUE.md). Esta sección describe la topología de producción completa en Azure.
+> **Hoy la plataforma no usa Azure** (se salió el 2026-10-18): corre en Render + Supabase + Brevo + GitHub Pages. El despliegue vigente y cómo pasar a pago están en [`docs/DESPLIEGUE.md`](../docs/DESPLIEGUE.md). Esta sección queda solo como referencia de una topología a gran escala.
 
 1. **Imagen:** `docker build -t <registro>.azurecr.io/trueke-api:<versión> backend` y `docker push`.
 2. **App Service (Linux, contenedor):**
