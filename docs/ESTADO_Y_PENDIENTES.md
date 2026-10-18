@@ -380,7 +380,20 @@ Tercer y último paso para salir de Azure: ya no queda nada en Azure.
 - Pruebas: motor (coincidencias, sin coincidencia, cifras en vivo y escalado) en vitest, y E2E `e2e/asistente.spec.ts`
   (visitante hasta la PQRS pública; con sesión hasta radicar en Soporte).
 
+## Hecho el 2026-10-18 — auditoría integral
+Informe completo, con los hallazgos por severidad, en `docs/AUDITORIA_2026-10-18.md`.
+- **#155:** un fragmento JS que no carga ya no hace fallar el ingreso. Era el "Ocurrió un error inesperado" intermitente del E2E en celular. Ahora se carga la página destino completa una vez.
+- **#156:** el acuse de la PQRS pública no repite el texto de quien radica, y cambiar un rol no devuelve la fecha de nacimiento.
+- **#157:** el foco va al primer error al enviar (`EnfocarError`), con ajustes de accesibilidad en los formularios.
+- Se actualizaron las menciones viejas a Application Insights y Azure en la documentación.
+
 ## Pendiente
+**De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
+- **Registro de oferentes** (Ley 1480, art. 53) para quien vende en modo Compra: decidir con el abogado. Prioridad alta.
+- **Cuenta antigua que declara ser menor:** bloquear los reintentos y marcarla para revisión. Decisión del dueño.
+- **PQRS pública:** política de límite propia por IP y avisos a la moderación agrupados.
+- **Producto:** `robots.txt` y `sitemap.xml`, y un monitor externo de `/health/ready`.
+
 **Despliegue y operación:**
 - **Configurar en Render** `Legal__ResponsableNombre`, `Legal__Domicilio`, `Legal__CorreoContacto` y `Legal__Telefono` (y, si
   se quiere, `Legal__ResponsableDocumento`) **antes** de desplegar la fase legal: sin ellos la API no arranca.
