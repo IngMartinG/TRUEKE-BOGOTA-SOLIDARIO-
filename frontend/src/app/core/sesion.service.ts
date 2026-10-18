@@ -57,6 +57,8 @@ export class SesionService {
    * registrarla antes de hacer cualquier otra cosa (la API responde 403 "fecha_nacimiento_requerida").
    */
   readonly mayoriaEdadConfirmada = computed(() => !!this._usuario()?.fechaNacimiento);
+  /** Falta el nombre y apellido reales (nombre provisional de Google o anterior a la regla): solo puede explorar. */
+  readonly nombreRealPendiente = computed(() => this._usuario()?.nombreRealPendiente === true);
   readonly primerNombre = computed(() => this._usuario()?.nombreCompleto?.split(' ')[0] ?? '');
 
   constructor() {

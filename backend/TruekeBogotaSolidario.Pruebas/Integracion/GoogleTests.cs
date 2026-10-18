@@ -93,6 +93,29 @@ public class GoogleTests : IClassFixture<FabricaApi>
     private static string Correo() => $"g{Guid.NewGuid():N}@gmail.test";
 
     [Fact]
+    public async Task Sin_nombre_y_apellido_reales_la_cuenta_de_Google_solo_explora_hasta_escribirlos()
+    {
+        var r = await GoogleAsync(Emitir(Correo(), nombre: "ANA 🌸"));
+        Assert.Equal(HttpStatusCode.Created, r.StatusCode);
+        var cuerpo = await r.Content.ReadFromJsonAsync<JsonElement>();
+        var usuario = cuerpo.GetProperty("usuario");
+        Assert.Equal("Ana", usuario.GetProperty("nombreCompleto").GetString());          // el nombre real, bien escrito
+        Assert.True(usuario.GetProperty("nombreRealPendiente").GetBoolean());
+        var c = Api.ConToken(_f, cuerpo.GetProperty("token").GetString()!);
+
+        Assert.Equal(HttpStatusCode.OK, (await c.GetAsync("/api/v1/publicaciones")).StatusCode);   // explorar sí
+        var subida = new { tipo = "Imagen", contentType = "image/png", tamanoBytes = 1000 };
+        var bloqueada = await c.PostAsJsonAsync("/api/v1/archivos/subidas", subida);
+        Assert.Equal(HttpStatusCode.Forbidden, bloqueada.StatusCode);
+        Assert.Equal("nombre_requerido", await CodigoErrorAsync(bloqueada));
+
+        var perfil = await c.PutAsJsonAsync("/api/v1/usuarios/yo", new { nombreCompleto = "Ana Martínez", localidad = "Chapinero" });
+        Assert.Equal(HttpStatusCode.OK, perfil.StatusCode);
+        Assert.False((await perfil.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("nombreRealPendiente").GetBoolean());
+        Assert.Equal(HttpStatusCode.Created, (await c.PostAsJsonAsync("/api/v1/archivos/subidas", subida)).StatusCode);
+    }
+
+    [Fact]
     public async Task Con_Google_la_cuenta_nueva_queda_invitada_y_un_ingreso_posterior_no_cambia_nada()
     {
         var sesion = await Api.RegistrarSesionAsync(_f, "anfitriona");

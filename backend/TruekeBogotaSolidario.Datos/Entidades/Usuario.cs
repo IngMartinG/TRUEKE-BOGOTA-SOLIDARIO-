@@ -344,12 +344,22 @@ public class Usuario
 
     public bool MayoriaEdadConfirmada => FechaNacimiento is not null;
 
+    /// <summary>Nombre temporal de una cuenta de Google cuyo nombre no se pudo usar (solo emojis, dígitos…).</summary>
+    public const string NombreProvisional = "Usuario Trueke";
+
+    /// <summary>
+    /// Falta el nombre real (nombre y apellido con el formato de <see cref="FormatosTexto.NombreCompleto"/>): la cuenta solo
+    /// puede explorar hasta escribirlo en su perfil. Pasa con el nombre provisional, con nombres de Google de una sola palabra
+    /// y con cuentas guardadas antes de la regla.
+    /// </summary>
+    public bool NombreRealPendiente => NombreCompleto == NombreProvisional || !FormatosTexto.EsNombreCompleto(NombreCompleto);
+
     /// <summary>Cuenta creada con Google: sin contraseña (no se puede entrar con clave hasta que el usuario cree una) y correo ya verificado.</summary>
     public static Usuario CrearDesdeGoogle(string nombre, string correo, string googleSub, DateTime ahoraUtc)
     {
-        // Si el nombre de Google no cumple el formato (dígitos, emojis, apodos…), se usa uno genérico que la persona cambia en su perfil.
-        var nombreValido = FormatosTexto.Compactar(nombre);
-        if (nombreValido.Length is < 3 or > 120 || !FormatosTexto.EsNombrePersona(nombreValido)) nombreValido = "Usuario Trueke";
+        // El nombre real de Google, bien escrito ("MARÍA PÉREZ" → "María Pérez"). Si no queda nada usable, uno provisional;
+        // en ambos casos, si no es nombre y apellido, la cuenta solo explora hasta completarlo (NombreRealPendiente).
+        var nombreValido = FormatosTexto.EscribirNombre(nombre) ?? NombreProvisional;
         var u = new Usuario
         {
             Id = Guid.NewGuid(),

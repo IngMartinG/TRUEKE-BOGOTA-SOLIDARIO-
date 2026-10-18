@@ -53,6 +53,44 @@ public static class FormatosTexto
     public static bool EsLocalidad(string? texto) => Cumple(ReLocalidad, texto);
     public static bool EsDireccion(string? texto) => Cumple(ReDireccion, texto);
 
+    /// <summary>Partículas que van en minúscula dentro de un nombre ("Ana de la Torre").</summary>
+    private static readonly HashSet<string> Particulas = new(StringComparer.Ordinal) { "de", "del", "la", "las", "los", "y", "e", "da", "do", "dos", "van", "von" };
+
+    /// <summary>
+    /// Escribe bien un nombre que llega de afuera (Google): quita lo que no es letra ni separador de nombre (dígitos, emojis,
+    /// guiones bajos…), deja un solo espacio y pone mayúscula inicial: "MARÍA JOSÉ O'NEILL" → "María José O'Neill",
+    /// "ana de la torre" → "Ana de la Torre". Devuelve null si no queda un nombre de persona válido.
+    /// </summary>
+    public static string? EscribirNombre(string? texto)
+    {
+        if (string.IsNullOrWhiteSpace(texto)) return null;
+        var limpio = new System.Text.StringBuilder(texto.Length);
+        foreach (var c in texto.Normalize(System.Text.NormalizationForm.FormC))
+            limpio.Append(char.IsLetter(c) || char.GetUnicodeCategory(c) is System.Globalization.UnicodeCategory.NonSpacingMark
+                || c is '\'' or '’' or '.' or '-' ? c : ' ');
+        var palabras = Compactar(limpio.ToString()).Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        for (var i = 0; i < palabras.Length; i++)
+        {
+            var p = palabras[i].ToLowerInvariant();
+            palabras[i] = i > 0 && Particulas.Contains(p) ? p : Capitalizar(p);
+        }
+        var nombre = string.Join(' ', palabras);
+        return nombre.Length is >= 2 and <= 120 && EsNombrePersona(nombre) ? nombre : null;
+    }
+
+    /// <summary>Mayúscula al inicio y después de apóstrofo, guion o punto ("o'neill" → "O'Neill", "jean-paul" → "Jean-Paul").</summary>
+    private static string Capitalizar(string palabra)
+    {
+        var letras = palabra.ToCharArray();
+        var inicio = true;
+        for (var i = 0; i < letras.Length; i++)
+        {
+            if (inicio && char.IsLetter(letras[i])) { letras[i] = char.ToUpperInvariant(letras[i]); inicio = false; }
+            else if (letras[i] is '\'' or '’' or '-' or '.') inicio = true;
+        }
+        return new string(letras);
+    }
+
     /// <summary>Recorta y deja un solo espacio entre palabras.</summary>
     public static string Compactar(string? texto) => Espacios.Replace((texto ?? "").Trim(), " ");
 

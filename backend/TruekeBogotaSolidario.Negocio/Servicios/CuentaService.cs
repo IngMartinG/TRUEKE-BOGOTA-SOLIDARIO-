@@ -12,13 +12,18 @@ namespace TruekeBogotaSolidario.Negocio.Servicios;
 /// <summary>Reglas compartidas de verificación de cuenta.</summary>
 public static class Guardas
 {
-    /// <summary>Publicar, solicitar, comentar, chatear, denunciar y pagar exigen haber demostrado que el correo es propio.</summary>
+    /// <summary>
+    /// Publicar, solicitar, comentar, chatear, denunciar y pagar exigen haber demostrado que el correo es propio, la mayoría
+    /// de edad y el nombre real (nombre y apellido).
+    /// </summary>
     public static void ExigirCorreoVerificado(Usuario u)
     {
         if (!u.CorreoVerificado)
             throw new AccesoDenegadoException("Verifica tu correo para realizar esta acción. Revisa tu bandeja de entrada o solicita un nuevo enlace.");
         // Defensa en profundidad: la API ya lo exige en la autorización (claim "edad").
         if (!u.MayoriaEdadConfirmada) throw new MayoriaEdadRequeridaException();
+        // Sin nombre y apellido reales (nombre provisional de Google o guardado antes de la regla) solo se explora.
+        if (u.NombreRealPendiente) throw new NombreRealRequeridoException();
     }
 
     /// <summary>

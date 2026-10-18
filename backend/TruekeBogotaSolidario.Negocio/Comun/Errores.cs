@@ -43,6 +43,14 @@ public sealed class MayoriaEdadRequeridaException : Exception
         : base("Registra tu fecha de nacimiento para seguir: Trueke Bogotá Solidario es solo para personas mayores de 18 años.") { }
 }
 
+/// <summary>Falta el nombre real, nombre y apellido (HTTP 403, codigo "nombre_requerido"): el front lleva al perfil a escribirlo.</summary>
+public sealed class NombreRealRequeridoException : Exception
+{
+    public const string Codigo = "nombre_requerido";
+    public NombreRealRequeridoException()
+        : base("Escribe tu nombre y apellido reales para seguir: así la comunidad sabe con quién intercambia. Hazlo en Mi cuenta → Perfil.") { }
+}
+
 /// <param name="Codigo">Identificador estable para que el front reaccione sin depender del texto.</param>
 public sealed record ErrorTraducido(int Estado, string Titulo, bool EsInesperado, string? Codigo = null);
 
@@ -60,6 +68,7 @@ public static class TraductorErrores
         DosFactoresRequeridoException e => new(401, e.Message, false, DosFactoresRequeridoException.Codigo),
         FotoPerfilRequeridaException e => new(403, e.Message, false, FotoPerfilRequeridaException.Codigo),
         MayoriaEdadRequeridaException e => new(403, e.Message, false, MayoriaEdadRequeridaException.Codigo),
+        NombreRealRequeridoException e => new(403, e.Message, false, NombreRealRequeridoException.Codigo),
         AutenticacionException e => new(401, e.Message, false),
         ConflictoDeConcurrenciaException e => new(409, e.Message, false),
         _ => new(500, "Error interno del servidor.", true)

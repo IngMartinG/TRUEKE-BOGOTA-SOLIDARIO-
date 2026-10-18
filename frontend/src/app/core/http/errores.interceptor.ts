@@ -36,6 +36,13 @@ export const erroresInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
+      if (problema.codigo === 'nombre_requerido') {
+        avisos.info('Escribe tu nombre y apellido', 'Es necesario para publicar, solicitar, chatear y pagar: así la comunidad sabe con quién intercambia.');
+        if (!router.url.startsWith('/cuenta/perfil'))
+          void router.navigate(['/cuenta/perfil'], { fragment: 'datos', queryParams: { volver: router.url } });
+        return throwError(() => error);
+      }
+
       if (problema.codigo === 'foto_requerida') {
         avisos.info('Agrega tu foto de perfil', 'Es necesaria para publicar, solicitar, chatear y pagar: así la comunidad sabe con quién intercambia.');
         void router.navigate(['/cuenta/perfil'], { fragment: 'foto', queryParams: { volver: router.url } });

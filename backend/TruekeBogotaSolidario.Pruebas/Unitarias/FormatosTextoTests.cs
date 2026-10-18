@@ -103,12 +103,30 @@ public class FormatosTextoTests
     }
 
     [Theory]
-    [InlineData("Ana Bolena", "Ana Bolena")]
-    [InlineData("Ana", "Ana")]
-    [InlineData("xX_gamer_99", "Usuario Trueke")]
-    [InlineData("Ana 🌸", "Usuario Trueke")]
-    public void Google_usa_un_nombre_generico_si_el_suyo_no_cumple(string deGoogle, string esperado)
-        => Assert.Equal(esperado, Usuario.CrearDesdeGoogle(deGoogle, "g@t.co", "sub-1", DateTime.UtcNow).NombreCompleto);
+    [InlineData("Ana Bolena", "Ana Bolena", false)]
+    [InlineData("MARÍA JOSÉ O'NEILL", "María José O'Neill", false)]
+    [InlineData("ana de la torre", "Ana de la Torre", false)]
+    [InlineData("jean-paul  muñoz", "Jean-Paul Muñoz", false)]
+    [InlineData("Ana 🌸 Pérez", "Ana Pérez", false)]
+    [InlineData("Laura_Gómez99", "Laura Gómez", false)]
+    [InlineData("Ana", "Ana", true)]                         // nombre real pero sin apellido: debe completarlo
+    [InlineData("🌸🌸 123", Usuario.NombreProvisional, true)]
+    [InlineData("", Usuario.NombreProvisional, true)]
+    public void Google_crea_la_cuenta_con_el_nombre_real_bien_escrito(string deGoogle, string esperado, bool pendiente)
+    {
+        var u = Usuario.CrearDesdeGoogle(deGoogle, "g@t.co", "sub-1", DateTime.UtcNow);
+        Assert.Equal(esperado, u.NombreCompleto);
+        Assert.Equal(pendiente, u.NombreRealPendiente);
+    }
+
+    [Fact]
+    public void Con_nombre_y_apellido_validos_ya_no_queda_pendiente()
+    {
+        var u = Usuario.CrearDesdeGoogle("🌸", "g@t.co", "sub-1", DateTime.UtcNow);
+        Assert.True(u.NombreRealPendiente);
+        u.ActualizarPerfil("Ana Pérez", "Chapinero");
+        Assert.False(u.NombreRealPendiente);
+    }
 
     [Fact]
     public void Datos_de_factura_exigen_formato_al_crear_pero_se_leen_los_ya_guardados()
