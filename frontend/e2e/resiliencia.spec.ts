@@ -22,7 +22,6 @@ test('si un fragmento de la app no carga al ingresar, la sesión sigue y se lleg
   await expect(page).toHaveURL(/\/explorar/);
   await expect(page.getByText('Ocurrió un error inesperado')).toHaveCount(0);
   expect(cortado).toBe(true);
-  // La sesión volvió sola con la cookie de refresco tras cargar la página completa.
-  const r = await page.request.post('/api/v1/auth/refrescar', { headers: { 'X-Trueke-Csrf': '1' } });
-  expect(r.ok(), await r.text()).toBe(true);
+  // La sesión volvió sola con la cookie de refresco tras cargar la página completa: ya no se ofrece "Ingresar".
+  await expect(page.getByRole('link', { name: 'Ingresar', exact: true })).toHaveCount(0);
 });
