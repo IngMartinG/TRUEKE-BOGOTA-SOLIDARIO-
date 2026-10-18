@@ -1,9 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { CLAVE, cuentaLista } from './utilidades';
 
-// Sin service worker: así la petición del fragmento llega a la red y se puede cortar (con él, sale de su caché).
-test.use({ serviceWorkers: 'block' });
-
 test('si un fragmento de la app no carga al ingresar, la sesión sigue y se llega a la página destino', async ({ page }) => {
   const cuenta = await cuentaLista(page, 'Resiliente');
   await page.goto('/ingresar');

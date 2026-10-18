@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { cuentaLista, ingresar } from './utilidades';
 
 test.describe('app instalable (PWA)', () => {
+  test.use({ serviceWorkers: 'allow' });
   test('tiene manifiesto, service worker y funciona sin conexión una vez cargada', async ({ page, context, request }) => {
     const manifiesto = await request.get('/manifest.webmanifest');
     expect(manifiesto.ok()).toBe(true);
