@@ -50,6 +50,10 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    groups:
+      # init, analyze y demás subacciones de CodeQL deben tener la misma versión: si suben por separado, el análisis falla.
+      codeql:
+        patterns: ["github/codeql-action*"]
 
   - package-ecosystem: docker
     directory: /backend
