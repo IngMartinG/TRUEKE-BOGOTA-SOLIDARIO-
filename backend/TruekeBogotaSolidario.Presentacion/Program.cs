@@ -51,10 +51,11 @@ if (esProduccion)
         throw new InvalidOperationException("Urls:Api debe ser la URL https pública de la API.");
     if (string.Equals(config["Facturacion:Modo"], "Simulado", StringComparison.OrdinalIgnoreCase))
         throw new InvalidOperationException("Facturacion:Modo=Simulado no está permitido en Producción (usa Manual: el equipo registra número y CUFE de la DIAN).");
-    // Ley 1581 (art. 17) y Decreto 1377 (art. 13): la política debe identificar al responsable del tratamiento.
+    // Decreto 1377 de 2013 (art. 13) y Ley 1480 (art. 50): la política y los términos deben identificar al responsable con su
+    // nombre, domicilio y dirección, correo y teléfono.
     if (string.IsNullOrWhiteSpace(config["Legal:ResponsableNombre"]) || string.IsNullOrWhiteSpace(config["Legal:Domicilio"])
-        || string.IsNullOrWhiteSpace(config["Legal:CorreoContacto"]))
-        throw new InvalidOperationException("Configura Legal:ResponsableNombre, Legal:Domicilio y Legal:CorreoContacto: la política de datos y los términos deben identificar al responsable.");
+        || string.IsNullOrWhiteSpace(config["Legal:CorreoContacto"]) || string.IsNullOrWhiteSpace(config["Legal:Telefono"]))
+        throw new InvalidOperationException("Configura Legal:ResponsableNombre, Legal:Domicilio, Legal:CorreoContacto y Legal:Telefono: la política de datos y los términos deben identificar al responsable.");
     if (string.Equals(config["Seguridad:ExigirDosFactoresModeradores"], "false", StringComparison.OrdinalIgnoreCase))
         throw new InvalidOperationException("Seguridad:ExigirDosFactoresModeradores=false no está permitido en Producción: moderar exige sesión con 2FA.");
 }

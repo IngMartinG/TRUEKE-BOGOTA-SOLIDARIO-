@@ -332,8 +332,9 @@ Tercer y último paso para salir de Azure: ya no queda nada en Azure.
 
 ## Hecho el 2026-10-18 — legal a fondo y aplicado en la app
 - **Responsable del tratamiento configurable** (el repositorio es público): `Legal__ResponsableNombre`, `Legal__Domicilio`
-  y `Legal__CorreoContacto` son obligatorios en producción (la API no arranca sin ellos); `Legal__ResponsableDocumento` y
-  `Legal__Telefono` son opcionales. Se publican en `GET /configuracion` (`legal`) junto con las versiones vigentes.
+  (dirección de notificación y ciudad), `Legal__CorreoContacto` y `Legal__Telefono` son obligatorios en producción (la API
+  no arranca sin ellos); `Legal__ResponsableDocumento` es opcional. Decisión de los dueños (2026-10-18): por ahora figura una
+  persona natural; cuando constituyan la SAS se cambian las variables por la razón social, el NIT y su dirección. Se publican en `GET /configuracion` (`legal`) junto con las versiones vigentes.
 - **Política de tratamiento de datos** reescrita (Ley 1581 y Decreto 1377, compilado en el 1074 de 2015): responsable,
   datos por categoría, finalidades necesarias y opcionales, datos sensibles, menores, encargados y transferencias
   internacionales (Supabase, Render, GitHub Pages, Brevo, Wompi y Google), derechos, consultas (10 días hábiles + 5) y
@@ -358,8 +359,11 @@ Tercer y último paso para salir de Azure: ya no queda nada en Azure.
 
 ## Pendiente
 **Despliegue y operación:**
-- **Configurar en Render** `Legal__ResponsableNombre`, `Legal__Domicilio` y `Legal__CorreoContacto` (y, si se quiere,
-  `Legal__ResponsableDocumento` y `Legal__Telefono`) **antes** de desplegar la fase legal: sin ellos la API no arranca.
+- **Configurar en Render** `Legal__ResponsableNombre`, `Legal__Domicilio`, `Legal__CorreoContacto` y `Legal__Telefono` (y, si
+  se quiere, `Legal__ResponsableDocumento`) **antes** de desplegar la fase legal: sin ellos la API no arranca.
+- **Cuando exista la SAS** (Cámara de Comercio y RUT): cambiar las variables `Legal__*` a la razón social, el NIT y la dirección
+  de la sociedad; subir la versión de la política y los términos si el abogado lo indica; y replantear la Fase 4 (aportes),
+  que hoy supone que el dinero lo recibe una persona natural.
 - **Brevo con un Gmail como remitente:** algunos correos pueden caer en spam. Con dominio propio, autenticarlo en Brevo (DKIM y DMARC) y usar `no-responder@tudominio`.
 - **Monitoreo de errores:** solo hay logs de Render. Si hace falta más, un servicio de errores con plan gratis.
 - **Supabase Free pausa el proyecto tras 7 días sin actividad:** se reactiva con *Restore project* (los datos no se pierden). Un monitor de `/health/ready` lo evita (`docs/DESPLIEGUE.md` §7.2).

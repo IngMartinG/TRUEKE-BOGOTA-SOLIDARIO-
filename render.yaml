@@ -108,11 +108,11 @@ services:
         sync: false
       - key: Legal__ResponsableNombre # obligatorio: responsable del tratamiento (Ley 1581)
         sync: false
-      - key: Legal__Domicilio # obligatorio: domicilio o dirección de notificación del responsable
+      - key: Legal__Domicilio # obligatorio: dirección de notificación y ciudad del responsable
         sync: false
       - key: Legal__ResponsableDocumento # opcional: cédula o NIT del responsable
         sync: false
-      - key: Legal__Telefono # opcional
+      - key: Legal__Telefono # obligatorio: teléfono de contacto (puede ser una línea o un WhatsApp de la plataforma)
         sync: false
       - key: Bootstrap__SuperUsuarioCorreo # crea el SuperUsuario la primera vez; después se puede borrar
         sync: false

@@ -107,21 +107,22 @@ public sealed class LegalOpciones
     [Required, RegularExpression(@"^\d{4}-\d{2}-\d{2}$")] public string FechaVigencia { get; set; } = "2026-10-18";
 
     // Responsable del tratamiento (Ley 1581, art. 17; Decreto 1377, art. 13). El repositorio es público: estos datos se
-    // configuran por variables de entorno (Legal__ResponsableNombre…) y en producción la API no arranca sin ellos.
+    // configuran por variables de entorno (Legal__ResponsableNombre…) y en producción la API no arranca sin ellos. Hoy es
+    // una persona natural; cuando exista la sociedad (SAS) se cambian por su razón social, NIT y dirección, sin tocar código.
     /// <summary>Nombre de la persona natural (o razón social) responsable del tratamiento y prestadora del servicio.</summary>
     [StringLength(150)] public string? ResponsableNombre { get; set; }
     /// <summary>Documento del responsable (cédula o NIT). Opcional: si se configura, se muestra en la política y los términos.</summary>
     [StringLength(30)] public string? ResponsableDocumento { get; set; }
-    /// <summary>Domicilio o dirección de notificación del responsable (por ejemplo, "Bogotá D.C., Colombia").</summary>
+    /// <summary>Dirección de notificación y ciudad del responsable (por ejemplo, "Calle 1 # 2-3, Bogotá D.C., Colombia").</summary>
     [StringLength(200)] public string? Domicilio { get; set; }
     /// <summary>Correo de atención al usuario (PQR) que se muestra en los términos y en los correos. Vacío = no se muestra.</summary>
     public string? CorreoContacto { get; set; }
-    /// <summary>Teléfono de contacto. Opcional.</summary>
+    /// <summary>Teléfono de contacto (obligatorio en producción; puede ser una línea o un WhatsApp de la plataforma).</summary>
     [StringLength(30)] public string? Telefono { get; set; }
 
-    /// <summary>Los tres datos mínimos para identificar al responsable en la política y los términos.</summary>
+    /// <summary>Los datos mínimos para identificar al responsable en la política y los términos (Decreto 1377, art. 13).</summary>
     public bool ResponsableCompleto => !string.IsNullOrWhiteSpace(ResponsableNombre) && !string.IsNullOrWhiteSpace(Domicilio)
-        && !string.IsNullOrWhiteSpace(CorreoContacto);
+        && !string.IsNullOrWhiteSpace(CorreoContacto) && !string.IsNullOrWhiteSpace(Telefono);
 
     public bool CorreoContactoValido => string.IsNullOrWhiteSpace(CorreoContacto)
         || (CorreoContacto.Length <= 160 && CorreoContacto.IndexOf('@') > 0 && CorreoContacto.IndexOf('@') == CorreoContacto.LastIndexOf('@'));

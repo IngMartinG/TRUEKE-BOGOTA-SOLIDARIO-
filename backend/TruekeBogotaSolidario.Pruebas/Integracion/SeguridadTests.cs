@@ -139,7 +139,7 @@ public class SeguridadTests : IClassFixture<FabricaApi>
             ("Captcha:ClaveSecreta", "x"), ("Captcha:ClaveSitio", "x"), ("Correo:Proveedor", "Smtp"),
             ("Urls:Frontend", "https://front.trueke.test"), ("Urls:Api", "https://api.trueke.test"), ("Facturacion:Modo", "Manual"),
             ("Legal:ResponsableNombre", "Responsable Prueba"), ("Legal:Domicilio", "Bogotá D.C., Colombia"), ("Legal:CorreoContacto", "contacto@trueke.test"),
-            ("Seguridad:ExigirDosFactoresModeradores", "false"));
+            ("Legal:Telefono", "+57 300 000 0000"), ("Seguridad:ExigirDosFactoresModeradores", "false"));
         var ex = Assert.ThrowsAny<Exception>(() => f.CreateClient());
         Assert.Contains("ExigirDosFactoresModeradores", ex.ToString());
     }
@@ -153,9 +153,9 @@ public class SeguridadTests : IClassFixture<FabricaApi>
             ("Almacenamiento:Url", "https://proyecto.supabase.co/storage/v1"), ("Almacenamiento:LlaveServicio", "sb_secret_x"), ("Seguridad:ClaveCifrado", FabricaApi.ClaveCifradoPruebas),
             ("Captcha:ClaveSecreta", "x"), ("Captcha:ClaveSitio", "x"), ("Correo:Proveedor", "Smtp"),
             ("Urls:Frontend", "https://front.trueke.test"), ("Urls:Api", "https://api.trueke.test"), ("Facturacion:Modo", "Manual"),
-            ("Legal:ResponsableNombre", "Responsable Prueba"), ("Legal:CorreoContacto", "contacto@trueke.test"));
-        var ex = Assert.ThrowsAny<Exception>(() => f.CreateClient());
-        Assert.Contains("Legal:Domicilio", ex.ToString());
+            ("Legal:ResponsableNombre", "Responsable Prueba"), ("Legal:Domicilio", "Bogotá D.C., Colombia"), ("Legal:CorreoContacto", "contacto@trueke.test"));
+        var ex = Assert.ThrowsAny<Exception>(() => f.CreateClient()); // falta el teléfono
+        Assert.Contains("Legal:Telefono", ex.ToString());
     }
 
     [Fact]

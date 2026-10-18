@@ -56,6 +56,7 @@ services:
       Legal__CorreoContacto: ${CORREO_CONTACTO:-}
       Legal__ResponsableNombre: ${LEGAL_RESPONSABLE:-}
       Legal__Domicilio: ${LEGAL_DOMICILIO:-}
+      Legal__Telefono: ${LEGAL_TELEFONO:-}
     depends_on:
       db-usuario:
         condition: service_completed_successfully
