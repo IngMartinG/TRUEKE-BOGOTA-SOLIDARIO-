@@ -357,6 +357,29 @@ Tercer y último paso para salir de Azure: ya no queda nada en Azure.
   nuevo `Consulta` (10 días hábiles) y estado `EnTramite` (el equipo lo marca y se le avisa a quien la radicó). Los plazos
   se cuentan en **días hábiles colombianos**, sin festivos (fijos, ley Emiliani y los de Pascua). Migración `PqrsPublica`.
 
+## Hecho el 2026-10-18 — asistente de ayuda sin IA (preparado para IA)
+- **Base de conocimiento única** en `frontend/src/app/features/ayuda/conocimiento.ts`: cada entrada tiene id, pregunta,
+  variantes, palabras clave, respuesta, acción y tema. La usan el Centro de ayuda, las preguntas de Planes y de Cómo
+  funciona, y el asistente; ya no hay preguntas repetidas en tres archivos. Las cifras (puntos, precios, recargas,
+  invitaciones, prueba Premium…) salen en vivo de `/eco-puntos/politica`; si no cargó, la respuesta va sin números.
+- **Motor de búsqueda** (`motor.ts`, sin red): sin tildes ni mayúsculas, plurales, sinónimos ("clave" = "contraseña",
+  "cobro" = "pago"…) y un error de tecleo en palabras largas. El buscador del Centro de ayuda también lo usa.
+- **Asistente** (`asistente-soporte.ts`): botón "Ayuda" flotante en todas las páginas (salvo el chat abierto y el
+  formulario de publicar, donde taparía la barra), cargado con `@defer (on idle)` fuera del paquete inicial. Es un
+  `<dialog>` modal (foco atrapado, Esc lo cierra y el foco vuelve al botón), hoja inferior en el celular, modo oscuro y
+  movimiento reducido. Ofrece temas según la sección, responde con un botón de acción ("Ir a mis pagos", "Subir foto";
+  sin sesión pasa por ingresar) y pregunta "¿Te sirvió?".
+- **Escalado a PQRS:** si no sirvió o no encontró nada, "Crear PQRS" con el tipo sugerido. Con sesión y correo
+  confirmado va a `/cuenta/soporte?tipo=…`; si no, a `/pqrs?tipo=…` (sin sesión, retracto y reversión pasan a reclamo).
+  El asunto y la conversación se precargan **en memoria** (`BorradorPqrs`), no en la URL, para no dejar datos personales
+  en el historial ni en registros.
+- **`ProveedorRespuestas`:** interfaz con la implementación local. Una futura `ProveedorIA` llamaría a un endpoint propio
+  del backend con límite de uso (la llave nunca en el front); esta fase no llama a ninguna IA ni cambia la API.
+- La medición de "preguntas sin respuesta" **no se hizo**: hoy no hay analítica en el front (`docs/ANALITICA.md` solo la
+  documenta) y exigiría un endpoint nuevo. Queda como mejora cuando se active la analítica.
+- Pruebas: motor (coincidencias, sin coincidencia, cifras en vivo y escalado) en vitest, y E2E `e2e/asistente.spec.ts`
+  (visitante hasta la PQRS pública; con sesión hasta radicar en Soporte).
+
 ## Pendiente
 **Despliegue y operación:**
 - **Configurar en Render** `Legal__ResponsableNombre`, `Legal__Domicilio`, `Legal__CorreoContacto` y `Legal__Telefono` (y, si

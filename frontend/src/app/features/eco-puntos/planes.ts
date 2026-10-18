@@ -7,6 +7,7 @@ import { AvisosService } from '../../core/avisos.service';
 import { mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
 import { CopPipe, FechaPipe } from '../../shared/pipes';
+import { preguntasDe } from '../ayuda/conocimiento';
 import { Icono } from '../../shared/ui/icono';
 
 type Plan = 'Individual' | 'Premium' | 'Empresa';
@@ -144,7 +145,7 @@ interface Fila {
       <section class="mx-auto mt-16 max-w-3xl" aria-labelledby="titulo-preguntas">
         <h2 id="titulo-preguntas" class="titulo-seccion text-center">Preguntas frecuentes</h2>
         <div class="mt-6 space-y-3">
-          @for (f of preguntas(); track f.p) {
+          @for (f of preguntas(); track f.id) {
             <details class="group tarjeta p-5 open:shadow-elevada">
               <summary class="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold">
                 {{ f.p }}
@@ -276,19 +277,7 @@ export default class Planes {
     ];
   });
 
-  protected readonly preguntas = computed(() => {
-    const p = this.politica();
-    const dias = p?.diasPruebaPremium ?? 7;
-    return [
-      { p: '¿Cómo funciona la prueba gratis?', r: `Tienes Premium ${dias} días sin pagar nada y sin tarjeta. Incluye todo Premium, con ${p?.destacadosGratisPruebaPremium ?? 1} destacado gratis en vez de ${p?.destacadosGratisPremium ?? 3}. Al terminar vuelves al plan Gratis: no se cobra nada. Es una vez por cuenta, para quien nunca ha tenido un plan.` },
-      { p: '¿Se renueva solo?', r: `No. Ningún plan se cobra automáticamente. Te avisamos ${p?.diasRecordatorioVencimiento ?? 3} días antes de que venza y, si renuevas antes, los días se suman sin perder tus destacados gratis.` },
-      { p: '¿Qué pasa si se vence?', r: 'Tus publicaciones siguen activas, pero no puedes crear nuevas por encima del límite del plan Gratis. Dejas de tener el descuento, la gráfica diaria, el nombre comercial y los destacados gratis.' },
-      { p: '¿Cómo funciona el plan anual?', r: `Pagas una sola vez y tienes ${p?.duracionSuscripcionAnualDias ?? 365} días de Premium o Empresa: son 12 meses por el precio de 10. Los destacados gratis se reponen igual, cada ${p?.diasCicloDestacadosGratis || 30} días, y si ya tienes el plan mensual los días del anual se suman a los que te quedan.` },
-      { p: '¿Puedo pasar de Premium a Empresa?', r: 'Sí, cuando venza tu Premium. Durante la prueba gratis puedes pasar a Empresa cuando quieras.' },
-      { p: '¿Me dan factura?', r: 'Sí: cada pago genera factura electrónica. Si la quieres a tu nombre o al de tu empresa, agrega tu cédula o NIT en Cuenta → Pagos y facturas.' },
-      { p: '¿Puedo arrepentirme?', r: 'Tienes derecho de retracto dentro de los 5 días hábiles siguientes a la compra; se solicita desde Soporte.' },
-    ];
-  });
+  protected readonly preguntas = computed(() => preguntasDe('planes', this.politica()));
 
   protected cop(v: number): string {
     return `$${v.toLocaleString('es-CO')}`;

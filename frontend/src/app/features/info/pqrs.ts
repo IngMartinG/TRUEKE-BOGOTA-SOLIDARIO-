@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
 import { estadoPqr, etiquetaPqr, TIPOS_PQR, type PqrDto, type TipoPqrDto } from '../../api/tipos';
 import { CuentaApi } from '../../core/api/cuenta.api';
@@ -16,9 +16,11 @@ import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo'
 import { Icono } from '../../shared/ui/icono';
 import { Volver } from '../../shared/ui/volver';
 import { nombrePersona, textoSeguro } from '../../shared/validadores';
+import { BorradorPqrs, type Borrador } from '../ayuda/borrador-pqrs';
 
 /** Lo que se puede radicar sin cuenta: el retracto y la reversión se piden sobre un pago propio, desde la cuenta. */
 const TIPOS_PUBLICOS = TIPOS_PQR.filter((t) => !t.conPago);
+const esTipoPublico = (v: string | null | undefined): v is TipoPqrDto => TIPOS_PUBLICOS.some((t) => t.valor === v);
 const RE_RADICADO = /^ *[Pp][Qq][Rr]-\d{8}-[0-9A-Fa-f]{6} *$/;
 
 /**
@@ -181,8 +183,9 @@ export default class Pqrs {
   protected readonly encontrada = signal<PqrDto | null>(null);
   protected readonly errorConsulta = signal<string | null>(null);
 
+  private readonly ruta = inject(ActivatedRoute);
   protected readonly form = this.fb.group({
-    tipo: this.fb.control<TipoPqrDto>('Peticion'),
+    tipo: this.fb.control<TipoPqrDto>(this.tipoDeLaRuta()),
     nombre: [this.sesion.usuario()?.nombreCompleto ?? '', [Validators.required, Validators.minLength(3), Validators.maxLength(120), nombrePersona]],
     correo: [this.sesion.usuario()?.correo ?? '', [Validators.required, Validators.email, Validators.maxLength(160)]],
     asunto: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(120), textoSeguro()]],
@@ -194,6 +197,28 @@ export default class Pqrs {
     radicado: ['', [Validators.required, Validators.pattern(RE_RADICADO)]],
     correo: ['', [Validators.required, Validators.email, Validators.maxLength(160)]],
   });
+
+  constructor() {
+    // Lo que se habló con el asistente llega en memoria (no en la URL) y se aplica una vez, aunque ya estés aquí.
+    const borrador = inject(BorradorPqrs);
+    effect(() => {
+      if (!borrador.pendiente()) return;
+      untracked(() => this.aplicar(borrador.tomar()));
+    });
+  }
+
+  /** `?tipo=` de un enlace o del asistente; solo los tipos que se pueden radicar sin cuenta. */
+  private tipoDeLaRuta(): TipoPqrDto {
+    const t = this.ruta.snapshot.queryParamMap.get('tipo');
+    return esTipoPublico(t) ? t : 'Peticion';
+  }
+
+  private aplicar(b: Borrador | null): void {
+    if (!b) return;
+    this.vista.set('radicar');
+    this.radicada.set(null);
+    this.form.patchValue({ tipo: esTipoPublico(b.tipo) ? b.tipo : 'Reclamo', asunto: b.asunto, descripcion: b.descripcion });
+  }
 
   protected async radicar(): Promise<void> {
     this.form.markAllAsTouched();
