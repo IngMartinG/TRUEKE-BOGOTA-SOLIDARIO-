@@ -198,12 +198,13 @@ Todo se configura por variables de entorno (Azure: *App Settings* o referencias 
 | `Seguridad__ClaveCifrado` | ✅ | 32 bytes en base64 (`openssl rand -base64 32`). **No la cambies**: cifra los secretos de 2FA |
 | `Captcha__ClaveSitio`, `Captcha__ClaveSecreta` | ✅ | reCAPTCHA v3 (google.com/recaptcha/admin) |
 | `Pagos__Wompi__LlavePublica`, `__LlavePrivada`, `__SecretoIntegridad`, `__SecretoEventos` | ✅ | Wompi |
-| `Correo__Smtp__Host`, `__Puerto`, `__Usuario`, `__Clave`, `Correo__Remitente` | ✅ | SMTP con TLS |
+| `Correo__Proveedor`, `Correo__Remitente` | ✅ | `Brevo` (API HTTPS) o `Smtp` |
+| `Correo__Brevo__ClaveApi` | Con Brevo | Clave API de Brevo (`xkeysib-…`) |
+| `Correo__Smtp__Host`, `__Puerto`, `__Usuario`, `__Clave` | Con Smtp | SMTP con TLS |
 | `Urls__Frontend` | ✅ | URL **https** del front (enlaces de los correos) |
 | `Almacenamiento__Url`, `Almacenamiento__LlaveServicio` | ✅ | `https://<ref>.supabase.co/storage/v1` y la llave secreta del proyecto (`sb_secret_…`) |
 | `Cors__Origenes__0..n` | ✅ | Origen(es) del front |
 | `Google__ClientId` | Si se usa Google | OAuth Client ID tipo "Aplicación web" |
-| `APPLICATIONINSIGHTS_CONNECTION_STRING` | Recomendado | Monitoreo (se registra un aviso si falta) |
 | `Seguridad__ExigirDosFactoresModeradores` | — | `true` por defecto |
 | `Auth__CookieSameSite` | — | `Strict` (mismo sitio) o `None` (sitios distintos) |
 | `Redis__Habilitado`, `Redis__Conexion` | Con más de una instancia | Backplane de SignalR |
@@ -230,7 +231,7 @@ Ninguna llave se escribe en el código ni en `appsettings.json`. En local: `dotn
 | **Google (inicio de sesión)** | [console.cloud.google.com](https://console.cloud.google.com) → *APIs y servicios* → *Pantalla de consentimiento OAuth* (tipo Externo, nombre y correo de soporte) → *Credenciales* → *Crear credenciales* → **ID de cliente OAuth** → tipo **Aplicación web** → *Orígenes de JavaScript autorizados*: `http://localhost:4200` y `https://<tu-front>` | ID de cliente (`…apps.googleusercontent.com`) → `Google__ClientId`. **No** se necesita el "secreto de cliente": el backend valida el ID token. |
 | **reCAPTCHA v3** | [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin) → nuevo sitio → **reCAPTCHA v3** → dominios `localhost` y el del front | Clave del sitio → `Captcha__ClaveSitio` · Clave secreta → `Captcha__ClaveSecreta` |
 | **PostgreSQL (producción)** | [supabase.com](https://supabase.com) → *New project* (región East US, **Data API desactivada**) → botón **Connect** → **Session pooler** (IPv4). Pasos en `docs/DESPLIEGUE.md` §2. | `ConnectionStrings__TruekeDb=Host=aws-N-<region>.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.<ref>;Password=…;SSL Mode=Require;Maximum Pool Size=10`. Deja `Database__Inicializacion=Migrate` (aplica las migraciones al arrancar) o `None` + script idempotente en el despliegue si hay varias instancias. |
-| Correo | Azure Communication Services → *Email* (API HTTPS: `Correo__Proveedor=AzureCommunication`, `Correo__Azure__CadenaConexion`; pasos en `docs/DESPLIEGUE.md` §5.1) o cualquier SMTP con TLS (`Correo__Proveedor=Smtp`: `Correo__Smtp__Host`, `__Usuario`, `__Clave`) | `Correo__Remitente` = dirección MailFrom del dominio (Azure) o la cuenta SMTP |
+| Correo | [Brevo](https://www.brevo.com) (API HTTPS: `Correo__Proveedor=Brevo`, `Correo__Brevo__ClaveApi`; pasos en `docs/DESPLIEGUE.md` §5.1) o cualquier SMTP con TLS (`Correo__Proveedor=Smtp`: `Correo__Smtp__Host`, `__Usuario`, `__Clave`) | `Correo__Remitente` = remitente verificado en Brevo o la cuenta SMTP |
 | Supabase Storage | El mismo proyecto de la base → *Project Settings → API Keys → Secret keys*. Los buckets los crea la API (`docs/DESPLIEGUE.md` §3). | `Almacenamiento__Url=https://<ref>.supabase.co/storage/v1` · `Almacenamiento__LlaveServicio=sb_secret_…` |
 
 ## 8. Base de datos y migraciones
@@ -263,7 +264,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
    - bucket `imagenes` **público, de solo lectura**; `documentos` y `subidas` **privados** (la API los crea y les fija 5 MB y los tipos permitidos);
    - sin políticas en `storage.objects`: solo la API, con la llave secreta, escribe;
    - las subidas sin usar ya las borra la API; las fotos quitadas al editar quedan en el bucket.
-5. **Monitoreo:** recurso de Application Insights → `APPLICATIONINSIGHTS_CONNECTION_STRING`.
+5. **Monitoreo:** logs de la plataforma y un chequeo de disponibilidad de `/health/live` (`docs/DESPLIEGUE.md` §7.2).
 6. **Dominio:** el mismo para front y API (`app.` y `api.`), para usar la cookie con `SameSite=Strict`.
 7. **Externos:**
    - Wompi: webhook `https://<api>/api/v1/pagos/wompi/eventos`;
@@ -355,8 +356,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
   - chat interno en lugar de correos;
   - documentos de identidad privados y borrados al resolverse;
   - Habeas Data: consentimiento, exportación y supresión;
-  - purga de datos vencidos;
-  - el monitoreo redacta la query string.
+  - purga de datos vencidos.
 - **Archivos:** URL firmada de Supabase (`createSignedUploadUrl`) **solo para crear un archivo** (no puede sobrescribir, leer, listar ni borrar) con nombre elegido por el servidor, en el bucket **privado** `subidas`, que además rechaza más de 5 MB y los tipos no permitidos. Al usarlo se valida dueño, tamaño ≤ 5 MB y *magic bytes*, y lo que se guarda es siempre una **copia hecha por el servidor** con otro nombre (fotos limpias en `imagenes`, documentos en `documentos`); la subida se borra. Nunca se confía en metadatos que pueda poner el cliente. Las subidas que nadie usa se borran a la hora (servicio en segundo plano).
 - **Fotos sin ubicación oculta:** al publicar, cada foto se **re-codifica** (SkiaSharp; solo se aceptan JPEG, PNG y WEBP aunque Skia lea otros formatos): se aplica la orientación, se reduce a 1.600 px y se eliminan **todos los metadatos** (EXIF con GPS, modelo del celular, IPTC, XMP). La copia limpia se guarda con un **nombre nuevo** en el bucket público y se borra el original: la URL firmada aún vigente no puede tocar lo publicado. Protege contra "bombas de descompresión" (máx. 12.000 px por lado).
 - **Límite de peticiones distribuido:** con Redis, los contadores se comparten entre instancias (el límite de login no se multiplica al escalar). Solo se acepta `X-Forwarded-For` de proxies configurados.
@@ -375,7 +375,6 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 - **Cadena de suministro:**
   - solo nuget.org;
   - el CI falla con paquetes vulnerables o con pruebas de PostgreSQL omitidas;
-  - dependencias Azure y OpenTelemetry fijadas a versiones compatibles con .NET 10;
   - imagen sin SDK y sin root.
 
 ## 12. Limitaciones conocidas
