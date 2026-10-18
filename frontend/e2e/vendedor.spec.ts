@@ -1,6 +1,16 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
 import { cuentaLista, fotoPng, ingresar } from './utilidades';
+
+/**
+ * Elige una opción tocando su tarjeta visible: los radios son sr-only y en celular un clic forzado sobre el input
+ * puede caer fuera de la opción.
+ */
+async function elegir(page: Page, nombre: string | RegExp): Promise<void> {
+  const radio = page.getByRole('radio', { name: nombre });
+  await page.locator('label', { has: radio }).click();
+  await expect(radio).toBeChecked();
+}
 
 test('vender por primera vez: la publicación en Compra pide el registro de vendedor y luego se publica', async ({ page }) => {
   const titulo = `Lámpara de escritorio E2E ${randomBytes(3).toString('hex')}`;
@@ -9,15 +19,13 @@ test('vender por primera vez: la publicación en Compra pide el registro de vend
 
   await test.step('elige Compra y ve el aviso del registro', async () => {
     await page.goto('/publicar');
-    // Se toca la tarjeta visible (el radio es sr-only: en celular un clic forzado sobre él cae fuera de la opción)
-    await page.getByText('Compra de segunda mano a un precio justo').click();
-    await expect(page.getByRole('radio', { name: /^Compra\b/ })).toBeChecked();
+    await elegir(page, /^Compra\b/);
     await expect(page.getByText('Para vender, la ley pide registrar una sola vez')).toBeVisible();
     await page.getByRole('button', { name: 'Continuar' }).click();
 
     await page.getByLabel('Título').fill(titulo);
-    await page.getByRole('radio', { name: 'Hogar y muebles' }).check({ force: true });
-    await page.getByRole('radio', { name: 'Como nuevo' }).check({ force: true });
+    await elegir(page, 'Hogar y muebles');
+    await elegir(page, 'Como nuevo');
     await page.getByLabel('Descripción').fill('Lámpara LED con brazo flexible, funciona perfecto.');
     await page.getByLabel('Precio de venta').fill('45000');
     await page.getByRole('button', { name: 'Continuar' }).click();
@@ -49,10 +57,9 @@ test('vender por primera vez: la publicación en Compra pide el registro de vend
   });
 
   await test.step('retoma el borrador y publica la venta', async () => {
+    // El borrador vuelve al último paso al que había llegado: la revisión
     await page.getByRole('button', { name: 'Retomar' }).click();
-    const publicarAhora = page.getByRole('button', { name: 'Publicar ahora' });
-    for (let i = 0; i < 5 && !(await publicarAhora.isVisible()); i++) await page.getByRole('button', { name: 'Continuar' }).click();
-    await publicarAhora.click();
+    await page.getByRole('button', { name: 'Publicar ahora' }).click();
     await expect(page).toHaveURL(/\/publicacion\/[0-9a-f-]{36}/);
     await expect(page.getByRole('heading', { name: titulo })).toBeVisible();
     // Nada del registro aparece en la publicación
