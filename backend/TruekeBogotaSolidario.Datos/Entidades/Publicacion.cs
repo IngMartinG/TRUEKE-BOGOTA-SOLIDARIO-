@@ -97,14 +97,14 @@ public class Publicacion
         if (titulo.Length is < 3 or > 120) throw new ReglaDeNegocioException("El título debe tener entre 3 y 120 caracteres.");
         if (descripcion.Length is < 1 or > 2000) throw new ReglaDeNegocioException("La descripción es obligatoria (máximo 2000 caracteres).");
         if (localidad.Length is < 2 or > 60) throw new ReglaDeNegocioException("La localidad, barrio o sector debe tener entre 2 y 60 caracteres.");
-        if (titulo.Any(char.IsControl) || localidad.Any(char.IsControl)) throw new ReglaDeNegocioException("Los datos contienen caracteres no permitidos.");
+        if (!TextoSeguro.EsSeguro(titulo) || !TextoSeguro.EsSeguro(localidad) || !TextoSeguro.EsSeguro(descripcion, multilinea: true)) throw new ReglaDeNegocioException("Los datos contienen caracteres no permitidos.");
         if (!Enum.IsDefined(d.Modo)) throw new ReglaDeNegocioException("Modo de transacción no válido.");
         if (!Enum.IsDefined(d.Condicion)) throw new ReglaDeNegocioException("Indica el estado del producto (nuevo, usado, reparado…).");
         if (CondicionRequiereDetalle(d.Condicion) && (detalle is null || detalle.Length < 5))
             throw new ReglaDeNegocioException("Describe el estado del producto: qué detalles tiene, qué se reparó o qué piezas sirven (mínimo 5 caracteres).");
         if (detalle is { Length: > LongitudMaximaDetalleCondicion })
             throw new ReglaDeNegocioException($"La descripción del estado admite como máximo {LongitudMaximaDetalleCondicion} caracteres.");
-        if (detalle is not null && detalle.Any(c => char.IsControl(c) && c is not '\n' and not '\r'))
+        if (detalle is not null && !TextoSeguro.EsSeguro(detalle, multilinea: true))
             throw new ReglaDeNegocioException("Los datos contienen caracteres no permitidos.");
         var municipio = Divipola.Exigir(d.MunicipioCodigo);
         if (d.Modo == ModoTransaccion.Compra && (d.PrecioReferenciaCop is null or <= 0))

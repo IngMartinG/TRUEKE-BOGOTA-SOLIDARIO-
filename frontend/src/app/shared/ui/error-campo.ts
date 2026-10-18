@@ -43,6 +43,17 @@ export class ErrorCampo {
     if (e['noCoincide']) return 'Las contraseñas no coinciden.';
     if (e['menorDeEdad']) return 'Trueke Bogotá Solidario es solo para personas mayores de 18 años.';
     if (e['fechaInvalida']) return 'Revisa la fecha: no parece correcta.';
+    if (e['nombreCompleto']) return 'Escribe tu nombre y apellido, solo con letras (se permiten espacios, apóstrofo, guion y punto).';
+    if (e['nombrePersona']) return 'El nombre solo puede tener letras, espacios, apóstrofo, guion y punto.';
+    if (e['nombreComercial']) return "El nombre comercial solo puede tener letras, números, espacios y & . , - ' ( ).";
+    if (e['razonSocial']) return "La razón social solo puede tener letras, números, espacios y & . , - ' ( ).";
+    if (e['localidad']) return 'La localidad o barrio solo puede tener letras, números, espacios y # - . °.';
+    if (e['direccion']) return 'La dirección solo puede tener letras, números, espacios y # - . , ° /.';
+    if (e['nit']) return 'El NIT debe tener entre 6 y 15 dígitos (puntos opcionales) y, si lo incluyes, el dígito de verificación tras un guion.';
+    if (e['nitDv']) return 'El dígito de verificación del NIT no es correcto.';
+    if (e['cedula']) return 'La cédula debe tener entre 5 y 10 dígitos, sin letras.';
+    if (e['textoInvisible']) return 'El texto tiene caracteres invisibles o de control; bórralos y vuelve a escribirlo.';
+    if (e['documentoAlfanumerico']) return 'El documento debe tener entre 3 y 20 letras o números, sin guiones ni símbolos.';
     return `${this.etiqueta()} no es válido.`;
   });
 }

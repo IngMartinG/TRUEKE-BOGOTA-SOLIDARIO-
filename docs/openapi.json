@@ -5440,11 +5440,13 @@
           "nombreCompleto": {
             "maxLength": 120,
             "minLength": 3,
+            "pattern": "^ *\\p{L}\\p{M}*(?:[\u0027\u2019.-]?\\p{L}\\p{M}*)*\\.?(?: \u002B\\p{L}\\p{M}*(?:[\u0027\u2019.-]?\\p{L}\\p{M}*)*\\.?)\u002B *$",
             "type": "string"
           },
           "localidad": {
             "maxLength": 60,
             "minLength": 2,
+            "pattern": "^(?=.*\\p{L}) *[\\p{L}\\p{M}0-9#.\u00B0\u00BA-]\u002B(?: \u002B[\\p{L}\\p{M}0-9#.\u00B0\u00BA-]\u002B)* *$",
             "type": "string"
           },
           "municipioCodigo": {
@@ -6249,6 +6251,7 @@
           },
           "pagoReferencia": {
             "maxLength": 100,
+            "pattern": "^ *[A-Za-z]{3}-[A-Za-z0-9]{1,96} *$",
             "type": "string",
             "nullable": true
           }
@@ -6425,6 +6428,7 @@
           "direccion": {
             "maxLength": 150,
             "minLength": 5,
+            "pattern": "^(?=.*\\p{L}) *[\\p{L}\\p{M}0-9#.,\u00B0\u00BA/-]\u002B(?: \u002B[\\p{L}\\p{M}0-9#.,\u00B0\u00BA/-]\u002B)* *$",
             "type": "string"
           },
           "municipioCodigo": {
@@ -8076,11 +8080,13 @@
           "nombreComercial": {
             "maxLength": 120,
             "minLength": 2,
+            "pattern": "^(?=.*[\\p{L}0-9]) *[\\p{L}\\p{M}0-9\u0026.,\u0027\u2019()-]\u002B(?: \u002B[\\p{L}\\p{M}0-9\u0026.,\u0027\u2019()-]\u002B)* *$",
             "type": "string"
           },
           "nit": {
             "maxLength": 20,
             "minLength": 6,
+            "pattern": "^ *[0-9][0-9. ]*(?:- *[0-9])? *$",
             "type": "string"
           },
           "mostrarNit": {
@@ -8768,11 +8774,13 @@
           "nombreCompleto": {
             "maxLength": 120,
             "minLength": 3,
+            "pattern": "^ *\\p{L}\\p{M}*(?:[\u0027\u2019.-]?\\p{L}\\p{M}*)*\\.?(?: \u002B\\p{L}\\p{M}*(?:[\u0027\u2019.-]?\\p{L}\\p{M}*)*\\.?)\u002B *$",
             "type": "string"
           },
           "localidad": {
             "maxLength": 60,
             "minLength": 2,
+            "pattern": "^(?=.*\\p{L}) *[\\p{L}\\p{M}0-9#.\u00B0\u00BA-]\u002B(?: \u002B[\\p{L}\\p{M}0-9#.\u00B0\u00BA-]\u002B)* *$",
             "type": "string"
           },
           "municipioCodigo": {

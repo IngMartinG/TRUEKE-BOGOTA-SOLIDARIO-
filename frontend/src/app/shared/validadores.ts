@@ -65,3 +65,126 @@ export const mayorDeEdad: ValidatorFn = (c: AbstractControl): ValidationErrors |
   if (v > hoy || v < restarAnios(hoy, EDAD_MAXIMA)) return { fechaInvalida: true };
   return v > fechaMaximaNacimiento() ? { menorDeEdad: true } : null;
 };
+
+// ---------------- Formatos de los datos (mismas reglas que el backend: Datos/Common/FormatosTexto.cs) ----------------
+// Se toleran espacios al inicio, al final y repetidos: el backend recorta y deja uno solo.
+
+/** Una palabra de un nombre: letras (con tildes, ñ, diéresis) con apóstrofo, guion o punto internos ("O'Neill", "J."). */
+const PALABRA = String.raw`\p{L}\p{M}*(?:['’.\-]?\p{L}\p{M}*)*\.?`;
+export const RE_NOMBRE_PERSONA = new RegExp(String.raw`^ *${PALABRA}(?: +${PALABRA})* *$`, 'u');
+export const RE_NOMBRE_COMPLETO = new RegExp(String.raw`^ *${PALABRA}(?: +${PALABRA})+ *$`, 'u');
+export const RE_NOMBRE_COMERCIAL = /^(?=.*[\p{L}0-9]) *[\p{L}\p{M}0-9&.,'’()-]+(?: +[\p{L}\p{M}0-9&.,'’()-]+)* *$/u;
+export const RE_LOCALIDAD = /^(?=.*\p{L}) *[\p{L}\p{M}0-9#.°º-]+(?: +[\p{L}\p{M}0-9#.°º-]+)* *$/u;
+export const RE_DIRECCION = /^(?=.*\p{L}) *[\p{L}\p{M}0-9#.,°º/-]+(?: +[\p{L}\p{M}0-9#.,°º/-]+)* *$/u;
+const RE_NIT = /^ *[0-9][0-9. ]*(?:- *[0-9])? *$/;
+
+function formato(re: RegExp, error: string): ValidatorFn {
+  return (c: AbstractControl): ValidationErrors | null => {
+    const v = String(c.value ?? '');
+    return !v || re.test(v) ? null : { [error]: true };
+  };
+}
+
+/** Nombre de persona: solo letras, espacio, apóstrofo, guion y punto (una o más palabras). */
+export const nombrePersona = formato(RE_NOMBRE_PERSONA, 'nombrePersona');
+/** Nombre completo (registro y perfil): como nombrePersona, con nombre y apellido. */
+export const nombreCompleto = formato(RE_NOMBRE_COMPLETO, 'nombreCompleto');
+/** Nombre comercial o razón social: letras, dígitos, espacio y & . , - ' ( ). */
+export const nombreComercial = formato(RE_NOMBRE_COMERCIAL, 'nombreComercial');
+/** Localidad o barrio: letras, dígitos, espacio y # - . ° (al menos una letra). */
+export const localidad = formato(RE_LOCALIDAD, 'localidad');
+/** Dirección: letras, dígitos, espacio y # - . , ° / (al menos una letra). */
+export const direccion = formato(RE_DIRECCION, 'direccion');
+
+const PESOS_NIT = [3, 7, 13, 17, 19, 23, 29, 37, 41, 43, 47, 53, 59, 67, 71];
+
+/** Dígito de verificación del NIT (módulo 11 de la DIAN, igual que DocumentosFiscales.DigitoVerificacion). */
+export function digitoVerificacionNit(numero: string): number {
+  let suma = 0;
+  for (let i = 0; i < numero.length; i++) suma += Number(numero[numero.length - 1 - i]) * PESOS_NIT[i]!;
+  const residuo = suma % 11;
+  return residuo <= 1 ? residuo : 11 - residuo;
+}
+
+/** null si el NIT es válido; si no, la clave del error ('nit' formato o largo, 'nitDv' dígito de verificación). */
+function errorNit(v: string): 'nit' | 'nitDv' | null {
+  if (!RE_NIT.test(v)) return 'nit';
+  const [numero = '', dv] = v.replace(/[.\s]/g, '').split('-');
+  if (numero.length < 6 || numero.length > 15) return 'nit';
+  if (dv !== undefined && Number(dv) !== digitoVerificacionNit(numero)) return 'nitDv';
+  return null;
+}
+
+/** NIT: dígitos y puntos, con el dígito de verificación opcional tras un guion (si viene, debe ser el correcto). */
+export const nit: ValidatorFn = (c: AbstractControl): ValidationErrors | null => {
+  const v = String(c.value ?? '');
+  if (!v) return null;
+  const e = errorNit(v);
+  return e ? { [e]: true } : null;
+};
+
+export type TipoDocumento = 'CC' | 'CE' | 'NIT' | 'Pasaporte';
+
+/** Documento según su tipo (como DocumentosFiscales.Normalizar): CC 5-10 dígitos; CE y Pasaporte 3-20 letras o dígitos. */
+export function errorDocumento(tipo: TipoDocumento, valor: string): string | null {
+  const d = valor.trim().replace(/[.\s]/g, '');
+  switch (tipo) {
+    case 'NIT':
+      return errorNit(valor);
+    case 'CC':
+      return /^\d{5,10}$/.test(d) ? null : 'cedula';
+    default:
+      return /^[A-Za-z0-9]{3,20}$/.test(d) ? null : 'documentoAlfanumerico';
+  }
+}
+
+/**
+ * Validador de grupo: el documento según el tipo elegido y el nombre según sea persona o empresa (razón social si es NIT).
+ * Escribe los errores en los controles (como `coinciden`) para que cada campo muestre el suyo.
+ */
+export function documentoSegunTipo(campoTipo: string, campoDocumento: string, campoNombre?: string): ValidatorFn {
+  const CLAVES = ['nit', 'nitDv', 'cedula', 'documentoAlfanumerico', 'nombrePersona', 'razonSocial'];
+  const poner = (c: AbstractControl, error: string | null) => {
+    const errores = { ...(c.errors ?? {}) };
+    for (const k of CLAVES) delete errores[k];
+    if (error) errores[error] = true;
+    c.setErrors(Object.keys(errores).length ? errores : null);
+  };
+  return (g: AbstractControl): ValidationErrors | null => {
+    const tipo = g.get(campoTipo)?.value as TipoDocumento | undefined;
+    const doc = g.get(campoDocumento);
+    if (!tipo || !doc) return null;
+    const vDoc = String(doc.value ?? '');
+    poner(doc, vDoc ? errorDocumento(tipo, vDoc) : null);
+    const nombre = campoNombre ? g.get(campoNombre) : null;
+    if (nombre) {
+      const v = String(nombre.value ?? '');
+      const re = tipo === 'NIT' ? RE_NOMBRE_COMERCIAL : RE_NOMBRE_PERSONA;
+      poner(nombre, v && !re.test(v) ? (tipo === 'NIT' ? 'razonSocial' : 'nombrePersona') : null);
+    }
+    return null;
+  };
+}
+
+/**
+ * Para (input) en campos numéricos (CC, NIT): quita lo que no sea dígito, punto, guion o espacio. No bloquea el pegado:
+ * lo pegado se limpia igual.
+ */
+export function filtrarNumerico(evento: Event, control: AbstractControl): void {
+  const el = evento.target as HTMLInputElement;
+  const limpio = el.value.replace(/[^0-9.\- ]/g, '');
+  if (limpio !== el.value) control.setValue(limpio);
+}
+
+/** Caracteres invisibles de engaño (inversión de sentido, ancho cero…). El ZWJ (U+200D) se permite: lo usan los emojis. */
+const RE_INVISIBLES = /[\u{202A}-\u{202E}\u{2066}-\u{2069}\u{200B}\u{FEFF}\u{2060}\u{180E}]/u;
+
+/** Textos libres (igual que TextoSeguro.cs): sin caracteres de control (salvo saltos de línea si es multilínea) ni invisibles. */
+export function textoSeguro(multilinea = false): ValidatorFn {
+  return (c: AbstractControl): ValidationErrors | null => {
+    const v = String(c.value ?? '');
+    const sinSaltos = multilinea ? v.replace(/[\r\n]/g, '') : v;
+    // eslint-disable-next-line no-control-regex
+    return RE_INVISIBLES.test(v) || /[\u0000-\u001F\u007F-\u009F]/u.test(sinSaltos) ? { textoInvisible: true } : null;
+  };
+}

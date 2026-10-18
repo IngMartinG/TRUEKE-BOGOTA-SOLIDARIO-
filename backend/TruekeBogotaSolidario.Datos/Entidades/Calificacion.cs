@@ -20,7 +20,7 @@ public class Calificacion
         if (autorId == calificadoId) throw new ReglaDeNegocioException("No puedes calificarte a ti mismo.");
         comentario = string.IsNullOrWhiteSpace(comentario) ? null : comentario.Trim();
         if (comentario is { Length: > 300 }) throw new ReglaDeNegocioException("El comentario admite como máximo 300 caracteres.");
-        if (comentario is not null && comentario.Any(c => char.IsControl(c) && c is not '\n' and not '\r'))
+        if (comentario is not null && !TextoSeguro.EsSeguro(comentario, multilinea: true))
             throw new ReglaDeNegocioException("El comentario contiene caracteres no permitidos.");
         Id = Guid.NewGuid();
         SolicitudId = solicitudId;

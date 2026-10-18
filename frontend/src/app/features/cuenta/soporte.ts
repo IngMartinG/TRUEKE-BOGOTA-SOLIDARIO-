@@ -8,6 +8,7 @@ import { CuentaApi } from '../../core/api/cuenta.api';
 import { AvisosService } from '../../core/avisos.service';
 import { erroresDeCampos, mensajeDe } from '../../core/http/problema';
 import { FechaPipe } from '../../shared/pipes';
+import { textoSeguro } from '../../shared/validadores';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
 import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { Icono } from '../../shared/ui/icono';
@@ -101,9 +102,9 @@ export default class Soporte {
 
   protected readonly form = this.fb.group({
     tipo: this.fb.control<TipoPqrDto>((this.ruta.snapshot.queryParamMap.get('tipo') as TipoPqrDto) || 'Peticion'),
-    pagoReferencia: [this.ruta.snapshot.queryParamMap.get('pago') ?? ''],
-    asunto: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(120)]],
-    descripcion: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(2000)]],
+    pagoReferencia: [this.ruta.snapshot.queryParamMap.get('pago') ?? '', [Validators.maxLength(100), Validators.pattern(/^ *[A-Za-z]{3}-[A-Za-z0-9]{1,96} *$/)]],
+    asunto: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(120), textoSeguro()]],
+    descripcion: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(2000), textoSeguro(true)]],
   });
   protected readonly tipo = toSignal(this.form.controls.tipo.valueChanges, { initialValue: this.form.controls.tipo.value });
   protected readonly conPago = computed(() => TIPOS_PQR.find((t) => t.valor === this.tipo())?.conPago ?? false);

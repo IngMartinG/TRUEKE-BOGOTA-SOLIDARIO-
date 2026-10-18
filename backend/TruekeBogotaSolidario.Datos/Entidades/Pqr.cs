@@ -18,9 +18,9 @@ public class Pqr
         if (!Enum.IsDefined(tipo)) throw new ReglaDeNegocioException("Tipo de solicitud no válido.");
         var a = (asunto ?? "").Trim();
         var d = (descripcion ?? "").Trim();
-        if (a.Length is < 5 or > 120 || a.Any(char.IsControl)) throw new ReglaDeNegocioException("El asunto debe tener entre 5 y 120 caracteres.");
+        if (a.Length is < 5 or > 120 || !TextoSeguro.EsSeguro(a)) throw new ReglaDeNegocioException("El asunto debe tener entre 5 y 120 caracteres.");
         if (d.Length is < 10 or > LongitudMaximaTexto) throw new ReglaDeNegocioException($"La descripción debe tener entre 10 y {LongitudMaximaTexto} caracteres.");
-        if (d.Any(c => char.IsControl(c) && c is not '\n' and not '\r')) throw new ReglaDeNegocioException("La descripción contiene caracteres no permitidos.");
+        if (!TextoSeguro.EsSeguro(d, multilinea: true)) throw new ReglaDeNegocioException("La descripción contiene caracteres no permitidos.");
         if (tipo is TipoPqr.Retracto or TipoPqr.ReversionPago && string.IsNullOrWhiteSpace(pagoReferencia))
             throw new ReglaDeNegocioException("Indica la referencia del pago (TRK-…).");
 
@@ -56,6 +56,7 @@ public class Pqr
     {
         if (Estado != EstadoPqr.Abierta) throw new ReglaDeNegocioException("Esta solicitud ya fue respondida.");
         var r = (respuesta ?? "").Trim();
+        if (!TextoSeguro.EsSeguro(r, multilinea: true)) throw new ReglaDeNegocioException("La respuesta contiene caracteres no permitidos.");
         if (r.Length is < 10 or > LongitudMaximaTexto) throw new ReglaDeNegocioException($"La respuesta debe tener entre 10 y {LongitudMaximaTexto} caracteres.");
         Respuesta = r;
         RespondidaPorId = moderadorId;

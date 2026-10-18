@@ -52,7 +52,7 @@ public class Mensaje
         texto = (texto ?? "").Trim();
         if (texto.Length is < 1 or > LongitudMaxima)
             throw new ReglaDeNegocioException($"El mensaje debe tener entre 1 y {LongitudMaxima} caracteres.");
-        if (texto.Any(c => char.IsControl(c) && c is not '\n' and not '\r'))
+        if (!TextoSeguro.EsSeguro(texto, multilinea: true))
             throw new ReglaDeNegocioException("El mensaje contiene caracteres no permitidos.");
         if (respuestaA is not null && respuestaA.ConversacionId != conversacionId)
             throw new ReglaDeNegocioException("Solo puedes responder mensajes de esta conversación.");

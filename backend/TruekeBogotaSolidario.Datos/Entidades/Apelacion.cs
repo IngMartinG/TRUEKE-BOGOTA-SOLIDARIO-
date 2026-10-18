@@ -22,7 +22,7 @@ public class Apelacion
         texto = (texto ?? "").Trim();
         if (texto.Length is < LongitudMinima or > LongitudMaxima)
             throw new ReglaDeNegocioException($"Cuéntanos tu versión en {LongitudMinima} a {LongitudMaxima} caracteres.");
-        if (texto.Any(c => char.IsControl(c) && c is not '\n' and not '\r'))
+        if (!TextoSeguro.EsSeguro(texto, multilinea: true))
             throw new ReglaDeNegocioException("El texto contiene caracteres no permitidos.");
         Id = Guid.NewGuid();
         ResolucionId = resolucionId;

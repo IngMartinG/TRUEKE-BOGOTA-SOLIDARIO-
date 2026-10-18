@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, untracked } from '@angular/core';
-import { rxResource } from '@angular/core/rxjs-interop';
+import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
@@ -9,6 +9,7 @@ import { AvisosService } from '../../core/avisos.service';
 import { erroresDeCampos, mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
 import { CopPipe, FechaPipe } from '../../shared/pipes';
+import { direccion, documentoSegunTipo, filtrarNumerico } from '../../shared/validadores';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
 import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { Icono } from '../../shared/ui/icono';
@@ -139,6 +140,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
         <div class="campo">
           <label for="documento" class="etiqueta">Número de documento</label>
           <input id="documento" class="entrada" formControlName="documento" maxlength="20" autocomplete="off"
+            [attr.inputmode]="documentoNumerico() ? 'numeric' : null" (input)="documentoNumerico() && filtrar($event, form.controls.documento)"
             [placeholder]="form.controls.tipoDocumento.value === 'NIT' ? '900123456 (calculamos el dígito de verificación)' : ''" />
           <app-error-campo [control]="form.controls.documento" etiqueta="El documento" idError="documento-error" />
         </div>
@@ -194,9 +196,13 @@ export default class Facturacion {
     documento: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(20)]],
     nombre: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(150)]],
     correo: ['', [Validators.required, Validators.email, Validators.maxLength(160)]],
-    direccion: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(150)]],
+    direccion: ['', [Validators.required, Validators.minLength(5), Validators.maxLength(150), direccion]],
     municipioCodigo: ['', [Validators.required]],
-  });
+  }, { validators: documentoSegunTipo('tipoDocumento', 'documento', 'nombre') });
+  private readonly tipoDocumento = toSignal(this.form.controls.tipoDocumento.valueChanges, { initialValue: this.form.controls.tipoDocumento.value });
+  /** CC y NIT son solo números: teclado numérico en el celular y se limpia lo que no sea dígito al escribir o pegar. */
+  protected readonly documentoNumerico = computed(() => this.tipoDocumento() === 'CC' || this.tipoDocumento() === 'NIT');
+  protected readonly filtrar = filtrarNumerico;
 
   constructor() {
     effect(() => {

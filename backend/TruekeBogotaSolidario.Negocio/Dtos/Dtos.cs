@@ -1,4 +1,6 @@
 using System.ComponentModel.DataAnnotations;
+using TruekeBogotaSolidario.Datos.Common;
+using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Negocio.Comun;
 
 namespace TruekeBogotaSolidario.Negocio.Dtos;
@@ -24,9 +26,12 @@ internal static class FormatosUbicacion
 // ---------------- Requests ----------------
 public sealed class RegistroRequest
 {
-    [Required, StringLength(120, MinimumLength = 3)] public string NombreCompleto { get; init; } = "";
-    /// <summary>Barrio, localidad o sector.</summary>
-    [Required, StringLength(60, MinimumLength = 2)] public string Localidad { get; init; } = "";
+    /// <summary>Nombre y apellido: solo letras, espacio, apóstrofo, guion y punto.</summary>
+    [Required, StringLength(120, MinimumLength = 3), RegularExpression(FormatosTexto.NombreCompleto, ErrorMessage = FormatosTexto.MensajeNombreCompleto)]
+    public string NombreCompleto { get; init; } = "";
+    /// <summary>Barrio, localidad o sector: letras, dígitos, espacio y # - . °.</summary>
+    [Required, StringLength(60, MinimumLength = 2), RegularExpression(FormatosTexto.Localidad, ErrorMessage = FormatosTexto.MensajeLocalidad)]
+    public string Localidad { get; init; } = "";
     /// <summary>Código DIVIPOLA del municipio (GET /ubicaciones/...). Si se omite: Bogotá (11001).</summary>
     [RegularExpression(FormatosUbicacion.Municipio, ErrorMessage = "El municipio no es válido.")] public string? MunicipioCodigo { get; init; }
     [Required, EmailAddress, MaxLength(160)] public string Correo { get; init; } = "";
@@ -40,6 +45,12 @@ public sealed class RegistroRequest
     [MaxLength(4096)] public string? CaptchaToken { get; init; }
     /// <summary>Código de quien invitó (enlace /registro?invita=). Si no existe, la cuenta se crea igual, sin invitación.</summary>
     [RegularExpression(FormatosInvitacion.Codigo, ErrorMessage = "El código de invitación no es válido.")] public string? CodigoInvitacion { get; init; }
+}
+
+public static class FormatosPago
+{
+    /// <summary>"TRK-" seguido de letras y números (la referencia que genera la plataforma).</summary>
+    public const string Referencia = "^ *[A-Za-z]{3}-[A-Za-z0-9]{1,96} *$";
 }
 
 public static class FormatosInvitacion
@@ -114,8 +125,10 @@ public sealed class FechaNacimientoRequest
 
 public sealed class ActualizarPerfilRequest
 {
-    [Required, StringLength(120, MinimumLength = 3)] public string NombreCompleto { get; init; } = "";
-    [Required, StringLength(60, MinimumLength = 2)] public string Localidad { get; init; } = "";
+    [Required, StringLength(120, MinimumLength = 3), RegularExpression(FormatosTexto.NombreCompleto, ErrorMessage = FormatosTexto.MensajeNombreCompleto)]
+    public string NombreCompleto { get; init; } = "";
+    [Required, StringLength(60, MinimumLength = 2), RegularExpression(FormatosTexto.Localidad, ErrorMessage = FormatosTexto.MensajeLocalidad)]
+    public string Localidad { get; init; } = "";
     /// <summary>Si se omite, se conserva el municipio actual.</summary>
     [RegularExpression(FormatosUbicacion.Municipio, ErrorMessage = "El municipio no es válido.")] public string? MunicipioCodigo { get; init; }
 }
@@ -123,22 +136,46 @@ public sealed class ActualizarPerfilRequest
 /// <summary>Perfil de empresa (plan Empresa vigente): se muestra en las publicaciones y en el perfil público.</summary>
 public sealed class PerfilEmpresaRequest
 {
-    [Required, StringLength(120, MinimumLength = 2)] public string NombreComercial { get; init; } = "";
+    [Required, StringLength(120, MinimumLength = 2), RegularExpression(FormatosTexto.NombreComercial, ErrorMessage = FormatosTexto.MensajeNombreComercial)]
+    public string NombreComercial { get; init; } = "";
     /// <summary>Con o sin dígito de verificación: "900123456" o "900.123.456-7".</summary>
-    [Required, StringLength(20, MinimumLength = 6)] public string Nit { get; init; } = "";
+    [Required, StringLength(20, MinimumLength = 6), RegularExpression(FormatosTexto.Nit, ErrorMessage = FormatosTexto.MensajeNit)]
+    public string Nit { get; init; } = "";
     /// <summary>Mostrar el número de NIT en el perfil público (si es persona natural, el NIT es su cédula). Por defecto no.</summary>
     public bool MostrarNit { get; init; }
 }
 
-public sealed class DatosFacturacionRequest
+public sealed class DatosFacturacionRequest : IValidatableObject
 {
     [EnumDataType(typeof(TipoDocumentoFiscalDto))] public TipoDocumentoFiscalDto TipoDocumento { get; init; } = TipoDocumentoFiscalDto.CC;
+    /// <summary>Según el tipo: CC solo dígitos (5 a 10); CE y Pasaporte letras y dígitos (3 a 20); NIT dígitos con DV opcional.</summary>
     [Required, StringLength(20, MinimumLength = 3)] public string Documento { get; init; } = "";
-    /// <summary>Nombre completo o razón social, como aparecerá en la factura.</summary>
+    /// <summary>Nombre de la persona (solo letras) o, si el documento es NIT, razón social; como aparecerá en la factura.</summary>
     [Required, StringLength(150, MinimumLength = 3)] public string Nombre { get; init; } = "";
     [Required, EmailAddress, MaxLength(160)] public string Correo { get; init; } = "";
-    [Required(ErrorMessage = "La dirección es obligatoria para la factura."), StringLength(150, MinimumLength = 5)] public string? Direccion { get; init; }
+    /// <summary>Letras, dígitos, espacio y # - . , ° /.</summary>
+    [Required(ErrorMessage = "La dirección es obligatoria para la factura."), StringLength(150, MinimumLength = 5),
+     RegularExpression(FormatosTexto.Direccion, ErrorMessage = FormatosTexto.MensajeDireccion)]
+    public string? Direccion { get; init; }
     [Required(ErrorMessage = "El municipio es obligatorio para la factura."), RegularExpression(FormatosUbicacion.Municipio, ErrorMessage = "El municipio no es válido.")] public string? MunicipioCodigo { get; init; }
+
+    /// <summary>El documento según su tipo (mismas reglas que la factura) y el nombre según sea persona o empresa.</summary>
+    public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+    {
+        if (!Enum.IsDefined(TipoDocumento)) yield break;
+        if (!string.IsNullOrWhiteSpace(Documento))
+        {
+            string? error = null;
+            try { DocumentosFiscales.Normalizar((TipoDocumentoFiscal)(int)TipoDocumento, Documento); }
+            catch (ReglaDeNegocioException ex) { error = ex.Message; }
+            if (error is not null) yield return new ValidationResult(error, new[] { nameof(Documento) });
+        }
+        if (string.IsNullOrWhiteSpace(Nombre)) yield break;
+        if (TipoDocumento == TipoDocumentoFiscalDto.NIT && !FormatosTexto.EsNombreComercial(Nombre))
+            yield return new ValidationResult(FormatosTexto.MensajeRazonSocial, new[] { nameof(Nombre) });
+        else if (TipoDocumento != TipoDocumentoFiscalDto.NIT && !FormatosTexto.EsNombrePersona(Nombre))
+            yield return new ValidationResult(FormatosTexto.MensajeNombrePersona, new[] { nameof(Nombre) });
+    }
 }
 
 public sealed class CrearPublicacionRequest
@@ -309,10 +346,11 @@ public sealed class DestacadasRequest
 public sealed class CrearPqrRequest
 {
     [EnumDataType(typeof(TipoPqrDto))] public TipoPqrDto Tipo { get; init; } = TipoPqrDto.Peticion;
-    [Required, StringLength(120, MinimumLength = 5)] public string Asunto { get; init; } = "";
-    [Required, StringLength(2000, MinimumLength = 10)] public string Descripcion { get; init; } = "";
+    [Required, StringLength(120, MinimumLength = 5), TextoLimpio] public string Asunto { get; init; } = "";
+    [Required, StringLength(2000, MinimumLength = 10), TextoLimpio(Multilinea = true)] public string Descripcion { get; init; } = "";
     /// <summary>Obligatoria para Retracto y ReversionPago: referencia TRK-… del pago.</summary>
-    [MaxLength(100)] public string? PagoReferencia { get; init; }
+    [MaxLength(100), RegularExpression(FormatosPago.Referencia, ErrorMessage = "La referencia del pago tiene la forma TRK-… (letras y números).")]
+    public string? PagoReferencia { get; init; }
 }
 
 public sealed class ResponderPqrRequest

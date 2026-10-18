@@ -62,6 +62,39 @@ public partial class ContratoAngularTests : IClassFixture<FabricaApi>
     }
 
     [Fact]
+    public async Task Cada_dato_personal_devuelve_su_error_de_formato_por_campo()
+    {
+        var anonimo = _fabrica.CreateClient();
+        var registro = await ProblemaAsync(await anonimo.PostAsJsonAsync("/api/v1/auth/registrar", new
+        {
+            nombreCompleto = "Ana2", localidad = "123", correo = $"fmt{Guid.NewGuid():N}@trueke.test", clave = Api.ClaveValida,
+            fechaNacimiento = Api.FechaNacimientoAdulta, aceptoPoliticaDatos = true
+        }), HttpStatusCode.BadRequest);
+        var errores = registro.GetProperty("errors");
+        Assert.Contains("nombre y apellido", errores.GetProperty("nombreCompleto")[0].GetString());
+        Assert.Contains("localidad", errores.GetProperty("localidad")[0].GetString());
+
+        var cliente = await Api.RegistrarAsync(_fabrica, "formatos");
+        var perfil = await ProblemaAsync(await cliente.PutAsJsonAsync("/api/v1/usuarios/yo", new { nombreCompleto = "123", localidad = "Kennedy" }),
+            HttpStatusCode.BadRequest);
+        Assert.True(perfil.GetProperty("errors").TryGetProperty("nombreCompleto", out _));
+
+        var factura = await ProblemaAsync(await cliente.PutAsJsonAsync("/api/v1/cuenta/facturacion", new
+        {
+            tipoDocumento = "CC", documento = "12A4567", nombre = "Ana Pérez", correo = "ana@trueke.test", direccion = "Calle 10 # 20-30", municipioCodigo = "11001"
+        }), HttpStatusCode.BadRequest);
+        Assert.Contains("cédula", factura.GetProperty("errors").GetProperty("documento")[0].GetString());
+
+        var empresa = await ProblemaAsync(await cliente.PutAsJsonAsync("/api/v1/usuarios/yo/empresa", new { nombreComercial = "Tienda", nit = "900A23456" }),
+            HttpStatusCode.BadRequest);
+        Assert.Contains("NIT", empresa.GetProperty("errors").GetProperty("nit")[0].GetString());
+
+        var pqr = await ProblemaAsync(await cliente.PostAsJsonAsync("/api/v1/pqr", new { tipo = "Peticion", asunto = "Hola\u202Emundo", descripcion = "Descripción suficiente" }),
+            HttpStatusCode.BadRequest);
+        Assert.True(pqr.GetProperty("errors").TryGetProperty("asunto", out _));
+    }
+
+    [Fact]
     public async Task Json_malformado_no_revela_tipos_internos()
     {
         var cliente = await Api.RegistrarAsync(_fabrica, "malformado");

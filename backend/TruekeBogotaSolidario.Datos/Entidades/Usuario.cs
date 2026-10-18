@@ -171,11 +171,13 @@ public class Usuario
 
     private static (string nombre, string localidad) ValidarPerfil(string nombreCompleto, string localidad)
     {
-        var n = (nombreCompleto ?? "").Trim();
-        var l = (localidad ?? "").Trim();
+        var n = FormatosTexto.Compactar(nombreCompleto);
+        var l = FormatosTexto.Compactar(localidad);
         if (n.Length is < 3 or > 120) throw new ReglaDeNegocioException("El nombre debe tener entre 3 y 120 caracteres.");
         if (l.Length is < 2 or > 60) throw new ReglaDeNegocioException("La localidad debe tener entre 2 y 60 caracteres.");
-        if (n.Any(char.IsControl) || l.Any(char.IsControl)) throw new ReglaDeNegocioException("Los datos contienen caracteres no permitidos.");
+        if (!TextoSeguro.EsSeguro(n) || !TextoSeguro.EsSeguro(l)) throw new ReglaDeNegocioException(TextoSeguro.Mensaje);
+        if (!FormatosTexto.EsNombreCompleto(n)) throw new ReglaDeNegocioException(FormatosTexto.MensajeNombreCompleto);
+        if (!FormatosTexto.EsLocalidad(l)) throw new ReglaDeNegocioException(FormatosTexto.MensajeLocalidad);
         return (n, l);
     }
 
@@ -208,8 +210,9 @@ public class Usuario
     public void ActualizarPerfilEmpresa(string nombreComercial, string nit, bool mostrarNit, DateTime ahoraUtc)
     {
         if (!EmpresaVigente(ahoraUtc)) throw new ReglaDeNegocioException("El perfil de empresa está disponible con el plan Empresa vigente.");
-        var nombre = (nombreComercial ?? "").Trim();
-        if (nombre.Length is < 2 or > 120 || nombre.Any(char.IsControl)) throw new ReglaDeNegocioException("El nombre comercial debe tener entre 2 y 120 caracteres.");
+        var nombre = FormatosTexto.Compactar(nombreComercial);
+        if (nombre.Length is < 2 or > 120) throw new ReglaDeNegocioException("El nombre comercial debe tener entre 2 y 120 caracteres.");
+        if (!FormatosTexto.EsNombreComercial(nombre)) throw new ReglaDeNegocioException(FormatosTexto.MensajeNombreComercial);
         NombreComercial = nombre;
         Nit = DocumentosFiscales.NormalizarNit(nit);
         MostrarNit = mostrarNit;
@@ -226,7 +229,7 @@ public class Usuario
         {
             if (FacturacionTipoDocumento is not { } tipo || string.IsNullOrWhiteSpace(FacturacionDireccion) || string.IsNullOrWhiteSpace(FacturacionMunicipioCodigo))
                 return null;
-            try { return DatosComprador.Crear(tipo, FacturacionDocumento, FacturacionNombre, FacturacionCorreo, FacturacionDireccion, FacturacionMunicipioCodigo); }
+            try { return DatosComprador.Restaurar(tipo, FacturacionDocumento, FacturacionNombre, FacturacionCorreo, FacturacionDireccion, FacturacionMunicipioCodigo); }
             catch (ReglaDeNegocioException) { return null; }
         }
     }
@@ -344,8 +347,9 @@ public class Usuario
     /// <summary>Cuenta creada con Google: sin contraseña (no se puede entrar con clave hasta que el usuario cree una) y correo ya verificado.</summary>
     public static Usuario CrearDesdeGoogle(string nombre, string correo, string googleSub, DateTime ahoraUtc)
     {
-        var nombreValido = (nombre ?? "").Trim();
-        if (nombreValido.Length is < 3 or > 120 || nombreValido.Any(char.IsControl)) nombreValido = "Usuario Trueke";
+        // Si el nombre de Google no cumple el formato (dígitos, emojis, apodos…), se usa uno genérico que la persona cambia en su perfil.
+        var nombreValido = FormatosTexto.Compactar(nombre);
+        if (nombreValido.Length is < 3 or > 120 || !FormatosTexto.EsNombrePersona(nombreValido)) nombreValido = "Usuario Trueke";
         var u = new Usuario
         {
             Id = Guid.NewGuid(),
