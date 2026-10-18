@@ -46,6 +46,9 @@ El plan Free de Supabase no vence: da 500 MB de base, no pide tarjeta y no mide 
    - `Maximum Pool Size=10`: en modo sesión cada conexión de la API ocupa una del pooler, y el plan gratis permite pocas.
    - **No usar el Transaction pooler (puerto 6543):** no conserva la sesión entre consultas y obligaría a desactivar las sentencias preparadas (`No Reset On Close=true`).
 6. Si la clave tiene `;` o comillas, generar otra (*Project Settings → Database → Reset database password*). Esos caracteres rompen la cadena.
+7. **Lo que muestra el panel y es normal:**
+   - *Advisors → Security Advisor → Info*: una sugerencia **"RLS Enabled No Policy"** por cada tabla. Es a propósito (la migración `CerrarDataApiSupabase`): RLS sin políticas significa que la Data API no ve nada. **No crear políticas**; se pueden descartar. Lo que sí hay que atender son los *Errors* y *Warnings*.
+   - *Home → Total requests*, tarjeta **Postgres** con muchos errores y tasa de éxito baja: esa tarjeta cuenta peticiones HTTP a la Data API (`/rest/v1/`), no las consultas de nuestra API (que entra por Npgsql y no aparece ahí). Si la Data API sigue encendida, los bots que prueban la URL pública del proyecto reciben "permission denied" y eso cuenta como error. Se corrige apagando la Data API (paso 3); el origen se confirma en *Logs → API Gateway* filtrando por estado ≥ 400.
 
 ## 3. Fotos: Supabase Storage (gratis)
 Las fotos y los documentos de verificación van en **Supabase Storage**, dentro del mismo proyecto de la base (§2). El plan Free incluye 1 GB de archivos y algo de transferencia mensual (ver los límites vigentes en *Usage*); cada foto pesa unos cientos de KB y su miniatura unas decenas.
