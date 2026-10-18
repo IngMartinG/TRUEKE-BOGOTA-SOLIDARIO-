@@ -4,7 +4,7 @@ namespace TruekeBogotaSolidario.Negocio.Comun;
 
 /// <summary>
 /// Respaldo cuando NO hay almacenamiento configurado: evita que se guarden enlaces arbitrarios (phishing, rastreo,
-/// contenido ajeno) como imagen o documento. Con Azure Blob habilitado se usa IAlmacenArchivos.ValidarArchivoPropioAsync.
+/// contenido ajeno) como imagen o documento. Con Supabase Storage habilitado se usa IAlmacenArchivos.ValidarArchivoPropioAsync.
 /// </summary>
 public static class ValidadorUrls
 {

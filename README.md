@@ -24,9 +24,9 @@ Plataforma comunitaria de **economía circular** en Colombia, nacida en Bogotá.
 | Front-end | Angular 22 (signals, sin Zone.js), Tailwind v4 |
 | API | ASP.NET Core 10 (C#, LTS), SignalR |
 | Datos | PostgreSQL en Supabase (EF Core 10 + Npgsql), Redis (backplane de SignalR, presencia y límite de peticiones) |
-| Archivos | Azure Blob Storage (subida directa con SAS; fotos sin GPS ni metadatos) |
+| Archivos | Supabase Storage (subida directa con URL firmada; fotos sin GPS ni metadatos) |
 | Pagos | Wompi (solo dinero hacia la plataforma) y factura electrónica por cada pago |
-| Infraestructura | Docker, GitHub Actions, GitHub Pages (front), Render (API), Supabase (base) y Azure Blob (fotos, por migrar) |
+| Infraestructura | Docker, GitHub Actions, GitHub Pages (front), Render (API) y Supabase (base y fotos) |
 
 ## Empezar (desarrollo local)
 

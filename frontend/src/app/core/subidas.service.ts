@@ -15,8 +15,8 @@ export interface ProgresoSubida {
 }
 
 /**
- * Subida directa a Azure Blob Storage con SAS:
- * 1) la API entrega una URL firmada de 5 minutos; 2) el navegador hace PUT del archivo;
+ * Subida directa a Supabase Storage con URL firmada:
+ * 1) la API entrega una URL firmada para UN archivo nuevo (no puede sobrescribir); 2) el navegador hace PUT del archivo;
  * 3) se usa `urlArchivo` en la publicación. La API valida dueño, tamaño y tipo real al usarla.
  */
 @Injectable({ providedIn: 'root' })
@@ -70,7 +70,7 @@ export class SubidasService {
   }
 }
 
-/** Agrega ?ngsw-bypass=true sin tocar los parámetros de la SAS. */
+/** Agrega ?ngsw-bypass=true sin tocar el token de la URL firmada. */
 export function conBypass(url: string): string {
   return url ? `${url}${url.includes('?') ? '&' : '?'}ngsw-bypass=true` : url;
 }

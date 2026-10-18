@@ -109,13 +109,17 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<ConfirmadorIdentidad>();
         services.AddScoped<IDosFactoresService, DosFactoresService>();
 
-        // Archivos: Azure Blob si está configurado; si no, deshabilitado (las URLs se validan solo por host permitido)
+        // Archivos: Supabase Storage si está configurado; si no, deshabilitado (las URLs se validan solo por host permitido)
         services.AddOptions<AlmacenamientoOpciones>().Bind(config.GetSection(AlmacenamientoOpciones.Seccion))
-            .Validate(o => o.CdnValida, "Almacenamiento:CdnUrl debe ser https, sin query, y requiere Almacenamiento:ServicioUrl.")
+            .Validate(o => o.UrlValida, "Almacenamiento:Url debe ser https (o http solo hacia este equipo) y sin query.")
+            .Validate(o => o.CdnValida, "Almacenamiento:CdnUrl debe ser https, sin query, y requiere Almacenamiento:Url.")
             .ValidateOnStart();
         var almacen = config.GetSection(AlmacenamientoOpciones.Seccion).Get<AlmacenamientoOpciones>() ?? new AlmacenamientoOpciones();
-        if (almacen.Configurado) services.TryAddSingleton<IAlmacenArchivos, AlmacenBlobAzure>();
+        if (almacen.Configurado) services.TryAddSingleton<IAlmacenArchivos, AlmacenSupabase>();
         else services.TryAddSingleton<IAlmacenArchivos, AlmacenDeshabilitado>();
+        // Storage: sin seguir redirecciones (la llave secreta solo va al host configurado).
+        services.AddHttpClient(AlmacenSupabase.ClienteHttp, c => c.Timeout = TimeSpan.FromSeconds(30))
+            .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
         services.AddHostedService<MiniaturasHostedService>();
         // Foto de Google: sin seguir redirecciones (una redirección podría llevar a un host interno: SSRF).
         services.AddHttpClient(ImportadorFotoGoogle.ClienteHttp, c => c.Timeout = TimeSpan.FromSeconds(8))

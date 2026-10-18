@@ -1,7 +1,7 @@
 name: Pruebas E2E (Playwright)
 
 # Pruebas de punta a punta contra las MISMAS imágenes Docker de producción (API + front con nginx) con PostgreSQL
-# (migraciones), Redis, correo por SMTP con TLS (Mailpit) y fotos en Azurite. Ver frontend/e2e/docker-compose.e2e.yml.
+# (migraciones), Redis, correo por SMTP con TLS (Mailpit) y fotos en Supabase Storage (supabase/storage-api). Ver frontend/e2e/docker-compose.e2e.yml.
 on:
   push:
     branches: [main]

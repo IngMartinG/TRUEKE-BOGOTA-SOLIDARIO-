@@ -3,7 +3,7 @@ namespace TruekeBogotaSolidario.Datos.Common;
 public static class UrlsSeguras
 {
     /// <summary>
-    /// https, o http SOLO hacia la propia máquina (emulador Azurite en desarrollo). Sin credenciales embebidas.
+    /// https, o http SOLO hacia la propia máquina (Storage local en Docker para desarrollo y pruebas). Sin credenciales embebidas.
     /// </summary>
     public static bool EsValida(string? url, int longitudMaxima = 500)
     {

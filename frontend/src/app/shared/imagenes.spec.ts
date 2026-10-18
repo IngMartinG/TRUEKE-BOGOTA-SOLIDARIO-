@@ -2,29 +2,33 @@ import { configurarCdn, miniatura, urlPublica } from './imagenes';
 
 const USUARIO = '0123456789abcdef0123456789abcdef';
 const FOTO = 'fedcba9876543210fedcba9876543210';
-const BLOB = 'https://cuenta.blob.core.windows.net/';
+const PUBLICO = 'https://proyecto.supabase.co/storage/v1/object/public/';
 
 describe('imagenes', () => {
   afterEach(() => configurarCdn(null, null));
 
   it('deriva la miniatura de las fotos de la plataforma y deja igual las demás', () => {
-    expect(miniatura(`${BLOB}imagenes/${USUARIO}/${FOTO}.jpg`)).toBe(`${BLOB}imagenes/${USUARIO}/${FOTO}.min.webp`);
-    expect(miniatura(`${BLOB}imagenes/${USUARIO}/${FOTO}.png`)).toBe(`${BLOB}imagenes/${USUARIO}/${FOTO}.min.webp`);
+    expect(miniatura(`${PUBLICO}imagenes/${USUARIO}/${FOTO}.jpg`)).toBe(`${PUBLICO}imagenes/${USUARIO}/${FOTO}.min.webp`);
+    expect(miniatura(`${PUBLICO}imagenes/${USUARIO}/${FOTO}.png`)).toBe(`${PUBLICO}imagenes/${USUARIO}/${FOTO}.min.webp`);
     expect(miniatura('https://ejemplo.co/foto.jpg')).toBe('https://ejemplo.co/foto.jpg');
-    expect(miniatura(`${BLOB}imagenes/${USUARIO}/${FOTO}.min.webp`)).toBe(`${BLOB}imagenes/${USUARIO}/${FOTO}.min.webp`);
+    expect(miniatura(`${PUBLICO}imagenes/${USUARIO}/${FOTO}.min.webp`)).toBe(`${PUBLICO}imagenes/${USUARIO}/${FOTO}.min.webp`);
     expect(miniatura(null)).toBeNull();
   });
 
-  it('con CDN descarga las fotos de Blob desde la CDN', () => {
-    const url = `${BLOB}imagenes/${USUARIO}/${FOTO}.jpg`;
+  it('con CDN descarga las fotos de Storage desde la CDN', () => {
+    const url = `${PUBLICO}imagenes/${USUARIO}/${FOTO}.jpg`;
     expect(urlPublica(url)).toBe(url);
 
-    configurarCdn(BLOB, 'https://fotos.trueke.co/');
+    configurarCdn(PUBLICO, 'https://fotos.trueke.co/');
     expect(urlPublica(url)).toBe(`https://fotos.trueke.co/imagenes/${USUARIO}/${FOTO}.jpg`);
     expect(urlPublica('https://otra.example/x.jpg')).toBe('https://otra.example/x.jpg');
   });
 
-  it('en desarrollo reescribe Azurite a una ruta del mismo sitio', () => {
-    expect(urlPublica('http://127.0.0.1:10000/devstoreaccount1/imagenes/x.jpg')).toBe('/devstoreaccount1/imagenes/x.jpg');
+  it('en desarrollo reescribe el Storage local a una ruta del mismo sitio', () => {
+    expect(urlPublica('http://127.0.0.1:8082/storage/v1/object/public/imagenes/x.jpg')).toBe('/storage/v1/object/public/imagenes/x.jpg');
+    expect(urlPublica('http://localhost:8082/storage/v1/object/upload/sign/subidas/x.jpg?token=t')).toBe(
+      '/storage/v1/object/upload/sign/subidas/x.jpg?token=t',
+    );
+    expect(urlPublica(`${PUBLICO}imagenes/x.jpg`)).toBe(`${PUBLICO}imagenes/x.jpg`);
   });
 });

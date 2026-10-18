@@ -273,10 +273,24 @@ Azure SQL gratis agotó su cupo del mes y se pausó (error 42119): la API de Ren
 - **Docker local y E2E:** `postgres:17-alpine` con el usuario `trueke_app`, dueño solo de la base `trueke`. Variables `POSTGRES_PASSWORD` y `DB_APP_PASSWORD`, que reemplazan a `SQL_SA_PASSWORD` y `SQL_APP_PASSWORD`.
 - **Guía:** `docs/DESPLIEGUE.md` §2 explica cómo crear el proyecto en Supabase y configurar Render.
 
+## Hecho el 2026-10-17 — fotos y documentos en Supabase Storage
+Segundo paso para salir de Azure: Azure Blob se reemplazó por **Supabase Storage**, en el mismo proyecto de la base.
+- **Almacén:** `AlmacenSupabase` usa la API REST de Storage con la llave secreta del proyecto (solo en el servidor). Se quitaron los paquetes `Azure.Storage.Blobs` y `Azure.Identity`.
+- **Subida directa:** la API pide una URL firmada (`createSignedUploadUrl`) para **un** archivo nuevo en el bucket privado `subidas`. El navegador sube con un `PUT` y no puede sobrescribir. Ya no hacen falta las cabeceras `x-ms-blob-type` ni una regla CORS.
+- **Igual que antes:** al usarla, el servidor descarga el archivo una vez (≤ 5 MB), revisa los *magic bytes*, re-codifica la foto (sin EXIF/GPS), publica la copia limpia y su miniatura `.min.webp` con un nombre nuevo y `Cache-Control` inmutable, y borra la subida. Las subidas sin usar se borran a la hora.
+- **Buckets:** la API los crea y les fija la configuración al arrancar. `imagenes` es público y de solo lectura; `documentos` y `subidas` son privados, y los documentos se ven con un enlace firmado de 5 minutos. Además, cada bucket rechaza por sí mismo más de 5 MB y los tipos no permitidos.
+- **Diferencia con Azure:** la URL firmada de subida vence a las 2 horas (Supabase no permite acortarla; la SAS duraba 5 minutos). Sirve para un solo archivo privado que nunca se publica tal cual.
+- **Pruebas:** Azurite se reemplazó por `supabase/storage-api`, el mismo servidor que corre Supabase:
+  - en .NET, con Testcontainers: subida firmada real, no sobrescribe, rechazo de tipos y tamaño, la llave pública no escribe, limpieza y miniaturas;
+  - en las E2E, detrás de una puerta nginx con CORS y el prefijo `/storage/v1`, como el gateway de Supabase.
+
+  Se descartó MinIO: por la API S3 no existe la URL firmada de subida de Supabase, así que no se probaría el camino real. Para desarrollo: `backend/docker-compose.storage.yml` (puerto 8082).
+- **CSP:** GitHub Pages permite `https://*.supabase.co` o, con la variable del repo `STORAGE_ORIGEN`, solo el proyecto. En nginx se usa `CSP_IMG_EXTRA`/`CSP_CONNECT_EXTRA` con el origen del proyecto.
+- **Guía:** `docs/DESPLIEGUE.md` §3.
+
 ## Pendiente
 **Despliegue y operación:**
 - **Salir de Azure (la cuenta gratuita vence hacia el 2026-11-09):**
-  - fotos: Azure Blob → Supabase Storage (URL firmada de subida, como hoy con SAS);
   - correo: Azure Communication Services → Brevo (API HTTPS, 300 correos al día gratis);
   - monitoreo: Application Insights se apaga dejando vacía `APPLICATIONINSIGHTS_CONNECTION_STRING`.
 - **Supabase Free pausa el proyecto tras 7 días sin actividad:** se reactiva con *Restore project* (los datos no se pierden). Un monitor de `/health/ready` lo evita (`docs/DESPLIEGUE.md` §7.2).

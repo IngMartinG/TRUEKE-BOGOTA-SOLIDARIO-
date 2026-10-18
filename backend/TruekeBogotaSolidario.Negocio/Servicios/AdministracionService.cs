@@ -395,7 +395,7 @@ public sealed class AdministracionService : IAdministracionService
         var resultado = new List<VerificacionPendienteDto>(lista.Count);
         foreach (var u in lista)
         {
-            // El documento de identidad vive en un contenedor privado: el moderador recibe un enlace que caduca en 5 minutos
+            // El documento de identidad vive en un bucket privado: el moderador recibe un enlace que caduca en 5 minutos
             var enlace = u.DocumentoVerificacionUrl is null ? null : await _almacen.UrlLecturaTemporalAsync(u.DocumentoVerificacionUrl);
             resultado.Add(new VerificacionPendienteDto(u.Id, u.NombreCompleto, u.Correo, enlace ?? "", u.FechaRegistro));
         }

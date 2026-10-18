@@ -5,11 +5,11 @@ import { of } from 'rxjs';
 import { CuentaApi } from './api/cuenta.api';
 import { conBypass, SubidasService } from './subidas.service';
 
-const SAS = 'https://cuenta.blob.core.windows.net/imagenes/u/f.webp?sv=2024&sig=abc';
+const FIRMADA = 'https://proyecto.supabase.co/storage/v1/object/upload/sign/subidas/u/f.webp?token=abc';
 
 describe('SubidasService', () => {
-  it('agrega ngsw-bypass sin tocar la SAS', () => {
-    expect(conBypass(SAS)).toBe(`${SAS}&ngsw-bypass=true`);
+  it('agrega ngsw-bypass sin tocar el token de la URL firmada', () => {
+    expect(conBypass(FIRMADA)).toBe(`${FIRMADA}&ngsw-bypass=true`);
     expect(conBypass('https://x.test/a')).toBe('https://x.test/a?ngsw-bypass=true');
   });
 
@@ -18,15 +18,15 @@ describe('SubidasService', () => {
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),
-        { provide: CuentaApi, useValue: { solicitarSubida: () => of({ urlSubida: SAS, urlArchivo: 'https://x/f.webp', metodo: 'PUT', cabeceras: {} }) } },
+        { provide: CuentaApi, useValue: { solicitarSubida: () => of({ urlSubida: FIRMADA, urlArchivo: 'https://x/f.webp', metodo: 'PUT', cabeceras: {} }) } },
       ],
     });
     const control = TestBed.inject(HttpTestingController);
     const archivo = new File(['x'], 'f.webp', { type: 'image/webp' });
     const url = TestBed.inject(SubidasService).subirTodo(archivo);
 
-    control.expectOne(`${SAS}&ngsw-bypass=true`).flush('no', { status: 403, statusText: 'Prohibido' });
-    control.expectOne(SAS).flush(null, { status: 201, statusText: 'Created' });
+    control.expectOne(`${FIRMADA}&ngsw-bypass=true`).flush('no', { status: 403, statusText: 'Prohibido' });
+    control.expectOne(FIRMADA).flush(null, { status: 200, statusText: 'OK' });
     expect(await url).toBe('https://x/f.webp');
     control.verify();
   });

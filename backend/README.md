@@ -2,7 +2,7 @@
 
 API REST + tiempo real para la plataforma comunitaria de economía circular de **Colombia** (nació en Bogotá y opera en los 1.122 municipios del país): **Trueke, Compra y Donación**, con moneda interna **Eco-Puntos**.
 
-ASP.NET Core 10 · EF Core 10 · PostgreSQL (Supabase) · SignalR (+ Redis) · Azure Blob Storage · Wompi · SMTP · Google Identity · reCAPTCHA v3 · TOTP (2FA) · Application Insights · Docker · GitHub Actions · Azure App Service.
+ASP.NET Core 10 · EF Core 10 · PostgreSQL (Supabase) · SignalR (+ Redis) · Supabase Storage · Wompi · SMTP · Google Identity · reCAPTCHA v3 · TOTP (2FA) · Application Insights · Docker · GitHub Actions · Azure App Service.
 La arquitectura sigue el modelo C4 de [`docs/c4`](../docs/c4) y el contrato para el front está en [`docs/openapi.json`](../docs/openapi.json).
 
 ---
@@ -12,7 +12,7 @@ La arquitectura sigue el modelo C4 de [`docs/c4`](../docs/c4) y el contrato para
 ```
 TruekeBogotaSolidario.sln
 ├── TruekeBogotaSolidario.Datos          Entidades, DbContext, repositorios, migraciones, PoliticaEcoPuntos, PasswordHasher
-├── TruekeBogotaSolidario.Negocio        Servicios, DTOs y reglas; integraciones (Wompi, SMTP, Google, reCAPTCHA, Azure Blob)
+├── TruekeBogotaSolidario.Negocio        Servicios, DTOs y reglas; integraciones (Wompi, SMTP, Google, reCAPTCHA, Supabase Storage)
 ├── TruekeBogotaSolidario.Presentacion   Web API: controllers, JWT + cookie de refresco, SignalR, CORS, rate limiting, ProblemDetails
 └── TruekeBogotaSolidario.Pruebas        xUnit: unitarias, integración (WebApplicationFactory), arquitectura, contrato y PostgreSQL real
 ```
@@ -158,8 +158,11 @@ En **Development**:
 - CORS para `http://localhost:4200` y Swagger en `/swagger`.
 - **Imágenes:**
   ```bash
-  docker run -d -p 10000:10000 mcr.microsoft.com/azure-storage/azurite azurite-blob --blobHost 0.0.0.0 --skipApiVersionCheck
-  dotnet user-secrets set "Almacenamiento:CadenaConexion" "UseDevelopmentStorage=true" --project TruekeBogotaSolidario.Presentacion
+  # Supabase Storage local (el mismo servidor que usa Supabase) en http://127.0.0.1:8082/storage/v1
+  docker compose -f docker-compose.storage.yml up -d
+  dotnet user-secrets set "Almacenamiento:Url" "http://127.0.0.1:8082/storage/v1" --project TruekeBogotaSolidario.Presentacion
+  # llave de demostración de Supabase (SERVICE_KEY en docker-compose.storage.yml; no es un secreto)
+  dotnet user-secrets set "Almacenamiento:LlaveServicio" "<SERVICE_KEY>" --project TruekeBogotaSolidario.Presentacion
   ```
 - **Google / reCAPTCHA en dev:** `dotnet user-secrets set "Google:ClientId" "..."`; `Captcha:ClaveSitio` y `Captcha:ClaveSecreta` (las claves de prueba de Google sirven).
 - **Pruebas contra PostgreSQL real:** con Docker instalado, `dotnet test` también las ejecuta. Sin Docker se marcan como *omitidas*; el CI las exige.
@@ -197,7 +200,7 @@ Todo se configura por variables de entorno (Azure: *App Settings* o referencias 
 | `Pagos__Wompi__LlavePublica`, `__LlavePrivada`, `__SecretoIntegridad`, `__SecretoEventos` | ✅ | Wompi |
 | `Correo__Smtp__Host`, `__Puerto`, `__Usuario`, `__Clave`, `Correo__Remitente` | ✅ | SMTP con TLS |
 | `Urls__Frontend` | ✅ | URL **https** del front (enlaces de los correos) |
-| `Almacenamiento__ServicioUrl` | ✅ | `https://<cuenta>.blob.core.windows.net` (Managed Identity) |
+| `Almacenamiento__Url`, `Almacenamiento__LlaveServicio` | ✅ | `https://<ref>.supabase.co/storage/v1` y la llave secreta del proyecto (`sb_secret_…`) |
 | `Cors__Origenes__0..n` | ✅ | Origen(es) del front |
 | `Google__ClientId` | Si se usa Google | OAuth Client ID tipo "Aplicación web" |
 | `APPLICATIONINSIGHTS_CONNECTION_STRING` | Recomendado | Monitoreo (se registra un aviso si falta) |
@@ -228,7 +231,7 @@ Ninguna llave se escribe en el código ni en `appsettings.json`. En local: `dotn
 | **reCAPTCHA v3** | [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin) → nuevo sitio → **reCAPTCHA v3** → dominios `localhost` y el del front | Clave del sitio → `Captcha__ClaveSitio` · Clave secreta → `Captcha__ClaveSecreta` |
 | **PostgreSQL (producción)** | [supabase.com](https://supabase.com) → *New project* (región East US, **Data API desactivada**) → botón **Connect** → **Session pooler** (IPv4). Pasos en `docs/DESPLIEGUE.md` §2. | `ConnectionStrings__TruekeDb=Host=aws-N-<region>.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.<ref>;Password=…;SSL Mode=Require;Maximum Pool Size=10`. Deja `Database__Inicializacion=Migrate` (aplica las migraciones al arrancar) o `None` + script idempotente en el despliegue si hay varias instancias. |
 | Correo | Azure Communication Services → *Email* (API HTTPS: `Correo__Proveedor=AzureCommunication`, `Correo__Azure__CadenaConexion`; pasos en `docs/DESPLIEGUE.md` §5.1) o cualquier SMTP con TLS (`Correo__Proveedor=Smtp`: `Correo__Smtp__Host`, `__Usuario`, `__Clave`) | `Correo__Remitente` = dirección MailFrom del dominio (Azure) o la cuenta SMTP |
-| Azure Blob | Cuenta de Storage | `Almacenamiento__ServicioUrl=https://<cuenta>.blob.core.windows.net` (con identidad administrada) |
+| Supabase Storage | El mismo proyecto de la base → *Project Settings → API Keys → Secret keys*. Los buckets los crea la API (`docs/DESPLIEGUE.md` §3). | `Almacenamiento__Url=https://<ref>.supabase.co/storage/v1` · `Almacenamiento__LlaveServicio=sb_secret_…` |
 
 ## 8. Base de datos y migraciones
 
@@ -254,13 +257,12 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
    - *Health check* en `/health/ready`;
    - HTTPS Only, TLS ≥ 1.2 y **WebSockets** activados;
    - VNet;
-   - identidad administrada con acceso a ACR, Key Vault y Storage (*Storage Blob Data Contributor* + *Storage Blob Delegator*).
+   - identidad administrada con acceso a ACR y Key Vault.
 3. **Datos y caché:** PostgreSQL administrado (Supabase Pro o Azure Database for PostgreSQL con endpoint privado); Azure Cache for Redis (`:6380,ssl=true,password=...`).
-4. **Storage:**
-   - contenedor `imagenes` con acceso anónimo **solo de lectura de blobs**;
-   - contenedores `documentos` y `subidas` **privados** (la API los crea si no existen);
-   - CORS de la cuenta: `PUT` desde el origen del front, con las cabeceras `x-ms-blob-type` y `content-type`;
-   - opcional: regla de *lifecycle* para las fotos quitadas al editar (las subidas sin usar ya las borra la API).
+4. **Storage (Supabase):**
+   - bucket `imagenes` **público, de solo lectura**; `documentos` y `subidas` **privados** (la API los crea y les fija 5 MB y los tipos permitidos);
+   - sin políticas en `storage.objects`: solo la API, con la llave secreta, escribe;
+   - las subidas sin usar ya las borra la API; las fotos quitadas al editar quedan en el bucket.
 5. **Monitoreo:** recurso de Application Insights → `APPLICATIONINSIGHTS_CONNECTION_STRING`.
 6. **Dominio:** el mismo para front y API (`app.` y `api.`), para usar la cookie con `SameSite=Strict`.
 7. **Externos:**
@@ -270,7 +272,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 8. **Endurecimiento de la infraestructura (configuración de Azure y GitHub, no código):**
    - **Entrada única:** Azure Front Door (o Application Gateway) con **WAF** (reglas OWASP + bots) delante del front y la API; en App Service, *Restricciones de acceso* para aceptar solo el tráfico de Front Door (etiqueta de servicio `AzureFrontDoor.Backend` + cabecera `X-Azure-FDID`). Así `Proxy__Confiar=true` es seguro.
    - **Redis** habilitado cuando haya más de una instancia: además del backplane de SignalR, activa el **límite de peticiones compartido** entre instancias.
-   - **Microsoft Defender for Storage** con *malware scanning* en la cuenta de Blob (escanea las fotos y los documentos al subirse).
+   - **Archivos:** las fotos ya se re-codifican al publicarse; si se quiere escanear también los PDF de identidad, agregar un antivirus al flujo de validación (Supabase no lo trae).
    - **Base de datos:** copias automáticas con restauración a un punto en el tiempo (PITR; Supabase la ofrece como complemento del plan Pro) y la Data API de Supabase desactivada.
    - **Key Vault** para todos los secretos, con rotación anual de `Jwt__Key` y de las llaves de Wompi.
    - **Alertas** de Application Insights: errores 5xx, latencia y la notificación `AlertaPagoEnRevision`.
@@ -330,7 +332,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 - **Seguridad del front:**
   - textos de usuarios siempre con interpolación de Angular (nunca `innerHTML`);
   - sin secretos en el código y sin source maps en producción;
-  - CSP que permita solo la API, Google (gsi y recaptcha) y el Blob.
+  - CSP que permita solo la API, Google (gsi y recaptcha) y el Storage.
 - **Tipos TypeScript del front:** desde `frontend/`, `npm run api` (openapi-typescript genera `src/app/api/schema.d.ts`). Si cambia la API, primero se regenera el contrato con `ACTUALIZAR_OPENAPI=1 dotnet test --filter OpenApiTests`.
 
 ## 11. Seguridad (resumen)
@@ -355,8 +357,8 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
   - Habeas Data: consentimiento, exportación y supresión;
   - purga de datos vencidos;
   - el monitoreo redacta la query string.
-- **Archivos:** SAS de 5 minutos **solo para crear** (no puede sobrescribir, leer, listar ni borrar) sobre un blob con nombre elegido por el servidor, en el contenedor **privado** `subidas`. Al usarlo se valida dueño, tamaño ≤ 5 MB y *magic bytes*, y lo que se guarda es siempre una **copia hecha por el servidor** con otro nombre (fotos limpias en `imagenes`, documentos en `documentos`); la subida se borra. Nunca se confía en metadatos que pueda poner el cliente. Las subidas que nadie usa se borran a la hora (servicio en segundo plano).
-- **Fotos sin ubicación oculta:** al publicar, cada foto se **re-codifica** (SkiaSharp; solo se aceptan JPEG, PNG y WEBP aunque Skia lea otros formatos): se aplica la orientación, se reduce a 1.600 px y se eliminan **todos los metadatos** (EXIF con GPS, modelo del celular, IPTC, XMP). La copia limpia se guarda con un **nombre nuevo** en el contenedor público y se borra el original, para que la SAS aún vigente no pueda reemplazarla. Protege contra "bombas de descompresión" (máx. 12.000 px por lado).
+- **Archivos:** URL firmada de Supabase (`createSignedUploadUrl`) **solo para crear un archivo** (no puede sobrescribir, leer, listar ni borrar) con nombre elegido por el servidor, en el bucket **privado** `subidas`, que además rechaza más de 5 MB y los tipos no permitidos. Al usarlo se valida dueño, tamaño ≤ 5 MB y *magic bytes*, y lo que se guarda es siempre una **copia hecha por el servidor** con otro nombre (fotos limpias en `imagenes`, documentos en `documentos`); la subida se borra. Nunca se confía en metadatos que pueda poner el cliente. Las subidas que nadie usa se borran a la hora (servicio en segundo plano).
+- **Fotos sin ubicación oculta:** al publicar, cada foto se **re-codifica** (SkiaSharp; solo se aceptan JPEG, PNG y WEBP aunque Skia lea otros formatos): se aplica la orientación, se reduce a 1.600 px y se eliminan **todos los metadatos** (EXIF con GPS, modelo del celular, IPTC, XMP). La copia limpia se guarda con un **nombre nuevo** en el bucket público y se borra el original: la URL firmada aún vigente no puede tocar lo publicado. Protege contra "bombas de descompresión" (máx. 12.000 px por lado).
 - **Límite de peticiones distribuido:** con Redis, los contadores se comparten entre instancias (el límite de login no se multiplica al escalar). Solo se acepta `X-Forwarded-For` de proxies configurados.
 - **CSV seguros:** las exportaciones neutralizan fórmulas (`=`, `+`, `-`, `@`) para evitar inyección en Excel.
 - **Endurecimiento HTTP:**
@@ -381,7 +383,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 - **Propagación de la revocación:** entre instancias tarda hasta 30 s (caché local). Una conexión SignalR abierta vive hasta que expira su token (≤ 15 min).
 - **Token en la URL del hub:** para WebSockets va en `?access_token=` (solo se acepta en `/hubs/*`). Desactiva el registro de *query strings* en los logs del proxy.
 - **Enumeración de cuentas:** el registro indica si el correo ya existe (mitigado con rate limiting y reCAPTCHA).
-- **Archivos huérfanos:** las subidas que nunca se usan se borran solas a la hora; las fotos quitadas al editar quedan en Blob (regla de *lifecycle* opcional).
+- **Archivos huérfanos:** las subidas que nunca se usan se borran solas a la hora; las fotos quitadas al editar quedan en el bucket de imágenes.
 - **Correo en memoria:** la cola vive en memoria; un reinicio puede perder un correo en tránsito, y el usuario puede pedir "reenviar".
 - **Reembolsos manuales:** se hacen en el panel de Wompi; la API solo los registra (y revierte el beneficio).
 - **Sin cobro recurrente automático:** los planes se renuevan pagando de nuevo (con recordatorio). El débito automático requiere habilitar *fuentes de pago* (tokenización) con Wompi; se implementará cuando el comercio esté aprobado.

@@ -7,7 +7,7 @@
 # PostgreSQL y Redis NO se publican al host: solo la API los ve por la red interna.
 # La API entra a PostgreSQL con su propio usuario (trueke_app, dueño solo de la base trueke), no con el superusuario "postgres".
 # Por defecto corre en "Local" (permite correo y pagos simulados; cualquier otro entorno exige la configuración real). Con ASPNETCORE_ENVIRONMENT=Production
-# la API exige TODOS los servicios reales (SMTP, Wompi, Azure Blob, Urls__Frontend https) o no arranca.
+# la API exige TODOS los servicios reales (SMTP, Wompi, Supabase Storage, Urls__Frontend https) o no arranca.
 
 name: trueke
 
@@ -41,8 +41,8 @@ services:
       Seguridad__ClaveCifrado: ${CLAVE_CIFRADO:?Define CLAVE_CIFRADO en .env}
       Seguridad__ExigirDosFactoresModeradores: ${EXIGIR_2FA_ADMIN:-true}
       APPLICATIONINSIGHTS_CONNECTION_STRING: ${APPLICATIONINSIGHTS_CONNECTION_STRING:-}
-      Almacenamiento__CadenaConexion: ${ALMACENAMIENTO_CADENA:-}
-      Almacenamiento__ServicioUrl: ${ALMACENAMIENTO_URL:-}
+      Almacenamiento__Url: ${ALMACENAMIENTO_URL:-}
+      Almacenamiento__LlaveServicio: ${ALMACENAMIENTO_LLAVE:-}
       Urls__Frontend: ${URL_FRONTEND:-http://localhost:8081}
       Redis__Habilitado: "true"
       Redis__Conexion: "redis:6379,password=${REDIS_PASSWORD:?Define REDIS_PASSWORD en .env},abortConnect=false"
@@ -78,7 +78,7 @@ services:
       # Vacío = la API se usa en el mismo origen a través del proxy de nginx (recomendado).
       API_URL: ${WEB_API_URL:-}
       API_UPSTREAM: http://api:8080
-      # Hosts de Azure Blob para fotos (img-src) y subidas directas con SAS (connect-src).
+      # Origen de Supabase Storage para fotos (img-src) y subidas directas con URL firmada (connect-src).
       CSP_IMG_EXTRA: ${WEB_CSP_IMG_EXTRA:-}
       CSP_CONNECT_EXTRA: ${WEB_CSP_CONNECT_EXTRA:-}
     depends_on:

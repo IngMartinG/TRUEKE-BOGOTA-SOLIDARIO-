@@ -6,7 +6,7 @@ namespace TruekeBogotaSolidario.Negocio.Archivos;
 /// <summary>
 /// Mantenimiento del almacenamiento:
 /// - una vez por arranque, crea las miniaturas que falten (fotos publicadas antes de que existieran o cuya miniatura falló);
-/// - cada pocas horas, borra las subidas que nadie usó (el contenedor de subidas no es un hosting gratuito).
+/// - cada pocas horas, borra las subidas que nadie usó (el bucket de subidas no es un hosting gratuito).
 /// </summary>
 public sealed class MiniaturasHostedService : BackgroundService
 {

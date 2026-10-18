@@ -49,7 +49,7 @@ public sealed class ConfiguracionService : IConfiguracionService
         Limites.DiasCierreConUnaConfirmacion,
         Limites.DiasCierreSinConfirmacion,
         _pagos.EsDePrueba,
-        CdnActiva ? _almacenamiento.ServicioUrl.TrimEnd('/') + "/" : null,
+        CdnActiva ? _almacenamiento.OrigenPublico : null,
         CdnActiva ? _almacenamiento.CdnUrl.TrimEnd('/') + "/" : null,
         _push.Habilitado && _push.Validas ? _push.ClavePublica : null);
 }

@@ -102,5 +102,5 @@ export function bajar(): void {
 }
 
 export function registrosApi(): void {
-  compose('logs', '--no-color', '--tail', '300', 'api', 'web', 'mailpit');
+  compose('logs', '--no-color', '--tail', '300', 'api', 'web', 'mailpit', 'storage', 'puerta-storage');
 }

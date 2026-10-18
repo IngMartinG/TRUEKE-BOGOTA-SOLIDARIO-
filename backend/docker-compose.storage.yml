@@ -1,0 +1,62 @@
+# Supabase Storage local para desarrollar con fotos sin un proyecto de Supabase (el mismo servidor que corre Supabase,
+# con los archivos en un volumen):
+#   docker compose -f docker-compose.storage.yml up -d
+# y en la API (dotnet run o docker-compose.yml):
+#   Almacenamiento__Url=http://127.0.0.1:8082/storage/v1
+#   Almacenamiento__LlaveServicio=<STORAGE_LLAVE_SERVICIO de abajo>
+# Las llaves y el secreto son los de DEMOSTRACIÓN que publica Supabase para su entorno local: no son secretos y NUNCA se
+# usan en un proyecto real (allí la llave secreta sale del panel de Supabase).
+
+name: trueke-storage
+
+x-llaves: &llaves
+  AUTH_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+  PGRST_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
+  ANON_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0
+  # STORAGE_LLAVE_SERVICIO (rol service_role):
+  SERVICE_KEY: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU
+
+services:
+  storage-db:
+    image: postgres:17-alpine@sha256:b0f9560a2de083e2cc7382e75f808c7381a32852a7ec49117deedb300e552b24
+    environment:
+      POSTGRES_PASSWORD: storage-local
+      POSTGRES_DB: storage
+    volumes:
+      - storage-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d storage"]
+      interval: 2s
+      timeout: 2s
+      retries: 30
+
+  storage:
+    image: supabase/storage-api:v1.79.28@sha256:1f6c99d3952d78d57129802aa2ae8a80d75e327492cf24742fd0aeaf90967b96
+    environment:
+      <<: *llaves
+      DATABASE_URL: postgres://postgres:storage-local@storage-db:5432/storage
+      DB_INSTALL_ROLES: "true"
+      STORAGE_BACKEND: file
+      FILE_STORAGE_BACKEND_PATH: /var/lib/storage
+      FILE_SIZE_LIMIT: "52428800"
+      TENANT_ID: local
+      REGION: local
+      GLOBAL_S3_BUCKET: local
+    volumes:
+      - storage-archivos:/var/lib/storage
+    depends_on:
+      storage-db:
+        condition: service_healthy
+
+  puerta:
+    image: nginxinc/nginx-unprivileged:1.30-alpine@sha256:15c994d10d6d78658721c3bcafff14cb281fba2a4bdf9d5ba92c416a472516e3
+    ports:
+      - "127.0.0.1:8082:8082"
+    volumes:
+      - ./supabase-storage/puerta.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - storage
+
+volumes:
+  storage-db:
+  storage-archivos:

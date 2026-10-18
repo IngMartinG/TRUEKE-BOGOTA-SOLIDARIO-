@@ -6,8 +6,8 @@ using TruekeBogotaSolidario.Negocio.Dtos;
 namespace TruekeBogotaSolidario.Pruebas.Infraestructura;
 
 /// <summary>
-/// Almacén en memoria con las MISMAS reglas que el de Azure (ReglasArchivos). Subir() simula el PUT del navegador al
-/// contenedor privado de subidas; al validar, se publica una copia con nombre nuevo y se borra la subida (como en Azure).
+/// Almacén en memoria con las MISMAS reglas que el de Supabase (ReglasArchivos). Subir() simula el PUT del navegador al
+/// bucket privado de subidas; al validar, se publica una copia con nombre nuevo y se borra la subida (como en Supabase).
 /// </summary>
 public sealed class AlmacenFalso : IAlmacenArchivos
 {
@@ -24,7 +24,7 @@ public sealed class AlmacenFalso : IAlmacenArchivos
         var ext = ReglasArchivos.Extension(tipo, contentType);
         ReglasArchivos.ValidarTamano(tamanoBytes);
         var url = $"{Subidas}/{ReglasArchivos.NuevoNombre(usuarioId, ext)}";
-        return Task.FromResult(new SubidaArchivoDto(url + "?sas=falsa", url, "PUT",
+        return Task.FromResult(new SubidaArchivoDto(url + "?token=falso", url, "PUT",
             new Dictionary<string, string> { ["Content-Type"] = contentType }, DateTime.UtcNow.AddMinutes(5)));
     }
 
