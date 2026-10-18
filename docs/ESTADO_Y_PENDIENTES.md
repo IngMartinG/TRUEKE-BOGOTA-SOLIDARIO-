@@ -387,11 +387,16 @@ Informe completo, con los hallazgos por severidad, en `docs/AUDITORIA_2026-10-18
 - **#157:** el foco va al primer error al enviar (`EnfocarError`), con ajustes de accesibilidad en los formularios.
 - Se actualizaron las menciones viejas a Application Insights y Azure en la documentación.
 
+## Hecho el 2026-10-18 — pendientes de la auditoría integral
+- **PQRS pública con límite propio:** `POST /pqr/publica` y `/pqr/consultar` usan la política `pqr-publica`, solo por IP,
+  con 3 por minuto y 10 por hora (`RateLimiting__PqrPublicaPorMinuto` y `RateLimiting__PqrPublicaPorHora`), también en el
+  limitador de Redis. Ya no comparten el límite del ingreso. Las PQRS públicas avisan a la moderación en un resumen cada
+  10 minutos ("N PQRS públicas nuevas"); las de usuarios con cuenta siguen avisando una por una.
+
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
 - **Registro de oferentes** (Ley 1480, art. 53) para quien vende en modo Compra: decidir con el abogado. Prioridad alta.
 - **Cuenta antigua que declara ser menor:** bloquear los reintentos y marcarla para revisión. Decisión del dueño.
-- **PQRS pública:** política de límite propia por IP y avisos a la moderación agrupados.
 - **Producto:** `robots.txt` y `sitemap.xml`, y un monitor externo de `/health/ready`.
 
 **Despliegue y operación:**

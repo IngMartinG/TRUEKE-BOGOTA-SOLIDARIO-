@@ -29,11 +29,11 @@ public sealed class PqrController : ControllerBase
     /// PQRS pública, sin cuenta (autorizado por el dueño el 2026-10-18): captcha, límite por IP y por correo. El radicado y
     /// la respuesta llegan al correo indicado.
     /// </summary>
-    [HttpPost("publica"), AllowAnonymous, EnableRateLimiting(Politicas.LimiteAuth)]
+    [HttpPost("publica"), AllowAnonymous, EnableRateLimiting(Politicas.LimitePqrPublica)]
     public async Task<ActionResult<PqrDto>> CrearPublica([FromBody] CrearPqrPublicaRequest r)
         => StatusCode(StatusCodes.Status201Created, await _pqr.CrearPublicaAsync(r));
 
     /// <summary>Estado de una PQRS pública con su radicado y el correo con que se radicó (captcha y límite por IP).</summary>
-    [HttpPost("consultar"), AllowAnonymous, EnableRateLimiting(Politicas.LimiteAuth)]
+    [HttpPost("consultar"), AllowAnonymous, EnableRateLimiting(Politicas.LimitePqrPublica)]
     public async Task<ActionResult<PqrDto>> Consultar([FromBody] ConsultarPqrRequest r) => Ok(await _pqr.ConsultarAsync(r));
 }

@@ -146,7 +146,9 @@ var limites = new LimitesPorMinuto(
     Auth: config.GetValue("RateLimiting:AuthPorMinuto", 10),
     Webhook: config.GetValue("RateLimiting:WebhookPorMinuto", 120),
     Escritura: config.GetValue("RateLimiting:EscrituraPorMinuto", 20),
-    Refresco: config.GetValue("RateLimiting:RefrescoPorMinuto", 60));
+    Refresco: config.GetValue("RateLimiting:RefrescoPorMinuto", 60),
+    PqrPublica: config.GetValue("RateLimiting:PqrPublicaPorMinuto", 3),
+    PqrPublicaPorHora: config.GetValue("RateLimiting:PqrPublicaPorHora", 10));
 builder.Services.AddSingleton(limites);
 builder.Services.AddRateLimiter(o =>
 {
@@ -163,6 +165,8 @@ builder.Services.AddRateLimiter(o =>
     var limiteGlobal = limites.Global;
     var limiteEscritura = limites.Escritura;
     var limiteRefresco = limites.Refresco;
+    var limitePqrMinuto = limites.PqrPublica;
+    var limitePqrHora = limites.PqrPublicaPorHora;
     o.AddPolicy(Politicas.LimiteRefresco, c => RateLimitPartition.GetFixedWindowLimiter(Ip(c),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = limiteRefresco, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     o.AddPolicy(Politicas.LimiteEscritura, c => RateLimitPartition.GetFixedWindowLimiter(
@@ -170,6 +174,11 @@ builder.Services.AddRateLimiter(o =>
         _ => new FixedWindowRateLimiterOptions { PermitLimit = limiteEscritura, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     o.AddPolicy(Politicas.LimiteAuth, c => RateLimitPartition.GetFixedWindowLimiter(Ip(c),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = limiteAuth, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    // PQRS pública: límite propio (no comparte el del ingreso, para que el abuso desde una IP compartida no deje sin
+    // ingreso a los demás), por minuto y por hora.
+    o.AddPolicy(Politicas.LimitePqrPublica, c => RateLimitPartition.Get(Ip(c), _ => RateLimiter.CreateChained(
+        new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions { PermitLimit = limitePqrMinuto, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }),
+        new FixedWindowRateLimiter(new FixedWindowRateLimiterOptions { PermitLimit = limitePqrHora, Window = TimeSpan.FromHours(1), QueueLimit = 0 }))));
     o.AddPolicy(Politicas.LimiteWebhook, c => RateLimitPartition.GetFixedWindowLimiter(Ip(c),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = limiteWebhook, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     o.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(c => RateLimitPartition.GetFixedWindowLimiter(Ip(c),

@@ -217,7 +217,8 @@ Todo se configura por variables de entorno (Azure: *App Settings* o referencias 
 | `Seguridad__DominiosCorreoBloqueados__0..n` | — | Dominios extra que no pueden registrarse |
 | `Legal__VersionPoliticaDatos`, `Legal__VersionTerminos`, `Legal__FechaVigencia` | — | Versiones vigentes (`2026-10-18`). Al cambiar una, quien aceptó la anterior debe aceptarla de nuevo (403 `terminos_desactualizados`) |
 | `Database__Inicializacion` | — | `Migrate` (por defecto), `EnsureCreated` o `None` |
-| `RateLimiting__*PorMinuto` | — | Auth 10 · Refresco 60 · Escritura 20 · Webhook 120 · Global 300 |
+| `RateLimiting__*PorMinuto` | — | Auth 10 · Refresco 60 · Escritura 20 · Webhook 120 · Global 300 · PqrPublica 3 |
+| `RateLimiting__PqrPublicaPorHora` | — | 10 (PQRS pública y su consulta, por IP; aparte del límite del ingreso) |
 
 **Fail-fast:** en `Production` la app **no arranca** si falta cualquiera de las obligatorias, si el correo, los pagos o la facturación están en `Simulado`, si la base es `InMemory` o si `Urls:Frontend` no es https.
 

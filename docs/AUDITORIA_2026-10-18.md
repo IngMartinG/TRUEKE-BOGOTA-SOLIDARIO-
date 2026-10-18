@@ -23,7 +23,7 @@ Cada corrección va en su propio PR. Lo que necesita una decisión del dueño, d
 | 3 | Media | La PQRS pública reenviaba a cualquier correo el texto escrito por quien la radicaba | **Corregido** en #156 |
 | 4 | Media | Al enviar un formulario con errores, el foco no iba al primer campo inválido (WCAG 3.3.1 y 2.4.3) | **Corregido** en #157 |
 | 5 | Media | Una cuenta antigua que declara una fecha de menor de edad puede reintentar con otra fecha | Pendiente: decisión del dueño |
-| 6 | Media-baja | La PQRS pública comparte el límite por IP con el ingreso y avisa a la moderación sin tope global | Pendiente: propuesta |
+| 6 | Media-baja | La PQRS pública comparte el límite por IP con el ingreso y avisa a la moderación sin tope global | **Corregido** en `fix/limite-pqrs-publica` |
 | 7 | Baja | Cambiar el rol de una cuenta devolvía su fecha de nacimiento | **Corregido** en #156 |
 | 8 | Baja | Facturas de administración sin `aria-invalid`; correctores ortográficos en correos y códigos; el indicador "buscando" del asistente no se anunciaba | **Corregido** en #157 |
 | 9 | Baja | La documentación seguía mencionando Application Insights y el despliegue en Azure | **Corregido** en este PR |
@@ -93,6 +93,8 @@ Solo la pantalla de publicar llevaba el foco al campo con error.
 La exposición es baja porque hay reCAPTCHA obligatorio en producción y un tope de 5 por día por correo.
 
 **Propuesta:** una política de límite propia para la PQRS pública, por ejemplo 5 por hora por IP, también en el limitador de Redis, y agrupar los avisos a la moderación en un resumen.
+
+**Corrección:** política `pqr-publica` solo por IP, con 3 por minuto y 10 por hora (configurables), en memoria y en Redis. El ingreso desde la misma IP no se ve afectado. Las PQRS públicas entran a un resumen cada 10 minutos: un solo aviso por moderador con la cantidad, sin el texto de quien radicó. El contador vive en la memoria de cada instancia; si una instancia se reinicia antes de enviarlo, las PQRS siguen en la cola de moderación.
 
 ### 7 y 8. Hallazgos menores — #156 y #157
 - La respuesta del cambio de rol traía la fecha de nacimiento de la otra cuenta. Por minimización (Ley 1581), ahora va en `null`.
