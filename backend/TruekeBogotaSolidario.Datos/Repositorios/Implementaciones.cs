@@ -233,6 +233,16 @@ public sealed class PublicacionRepository : IPublicacionRepository
         return await q.OrderByDescending(p => p.FechaPublicacion).Take(Math.Clamp(maximo, 1, 1000)).ToListAsync();
     }
 
+    public async Task<IReadOnlyList<Publicacion>> ListarVisiblesSinPuntoEnMunicipiosAsync(IReadOnlyCollection<string> municipios,
+        int? categoriaId, ModoTransaccion? modo, int maximo, DateTime ahoraUtc)
+    {
+        if (municipios.Count == 0) return [];
+        var q = Visibles(ahoraUtc).Where(p => (p.Latitud == null || p.Longitud == null) && municipios.Contains(p.MunicipioCodigo));
+        if (categoriaId.HasValue) q = q.Where(p => p.CategoriaId == categoriaId.Value);
+        if (modo.HasValue) q = q.Where(p => p.Modo == modo.Value);
+        return await q.OrderByDescending(p => p.FechaPublicacion).Take(Math.Clamp(maximo, 1, 1000)).ToListAsync();
+    }
+
     public async Task<IReadOnlyList<Publicacion>> ListarPorPropietarioAsync(Guid propietarioId)
         => await _db.Publicaciones.AsNoTracking().Include(p => p.Categoria).Include(p => p.Propietario)
             .Where(p => p.PropietarioId == propietarioId).OrderByDescending(p => p.FechaPublicacion).Take(200).ToListAsync();

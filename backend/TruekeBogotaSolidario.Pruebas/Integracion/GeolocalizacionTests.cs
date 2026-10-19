@@ -81,6 +81,32 @@ public class GeolocalizacionTests : IClassFixture<FabricaApi>
         Assert.True(distancia > 0);
     }
 
+    [Fact]
+    public async Task Cercanas_incluye_las_que_no_marcaron_punto_por_el_centro_de_su_localidad()
+    {
+        var duenio = await Api.RegistrarAsync(_fabrica, "sinpunto");
+        async Task<Guid> Crear(string localidad)
+        {
+            var r = await duenio.PostAsJsonAsync("/api/v1/publicaciones", new
+            {
+                titulo = "Silla de madera", descripcion = "Sin punto de entrega", categoriaId = 1, modo = "Donacion",
+                condicion = "Usado", localidad
+            });
+            Assert.Equal(HttpStatusCode.Created, r.StatusCode);
+            return (await r.Content.ReadFromJsonAsync<IdDto>())!.Id;
+        }
+        var enBosa = await Crear("Bosa");
+        var enUsaquen = await Crear("Usaquén");
+
+        // A 1 km del centro de Bosa: aparece la de Bosa (sin coordenadas) y no la de Usaquén (~20 km)
+        var lista = await Json(await _fabrica.CreateClient().GetAsync("/api/v1/publicaciones/cercanas?lat=4.6271&lon=-74.1903&radioKm=3&max=50"));
+        var items = lista.EnumerateArray().ToList();
+        var bosa = items.Single(e => e.GetProperty("publicacion").GetProperty("id").GetGuid() == enBosa);
+        Assert.InRange(bosa.GetProperty("distanciaKm").GetDouble(), 0.5, 1.5);
+        Assert.Equal(JsonValueKind.Null, bosa.GetProperty("publicacion").GetProperty("latitud").ValueKind); // no se inventan coordenadas
+        Assert.DoesNotContain(items, e => e.GetProperty("publicacion").GetProperty("id").GetGuid() == enUsaquen);
+    }
+
     [Theory]
     [InlineData("/api/v1/publicaciones/cercanas?lon=-74.08")]
     [InlineData("/api/v1/publicaciones/cercanas?lat=4.6&lon=-74.08&radioKm=500")]
