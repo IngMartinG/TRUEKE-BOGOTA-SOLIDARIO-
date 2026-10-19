@@ -897,6 +897,47 @@ export interface paths {
         };
         trace?: never;
     };
+    "/api/v1/admin/usuarios/{usuarioId}/eliminar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    usuarioId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MotivoRequest"];
+                    "text/json": components["schemas"]["MotivoRequest"];
+                    "application/*+json": components["schemas"]["MotivoRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/pagos/{referencia}/reembolsado": {
         parameters: {
             query?: never;

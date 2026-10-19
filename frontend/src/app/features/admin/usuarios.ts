@@ -93,6 +93,11 @@ const TAMANO = 20;
                   } @else {
                     <button type="button" class="btn btn-peligro btn-sm" (click)="abrirSuspender(u)"><app-icono nombre="ban" [tamano]="14" />Suspender</button>
                   }
+                  @if (sesion.esSuperUsuario() && u.rol !== 'SuperUsuario') {
+                    <button type="button" class="btn btn-fantasma btn-sm mt-2 text-tierra-700 dark:text-tierra-100" (click)="abrirEliminar(u)">
+                      <app-icono nombre="basura" [tamano]="14" />Eliminar cuenta
+                    </button>
+                  }
                 }
               </td>
             </tr>
@@ -123,6 +128,30 @@ const TAMANO = 20;
       <div pie class="flex justify-end gap-2 border-t border-borde p-4">
         <button type="button" class="btn btn-fantasma" (click)="suspenderAbierto.set(false)">Cancelar</button>
         <button type="submit" form="form-suspender" class="btn btn-peligro" [disabled]="motivo().trim().length < 3">Suspender</button>
+      </div>
+    </app-modal>
+
+    <app-modal [(abierto)]="eliminarAbierto" titulo="Eliminar cuenta definitivamente" [subtitulo]="seleccionado()?.nombreCompleto ?? ''">
+      <form id="form-eliminar-cuenta" (ngSubmit)="eliminar()" class="space-y-4">
+        <p class="text-sm text-tenue">
+          Para cuentas de prueba o duplicadas. Se retiran sus publicaciones, se cierran sus sesiones, se borran sus fotos y sus
+          datos personales quedan anonimizados. <strong class="text-tinta">No se puede deshacer.</strong> Si solo quieres frenar
+          a alguien, suspende la cuenta.
+        </p>
+        <div class="campo">
+          <label for="motivo-eliminar" class="etiqueta">Motivo (queda en la auditoría)</label>
+          <textarea id="motivo-eliminar" name="motivo" class="entrada" maxlength="300" required [(ngModel)]="motivo"></textarea>
+        </div>
+        <div class="campo">
+          <label for="confirmar-eliminar" class="etiqueta">Escribe <strong>ELIMINAR</strong> para confirmar</label>
+          <input id="confirmar-eliminar" name="confirmacion" class="entrada" autocomplete="off" [(ngModel)]="confirmacion" />
+        </div>
+      </form>
+      <div pie class="flex justify-end gap-2 border-t border-borde p-4">
+        <button type="button" class="btn btn-fantasma" (click)="eliminarAbierto.set(false)">Cancelar</button>
+        <button type="submit" form="form-eliminar-cuenta" class="btn btn-peligro" [disabled]="motivo().trim().length < 3 || confirmacion() !== 'ELIMINAR'">
+          Eliminar cuenta
+        </button>
       </div>
     </app-modal>
 
@@ -170,6 +199,8 @@ export default class Usuarios {
 
   protected readonly suspenderAbierto = signal(false);
   protected readonly descartarAbierto = signal(false);
+  protected readonly eliminarAbierto = signal(false);
+  protected readonly confirmacion = signal('');
   protected readonly seleccionado = signal<UsuarioAdminDto | null>(null);
   protected readonly motivo = signal('');
   protected readonly dias = signal<number | null>(7);
@@ -191,6 +222,20 @@ export default class Usuarios {
     if (!u?.id) return;
     await this.correr(() => firstValueFrom(this.api.suspender(u.id!, this.motivo().trim(), this.dias())), 'Cuenta suspendida');
     this.suspenderAbierto.set(false);
+  }
+
+  protected abrirEliminar(u: UsuarioAdminDto): void {
+    this.seleccionado.set(u);
+    this.motivo.set('');
+    this.confirmacion.set('');
+    this.eliminarAbierto.set(true);
+  }
+
+  protected async eliminar(): Promise<void> {
+    const u = this.seleccionado();
+    if (!u?.id || this.confirmacion() !== 'ELIMINAR') return;
+    await this.correr(() => firstValueFrom(this.api.eliminarCuenta(u.id!, this.motivo().trim())), 'Cuenta eliminada');
+    this.eliminarAbierto.set(false);
   }
 
   protected abrirDescartar(u: UsuarioAdminDto): void {

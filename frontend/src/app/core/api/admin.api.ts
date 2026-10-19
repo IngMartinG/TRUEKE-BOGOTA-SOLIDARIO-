@@ -39,6 +39,8 @@ export class AdminApi {
   suspender = (id: string, motivo: string, dias: number | null) =>
     this.api.post<UsuarioAdminDto>(`/admin/usuarios/${seg(id)}/suspender`, { motivo, dias });
   reactivar = (id: string) => this.api.post<UsuarioAdminDto>(`/admin/usuarios/${seg(id)}/reactivar`);
+  /** Solo SuperUsuario: elimina (anonimiza) la cuenta de otra persona; el motivo queda en la auditoría. */
+  eliminarCuenta = (id: string, motivo: string) => this.api.post<void>(`/admin/usuarios/${seg(id)}/eliminar`, { motivo });
   cambiarRol = (id: string, rol: RolDto) => this.api.patch<UsuarioDto>(`/admin/usuarios/${seg(id)}/rol`, { rol });
 
   denuncias = (estado: EstadoDenunciaDto) =>

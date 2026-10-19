@@ -13,6 +13,8 @@ public interface IDatosPersonalesService
 {
     Task<DatosPersonalesDto> ExportarAsync(Guid actorId);
     Task EliminarCuentaAsync(Guid actorId, EliminarCuentaRequest r);
+    /// <summary>El SuperUsuario elimina la cuenta de otra persona (p. ej. cuentas de prueba o duplicadas). Mismo efecto que la propia.</summary>
+    Task EliminarCuentaPorAdministracionAsync(Guid superUsuarioId, Guid usuarioId, string motivo);
 }
 
 public sealed class DatosPersonalesService : IDatosPersonalesService
@@ -127,6 +129,33 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         if (u.Rol == RolUsuarioEnum.SuperUsuario && await _usuarios.ContarPorRolAsync(RolUsuarioEnum.SuperUsuario) <= 1)
             throw new ReglaDeNegocioException("Eres el único SuperUsuario: asigna otro antes de eliminar tu cuenta.");
 
+        await SuprimirAsync(u, actorId, "Cuenta eliminada por su titular.", "CUENTA_ELIMINADA", null);
+        _log.LogWarning("Cuenta eliminada (anonimizada) por su titular {UsuarioId}", actorId);
+    }
+
+    public async Task EliminarCuentaPorAdministracionAsync(Guid superUsuarioId, Guid usuarioId, string motivo)
+    {
+        // El rol se recomprueba contra la base: un JWT emitido antes de quitarle el rol no basta.
+        var actor = await _usuarios.ObtenerPorIdAsync(superUsuarioId);
+        if (actor is null || actor.EstaEliminado || actor.Rol != RolUsuarioEnum.SuperUsuario)
+            throw new AccesoDenegadoException("Solo el SuperUsuario puede eliminar cuentas.");
+        if (usuarioId == superUsuarioId)
+            throw new ReglaDeNegocioException("Para eliminar tu propia cuenta usa Mi cuenta → Privacidad y datos.");
+        var u = await _usuarios.ObtenerPorIdAsync(usuarioId);
+        if (u is null || u.EstaEliminado) throw new NoEncontradoException("La cuenta no existe o ya fue eliminada.");
+        if (u.Rol == RolUsuarioEnum.SuperUsuario)
+            throw new ReglaDeNegocioException("No se puede eliminar a otro SuperUsuario. Quítale el rol primero.");
+        if (await _pagos.ContarPendientesAsync(usuarioId, DateTime.MinValue) > 0)
+            throw new ReglaDeNegocioException("La cuenta tiene pagos en proceso. Espera a que se resuelvan (máximo una hora).");
+
+        await SuprimirAsync(u, superUsuarioId, "Cuenta eliminada por la administración.", "CUENTA_ELIMINADA_ADMIN", motivo.Trim());
+        _log.LogWarning("Cuenta {UsuarioId} eliminada (anonimizada) por el SuperUsuario {ActorId}", usuarioId, superUsuarioId);
+    }
+
+    /// <summary>Supresión (Ley 1581): retira el contenido, cierra sesiones, anonimiza y borra los archivos de <paramref name="u"/>.</summary>
+    private async Task SuprimirAsync(Usuario u, Guid autorId, string razon, string accionAuditoria, string? detalle)
+    {
+        var actorId = u.Id;
         var ahora = Ahora;
         var avisos = new List<(Guid UsuarioId, string Tipo, string Mensaje, Guid Recurso)>();
 
@@ -152,19 +181,18 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
             }
         }
         // 2) Publicaciones activas: se retiran del catálogo
-        foreach (var p in await _pubs.ListarActivasParaActualizarAsync(actorId)) p.Cancelar("Cuenta eliminada por su titular.");
+        foreach (var p in await _pubs.ListarActivasParaActualizarAsync(actorId)) p.Cancelar(razon);
         // 3) Comentarios públicos: se ocultan (los mensajes privados quedan para la contraparte, sin nombre del autor)
-        foreach (var c in await _comentarios.ListarDelAutorAsync(actorId, 10_000)) if (!c.EstaOculto) c.Ocultar("Cuenta eliminada por su titular.");
+        foreach (var c in await _comentarios.ListarDelAutorAsync(actorId, 10_000)) if (!c.EstaOculto) c.Ocultar(razon);
         // 4) Sesiones y datos personales
         await _refrescos.RevocarTodasDelUsuarioAsync(actorId, ahora);
         foreach (var s in await _suscripcionesPush.DeUsuarioAsync(actorId)) _suscripcionesPush.Quitar(s); // ningún aviso más
         foreach (var b in await _busquedasRepo.DeUsuarioAsync(actorId)) _busquedasRepo.Quitar(b);
         foreach (var d in await _deseosRepo.DeUsuarioAsync(actorId)) _deseosRepo.Quitar(d); // dejan de verse en el perfil
         u.Anonimizar(ahora);
-        _auditoria.Agregar(new AuditoriaEvento(actorId, "CUENTA_ELIMINADA", "Usuario", actorId, null, ahora));
+        _auditoria.Agregar(new AuditoriaEvento(autorId, accionAuditoria, "Usuario", actorId, detalle, ahora));
         await _uow.GuardarCambiosAsync();
         _sesiones.Invalidar(actorId);
-        _log.LogWarning("Cuenta eliminada (anonimizada) por su titular {UsuarioId}", actorId);
 
         // 5) Fuera de la transacción: archivos y avisos (si fallan, no deshacen la eliminación)
         try { await _almacen.EliminarDelUsuarioAsync(actorId); }
