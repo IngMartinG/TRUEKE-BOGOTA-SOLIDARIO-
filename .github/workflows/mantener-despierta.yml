@@ -1,0 +1,41 @@
+name: Mantener la API despierta
+
+# En el plan gratis de Render la API se duerme a los 15 minutos sin tráfico y la primera visita espera 30-60 s.
+# Se consulta /health/ready cada 10 minutos: despierta la API y, de paso, toca la base (Supabase Free pausa el proyecto
+# tras 7 días sin actividad). Render Free da 750 h al mes y un servicio encendido todo el mes usa unas 744 h.
+# Límites del cron de GitHub: puede retrasarse en horas pico y se desactiva tras 60 días sin commits en el repositorio.
+# Por eso se recomienda además un monitor externo gratuito (cron-job.org o UptimeRobot) a la misma URL cada 10 minutos.
+# URL: variable del repositorio API_URL (la misma que usa el workflow de Pages).
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mantener-despierta
+  cancel-in-progress: true
+
+jobs:
+  ping:
+    name: Consultar /health/ready
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    if: ${{ vars.API_URL != '' }}
+    steps:
+      - name: Despertar la API
+        env:
+          API_URL: ${{ vars.API_URL }}
+        run: |
+          url="${API_URL%/}/health/ready"
+          # Hasta 3 intentos de 90 s: el arranque en frío puede pasar del minuto.
+          for intento in 1 2 3; do
+            codigo=$(curl -s -o /dev/null -w "%{http_code}" --max-time 90 "$url" || true)
+            echo "Intento $intento: HTTP $codigo"
+            [ "$codigo" = "200" ] && exit 0
+            sleep 10
+          done
+          echo "::error::La API no respondió 200 en $url"
+          exit 1
