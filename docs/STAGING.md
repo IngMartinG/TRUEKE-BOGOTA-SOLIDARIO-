@@ -41,7 +41,7 @@ Mientras el equipo sea una persona y el tráfico sea de amistades, **las E2E en 
 1. **Nunca copiar datos de producción a staging** (Ley 1581: los datos se usan solo para lo que la persona autorizó). Staging se llena con cuentas y publicaciones de prueba.
 2. **Secretos propios:** `Jwt__Key`, `Seguridad__ClaveCifrado`, llaves VAPID y cadenas de conexión **distintos** de producción. Un token de staging nunca debe servir en producción.
 3. **Wompi solo sandbox.**
-4. Que nadie la confunda con la real: el aviso "Sitio de demostración" ya aparece solo con pagos de prueba. Además, no publicar el enlace de staging.
+4. Que nadie la confunda con la real: el aviso de pagos de prueba ("AVISO") ya aparece solo con pagos de prueba. Además, no publicar el enlace de staging.
 5. Los buscadores no deben indexarla: el front de staging debe enviar `X-Robots-Tag: noindex` (en Render Static Site → *Headers*).
 
 ## Pasos para crearlo (cuando se decida)
