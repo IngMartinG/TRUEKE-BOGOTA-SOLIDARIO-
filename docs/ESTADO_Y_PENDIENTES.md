@@ -419,6 +419,15 @@ Informe completo, con los hallazgos por severidad, en `docs/AUDITORIA_2026-10-18
 - **Ya estaban bien:** cabeceras de seguridad, CORS con lista de orígenes, límites de peticiones, Swagger cerrado, Storage
   sin listado y Data API cerrada. Lo público por diseño quedó documentado en `backend/README.md` §11.1.
 
+## Hecho el 2026-10-19 — mejoras de publicar, cercanía y administración
+- **Cerca de mí:** las publicaciones sin punto de entrega (opcional) se ubican en el centro de su localidad (Bogotá) o de
+  su municipio (`CentrosZona`). Antes la lista quedaba vacía. La respuesta no inventa coordenadas: siguen en null.
+- **Publicar:** la revisión del último paso muestra las fotos ya subidas (antes caía en la ilustración y parecía que no había).
+- **Eliminar cuentas desde el panel (solo SuperUsuario):** `POST /admin/usuarios/{id}/eliminar` con motivo. Mismo efecto
+  que la supresión del titular (anonimiza, retira publicaciones, cierra sesiones, borra fotos); no aplica a uno mismo ni a
+  otro SuperUsuario y queda en la auditoría (`CUENTA_ELIMINADA_ADMIN`).
+- **Aviso de pagos de prueba:** dice "AVISO" y explica que se está verificando Wompi, en lugar de "Sitio de demostración".
+
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
 - **Registro de oferentes:** que el abogado revise el texto de la política y los términos (versión `2026-10-19`), si el

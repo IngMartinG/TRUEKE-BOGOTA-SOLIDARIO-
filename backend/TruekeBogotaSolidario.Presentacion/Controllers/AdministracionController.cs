@@ -13,7 +13,11 @@ public sealed class AdministracionController : ControllerBase
 {
     private readonly IAdministracionService _admin;
     private readonly IOferenteService _oferentes;
-    public AdministracionController(IAdministracionService admin, IOferenteService oferentes) { _admin = admin; _oferentes = oferentes; }
+    private readonly IDatosPersonalesService _datosPersonales;
+    public AdministracionController(IAdministracionService admin, IOferenteService oferentes, IDatosPersonalesService datosPersonales)
+    {
+        _admin = admin; _oferentes = oferentes; _datosPersonales = datosPersonales;
+    }
 
     // ---- Moderación: Administrador y SuperUsuario
     [HttpPost("publicaciones/{id:guid}/ocultar"), Authorize(Policy = Politicas.Moderador)]
@@ -142,6 +146,17 @@ public sealed class AdministracionController : ControllerBase
     [HttpPatch("usuarios/{usuarioId:guid}/rol"), Authorize(Policy = Politicas.SuperUsuario)]
     public async Task<ActionResult<UsuarioDto>> CambiarRol(Guid usuarioId, [FromBody] CambiarRolRequest r)
         => Ok(await _admin.CambiarRolAsync(User.IdActual(), usuarioId, r.Rol));
+
+    /// <summary>
+    /// Elimina (anonimiza) la cuenta de otra persona: retira sus publicaciones, cierra sus sesiones y borra sus fotos.
+    /// Para cuentas de prueba o duplicadas. No aplica a uno mismo ni a otro SuperUsuario; queda en la auditoría con el motivo.
+    /// </summary>
+    [HttpPost("usuarios/{usuarioId:guid}/eliminar"), Authorize(Policy = Politicas.SuperUsuario)]
+    public async Task<IActionResult> EliminarCuenta(Guid usuarioId, [FromBody] MotivoRequest r)
+    {
+        await _datosPersonales.EliminarCuentaPorAdministracionAsync(User.IdActual(), usuarioId, r.Motivo);
+        return NoContent();
+    }
 
     /// <summary>Registra un reembolso ya hecho en el panel de Wompi (la API nunca envía dinero).</summary>
     [HttpPost("pagos/{referencia}/reembolsado"), Authorize(Policy = Politicas.SuperUsuario)]

@@ -65,7 +65,7 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
         Assert.Equal(HttpStatusCode.OK, (await anonimo.GetAsync("/api/v1/publicaciones/sugerencias?texto=bici")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await anonimo.GetAsync("/api/v1/publicaciones?orden=Recientes&categoriaId=1&modo=Compra")).StatusCode);
         var cercanas = await anonimo.GetFromJsonAsync<JsonElement>("/api/v1/publicaciones/cercanas?lat=4.6097&lon=-74.0817&radioKm=5");
-        Assert.Single(cercanas.EnumerateArray());
+        Assert.Contains(cercanas.EnumerateArray(), e => e.GetProperty("publicacion").GetProperty("id").GetGuid() == pub);
 
         // solicitud + chat (GroupBy/First para la bandeja) + entrega + calificación
         var s = await (await otro.PostAsJsonAsync("/api/v1/solicitudes", new { publicacionId = pub, mensaje = "Hola" })).Content.ReadFromJsonAsync<JsonElement>();

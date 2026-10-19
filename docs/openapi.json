@@ -1051,6 +1051,48 @@
         }
       }
     },
+    "/api/v1/admin/usuarios/{usuarioId}/eliminar": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/admin/pagos/{referencia}/reembolsado": {
       "post": {
         "tags": [

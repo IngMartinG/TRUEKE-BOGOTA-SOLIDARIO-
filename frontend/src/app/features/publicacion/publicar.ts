@@ -350,7 +350,7 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
                 <h2 class="text-xl font-bold" data-titulo-paso>Así se verá tu publicación</h2>
                 <div class="mt-5 grid grid-cols-1 gap-6 sm:grid-cols-[16rem_1fr]">
                   <div class="tarjeta overflow-hidden">
-                    <app-imagen-publicacion class="aspect-[4/3]" [src]="fotosListas()[0]" [miniatura]="true" [modo]="modoActual()" [categoriaId]="categoriaActual()" />
+                    <app-imagen-publicacion class="aspect-[4/3]" [src]="vistasListas()[0]" [modo]="modoActual()" [categoriaId]="categoriaActual()" alt="Portada de tu publicación" />
                     <div class="p-4">
                       <app-insignia-modo [modo]="modoActual()" />
                       <p class="mt-2 font-display font-bold">{{ form.controls.titulo.value }}</p>
@@ -367,7 +367,22 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
                     @if (modoActual() !== 'Donacion' && form.controls.precioReferenciaCop.value) {
                       <div><dt class="text-tenue">{{ modoActual() === 'Compra' ? 'Precio' : 'Valor de referencia' }}</dt><dd class="font-semibold">{{ form.controls.precioReferenciaCop.value | cop }}</dd></div>
                     }
-                    <div><dt class="text-tenue">Fotos</dt><dd class="font-semibold">{{ fotosListas().length }}</dd></div>
+                    <div>
+                      <dt class="text-tenue">Fotos</dt>
+                      @if (vistasListas().length) {
+                        <dd class="mt-1.5">
+                          <ul class="flex flex-wrap gap-2" aria-label="Fotos que se publicarán">
+                            @for (v of vistasListas(); track v; let i = $index) {
+                              <li class="size-14 overflow-hidden rounded-xl border-2" [class]="i === 0 ? 'border-bosque-500' : 'border-borde'">
+                                <img [src]="v" [alt]="i === 0 ? 'Foto 1 (portada)' : 'Foto ' + (i + 1)" class="size-full object-cover" referrerpolicy="no-referrer" />
+                              </li>
+                            }
+                          </ul>
+                        </dd>
+                      } @else {
+                        <dd class="font-semibold">Sin fotos. <button type="button" class="enlace font-normal" (click)="irA(2)">Agregar fotos</button></dd>
+                      }
+                    </div>
                     <div><dt class="text-tenue">Punto de entrega</dt><dd class="font-semibold">{{ ubicacion() ? 'Marcado en el mapa' : 'Solo localidad' }}</dd></div>
                     <div><dt class="text-tenue">Descripción</dt><dd class="line-clamp-4 whitespace-pre-line">{{ form.controls.descripcion.value }}</dd></div>
                   </dl>
@@ -484,6 +499,11 @@ export default class Publicar {
   });
   protected readonly subiendo = computed(() => this.fotos().some((f) => f.progreso < 100 && !f.error));
   protected readonly fotosListas = computed(() => this.fotos().filter((f) => f.url && !f.error).map((f) => f.url!));
+  /**
+   * Lo que se muestra en la revisión: la vista local de cada foto ya subida. La URL de la subida apunta al bucket privado
+   * (la foto se publica al guardar), así que con ella la vista previa caía en la ilustración y parecía que no había fotos.
+   */
+  protected readonly vistasListas = computed(() => this.fotos().filter((f) => f.url && !f.error).map((f) => f.vista));
 
   private readonly vistasLocales = new Set<string>();
   private readonly formulario = viewChild<ElementRef<HTMLFormElement>>('formulario');

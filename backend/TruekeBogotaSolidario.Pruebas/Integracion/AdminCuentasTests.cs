@@ -65,6 +65,34 @@ public class AdminCuentasTests : IClassFixture<FabricaApi>
     }
 
     [Fact]
+    public async Task Solo_el_SuperUsuario_elimina_cuentas_ajenas_y_queda_anonimizada()
+    {
+        var super = await SuperAsync();
+        var superId = (await super.GetFromJsonAsync<JsonElement>("/api/v1/usuarios/yo")).GetProperty("id").GetGuid();
+        var ses = await Api.RegistrarSesionAsync(_fabrica, "deprueba");
+        var deprueba = Api.ConToken(_fabrica, ses.Token);
+        var pub = await Api.CrearPublicacionAsync(deprueba);
+
+        // Un administrador (no SuperUsuario) no puede
+        var sesAdmin = await Api.RegistrarSesionAsync(_fabrica, "adminelim");
+        (await super.PatchAsJsonAsync($"/api/v1/admin/usuarios/{sesAdmin.Usuario.Id}/rol", new { rol = "Administrador" })).EnsureSuccessStatusCode();
+        var admin = Api.ConToken(_fabrica, await Api.LoginAsync(_fabrica, sesAdmin.Usuario.Correo, Api.ClaveValida));
+        Assert.Equal(HttpStatusCode.Forbidden, (await admin.PostAsJsonAsync($"/api/v1/admin/usuarios/{ses.Usuario.Id}/eliminar", new { motivo = "Cuenta de prueba" })).StatusCode);
+
+        // Motivo obligatorio; no a sí mismo
+        Assert.Equal(HttpStatusCode.BadRequest, (await super.PostAsJsonAsync($"/api/v1/admin/usuarios/{ses.Usuario.Id}/eliminar", new { motivo = "" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await super.PostAsJsonAsync($"/api/v1/admin/usuarios/{superId}/eliminar", new { motivo = "Yo mismo" })).StatusCode);
+
+        Assert.Equal(HttpStatusCode.NoContent, (await super.PostAsJsonAsync($"/api/v1/admin/usuarios/{ses.Usuario.Id}/eliminar", new { motivo = "Cuenta de prueba duplicada" })).StatusCode);
+        Assert.Equal(HttpStatusCode.Unauthorized, (await deprueba.GetAsync("/api/v1/usuarios/yo")).StatusCode);                 // sesión cortada
+        Assert.Equal(HttpStatusCode.Unauthorized, (await _fabrica.CreateClient().PostAsJsonAsync("/api/v1/auth/login",
+            new { correo = ses.Usuario.Correo, clave = Api.ClaveValida })).StatusCode);                                         // no puede entrar
+        Assert.Equal(HttpStatusCode.NotFound, (await _fabrica.CreateClient().GetAsync($"/api/v1/publicaciones/{pub}")).StatusCode); // retirada
+        // Ya eliminada: 404
+        Assert.Equal(HttpStatusCode.NotFound, (await super.PostAsJsonAsync($"/api/v1/admin/usuarios/{ses.Usuario.Id}/eliminar", new { motivo = "Otra vez" })).StatusCode);
+    }
+
+    [Fact]
     public async Task Buscar_usuarios_por_correo_o_nombre()
     {
         var ses = await Api.RegistrarSesionAsync(_fabrica, "buscable");

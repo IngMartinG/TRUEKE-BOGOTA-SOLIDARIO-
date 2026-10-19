@@ -268,8 +268,12 @@ public sealed class PublicacionService : IPublicacionService
 
         // margen = media celda de redondeo: incluye publicaciones cuya posición aproximada cae dentro del círculo
         var (minLat, maxLat, minLon, maxLon) = Geo.Caja(lat, lon, radio, margenGrados: 0.006);
-        var candidatos = await _pubs.ListarVisiblesEnAreaAsync(minLat, maxLat, minLon, maxLon, r.CategoriaId,
-            r.Modo.HasValue ? (ModoTransaccion)(int)r.Modo.Value : null, MaxCandidatosCercanas, ahora);
+        var modo = r.Modo.HasValue ? (ModoTransaccion)(int)r.Modo.Value : (ModoTransaccion?)null;
+        var candidatos = (await _pubs.ListarVisiblesEnAreaAsync(minLat, maxLat, minLon, maxLon, r.CategoriaId, modo, MaxCandidatosCercanas, ahora)).ToList();
+        // El punto de entrega es opcional: las publicaciones sin él se ubican en el centro de su localidad (Bogotá) o de su
+        // municipio. Sin esto, "Cerca de mí" quedaba vacío aunque hubiera publicaciones en la misma localidad.
+        candidatos.AddRange(await _pubs.ListarVisiblesSinPuntoEnMunicipiosAsync(CentrosZona.MunicipiosCerca(lat, lon, radio),
+            r.CategoriaId, modo, MaxCandidatosCercanas, ahora));
         if (r.Condicion.HasValue)
             candidatos = candidatos.Where(p => p.Condicion == (CondicionProducto)(int)r.Condicion.Value).ToList();
         if (r.SoloVerificados)
@@ -279,8 +283,13 @@ public sealed class PublicacionService : IPublicacionService
             .Select(p =>
             {
                 var esMia = actorId.HasValue && p.PropietarioId == actorId.Value;
-                var pLat = esMia ? p.Latitud!.Value : Geo.Aproximar(p.Latitud!.Value);
-                var pLon = esMia ? p.Longitud!.Value : Geo.Aproximar(p.Longitud!.Value);
+                if (p.Latitud is null || p.Longitud is null)
+                {
+                    var centro = CentrosZona.Centro(p.MunicipioCodigo, p.Localidad);
+                    return (p, esMia, d: centro is { } c ? Geo.DistanciaKm(lat, lon, c.Lat, c.Lon) : double.MaxValue);
+                }
+                var pLat = esMia ? p.Latitud.Value : Geo.Aproximar(p.Latitud.Value);
+                var pLon = esMia ? p.Longitud.Value : Geo.Aproximar(p.Longitud.Value);
                 return (p, esMia, d: Geo.DistanciaKm(lat, lon, pLat, pLon));
             })
             .Where(x => x.d <= radio)

@@ -81,6 +81,9 @@ public interface IPublicacionRepository
     /// <summary>Visibles con coordenadas dentro del rectángulo indicado. Máximo <paramref name="maximo"/>.</summary>
     Task<IReadOnlyList<Publicacion>> ListarVisiblesEnAreaAsync(double minLat, double maxLat, double minLon, double maxLon,
         int? categoriaId, ModoTransaccion? modo, int maximo, DateTime ahoraUtc);
+    /// <summary>Visibles SIN punto de entrega en los municipios indicados (se ubican por su localidad o municipio).</summary>
+    Task<IReadOnlyList<Publicacion>> ListarVisiblesSinPuntoEnMunicipiosAsync(IReadOnlyCollection<string> municipios,
+        int? categoriaId, ModoTransaccion? modo, int maximo, DateTime ahoraUtc);
     /// <summary>Visibles de un propietario (su perfil público).</summary>
     Task<(IReadOnlyList<Publicacion> Items, int Total)> ListarVisiblesDePropietarioAsync(Guid propietarioId, int pagina, int tamano, DateTime ahoraUtc);
     /// <summary>Visibles, en el orden de <paramref name="ids"/> no garantizado (favoritos).</summary>
