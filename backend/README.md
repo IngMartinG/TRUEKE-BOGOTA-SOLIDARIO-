@@ -349,6 +349,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
   - **reCAPTCHA v3** con falla cerrada.
 - **Autorización:**
   - `FallbackPolicy` exige sesión en todo; lo anónimo es una lista blanca verificada por prueba;
+  - una ruta inexistente responde 404 (o 405 con otro verbo) también sin sesión: el contrato ya es público en `docs/openapi.json`;
   - los roles se recomprueban contra la BD, con jerarquía para suspender;
   - el usuario actuante sale **siempre** del JWT;
   - los recursos ajenos responden 404.
