@@ -8,6 +8,9 @@ on:
   push:
     branches: [main]
     paths: ["frontend/**", ".github/workflows/frontend-pages.yml"]
+  # Cada 6 h se regenera para que las publicaciones nuevas entren al sitemap y tengan su página con HTTP 200.
+  schedule:
+    - cron: "17 */6 * * *"
   workflow_dispatch:
 
 # Mínimo privilegio: leer el repo y publicar en Pages (id-token lo exige deploy-pages).
@@ -102,6 +105,20 @@ jobs:
           sed -i -E "s#<meta charset=\"utf-8\" ?/?>#&\n    <meta http-equiv=\"Content-Security-Policy\" content=\"${csp}\">#" "$index"
           grep -q 'http-equiv="Content-Security-Policy"' "$index" || { echo "::error::No se pudo insertar la CSP"; exit 1; }
           grep -o '<meta http-equiv="Content-Security-Policy"[^>]*>' "$index"
+
+      # Buscadores: robots.txt, sitemap.xml y una copia de index.html por ruta pública y por publicación. Sin esas copias,
+      # Pages sirve /explorar o /publicacion/{id} desde 404.html con HTTP 404 y Google no las indexa. Va después de la CSP
+      # (las copias la heredan). Si la API está dormida y no responde, publica solo las rutas estáticas.
+      - name: SEO (robots.txt, sitemap.xml y páginas con HTTP 200)
+        env:
+          API_URL: ${{ vars.API_URL }}
+          FRONT_URL: ${{ vars.FRONT_URL }}
+          DUENO: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+        run: |
+          url="${FRONT_URL:-https://${DUENO,,}.github.io/${REPO}/}"
+          node scripts/generar-seo.mjs dist/trueke-web/browser "$url" "$API_URL"
+          test -s dist/trueke-web/browser/sitemap.xml && test -s dist/trueke-web/browser/robots.txt
 
       # index.html cambió después del build (og:, CSP): el service worker valida cada archivo con el SHA-1 de ngsw.json y,
       # si no coincide, no se instala. Se actualiza el hash.
