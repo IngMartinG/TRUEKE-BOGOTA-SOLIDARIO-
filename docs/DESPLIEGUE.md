@@ -137,16 +137,17 @@ En un plan pago de Render se puede usar también cualquier SMTP: `Correo__Provee
 - El servidor solo envía a los servicios de push reconocidos (`fcm.googleapis.com`, `*.push.services.mozilla.com`, `*.notify.windows.com`, `*.push.apple.com`): nunca a una URL arbitraria.
 
 ## 7. Limitaciones de la fase gratis
-- **Arranque en frío:** tras 15 min sin uso, la primera petición tarda 30-60 s.
+- **Arranque en frío:** tras 15 min sin uso, la primera petición tarda 30-60 s. Lo evita el workflow *Mantener la API despierta* (§7.2); mientras tanto, la pantalla de carga del front explica que el servidor está despertando.
 - **iPhone/Safari:** el front (`github.io`) y la API (`onrender.com`) son sitios distintos, y Safari bloquea esa cookie de sesión "de terceros". En Safari la sesión se cierra cuando vence el token (15 min). En Chrome, Edge y Firefox funciona bien. **Se resuelve con dominio propio** (§8).
 - **Pausa de Supabase por inactividad:** si el proyecto pasa 7 días sin actividad, Supabase lo pausa y avisa por correo. La API sigue viva, pero `/health/ready` y todo lo que use la base fallan. Para reactivarlo: panel de Supabase → proyecto → **Restore project** (1-2 minutos). Los datos no se pierden. Con usuarios entrando cada semana no pasa. Además: 500 MB de base (las fotos van aparte) y 5 GB de salida al mes; el consumo se ve en *Project Settings → Usage*.
 - Sin Redis: el límite de intentos es por instancia (correcto mientras haya una sola).
-- **Sin chequeo de disponibilidad por ahora:** un monitor cada 5 min mantendría despierta la API de Render (750 horas gratis al mes alcanzan para una sola instancia encendida siempre) y, de paso, evitaría la pausa de Supabase. Se puede activar ya con UptimeRobot (§7.2).
+- **API despierta:** el workflow *Mantener la API despierta* consulta `/health/ready` cada 10 min (750 horas gratis al mes alcanzan para una sola instancia encendida siempre) y, de paso, evita la pausa de Supabase. Ver §7.2.
 
 ### 7.1 Monitoreo
 Application Insights se quitó al salir de Azure. Los errores quedan en los **logs de Render** (*trueke-api → Logs*; el plan gratis guarda los últimos días). El chequeo de disponibilidad (§7.2) avisa si la API se cae.
 
-### 7.2 Chequeo de disponibilidad (cuando haya plan pago)
+### 7.2 Chequeo de disponibilidad y API despierta
+- **Ya activo:** `.github/workflows/mantener-despierta.yml` consulta `<API_URL>/health/ready` cada 10 min (usa la variable del repositorio `API_URL`). Si la API no responde 200 en 3 intentos, la ejecución falla y GitHub avisa por correo. Límites: el cron de GitHub puede retrasarse en horas pico y **se desactiva tras 60 días sin commits** (se reactiva en *Actions → Mantener la API despierta → Enable workflow*). Por eso conviene también el monitor externo de abajo.
 - **Gratis:** [UptimeRobot](https://uptimerobot.com) (cuenta propia) → monitor HTTP(s) a `https://<API>/health/live` cada 5 min, con aviso por correo. `/health/live` no toca la base; `/health/ready` sí.
 - Con Supabase ya no hay cuota de cómputo que cuidar: se puede activar en la fase gratis. Usar `/health/ready` si además se quiere mantener activa la base.
 

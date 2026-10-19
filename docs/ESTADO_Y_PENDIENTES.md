@@ -409,12 +409,22 @@ Informe completo, con los hallazgos por severidad, en `docs/AUDITORIA_2026-10-18
   consulta queda en la auditoría (`OFERENTE_CONSULTADO`). Se borra al eliminar la cuenta. Política de datos, términos y
   asistente actualizados; **versión legal `2026-10-19`**, que pide reaceptar a todos.
 
+## Hecho el 2026-10-19 — auditoría externa (sin credenciales)
+- **SEO:** el build de Pages genera `robots.txt`, `sitemap.xml` y una copia de `index.html` por ruta pública y por
+  publicación (`scripts/generar-seo.mjs`). Antes, Pages servía todas las rutas desde `404.html` con HTTP 404 y Google no
+  las indexaba. Se regenera cada 6 h. Falta registrar el sitemap en Google Search Console (Google no lee un `robots.txt`
+  dentro de la subcarpeta del repositorio; con dominio propio sí).
+- **Arranque en frío:** workflow *Mantener la API despierta* (`/health/ready` cada 10 min) y aviso en la pantalla de carga.
+- **404 real:** una ruta inexistente responde 404/405 también sin sesión (antes, 401 "sesión expirada").
+- **Ya estaban bien:** cabeceras de seguridad, CORS con lista de orígenes, límites de peticiones, Swagger cerrado, Storage
+  sin listado y Data API cerrada. Lo público por diseño quedó documentado en `backend/README.md` §11.1.
+
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
 - **Registro de oferentes:** que el abogado revise el texto de la política y los términos (versión `2026-10-19`), si el
   registro debe conservarse un tiempo tras eliminar la cuenta, y si las ventas publicadas antes del registro deben pedirlo
   (hoy se pide al crear o editar una venta).
-- **Producto:** `robots.txt` y `sitemap.xml`, y un monitor externo de `/health/ready`.
+- **Producto:** registrar el sitemap en Google Search Console y, como respaldo del workflow, un monitor externo de `/health/ready`.
 
 **Despliegue y operación:**
 - **Versión legal en Render:** si `Legal__VersionPoliticaDatos`, `Legal__VersionTerminos` o `Legal__FechaVigencia` están

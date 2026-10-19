@@ -380,6 +380,22 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
   - el CI falla con paquetes vulnerables o con pruebas de PostgreSQL omitidas;
   - imagen sin SDK y sin root.
 
+### 11.1 Qué es público por diseño
+Lo que sigue lo ve cualquiera sin cuenta, y es a propósito. Se revisó en la auditoría externa del 2026-10-19.
+
+- **`config.json` del front** (`apiUrl`): la URL de la API la conoce cualquier navegador que use la app. El front no guarda secretos.
+- **`GET /configuracion`:**
+  - clave **de sitio** de reCAPTCHA, Client ID de Google y clave **pública** VAPID: están hechas para el navegador; sus pares secretos solo viven en el servidor;
+  - límites de subida, si los pagos son de prueba y las URLs de imágenes/CDN: los usa la interfaz;
+  - datos del responsable (`legal`): la ley exige publicarlos (Decreto 1377 de 2013, art. 13; Ley 1480, art. 50);
+  - `diasCierreConUnaConfirmacion` y `diasCierreSinConfirmacion` hoy no los usa el front; son reglas de negocio sin riesgo y se mantienen para no cambiar el contrato.
+- **`propietario` en el catálogo:** id, nombre abreviado ("Ana P."), localidad y municipio, foto, reputación, calificaciones, si está verificado, tipo de cuenta, nombre comercial y si tiene NIT registrado (solo sí/no, nunca el NIT). Es lo que una persona necesita para decidir si confía. El id es un UUID aleatorio: no se puede recorrer en secuencia y solo aparece quien publicó algo. No se usa un "slug" en su lugar porque cambiaría el contrato y los enlaces `/usuarios/{id}` ya compartidos sin ganar privacidad. Nunca salen correo, teléfono, documento ni coordenadas exactas.
+- **Fotos (bucket `imagenes` de Supabase Storage):** públicas solo para leer, con la ruta `{usuario}/{32 hex aleatorios}.webp`: no se pueden adivinar. Listar el bucket está cerrado (no hay políticas en `storage.objects`, así que la clave anónima no ve nada) y no hay manifiesto público. Las fotos se re-codifican sin EXIF ni GPS.
+- **Data API de Supabase (`/rest/v1`):** RLS activo y sin políticas en todas las tablas; la API entra por Npgsql, no por ahí.
+- **Rutas:** el contrato está en `docs/openapi.json`; por eso una ruta inexistente responde 404, no 401.
+- **Cabeceras del front:** GitHub Pages no permite cabeceras propias. La CSP va en un `<meta>`, `main.ts` no arranca dentro de un iframe ajeno y HSTS lo pone `github.io`. La API sí envía todas las cabeceras de seguridad.
+- **Sin source maps en producción:** el workflow de Pages falla si aparece alguno.
+
 ## 12. Limitaciones conocidas
 
 - **Propagación de la revocación:** entre instancias tarda hasta 30 s (caché local). Una conexión SignalR abierta vive hasta que expira su token (≤ 15 min).
