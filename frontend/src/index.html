@@ -37,16 +37,24 @@
       .carga{min-height:100vh;display:grid;place-items:center;background:#f6f4ec}
       html.dark .carga{background:#0b1611}
       html.dark .carga img{background:#f6f4ec;border-radius:1.5rem;padding:.75rem}
+      /* La app espera la configuración de la API antes de arrancar. En el plan gratis la API se duerme y la primera
+         visita tarda hasta un minuto: si la carga pasa de 4 s, se explica por qué. Solo CSS (sin JS ni animación). */
+      .carga>div{display:grid;justify-items:center;gap:1.25rem;padding:0 1rem}
+      .carga p{margin:0;max-width:22rem;text-align:center;font:500 .95rem/1.5 system-ui,sans-serif;color:#2f4a3b;visibility:hidden;animation:mostrar-aviso 0s 4s forwards}
+      html.dark .carga p{color:#d7e4dc}
+      @keyframes mostrar-aviso{to{visibility:visible}}
     </style>
   </head>
   <body>
     <app-root>
       <div class="carga">
-        <picture>
-          <source srcset="logo-carga.webp" type="image/webp" />
-          <img src="logo-completo.png" width="168" height="140" alt="Cargando Trueke Bogotá Solidario" fetchpriority="high" />
-        </picture>
-
+        <div>
+          <picture>
+            <source srcset="logo-carga.webp" type="image/webp" />
+            <img src="logo-completo.png" width="168" height="140" alt="Cargando Trueke Bogotá Solidario" fetchpriority="high" />
+          </picture>
+          <p role="status">Estamos despertando el servidor. La primera visita puede tardar hasta un minuto.</p>
+        </div>
       </div>
     </app-root>
     <noscript>Trueke Bogotá Solidario necesita JavaScript para funcionar.</noscript>

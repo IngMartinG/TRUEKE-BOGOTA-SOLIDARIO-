@@ -34,8 +34,13 @@ public partial class ContratoAngularTests : IClassFixture<FabricaApi>
         await ProblemaAsync(await anonimo.GetAsync("/api/v1/usuarios/yo"), HttpStatusCode.Unauthorized);
         await ProblemaAsync(await cliente.GetAsync("/api/v1/admin/verificaciones"), HttpStatusCode.Forbidden);
         await ProblemaAsync(await anonimo.GetAsync($"/api/v1/publicaciones/{Guid.NewGuid()}"), HttpStatusCode.NotFound);   // de dominio
-        // Rutas inexistentes: el invitado recibe 401 (FallbackPolicy: no se revela qué rutas existen); con sesión, 404/405
-        await ProblemaAsync(await anonimo.GetAsync("/api/v1/no-existe"), HttpStatusCode.Unauthorized);
+        // Rutas inexistentes: 404 (y 405 con otro verbo) para todos; un endpoint real sin sesión sigue respondiendo 401
+        await ProblemaAsync(await anonimo.GetAsync("/api/v1/no-existe"), HttpStatusCode.NotFound);
+        await ProblemaAsync(await anonimo.GetAsync("/no-existe"), HttpStatusCode.NotFound);
+        await ProblemaAsync(await anonimo.DeleteAsync("/api/v1/categorias"), HttpStatusCode.MethodNotAllowed);
+        Assert.Equal(HttpStatusCode.MethodNotAllowed,   // HEAD (curl -I) no lleva cuerpo
+            (await anonimo.SendAsync(new HttpRequestMessage(HttpMethod.Head, "/api/v1/configuracion"))).StatusCode);
+        await ProblemaAsync(await anonimo.GetAsync("/api/v1/admin/no-existe"), HttpStatusCode.NotFound);
         await ProblemaAsync(await cliente.GetAsync("/api/v1/no-existe"), HttpStatusCode.NotFound);
         await ProblemaAsync(await cliente.DeleteAsync("/api/v1/categorias"), HttpStatusCode.MethodNotAllowed);
         await ProblemaAsync(await cliente.GetAsync("/api/v1/eco-puntos/cotizacion?concepto=Recarga"), HttpStatusCode.NotFound);

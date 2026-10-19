@@ -297,6 +297,24 @@ app.UseCors();
 app.UseAuthentication();
 app.UseRateLimiter();   // después de autenticar: la política "escritura" particiona por usuario
 if (redisHabilitado) app.UseMiddleware<LimitadorDistribuidoMiddleware>(); // límite compartido entre instancias
+// Lo que no existe responde 404/405 también al invitado. Sin esto, la FallbackPolicy contestaba 401 "sesión expirada"
+// a cualquier ruta inventada, y eso no protegía nada: el contrato completo es público (docs/openapi.json). Va después
+// del límite de peticiones (el escaneo de rutas sigue contando) y antes de autorizar; los endpoints reales no cambian.
+app.Use(async (ctx, siguiente) =>
+{
+    var endpoint = ctx.GetEndpoint();
+    if (endpoint is null)
+    {
+        await Problemas.EscribirAsync(ctx, StatusCodes.Status404NotFound);
+        return;
+    }
+    if (endpoint.DisplayName == "405 HTTP Method Not Supported") // el que arma el enrutador si la ruta existe con otro verbo
+    {
+        await Problemas.EscribirAsync(ctx, StatusCodes.Status405MethodNotAllowed);
+        return;
+    }
+    await siguiente();
+});
 app.UseAuthorization();
 
 app.MapControllers();
