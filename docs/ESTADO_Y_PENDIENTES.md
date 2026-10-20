@@ -428,6 +428,19 @@ Informe completo, con los hallazgos por severidad, en `docs/AUDITORIA_2026-10-18
   otro SuperUsuario y queda en la auditoría (`CUENTA_ELIMINADA_ADMIN`).
 - **Aviso de pagos de prueba:** dice "AVISO" y explica que se está verificando Wompi, en lugar de "Sitio de demostración".
 
+## Hecho el 2026-10-20 — niveles de Eco-Puntos
+- **Cinco niveles:** 🌱 Semilla (0), 🌿 Brote (200), 🌳 Árbol (500), 🌲 Bosque (1.000) y 🛡️ Guardián (2.500). La tabla vive en
+  `PoliticaEcoPuntos.Niveles` y se publica en `GET /eco-puntos/politica` (`niveles`).
+- **Solo cuenta lo ganado participando** (`Usuario.PuntosParticipacion`): bienvenida, intercambios, invitaciones y el saldo
+  inicial. Recargar (y su bono) no sube de nivel, para que no se pueda comprar, y gastar puntos no lo baja. Migración
+  `NivelesEcoPuntos`: agrega la columna y la llena con el historial de movimientos de cada cuenta.
+- **Es solo un reconocimiento:** no da permisos, límites ni descuentos. A los demás solo se les muestra el nombre del nivel
+  (`nivel` en el perfil público), nunca los puntos. Una cuenta suspendida o eliminada se muestra en Semilla y eliminar la
+  cuenta borra el contador.
+- **Aviso al subir de nivel:** notificación `NivelAlcanzado` cuando un intercambio (o una invitación) sube a alguien de nivel.
+- **Front:** insignia en el perfil público, en "Publicado por" del detalle y en el encabezado del chat (en Semilla solo se ve
+  en el perfil). Barra de progreso en `/eco-puntos` con lo que falta para el siguiente nivel, y tabla de niveles.
+
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
 - **Registro de oferentes:** que el abogado revise el texto de la política y los términos (versión `2026-10-19`), si el

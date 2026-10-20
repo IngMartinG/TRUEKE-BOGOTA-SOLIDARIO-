@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Datos.Repositorios;
@@ -351,6 +351,8 @@ public sealed class SolicitudService : ISolicitudService
             puntosReceptor = false;
         }
 
+        // Nivel de cada persona antes de sumar puntos, para avisar a quien suba (quien invitó se agrega al recompensarlo).
+        var nivelesAntes = new Dictionary<Usuario, NivelEcoPuntos> { [oferente] = oferente.Nivel, [receptor] = receptor.Nivel };
         s.Completar(ahora);
         pub.ConfirmarIntercambio();
         // Trueke con objeto: el objeto ofrecido también cambió de manos (es un solo intercambio: los puntos se suman una vez).
@@ -360,7 +362,7 @@ public sealed class SolicitudService : ISolicitudService
         receptor.RegistrarTransaccionCompletada(pub.Modo, puntosReceptor, s.Id, pub.Titulo);
         var invitaciones = new List<(Guid Invitado, Guid? Invitador)>();
         foreach (var (invitado, otro, conPuntos) in new[] { (oferente, receptor, puntosOferente), (receptor, oferente, puntosReceptor) })
-            if (await RecompensarInvitacionAsync(invitado, otro, conPuntos, s.Id, ahora) is { } recompensa)
+            if (await RecompensarInvitacionAsync(invitado, otro, conPuntos, s.Id, ahora, nivelesAntes) is { } recompensa)
                 invitaciones.Add(recompensa);
         _transacciones.Agregar(new Transaccion(pub.Id, s.Id, oferente.Id, receptor.Id, pub.Modo, puntosOferente, puntosReceptor, ahora));
         // Los objetos ya se entregaron: sus listas de espera se cierran (en el mismo guardado, todo o nada).
@@ -391,7 +393,19 @@ public sealed class SolicitudService : ISolicitudService
                 await _notificador.NotificarAsync(id, TiposNotificacion.InvitacionRecompensada,
                     $"Una persona que invitaste completó su primer intercambio: ganaste {PoliticaEcoPuntos.PuntosInvitacion} Eco-Puntos.");
         }
+        foreach (var (usuario, antes) in nivelesAntes)
+            if (usuario.Nivel > antes)
+                await _notificador.NotificarAsync(usuario.Id, TiposNotificacion.NivelAlcanzado, MensajeNivel(usuario.Nivel));
     }
+
+    private static string MensajeNivel(NivelEcoPuntos nivel) => nivel switch
+    {
+        NivelEcoPuntos.Brote => "¡Subiste a Brote 🌿! Tus intercambios ya están dando fruto.",
+        NivelEcoPuntos.Arbol => "¡Subiste a Árbol 🌳! Eres parte de las raíces de la comunidad.",
+        NivelEcoPuntos.Bosque => "¡Subiste a Bosque 🌲! Tu aporte ya se nota en toda la comunidad.",
+        NivelEcoPuntos.Guardian => "¡Llegaste a Guardián 🛡️, el nivel más alto! Gracias por cuidar la economía circular.",
+        _ => "¡Subiste de nivel!"
+    };
 
     /// <summary>
     /// Invita y ganan los dos: el primer intercambio VÁLIDO de la persona invitada da puntos a ambos. No cuenta un intercambio con
@@ -399,7 +413,8 @@ public sealed class SolicitudService : ISolicitudService
     /// N invitaciones por ciclo; pasado el tope, la persona invitada recibe lo suyo igual.
     /// </summary>
     /// <returns>A quién avisar, o null si este intercambio no cierra la invitación.</returns>
-    private async Task<(Guid Invitado, Guid? Invitador)?> RecompensarInvitacionAsync(Usuario invitado, Usuario otro, bool conPuntos, Guid solicitudId, DateTime ahora)
+    private async Task<(Guid Invitado, Guid? Invitador)?> RecompensarInvitacionAsync(Usuario invitado, Usuario otro, bool conPuntos, Guid solicitudId,
+        DateTime ahora, Dictionary<Usuario, NivelEcoPuntos> nivelesAntes)
     {
         if (!invitado.EsperaRecompensaInvitacion || !conPuntos || otro.Id == invitado.InvitadoPorId) return null;
         var invitador = await _usuarios.ObtenerPorIdAsync(invitado.InvitadoPorId!.Value);
@@ -408,7 +423,8 @@ public sealed class SolicitudService : ISolicitudService
                 < PoliticaEcoPuntos.MaxInvitacionesRecompensadasPorCiclo;
         invitado.RecibirRecompensaInvitacion(ahora, solicitudId);
         if (!invitadorGana) return (invitado.Id, null);
-        invitador!.AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosInvitacion, ConceptoEcoPuntos.Invitacion, null,
+        nivelesAntes.TryAdd(invitador!, invitador!.Nivel);
+        invitador.AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosInvitacion, ConceptoEcoPuntos.Invitacion, null,
             "Una persona que invitaste completó su primer intercambio");
         return (invitado.Id, invitador.Id);
     }

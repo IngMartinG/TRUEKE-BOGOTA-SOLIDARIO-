@@ -1,4 +1,4 @@
-using TruekeBogotaSolidario.Datos.Common;
+﻿using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Dtos;
@@ -30,7 +30,23 @@ internal static class Mapeos
     public static PerfilPublicoDto APerfilPublico(Usuario u, DateTime ahora)
         => new(u.Id, NombrePublico(u.NombreCompleto), u.Localidad, u.Reputacion, u.EsVerificado, TipoCuentaEfectivo(u, ahora),
             u.CalificacionPromedio, u.CalificacionesTotal, Divipola.NombreCompleto(u.MunicipioCodigo), NombreComercialVisible(u, ahora),
-            FotoVisible(u), NitRegistrado(u, ahora));
+            FotoVisible(u), NitRegistrado(u, ahora), NivelVisible(u));
+
+    /// <summary>A los demás solo se muestra el nombre del nivel (nunca el saldo ni los puntos); cuentas eliminadas o suspendidas quedan en Semilla.</summary>
+    private static string NivelVisible(Usuario u)
+        => (u.EstaEliminado || u.EstaSuspendido ? NivelEcoPuntos.Semilla : u.Nivel).ToString();
+
+    /// <summary>Nivel propio con su progreso hacia el siguiente.</summary>
+    public static NivelEcoPuntosDto ANivelDto(Usuario u)
+    {
+        var puntos = u.PuntosParticipacion;
+        var nivel = PoliticaEcoPuntos.NivelPara(puntos);
+        var minimo = PoliticaEcoPuntos.Niveles.First(n => n.Nivel == nivel).PuntosMinimos;
+        var siguiente = PoliticaEcoPuntos.PuntosSiguienteNivel(puntos);
+        var progreso = siguiente is { } s ? (int)Math.Floor(100m * (puntos - minimo) / (s - minimo)) : 100;
+        return new NivelEcoPuntosDto(nivel.ToString(), puntos, minimo,
+            siguiente is { } sig ? PoliticaEcoPuntos.NivelPara(sig).ToString() : null, siguiente, Math.Clamp(progreso, 0, 100));
+    }
 
     /// <summary>Cuentas eliminadas o suspendidas no muestran foto.</summary>
     private static string? FotoVisible(Usuario u) => u.EstaEliminado || u.EstaSuspendido ? null : u.FotoUrl;
@@ -41,7 +57,7 @@ internal static class Mapeos
             u.TotalTruekesCompletados, u.TotalComprasRealizadas, u.TotalDonacionesRealizadas,
             u.CalificacionPromedio, u.CalificacionesTotal, publicacionesActivas, Divipola.NombreCompleto(u.MunicipioCodigo),
             NombreComercialVisible(u, ahora), FotoVisible(u), confianza, NitRegistrado(u, ahora),
-            NitRegistrado(u, ahora) && u.MostrarNit ? u.Nit : null);
+            NitRegistrado(u, ahora) && u.MostrarNit ? u.Nit : null, Nivel: NivelVisible(u));
 
     public static UsuarioDto AUsuarioDto(Usuario u, DateTime ahora)
     {

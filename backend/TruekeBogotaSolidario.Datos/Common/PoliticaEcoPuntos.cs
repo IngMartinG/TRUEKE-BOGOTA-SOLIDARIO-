@@ -47,6 +47,40 @@ public static class PoliticaEcoPuntos
         _ => 0m
     };
 
+    // ---- Niveles (solo reconocimiento: no dan permisos, límites ni descuentos) ----
+    /// <summary>
+    /// Niveles por puntos ganados participando, de menor a mayor. Los puntos recargados (y su bono) no cuentan, para que el
+    /// nivel no se pueda comprar, y gastar puntos nunca baja de nivel.
+    /// </summary>
+    public static readonly IReadOnlyList<(NivelEcoPuntos Nivel, int PuntosMinimos)> Niveles =
+    [
+        (NivelEcoPuntos.Semilla, 0),
+        (NivelEcoPuntos.Brote, 200),
+        (NivelEcoPuntos.Arbol, 500),
+        (NivelEcoPuntos.Bosque, 1_000),
+        (NivelEcoPuntos.Guardian, 2_500),
+    ];
+
+    /// <summary>Conceptos que suben de nivel: lo ganado por participar en la comunidad (nunca lo comprado).</summary>
+    public static bool CuentaParaNivel(ConceptoEcoPuntos concepto) => concepto is
+        ConceptoEcoPuntos.SaldoInicial or ConceptoEcoPuntos.Bienvenida or ConceptoEcoPuntos.Intercambio or ConceptoEcoPuntos.Invitacion;
+
+    public static NivelEcoPuntos NivelPara(int puntosParticipacion)
+    {
+        var nivel = NivelEcoPuntos.Semilla;
+        foreach (var (n, minimo) in Niveles)
+            if (puntosParticipacion >= minimo) nivel = n;
+        return nivel;
+    }
+
+    /// <summary>Puntos mínimos del nivel siguiente; null si ya está en el más alto.</summary>
+    public static int? PuntosSiguienteNivel(int puntosParticipacion)
+    {
+        foreach (var (_, minimo) in Niveles)
+            if (puntosParticipacion < minimo) return minimo;
+        return null;
+    }
+
     // ---- Uso directo de los puntos ----
     /// <summary>Impulsar sube la publicación al primer lugar de "Más recientes". Se paga solo con Eco-Puntos.</summary>
     public const int PuntosImpulsar = 20;

@@ -185,6 +185,7 @@ export class TiempoRealService {
     if (n.tipo && AFECTAN_PERFIL.has(n.tipo)) this.sesion.recargarUsuario();
     if (n.tipo === 'IntercambioCompletado') this.avisos.puntos('¡Intercambio completado!', n.mensaje);
     else if (n.tipo === 'InvitacionRecompensada') this.avisos.puntos('¡Invitación recompensada!', n.mensaje);
+    else if (n.tipo === 'NivelAlcanzado') this.avisos.puntos('¡Nuevo nivel!', n.mensaje);
     else this.avisos.info('Nueva notificación', n.mensaje);
   }
 

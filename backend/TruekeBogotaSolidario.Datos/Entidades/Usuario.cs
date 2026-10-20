@@ -66,6 +66,9 @@ public class Usuario
 
     // Economía
     public int SaldoEcoPuntos { get; private set; }
+    /// <summary>Total ganado participando (define el nivel): solo sube, no cuenta lo recargado y gastar no lo baja.</summary>
+    public int PuntosParticipacion { get; private set; }
+    public NivelEcoPuntos Nivel => PoliticaEcoPuntos.NivelPara(PuntosParticipacion);
     public decimal Reputacion { get; private set; }
     public int TotalTruekesCompletados { get; private set; }
     public int TotalComprasRealizadas { get; private set; }
@@ -508,6 +511,7 @@ public class Usuario
         MotivoRechazoVerificacion = null;
         FotoUrl = null;
         SaldoEcoPuntos = 0;
+        PuntosParticipacion = 0;
         DestacadosGratisRestantes = 0;
         ProximaRecargaDestacadosUtc = null;
         EnPruebaPremium = false;
@@ -655,6 +659,7 @@ public class Usuario
     {
         if (puntos <= 0) throw new ReglaDeNegocioException("Los puntos a acreditar deben ser positivos.");
         SaldoEcoPuntos = checked(SaldoEcoPuntos + puntos);
+        if (PoliticaEcoPuntos.CuentaParaNivel(concepto)) PuntosParticipacion = checked(PuntosParticipacion + puntos);
         _movimientosEcoPuntos.Add(new MovimientoEcoPuntos(Id, puntos, concepto, referenciaId, detalle, SaldoEcoPuntos));
     }
 

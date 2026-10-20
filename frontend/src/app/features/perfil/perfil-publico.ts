@@ -11,13 +11,14 @@ import { Denunciar } from '../../shared/ui/denunciar';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Estrellas } from '../../shared/ui/estrellas';
 import { Icono } from '../../shared/ui/icono';
+import { InsigniaNivel } from '../../shared/ui/insignia-nivel';
 import { Paginador } from '../../shared/ui/paginador';
 import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-publicacion';
 import { VisorImagenes } from '../../shared/ui/visor-imagenes';
 import { Volver } from '../../shared/ui/volver';
 
 @Component({
-  imports: [Volver, RouterLink, Avatar, Estrellas, Icono, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, Denunciar, Bloquear, VisorImagenes, FechaPipe, HacePipe],
+  imports: [Volver, RouterLink, Avatar, Estrellas, Icono, InsigniaNivel, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, Denunciar, Bloquear, VisorImagenes, FechaPipe, HacePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (perfil.error()) {
@@ -47,6 +48,7 @@ import { Volver } from '../../shared/ui/volver';
                 @if (p.verificado) {
                   <span class="insignia-agua"><app-icono nombre="verificado" [tamano]="12" />Verificada</span>
                 }
+                <app-insignia-nivel [nivel]="p.nivel" [siempre]="true" />
                 @if (p.tipoCuenta && p.tipoCuenta !== 'Individual') {
                   <span class="insignia-sol"><app-icono nombre="corona" [tamano]="12" />{{ p.tipoCuenta }}</span>
                 }

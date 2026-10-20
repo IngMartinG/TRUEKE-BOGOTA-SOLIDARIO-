@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Options;
+﻿using Microsoft.Extensions.Options;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Datos.Repositorios;
@@ -77,7 +77,8 @@ public sealed class EcoPuntosService : IEcoPuntosService
             Math.Max(0, PoliticaEcoPuntos.MaxTransaccionesConPuntosPorDia - hoy), plan.ToString(),
             planVigente ? u.FechaVencimientoSuscripcion : null, u.DestacadosGratisDisponibles(ahora),
             PoliticaEcoPuntos.MaxPublicacionesActivas(plan), PoliticaEcoPuntos.DescuentoPlan(plan),
-            planVigente ? u.ProximaRecargaDestacadosVigente(ahora) : null, u.PuedeUsarPruebaPremium, u.PruebaPremiumVigente(ahora));
+            planVigente ? u.ProximaRecargaDestacadosVigente(ahora) : null, u.PuedeUsarPruebaPremium, u.PruebaPremiumVigente(ahora),
+            Mapeos.ANivelDto(u));
     }
 
     public async Task<PaginaDto<MovimientoEcoPuntosDto>> MovimientosAsync(Guid actorId, int pagina, int tamano)
@@ -111,6 +112,7 @@ public sealed class EcoPuntosService : IEcoPuntosService
             PoliticaEcoPuntos.PrecioPremiumAnualCop, PoliticaEcoPuntos.PrecioEmpresaAnualCop, PoliticaEcoPuntos.DuracionSuscripcionAnualDias,
             PoliticaEcoPuntos.PaquetesRecarga
                 .Select(p => new PaqueteRecargaDto(p.MontoCop, p.MontoCop / PoliticaEcoPuntos.CopPorEcoPunto, p.Bono)).ToList(),
-            PoliticaEcoPuntos.PuntosInvitacion, PoliticaEcoPuntos.MaxInvitacionesRecompensadasPorCiclo, PoliticaEcoPuntos.DiasCicloInvitaciones);
+            PoliticaEcoPuntos.PuntosInvitacion, PoliticaEcoPuntos.MaxInvitacionesRecompensadasPorCiclo, PoliticaEcoPuntos.DiasCicloInvitaciones,
+            PoliticaEcoPuntos.Niveles.Select(n => new NivelPoliticaDto(n.Nivel.ToString(), n.PuntosMinimos)).ToList());
     }
 }
