@@ -294,6 +294,7 @@ public interface IConversacionRepository
     /// <summary>Incluye la Conversacion.</summary>
     Task<Mensaje?> ObtenerMensajeAsync(Guid id);
     Task<int> ContarMensajesDelAutorDesdeAsync(Guid autorId, DateTime desdeUtc);
+    Task<int> ContarFotosDelAutorDesdeAsync(Guid autorId, DateTime desdeUtc);
     Task<IReadOnlyList<Mensaje>> ListarMensajesDelAutorAsync(Guid autorId, int maximo);
     void Agregar(Conversacion conversacion);
     void AgregarMensaje(Mensaje mensaje);

@@ -167,6 +167,31 @@ public class AlmacenSupabaseTests : IClassFixture<StorageFixture>
     }
 
     [SkippableFact]
+    public async Task La_foto_del_chat_queda_limpia_en_un_bucket_privado_y_se_lee_con_firma_por_lotes()
+    {
+        Skip.IfNot(_storage.Disponible, _storage.MotivoNoDisponible);
+        var almacen = Almacen();
+        var yo = Guid.NewGuid();
+        var foto = FotoConDatosOcultos();
+        var s = await almacen.CrearSubidaAsync(yo, TipoArchivoDto.FotoChat, "image/png", foto.Length);
+        Assert.True((await PutAsync(s, foto)).IsSuccessStatusCode);
+
+        var guardada = await almacen.ValidarArchivoPropioAsync(s.UrlArchivo, yo, TipoArchivoDto.FotoChat);
+
+        Assert.Contains("/object/authenticated/chat/", guardada);
+        Assert.False(await ExisteAsync(s.UrlArchivo));
+        Assert.False((await Http.GetAsync(guardada)).IsSuccessStatusCode);                                 // privada: sin firma no se lee
+        Assert.False((await Http.GetAsync(guardada.Replace("/authenticated/", "/public/"))).IsSuccessStatusCode);
+        var otra = $"{_storage.Url}/object/authenticated/chat/{yo:N}/{Guid.NewGuid():N}.png";              // no existe
+        var firmadas = await almacen.UrlsLecturaChatAsync([guardada, otra, "https://otro-sitio.test/x.png"]);
+        var leida = await Http.GetByteArrayAsync(Assert.Single(firmadas).Value);
+        Assert.True(leida.AsSpan().IndexOf(Marca) < 0);                                                   // re-codificada: sin datos ocultos
+
+        await almacen.EliminarDelUsuarioAsync(yo);
+        Assert.False(await ExisteAsync(guardada));
+    }
+
+    [SkippableFact]
     public async Task Con_la_llave_publica_nadie_puede_escribir_en_los_buckets()
     {
         Skip.IfNot(_storage.Disponible, _storage.MotivoNoDisponible);

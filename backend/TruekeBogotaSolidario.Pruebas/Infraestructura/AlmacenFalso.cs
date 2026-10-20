@@ -16,7 +16,7 @@ public sealed class AlmacenFalso : IAlmacenArchivos
 
     public bool Habilitado => true;
 
-    private static Uri Contenedor(TipoArchivoDto tipo) => new(Base, tipo == TipoArchivoDto.Documento ? "documentos" : "imagenes");
+    private static Uri Contenedor(TipoArchivoDto tipo) => new(Base, tipo switch { TipoArchivoDto.Documento => "documentos", TipoArchivoDto.FotoChat => "chat", _ => "imagenes" });
     private static readonly Uri Subidas = new(Base, "subidas");
 
     public Task<SubidaArchivoDto> CrearSubidaAsync(Guid usuarioId, TipoArchivoDto tipo, string contentType, long tamanoBytes, CancellationToken ct = default)
@@ -59,6 +59,11 @@ public sealed class AlmacenFalso : IAlmacenArchivos
     public Task<int> EliminarSubidasVencidasAsync(CancellationToken ct = default) => Task.FromResult(0);
 
     public Task<string?> UrlLecturaTemporalAsync(string url, CancellationToken ct = default) => Task.FromResult<string?>(url + "?sas=lectura");
+
+    public Task<IReadOnlyDictionary<string, string>> UrlsLecturaChatAsync(IReadOnlyCollection<string> urls, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyDictionary<string, string>>(urls.Distinct(StringComparer.Ordinal)
+            .Where(u => ReglasArchivos.NombreArchivo(u, Contenedor(TipoArchivoDto.FotoChat)) is not null && _blobs.ContainsKey(u))
+            .ToDictionary(u => u, u => u + "?firma=chat", StringComparer.Ordinal));
 
     public List<Guid> Eliminados { get; } = new();
     public Task EliminarDelUsuarioAsync(Guid usuarioId, CancellationToken ct = default)

@@ -7284,6 +7284,10 @@
           },
           "estado": {
             "type": "string"
+          },
+          "fotoUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -7569,19 +7573,22 @@
         "additionalProperties": false
       },
       "EnviarMensajeRequest": {
-        "required": [
-          "texto"
-        ],
         "type": "object",
         "properties": {
           "texto": {
             "maxLength": 1000,
-            "minLength": 1,
+            "minLength": 0,
             "type": "string"
           },
           "respuestaAId": {
             "type": "string",
             "format": "uuid",
+            "nullable": true
+          },
+          "fotoUrl": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string",
             "nullable": true
           }
         },
@@ -8406,6 +8413,13 @@
           },
           "estado": {
             "$ref": "#/components/schemas/EstadoMensajeDto"
+          },
+          "tieneFoto": {
+            "type": "boolean"
+          },
+          "fotoUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9982,7 +9996,8 @@
       "TipoArchivoDto": {
         "enum": [
           "Imagen",
-          "Documento"
+          "Documento",
+          "FotoChat"
         ],
         "type": "string"
       },

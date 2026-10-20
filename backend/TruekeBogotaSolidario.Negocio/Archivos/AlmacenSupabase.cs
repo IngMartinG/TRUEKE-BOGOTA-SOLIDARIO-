@@ -28,6 +28,8 @@ public sealed class AlmacenSupabase : IAlmacenArchivos
     private static readonly TimeSpan VidaSubida = TimeSpan.FromHours(1);
     /// <summary>Vigencia de la URL de lectura de un documento privado (moderadores).</summary>
     private const int SegundosLecturaTemporal = 300;
+    /// <summary>Vigencia de las URLs de las fotos del chat: alcanza para una sesión de chat sin quedar abiertas por días.</summary>
+    private const int SegundosLecturaChat = 3600;
     private const string CachePublica = "public, max-age=31536000, immutable"; // el nombre nunca se reutiliza
     private const int TamanoPagina = 1000;
 
@@ -181,6 +183,7 @@ public sealed class AlmacenSupabase : IAlmacenArchivos
             await AsegurarBucketAsync(_o.BucketImagenes, publico: true, TiposImagen, ct);
             await AsegurarBucketAsync(_o.BucketDocumentos, publico: false, TiposDocumento, ct);
             await AsegurarBucketAsync(_o.BucketSubidas, publico: false, TiposDocumento, ct);
+            await AsegurarBucketAsync(_o.BucketChat, publico: false, TiposImagen, ct);
             _bucketsListos = true;
         }
         catch (Exception ex) when (ex is ErrorAlmacenamientoException or HttpRequestException)
@@ -287,6 +290,15 @@ public sealed class AlmacenSupabase : IAlmacenArchivos
                 _log.LogInformation("Imagen limpiada y publicada ({Antes} → {Despues} bytes, miniatura {Miniatura} bytes)",
                     contenido.Length, limpia.Foto.Length, limpia.Miniatura.Length);
             }
+            else if (tipo == TipoArchivoDto.FotoChat)
+            {
+                // Foto del chat: misma limpieza (sin GPS ni metadatos), pero a un bucket PRIVADO.
+                using var flujo = new MemoryStream(contenido, writable: false);
+                var limpia = await ProcesadorImagenes.LimpiarAsync(flujo, subida.Extension, ct);
+                var nombre = ReglasArchivos.NuevoNombre(usuarioId, subida.Extension);
+                await SubirInmutableAsync(_o.BucketChat, nombre, limpia, TipoImagen(subida.Extension), "private, no-store", ct);
+                final = $"{BasePrivada(_o.BucketChat)}/{nombre}";
+            }
             else
             {
                 // Documento: copia del servidor con nombre nuevo en el bucket privado (ninguna URL de subida llega ahí).
@@ -322,8 +334,7 @@ public sealed class AlmacenSupabase : IAlmacenArchivos
     private async Task<string> PublicarLimpiaAsync(Guid usuarioId, ProcesadorImagenes.ImagenLimpia limpia, string extension, CancellationToken ct)
     {
         var nombre = ReglasArchivos.NuevoNombre(usuarioId, extension);
-        await SubirInmutableAsync(_o.BucketImagenes, nombre, limpia.Foto,
-            extension switch { "png" => "image/png", "webp" => "image/webp", _ => "image/jpeg" }, CachePublica, ct);
+        await SubirInmutableAsync(_o.BucketImagenes, nombre, limpia.Foto, TipoImagen(extension), CachePublica, ct);
         try
         {
             await SubirInmutableAsync(_o.BucketImagenes, ReglasArchivos.NombreMiniatura(nombre)!, limpia.Miniatura, "image/webp", CachePublica, ct);
@@ -334,6 +345,8 @@ public sealed class AlmacenSupabase : IAlmacenArchivos
         }
         return $"{BaseImagenes}/{nombre}";
     }
+
+    private static string TipoImagen(string extension) => extension switch { "png" => "image/png", "webp" => "image/webp", _ => "image/jpeg" };
 
     public async Task<string> GuardarImagenAsync(Guid usuarioId, byte[] contenido, CancellationToken ct = default)
     {
@@ -430,6 +443,30 @@ public sealed class AlmacenSupabase : IAlmacenArchivos
         return _base + firmada.SignedUrl;
     }
 
+    public async Task<IReadOnlyDictionary<string, string>> UrlsLecturaChatAsync(IReadOnlyCollection<string> urls, CancellationToken ct = default)
+    {
+        var resultado = new Dictionary<string, string>(StringComparer.Ordinal);
+        var porNombre = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var url in urls)
+            if (ReglasArchivos.NombreArchivo(url, BasePrivada(_o.BucketChat)) is { } nombre) porNombre.TryAdd(nombre, url);
+        if (porNombre.Count == 0) return resultado;
+        try
+        {
+            // Una sola llamada para toda la página de mensajes; las que fallan (archivo borrado) vienen con "error".
+            var firmadas = await LeerAsync<List<UrlLecturaLote>>(HttpMethod.Post, $"object/sign/{_o.BucketChat}",
+                new { expiresIn = SegundosLecturaChat, paths = porNombre.Keys }, ct);
+            foreach (var f in firmadas)
+                if (f.Error is null && f.SignedUrl is { } s && f.Path is { } p && porNombre.TryGetValue(p, out var original))
+                    resultado[original] = _base + s;
+        }
+        catch (Exception ex) when (ex is ErrorAlmacenamientoException or HttpRequestException)
+        {
+            // Sin URL la foto se muestra como "no disponible"; el texto del chat sigue funcionando.
+            _log.LogWarning(ex, "No se pudieron firmar las fotos del chat");
+        }
+        return resultado;
+    }
+
     public async Task EliminarDocumentoAsync(string url, CancellationToken ct = default)
     {
         if (Documento(url) is not { } nombre) return;
@@ -457,7 +494,7 @@ public sealed class AlmacenSupabase : IAlmacenArchivos
 
     public async Task EliminarDelUsuarioAsync(Guid usuarioId, CancellationToken ct = default)
     {
-        foreach (var bucket in new[] { _o.BucketImagenes, _o.BucketDocumentos, _o.BucketSubidas })
+        foreach (var bucket in new[] { _o.BucketImagenes, _o.BucketDocumentos, _o.BucketSubidas, _o.BucketChat })
         {
             try
             {
@@ -477,5 +514,6 @@ public sealed class AlmacenSupabase : IAlmacenArchivos
     private sealed record ErrorStorage(string? StatusCode, string? Error, string? Message);
     private sealed record UrlFirmada(string Url, string? Token);
     private sealed record UrlLectura([property: JsonPropertyName("signedURL")] string SignedUrl);
+    private sealed record UrlLecturaLote(string? Path, [property: JsonPropertyName("signedURL")] string? SignedUrl, string? Error);
     private sealed record ElementoStorage(string Name, string? Id, [property: JsonPropertyName("created_at")] DateTimeOffset? CreatedAt);
 }

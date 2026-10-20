@@ -20,7 +20,9 @@ import { firstValueFrom } from 'rxjs';
 import { ETIQUETA_ESTADO_SOLICITUD, type ConversacionDto, type MensajeChatDto } from '../../api/tipos';
 import { IntercambiosApi } from '../../core/api/intercambios.api';
 import { AvisosService } from '../../core/avisos.service';
+import { ConfigService } from '../../core/config.service';
 import { mensajeDe } from '../../core/http/problema';
+import { SubidasService } from '../../core/subidas.service';
 import { TiempoRealService } from '../../core/tiempo-real.service';
 import { FechaPipe, HacePipe, HoraPipe } from '../../shared/pipes';
 import { Avatar } from '../../shared/ui/avatar';
@@ -30,12 +32,13 @@ import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Icono } from '../../shared/ui/icono';
 import { InsigniaNivel } from '../../shared/ui/insignia-nivel';
 import { PuntosEncuentro } from '../../shared/ui/puntos-encuentro';
+import { VisorImagenes } from '../../shared/ui/visor-imagenes';
 import { desplazamiento } from '../../shared/movimiento';
 
 const TAMANO = 40;
 
 @Component({
-  imports: [FormsModule, RouterLink, Avatar, Icono, InsigniaNivel, EstadoVacio, PuntosEncuentro, Denunciar, Bloquear, HacePipe, HoraPipe, FechaPipe],
+  imports: [FormsModule, RouterLink, Avatar, Icono, InsigniaNivel, EstadoVacio, PuntosEncuentro, Denunciar, Bloquear, VisorImagenes, HacePipe, HoraPipe, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor py-4 sm:py-8">
@@ -172,7 +175,21 @@ const TAMANO = 40;
                     @if (m.oculto) {
                       <p class="italic opacity-70">Mensaje oculto por moderación</p>
                     } @else {
-                      <p class="break-words whitespace-pre-line">{{ m.texto }}</p>
+                      @if (m.tieneFoto) {
+                        @if (m.fotoUrl) {
+                          <button type="button" class="-mx-1.5 mt-0.5 mb-1 block overflow-hidden rounded-xl focus-visible:ring-2 focus-visible:ring-sol-300"
+                            (click)="verFoto(m)" [attr.aria-label]="'Ver en grande la foto de ' + autor(m.esMio)">
+                            <img [src]="m.fotoUrl" alt="" loading="lazy" decoding="async" class="max-h-72 w-full min-w-40 object-cover" />
+                          </button>
+                        } @else {
+                          <p class="my-1 flex items-center gap-1.5 rounded-xl px-2 py-3 text-xs italic opacity-80" [class]="m.esMio ? 'bg-white/10' : 'bg-superficie-2'">
+                            <app-icono nombre="imagen" [tamano]="14" />Foto no disponible
+                          </p>
+                        }
+                      }
+                      @if (m.texto) {
+                        <p class="break-words whitespace-pre-line">{{ m.texto }}</p>
+                      }
                     }
                     <p class="mt-0.5 flex items-center justify-end gap-1 text-[11px]" [class]="m.esMio ? 'text-white/85' : 'text-tenue'">
                       {{ m.fechaUtc | hora }}
@@ -221,7 +238,7 @@ const TAMANO = 40;
                 <div class="flex items-start gap-2 border-t border-borde bg-superficie-2/60 px-3 pt-2.5 animate-aparecer">
                   <div class="min-w-0 flex-1 rounded-lg border-l-4 border-bosque-500 bg-superficie px-3 py-1.5 text-xs">
                     <p class="font-semibold text-bosque-700 dark:text-bosque-300">Respondiendo a {{ r.esMio ? 'tu mensaje' : actual()?.contraparte?.nombre }}</p>
-                    <p class="truncate text-tenue">{{ r.texto }}</p>
+                    <p class="truncate text-tenue">{{ r.texto || (r.tieneFoto ? '📷 Foto' : '') }}</p>
                   </div>
                   <button type="button" class="btn-icono" (click)="cancelarRespuesta()" aria-label="Cancelar respuesta"><app-icono nombre="x" [tamano]="16" /></button>
                 </div>
@@ -232,18 +249,38 @@ const TAMANO = 40;
                   <app-puntos-encuentro variante="chat" (elegir)="proponerLugar($event)" />
                 </div>
               }
-              <form class="flex items-end gap-2 border-t border-borde p-3" [class.border-t-0]="respondiendoA() || lugaresAbiertos()" (ngSubmit)="enviar()">
+              @if (foto(); as f) {
+                <div class="flex items-center gap-3 border-t border-borde bg-superficie-2/60 px-3 pt-2.5" [class.border-t-0]="respondiendoA() || lugaresAbiertos()">
+                  <img [src]="f.vista" alt="Foto que vas a enviar" class="size-16 shrink-0 rounded-lg object-cover" />
+                  <p class="min-w-0 flex-1 text-xs text-tenue" aria-live="polite">
+                    @if (enviando()) {
+                      Subiendo la foto…
+                    } @else {
+                      Solo la verán tú y {{ actual()?.contraparte?.nombre ?? 'la otra persona' }}. Le quitamos la ubicación y los datos de la cámara.
+                    }
+                  </p>
+                  <button type="button" class="btn-icono" (click)="quitarFoto()" [disabled]="enviando()" aria-label="Quitar la foto"><app-icono nombre="x" [tamano]="16" /></button>
+                </div>
+              }
+              <form class="flex items-end gap-2 border-t border-borde p-3" [class.border-t-0]="respondiendoA() || lugaresAbiertos() || foto()" (ngSubmit)="enviar()">
                 <button type="button" class="btn-icono size-11 shrink-0 aria-expanded:bg-bosque-50 aria-expanded:text-bosque-700 dark:aria-expanded:bg-bosque-900/40 dark:aria-expanded:text-bosque-300"
                   [attr.aria-expanded]="lugaresAbiertos()" aria-controls="lugares-seguros" aria-label="Proponer un lugar seguro" title="Proponer un lugar seguro"
                   (click)="lugaresAbiertos.update((v) => !v)">
                   <app-icono nombre="escudo" [tamano]="20" />
                 </button>
+                @if (config.subidasHabilitadas()) {
+                  <input #selectorFoto type="file" accept="image/jpeg,image/png,image/webp" class="sr-only" tabindex="-1" aria-hidden="true" (change)="elegirFoto($event)" />
+                  <button type="button" class="btn-icono size-11 shrink-0" (click)="selectorFoto.click()" [disabled]="enviando()"
+                    aria-label="Enviar una foto" title="Enviar una foto">
+                    <app-icono nombre="camara" [tamano]="20" />
+                  </button>
+                }
                 <label for="nuevo-mensaje" class="sr-only">Escribe un mensaje</label>
                 <textarea #entrada id="nuevo-mensaje" name="texto" rows="1" class="entrada max-h-32 min-h-11 resize-none rounded-2xl py-2.5" maxlength="1000"
                   [(ngModel)]="texto" (input)="alEscribir()" (keydown.enter)="alPresionarEnter($event)" (keydown.escape)="cancelarRespuesta()" placeholder="Escribe un mensaje…"
                   aria-describedby="aviso-chat"></textarea>
                 <button type="submit" class="grid size-11 shrink-0 place-items-center rounded-full bg-bosque-600 text-white transition hover:bg-bosque-700 disabled:opacity-50"
-                  [disabled]="!texto().trim() || enviando()" aria-label="Enviar">
+                  [disabled]="(!texto().trim() && !foto()) || enviando()" aria-label="Enviar">
                   <app-icono nombre="enviar" [tamano]="18" />
                 </button>
               </form>
@@ -260,6 +297,9 @@ const TAMANO = 40;
     @if (aDenunciar(); as idMensaje) {
       <app-denunciar [(abierto)]="denunciaAbierta" tipo="Mensaje" [objetivoId]="idMensaje" />
     }
+    @if (fotoAbierta(); as url) {
+      <app-visor-imagenes [imagenes]="[url]" titulo="Foto del chat" [abierto]="true" (abiertoChange)="!$event && fotoAbierta.set(null)" />
+    }
   `,
 })
 export default class Mensajes {
@@ -267,6 +307,8 @@ export default class Mensajes {
   private readonly avisos = inject(AvisosService);
   protected readonly tiempoReal = inject(TiempoRealService);
   private readonly anunciador = inject(LiveAnnouncer);
+  private readonly subidas = inject(SubidasService);
+  protected readonly config = inject(ConfigService);
 
   readonly id = input<string>();
   private readonly lista = viewChild<ElementRef<HTMLElement>>('lista');
@@ -290,6 +332,9 @@ export default class Mensajes {
   protected readonly aDenunciar = signal<string | null>(null);
   protected readonly denunciaAbierta = signal(false);
   protected readonly respondiendoA = signal<MensajeChatDto | null>(null);
+  /** Foto elegida y aún sin enviar; `vista` es una URL local (blob:) solo para la miniatura. */
+  protected readonly foto = signal<{ archivo: File; vista: string } | null>(null);
+  protected readonly fotoAbierta = signal<string | null>(null);
   /** Botones de lugares seguros sobre el cuadro de texto. */
   protected readonly lugaresAbiertos = signal(false);
   protected readonly deslizamiento = signal<{ id: string; dx: number } | null>(null);
@@ -317,7 +362,10 @@ export default class Mensajes {
           this.mensajes.update((l) => [...l, m]);
           this.bajar();
           // Al lector de pantalla solo se le anuncian los mensajes que llegan, no el historial al abrir el chat
-          if (!m.esMio) void this.anunciador.announce(`Mensaje de ${this.actual()?.contraparte?.nombre ?? 'la otra persona'}: ${m.texto}`);
+          if (!m.esMio) {
+            const de = this.actual()?.contraparte?.nombre ?? 'la otra persona';
+            void this.anunciador.announce(m.texto ? `Mensaje de ${de}: ${m.texto}` : `${de} te envió una foto`);
+          }
         }
         // Primero se marca como leída y luego se recarga la lista, para no mostrar un "no leído" falso.
         // Solo si la pantalla se ve: con la pestaña oculta el autor ve ✓✓ (entregado), no "leído".
@@ -336,7 +384,10 @@ export default class Mensajes {
     };
     document.addEventListener('visibilitychange', alVolver);
     const destroy = inject(DestroyRef);
-    destroy.onDestroy(() => document.removeEventListener('visibilitychange', alVolver));
+    destroy.onDestroy(() => {
+      document.removeEventListener('visibilitychange', alVolver);
+      this.quitarFoto();
+    });
 
     // La tarjeta ocupa justo el espacio visible: así la caja para escribir nunca queda bajo la barra inferior del
     // celular ni depende de cuántas franjas de aviso haya arriba. Se recalcula si cambia la ventana o el contenido de arriba.
@@ -385,6 +436,7 @@ export default class Mensajes {
     this.cargando.set(true);
     this.mensajes.set([]);
     this.respondiendoA.set(null);
+    this.quitarFoto();
     try {
       const lista = await firstValueFrom(this.api.mensajes(id, undefined, TAMANO));
       if (this.id() !== id) return;
@@ -422,12 +474,16 @@ export default class Mensajes {
   protected async enviar(): Promise<void> {
     const id = this.id();
     const texto = this.texto().trim();
-    if (!id || !texto) return;
+    const foto = this.foto();
+    if (!id || (!texto && !foto)) return;
     this.enviando.set(true);
     try {
-      const m = await firstValueFrom(this.api.enviarMensaje(id, texto, this.respondiendoA()?.id ?? null));
+      // La foto va primero al almacenamiento (URL firmada) y el servidor la limpia y la deja privada al enviar
+      const fotoUrl = foto ? await this.subidas.subirTodo(foto.archivo, 'FotoChat') : null;
+      const m = await firstValueFrom(this.api.enviarMensaje(id, texto, this.respondiendoA()?.id ?? null, fotoUrl));
       this.texto.set('');
       this.respondiendoA.set(null);
+      this.quitarFoto();
       this.tiempoReal.reiniciarEscribiendo(id);
       if (!this.mensajes().some((x) => x.id === m.id)) this.mensajes.update((l) => [...l, m]);
       this.bajar();
@@ -461,6 +517,33 @@ export default class Mensajes {
       e?.focus();
       e?.setSelectionRange(propuesta.length, propuesta.length);
     });
+  }
+
+  // ---------------- Fotos ----------------
+
+  protected elegirFoto(e: Event): void {
+    const input = e.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    input.value = ''; // permite volver a elegir el mismo archivo
+    if (!archivo) return;
+    const error = this.subidas.validar(archivo, 'FotoChat');
+    if (error) {
+      this.avisos.error(error);
+      return;
+    }
+    this.quitarFoto();
+    this.foto.set({ archivo, vista: URL.createObjectURL(archivo) });
+    requestAnimationFrame(() => this.entrada()?.nativeElement.focus());
+  }
+
+  protected quitarFoto(): void {
+    const f = this.foto();
+    if (f) URL.revokeObjectURL(f.vista);
+    this.foto.set(null);
+  }
+
+  protected verFoto(m: MensajeChatDto): void {
+    if (m.fotoUrl) this.fotoAbierta.set(m.fotoUrl);
   }
 
   protected alEscribir(): void {

@@ -487,9 +487,12 @@ public sealed class PaginacionRequest
 
 public sealed class EnviarMensajeRequest
 {
-    [Required, StringLength(1000, MinimumLength = 1)] public string Texto { get; init; } = "";
+    /// <summary>Obligatorio salvo que se envíe una foto (entonces es el pie de foto, opcional).</summary>
+    [StringLength(1000)] public string Texto { get; init; } = "";
     /// <summary>Mensaje de la misma conversación al que se responde (opcional).</summary>
     public Guid? RespuestaAId { get; init; }
+    /// <summary>urlArchivo de POST /archivos/subidas con tipo FotoChat, ya subido con PUT. Se limpia y queda privada.</summary>
+    [StringLength(500)] public string? FotoUrl { get; init; }
 }
 
 public sealed class MensajesRequest
@@ -499,11 +502,14 @@ public sealed class MensajesRequest
     [Range(1, 100)] public int Tamano { get; init; } = 30;
 }
 
-public enum TipoArchivoDto { Imagen = 1, Documento = 2 }
+public enum TipoArchivoDto { Imagen = 1, Documento = 2, FotoChat = 3 }
 
 public sealed class SolicitarSubidaRequest
 {
-    /// <summary>Imagen (publicaciones, bucket público) o Documento (verificación de identidad, bucket PRIVADO).</summary>
+    /// <summary>
+    /// Imagen (publicaciones, bucket público), Documento (verificación de identidad, bucket PRIVADO) o FotoChat (foto para el
+    /// chat: se limpia como una Imagen pero queda en un bucket PRIVADO y solo la ven las dos partes).
+    /// </summary>
     [EnumDataType(typeof(TipoArchivoDto))] public TipoArchivoDto Tipo { get; init; } = TipoArchivoDto.Imagen;
     [Required, StringLength(50)] public string ContentType { get; init; } = "";
     [Range(1, 5 * 1024 * 1024)] public long TamanoBytes { get; init; }
@@ -728,8 +734,12 @@ public sealed record ComentarioDto(Guid Id, Guid PublicacionId, PerfilPublicoDto
     bool EsMio, bool Oculto, string? MotivoOcultamiento);
 
 /// <summary>Mensaje de chat. EsMio es relativo a quien lo recibe. Si fue ocultado por moderación, Texto trae un aviso.</summary>
+/// <summary>
+/// TieneFoto = el mensaje lleva foto. FotoUrl = URL firmada para verla (vence en una hora); null si está oculto o la foto
+/// ya no existe (p. ej. su autor eliminó la cuenta): el front muestra "Foto no disponible".
+/// </summary>
 public sealed record MensajeChatDto(Guid Id, Guid ConversacionId, bool EsMio, string Texto, DateTime FechaUtc, bool Leido, bool Oculto,
-    MensajeCitadoDto? RespuestaA = null, EstadoMensajeDto Estado = EstadoMensajeDto.Enviado);
+    MensajeCitadoDto? RespuestaA = null, EstadoMensajeDto Estado = EstadoMensajeDto.Enviado, bool TieneFoto = false, string? FotoUrl = null);
 
 /// <summary>✓ enviado · ✓✓ entregado (llegó al dispositivo) · ✓✓ de color leído.</summary>
 [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<EstadoMensajeDto>))]
@@ -763,8 +773,10 @@ public sealed record DenunciaCreadaDto(Guid Id, string Estado, DateTime FechaUtc
 /// Cola de moderación: denuncias agrupadas por objetivo. <see cref="DenunciaId"/> es la más antigua del grupo (resolverla
 /// resuelve todas). VistaPrevia muestra lo denunciado SOLO al moderador; Detalles son los textos de los denunciantes.
 /// </summary>
+/// <summary>FotoUrl: si se denunció un mensaje con foto, URL firmada temporal para que el moderador la vea.</summary>
 public sealed record DenunciaAgrupadaDto(Guid DenunciaId, string Tipo, Guid ObjetivoId, int Total, IReadOnlyList<string> Motivos,
-    IReadOnlyList<string> Detalles, string? VistaPrevia, bool ObjetivoExiste, DateTime PrimeraUtc, DateTime UltimaUtc, string Estado);
+    IReadOnlyList<string> Detalles, string? VistaPrevia, bool ObjetivoExiste, DateTime PrimeraUtc, DateTime UltimaUtc, string Estado,
+    string? FotoUrl = null);
 
 /// <summary>
 /// Denuncia procedente contra el usuario (lo que el moderador decidió). Nunca revela quién denunció ni sus textos.

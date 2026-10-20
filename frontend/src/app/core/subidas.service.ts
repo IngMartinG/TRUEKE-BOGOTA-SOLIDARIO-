@@ -26,9 +26,10 @@ export class SubidasService {
   private readonly config = inject(ConfigService);
 
   validar(archivo: File, tipo: TipoArchivoDto = 'Imagen'): string | null {
-    const permitidos = tipo === 'Imagen' ? TIPOS_IMAGEN : TIPOS_DOCUMENTO;
+    const documento = tipo === 'Documento';
+    const permitidos = documento ? TIPOS_DOCUMENTO : TIPOS_IMAGEN;
     if (!permitidos.includes(archivo.type)) {
-      return tipo === 'Imagen' ? 'Usa imágenes JPG, PNG o WebP.' : 'Usa un PDF, JPG o PNG.';
+      return documento ? 'Usa un PDF, JPG o PNG.' : 'Usa imágenes JPG, PNG o WebP.';
     }
     const max = this.config.tamanoMaximo();
     if (archivo.size > max) return `El archivo supera ${Math.round(max / 1024 / 1024)} MB.`;

@@ -785,6 +785,9 @@ public sealed class ConversacionRepository : IConversacionRepository
     public Task<int> ContarMensajesDelAutorDesdeAsync(Guid autorId, DateTime desdeUtc)
         => _db.Mensajes.CountAsync(m => m.AutorId == autorId && m.FechaUtc >= desdeUtc);
 
+    public Task<int> ContarFotosDelAutorDesdeAsync(Guid autorId, DateTime desdeUtc)
+        => _db.Mensajes.CountAsync(m => m.AutorId == autorId && m.FechaUtc >= desdeUtc && m.FotoUrl != null);
+
     public async Task<IReadOnlyList<Mensaje>> ListarMensajesDelAutorAsync(Guid autorId, int maximo)
         => await _db.Mensajes.AsNoTracking().Where(m => m.AutorId == autorId).OrderByDescending(m => m.FechaUtc).Take(maximo).ToListAsync();
 
