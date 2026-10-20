@@ -76,6 +76,45 @@
   --animate-aparecer: aparecer 0.35s cubic-bezier(0.2, 0.7, 0.2, 1) both;
   --animate-flotar: flotar 6s ease-in-out infinite;
   --animate-brillo: brillo 1.4s ease-in-out infinite;
+  /* "Apoya el proyecto": el pulso se dibuja una vez, el corazón late y, al agradecer, suben corazones */
+  --animate-trazo: trazo 1.6s cubic-bezier(0.65, 0, 0.35, 1) both;
+  --animate-latido: latido 1.8s ease-in-out infinite;
+  --animate-subir: subir 3.2s cubic-bezier(0.2, 0.6, 0.3, 1) both;
+
+  @keyframes trazo {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
+  }
+  @keyframes latido {
+    0%,
+    40%,
+    100% {
+      transform: scale(1);
+    }
+    15% {
+      transform: scale(1.12);
+    }
+    28% {
+      transform: scale(1.04);
+    }
+  }
+  @keyframes subir {
+    0% {
+      opacity: 0;
+      transform: translateY(0) scale(0.6);
+    }
+    15% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0;
+      transform: translateY(-70vh) scale(1.1) rotate(var(--giro, 0deg));
+    }
+  }
 
   @keyframes aparecer {
     from {

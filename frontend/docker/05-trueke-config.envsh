@@ -8,7 +8,7 @@ trueke_api_origen=""
 if [ -n "${API_URL:-}" ]; then
   trueke_api_origen="$API_URL $(printf '%s' "$API_URL" | sed -e 's#^https://#wss://#' -e 's#^http://#ws://#')"
 fi
-export CSP_CONNECT="'self' ${trueke_api_origen} https://accounts.google.com/gsi/ https://www.google.com/recaptcha/ ${CSP_CONNECT_EXTRA:-}"
+export CSP_CONNECT="'self' ${trueke_api_origen} https://accounts.google.com/gsi/ https://www.google.com/recaptcha/ https://production.wompi.co https://sandbox.wompi.co ${CSP_CONNECT_EXTRA:-}"
 # Calculados al compilar: permiten SOLO el importmap de Angular, sin abrir 'unsafe-inline'.
 CSP_SCRIPT_HASHES="$(cat /etc/trueke/csp-script-hashes 2>/dev/null || true)"
 export CSP_SCRIPT_HASHES
