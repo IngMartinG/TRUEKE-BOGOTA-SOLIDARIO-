@@ -7,6 +7,7 @@ import { AvisosService } from '../../core/avisos.service';
 import { mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
 import { CopPipe, FechaPipe } from '../../shared/pipes';
+import { Cargando } from '../../shared/ui/cargando';
 import { Icono } from '../../shared/ui/icono';
 
 const INTERVALO_MS = 3000;
@@ -14,12 +15,12 @@ const MAX_INTENTOS = 40; // ~2 minutos
 
 /** Resultado de un pago: consulta el estado hasta que se resuelva (Wompi confirma por webhook). */
 @Component({
-  imports: [RouterLink, Icono, CopPipe, FechaPipe],
+  imports: [RouterLink, Icono, Cargando, CopPipe, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor flex min-h-[60vh] max-w-lg flex-col items-center justify-center py-16 text-center">
       @if (!pago() && !error()) {
-        <span class="size-14 animate-spin rounded-full border-4 border-sol-100 border-t-sol-500" aria-hidden="true"></span>
+        <app-cargando />
         <h1 class="mt-6 text-2xl font-bold">Consultando tu pago…</h1>
       } @else if (error()) {
         <span class="grid size-20 place-items-center rounded-full bg-tierra-100 text-tierra-600 dark:bg-tierra-700/30 dark:text-tierra-100"><app-icono nombre="alerta" [tamano]="36" /></span>

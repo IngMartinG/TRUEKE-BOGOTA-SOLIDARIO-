@@ -4,22 +4,23 @@ import { firstValueFrom } from 'rxjs';
 import { AuthApi } from '../../core/api/auth.api';
 import { mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
+import { Cargando } from '../../shared/ui/cargando';
 import { Icono } from '../../shared/ui/icono';
 
 /** Destino del enlace del correo de verificación: confirma el token y lo borra de la URL. */
 @Component({
-  imports: [RouterLink, Icono],
+  imports: [RouterLink, Icono, Cargando],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor flex min-h-[60vh] max-w-md flex-col items-center justify-center py-16 text-center">
       @switch (estado()) {
         @case ('verificando') {
-          <span class="size-14 animate-spin rounded-full border-4 border-bosque-200 border-t-bosque-600" aria-hidden="true"></span>
+          <app-cargando />
           <h1 class="mt-6 text-2xl font-bold">Confirmando tu correo…</h1>
         }
         @case ('ok') {
           <span class="grid size-20 place-items-center rounded-full bg-bosque-600 text-white shadow-elevada"><app-icono nombre="check" [tamano]="40" /></span>
-          <h1 class="mt-6 text-2xl font-bold">¡Correo confirmado!</h1>
+          <h1 class="mt-6 text-2xl font-bold">¡Correo confirmado! <span aria-hidden="true">🌿</span></h1>
           <p class="mt-2 text-tenue">Ya puedes publicar, solicitar intercambios y chatear con la comunidad.</p>
           <div class="mt-8 flex flex-wrap justify-center gap-3">
             <a routerLink="/bienvenida" class="btn btn-primario">Empezar</a>
