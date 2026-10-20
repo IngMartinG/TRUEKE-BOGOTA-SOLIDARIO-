@@ -2886,6 +2886,44 @@
         }
       }
     },
+    "/api/v1/eco-puntos/logros": {
+      "get": {
+        "tags": [
+          "EcoPuntos"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LogroDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LogroDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/LogroDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/planes/prueba-premium": {
       "post": {
         "tags": [
@@ -8306,6 +8344,36 @@
         },
         "additionalProperties": false
       },
+      "LogroDto": {
+        "type": "object",
+        "properties": {
+          "clave": {
+            "type": "string"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "grado": {
+            "type": "string",
+            "nullable": true
+          },
+          "obtenido": {
+            "type": "boolean"
+          },
+          "progreso": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "meta": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "MensajeChatDto": {
         "type": "object",
         "properties": {
@@ -8953,6 +9021,13 @@
           },
           "nivel": {
             "type": "string"
+          },
+          "logros": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/LogroDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false

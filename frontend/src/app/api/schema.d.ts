@@ -2618,6 +2618,43 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/eco-puntos/logros": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["LogroDto"][];
+                        "application/json": components["schemas"]["LogroDto"][];
+                        "text/json": components["schemas"]["LogroDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/planes/prueba-premium": {
         parameters: {
             query?: never;
@@ -6065,6 +6102,17 @@ export interface components {
             codigoDosFactores?: string | null;
             captchaToken?: string | null;
         };
+        LogroDto: {
+            clave?: string;
+            nombre?: string;
+            descripcion?: string;
+            grado?: string | null;
+            obtenido?: boolean;
+            /** Format: int32 */
+            progreso?: number;
+            /** Format: int32 */
+            meta?: number;
+        };
         MensajeChatDto: {
             /** Format: uuid */
             id?: string;
@@ -6298,6 +6346,7 @@ export interface components {
             nit?: string | null;
             deseos?: components["schemas"]["DeseoPublicoDto"][] | null;
             nivel?: string;
+            logros?: components["schemas"]["LogroDto"][] | null;
         };
         PoliticaEcoPuntosDto: {
             /** Format: int32 */
@@ -6843,6 +6892,7 @@ export type IniciarPagoRequest = components['schemas']['IniciarPagoRequest'];
 export type InvitacionDto = components['schemas']['InvitacionDto'];
 export type LegalPublicoDto = components['schemas']['LegalPublicoDto'];
 export type LoginRequest = components['schemas']['LoginRequest'];
+export type LogroDto = components['schemas']['LogroDto'];
 export type MensajeChatDto = components['schemas']['MensajeChatDto'];
 export type MensajeCitadoDto = components['schemas']['MensajeCitadoDto'];
 export type MensajeExportDto = components['schemas']['MensajeExportDto'];

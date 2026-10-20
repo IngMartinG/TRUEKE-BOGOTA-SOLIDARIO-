@@ -13,7 +13,11 @@ public sealed class EcoPuntosController : ControllerBase
 {
     private readonly IEcoPuntosService _eco;
     private readonly IPagoService _pagos;
-    public EcoPuntosController(IEcoPuntosService eco, IPagoService pagos) { _eco = eco; _pagos = pagos; }
+    private readonly IPublicacionService _perfiles;
+    public EcoPuntosController(IEcoPuntosService eco, IPagoService pagos, IPublicacionService perfiles)
+    {
+        _eco = eco; _pagos = pagos; _perfiles = perfiles;
+    }
 
     /// <summary>Tabla de ganancias, beneficios y precios. Pública: un Invitado puede verla antes de registrarse.</summary>
     [HttpGet("politica"), AllowAnonymous]
@@ -21,6 +25,10 @@ public sealed class EcoPuntosController : ControllerBase
 
     [HttpGet("resumen")]
     public async Task<ActionResult<EcoPuntosResumenDto>> Resumen() => Ok(await _eco.ResumenAsync(User.IdActual()));
+
+    /// <summary>Tus logros con su progreso (el perfil público solo muestra los obtenidos). Son solo un reconocimiento.</summary>
+    [HttpGet("logros")]
+    public async Task<ActionResult<IReadOnlyList<LogroDto>>> Logros() => Ok(await _perfiles.MisLogrosAsync(User.IdActual()));
 
     /// <summary>Premium gratis por unos días, una vez por cuenta y sin tarjeta: al terminar no se cobra nada.</summary>
     [HttpPost("~/api/v1/planes/prueba-premium")]

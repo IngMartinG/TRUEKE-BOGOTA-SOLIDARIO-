@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, signal, untracked } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, effect, inject, Injector, input, signal, untracked } from '@angular/core';
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
@@ -13,6 +13,7 @@ import { SesionService } from '../../core/sesion.service';
 import { SubidasService } from '../../core/subidas.service';
 import { CopPipe, FechaPipe, NumeroPipe } from '../../shared/pipes';
 import { Icono } from '../../shared/ui/icono';
+import { MedallasLogros } from '../../shared/ui/medallas-logros';
 import { Modal } from '../../shared/ui/modal';
 import { abrirCheckoutWompi, esOrigenLocal, urlCheckoutWompi, urlRetornoPago } from './wompi';
 import { HistorialEcoPuntos } from './historial-eco-puntos';
@@ -36,7 +37,7 @@ interface Servicio {
 }
 
 @Component({
-  imports: [FormsModule, RouterLink, Icono, Modal, CopPipe, NumeroPipe, FechaPipe, HistorialEcoPuntos, Invitar],
+  imports: [FormsModule, RouterLink, Icono, Modal, CopPipe, NumeroPipe, FechaPipe, HistorialEcoPuntos, Invitar, MedallasLogros],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <!-- Encabezado con saldo -->
@@ -184,6 +185,18 @@ interface Servicio {
             </li>
           }
         </ol>
+      </section>
+    }
+
+    <!-- Logros: solo reconocimiento; el perfil público muestra los obtenidos -->
+    @if (logros.value()?.length) {
+      <section id="logros" class="contenedor mt-14 scroll-mt-24" aria-labelledby="titulo-logros">
+        <h2 id="titulo-logros" class="titulo-seccion">Tus logros</h2>
+        <p class="mt-1 max-w-2xl text-tenue">
+          Llevas {{ logrosObtenidos() }} de {{ logros.value()!.length }}. Los que consigues aparecen en tu perfil. Son un
+          reconocimiento: no dan puntos ni descuentos, y solo cuentan los intercambios que te dieron Eco-Puntos.
+        </p>
+        <div class="mt-6"><app-medallas-logros [logros]="logros.value()" [progreso]="true" /></div>
       </section>
     }
 
@@ -513,6 +526,7 @@ export default class EcoPuntos {
   private readonly subidas = inject(SubidasService);
   private readonly avisos = inject(AvisosService);
   private readonly router = inject(Router);
+  private readonly injector = inject(Injector);
   protected readonly sesion = inject(SesionService);
   protected readonly config = inject(ConfigService);
 
@@ -555,6 +569,11 @@ export default class EcoPuntos {
     params: () => (this.sesion.autenticado() ? true : undefined),
     stream: () => this.api.resumenPuntos(),
   });
+  protected readonly logros = rxResource({
+    params: () => (this.sesion.autenticado() ? true : undefined),
+    stream: () => this.api.logros(),
+  });
+  protected readonly logrosObtenidos = computed(() => (this.logros.value() ?? []).filter((l) => l.obtenido).length);
   private readonly mias = rxResource({
     params: () => (this.sesion.autenticado() && this.conceptoCompra() === 'Destacar' ? true : undefined),
     stream: () => this.catalogo.mias(),
@@ -769,6 +788,12 @@ export default class EcoPuntos {
       const plan = this.plan();
       const anual = this.periodo() === 'anual';
       if ((plan === 'Premium' || plan === 'Empresa') && this.sesion.autenticado()) untracked(() => this.abrirCompra(anual ? (`${plan}Anual` as ConceptoPlan) : plan));
+    });
+    // "/eco-puntos#logros" (desde el perfil): la sección llega después de navegar, así que el router no alcanza a bajar
+    effect(() => {
+      if (this.logros.value()?.length && location.hash === '#logros') {
+        afterNextRender(() => document.getElementById('logros')?.scrollIntoView(), { injector: this.injector });
+      }
     });
   }
 

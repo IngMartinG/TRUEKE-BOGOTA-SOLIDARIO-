@@ -166,6 +166,8 @@ public interface ITransaccionRepository
     Task<ResumenImpacto> ResumenImpactoAsync(DateTime desdeMesUtc, int minimoPorLocalidad, int maxLocalidades);
     /// <summary>Transacciones desde <paramref name="desdeUtc"/> en las que ESTE usuario recibió puntos (tope anti-farmeo).</summary>
     Task<int> ContarDesdeAsync(Guid usuarioId, DateTime desdeUtc);
+    /// <summary>Intercambios por modo en los que ESTE usuario recibió puntos (logros: lo que el anti-farmeo dejó contar).</summary>
+    Task<(int Truekes, int Compras, int Donaciones)> ContarConPuntosPorModoAsync(Guid usuarioId);
     /// <summary>¿Estas dos personas ya completaron, desde la fecha, un intercambio que otorgó puntos (en cualquier sentido)?</summary>
     Task<bool> ExisteConPuntosEntreDesdeAsync(Guid usuarioA, Guid usuarioB, DateTime desdeUtc);
     Task<IReadOnlyList<Transaccion>> ListarPorUsuarioAsync(Guid usuarioId);

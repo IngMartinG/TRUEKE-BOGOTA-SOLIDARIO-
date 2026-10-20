@@ -4,7 +4,10 @@ import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { CuentaApi } from '../../core/api/cuenta.api';
 import { SesionService } from '../../core/sesion.service';
-import { FechaPipe, HacePipe } from '../../shared/pipes';
+import { HacePipe } from '../../shared/pipes';
+
+/** La API manda solo mes y año como el día 1 a medianoche UTC: en hora de Colombia caería en el mes anterior. */
+const formatoMesAnio = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 import { Avatar } from '../../shared/ui/avatar';
 import { Bloquear } from '../../shared/ui/bloquear';
 import { Denunciar } from '../../shared/ui/denunciar';
@@ -12,13 +15,14 @@ import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Estrellas } from '../../shared/ui/estrellas';
 import { Icono } from '../../shared/ui/icono';
 import { InsigniaNivel } from '../../shared/ui/insignia-nivel';
+import { MedallasLogros } from '../../shared/ui/medallas-logros';
 import { Paginador } from '../../shared/ui/paginador';
 import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-publicacion';
 import { VisorImagenes } from '../../shared/ui/visor-imagenes';
 import { Volver } from '../../shared/ui/volver';
 
 @Component({
-  imports: [Volver, RouterLink, Avatar, Estrellas, Icono, InsigniaNivel, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, Denunciar, Bloquear, VisorImagenes, FechaPipe, HacePipe],
+  imports: [Volver, RouterLink, Avatar, Estrellas, Icono, InsigniaNivel, MedallasLogros, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, Denunciar, Bloquear, VisorImagenes, HacePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (perfil.error()) {
@@ -57,8 +61,8 @@ import { Volver } from '../../shared/ui/volver';
                 }
               </div>
               <p class="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-tenue sm:justify-start">
-                <span class="flex items-center gap-1"><app-icono nombre="pin" [tamano]="14" />{{ p.localidad }}@if (p.municipio) {<span>, {{ p.municipio }}</span>}</span>
-                <span>Miembro desde {{ p.miembroDesde | fecha }}</span>
+                <span class="flex items-center gap-1"><app-icono nombre="pin" [tamano]="14" /><span>{{ p.localidad }}{{ p.municipio ? ', ' + p.municipio : '' }}</span></span>
+                <span>Miembro desde {{ mesYAnio(p.miembroDesde) }}</span>
               </p>
               @if (p.calificacionPromedio) {
                 <p class="mt-2 flex items-center justify-center gap-2 sm:justify-start">
@@ -118,6 +122,15 @@ import { Volver } from '../../shared/ui/volver';
               }
               @if (deseoDenunciado(); as idDeseo) {
                 <app-denunciar [(abierto)]="denunciaDeseoAbierta" tipo="Deseo" [objetivoId]="idDeseo" />
+              }
+            </section>
+          }
+          @if (perfil.value()?.logros?.length) {
+            <section aria-labelledby="titulo-logros" class="mb-10">
+              <h2 id="titulo-logros" class="text-xl font-bold">Logros</h2>
+              <div class="mt-4"><app-medallas-logros [logros]="perfil.value()?.logros" /></div>
+              @if (esMio()) {
+                <a routerLink="/eco-puntos" fragment="logros" class="enlace mt-3 inline-block text-sm">Ver lo que te falta para los demás</a>
               }
             </section>
           }
@@ -290,6 +303,10 @@ export default class PerfilPublico {
     const total = e.reduce((a, b) => a + b, 0) || 1;
     return [5, 4, 3, 2, 1].map((n) => ({ estrellas: n, total: e[n - 1] ?? 0, porcentaje: Math.round((100 * (e[n - 1] ?? 0)) / total) }));
   });
+
+  protected mesYAnio(fecha: string | null | undefined): string {
+    return fecha ? formatoMesAnio.format(Date.parse(fecha)) : '';
+  }
 
   protected respuesta(horas: number | null | undefined): string {
     if (horas === null || horas === undefined) return '—';
