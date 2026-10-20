@@ -116,6 +116,9 @@ public sealed class PagoService : IPagoService
         Guardas.ExigirCuentaCompleta(u);
         var concepto = (ConceptoPago)(int)r.Concepto;
         if (!Enum.IsDefined(concepto)) throw new ReglaDeNegocioException("Concepto de pago no válido.");
+        // Lanzamiento sin cobro: solo Destacar y Verificar pueden cubrirse con Eco-Puntos; lo demás exige dinero.
+        if (!_opciones.VentasHabilitadas && concepto is not (ConceptoPago.Destacar or ConceptoPago.Verificar))
+            throw new VentasPausadasException();
 
         if (await _pagos.ContarPendientesAsync(actorId, ahora.AddHours(-1)) >= Limites.MaxPagosPendientesPorHora)
             throw new ReglaDeNegocioException("Tienes demasiados pagos pendientes. Complétalos o espera a que expiren.");
@@ -175,6 +178,7 @@ public sealed class PagoService : IPagoService
         // Cubierto del todo con Eco-Puntos: no hay cobro ni factura (no entra dinero); se aplica ya y queda en el historial.
         if (cotizacion is { TotalCop: 0 })
             return await AplicarConPuntosAsync(u, concepto, cotizacion, publicacionId, documento, ahora);
+        if (!_opciones.VentasHabilitadas) throw new VentasPausadasException();
 
         // Factura: la persona elige SIEMPRE antes de pagar (validado antes de reservar puntos o cobrar).
         DatosComprador? aNombre = null;

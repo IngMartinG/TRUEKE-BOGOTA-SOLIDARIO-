@@ -67,6 +67,11 @@ public sealed class PagosOpciones
     [Range(5, 1440)] public int MinutosParaExpirarPendientes { get; set; } = 60;
     [Range(10, 3600)] public int SegundosEntreReconciliaciones { get; set; } = 120;
     public WompiOpciones Wompi { get; set; } = new();
+    /// <summary>
+    /// false = lanzamiento sin cobro: no se inicia ningún pago con dinero (planes, destacar, verificar ni recargas). Lo que
+    /// se cubre al 100 % con Eco-Puntos sigue funcionando, y los pagos ya iniciados terminan su curso (webhook y conciliación).
+    /// </summary>
+    public bool VentasHabilitadas { get; set; } = true;
     public bool EsSimulado => string.Equals(Proveedor, "Simulado", StringComparison.OrdinalIgnoreCase);
     /// <summary>
     /// Los pagos no mueven dinero real: pasarela simulada, ambiente sandbox de Wompi o llaves de prueba. El front lo avisa
@@ -75,6 +80,18 @@ public sealed class PagosOpciones
     public bool EsDePrueba => EsSimulado
         || Wompi.BaseUrl.Contains("sandbox", StringComparison.OrdinalIgnoreCase)
         || Wompi.LlavePublica.StartsWith("pub_test_", StringComparison.Ordinal);
+}
+
+public sealed class DonacionesOpciones
+{
+    public const string Seccion = "Donaciones";
+    /// <summary>
+    /// Enlace externo (https) para aportes voluntarios: link de pago, llave Bre-B, etc. Vacío = el front no muestra
+    /// "Apoya el proyecto". Un aporte no da Eco-Puntos ni beneficios, y no es deducible de impuestos.
+    /// </summary>
+    public string Url { get; set; } = "";
+    public bool UrlValida => Url.Length == 0
+        || (Uri.TryCreate(Url, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps);
 }
 
 public sealed class UrlsOpciones

@@ -20,7 +20,7 @@ public sealed class EntornoNegocio : IDisposable
     public const int SaldoAlRegistrarse = Datos.Common.PoliticaEcoPuntos.PuntosBienvenida + Datos.Common.PoliticaEcoPuntos.PuntosPerfilCompleto;
     private readonly ServiceProvider _sp;
 
-    public EntornoNegocio(IProveedorPagos? proveedor = null, TimeProvider? reloj = null)
+    public EntornoNegocio(IProveedorPagos? proveedor = null, TimeProvider? reloj = null, IReadOnlyDictionary<string, string?>? extra = null)
     {
         var valores = new Dictionary<string, string?>
         {
@@ -39,6 +39,7 @@ public sealed class EntornoNegocio : IDisposable
             ["Correo:Proveedor"] = "Simulado",
             ["Seguridad:ClaveCifrado"] = FabricaApi.ClaveCifradoPruebas,
         };
+        foreach (var (clave, valor) in extra ?? new Dictionary<string, string?>()) valores[clave] = valor;
         var config = new ConfigurationBuilder().AddInMemoryCollection(valores).Build();
         var services = new ServiceCollection();
         services.AddLogging();

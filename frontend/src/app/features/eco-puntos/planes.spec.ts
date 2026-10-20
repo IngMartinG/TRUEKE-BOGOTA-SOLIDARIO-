@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { CuentaApi } from '../../core/api/cuenta.api';
 import { AvisosService } from '../../core/avisos.service';
+import { ConfigService } from '../../core/config.service';
 import { SesionService } from '../../core/sesion.service';
 import Planes from './planes';
 
@@ -15,12 +16,13 @@ const politica = {
   duracionSuscripcionAnualDias: 365,
 };
 
-function montar() {
+function montar(ventas = true) {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
       { provide: CuentaApi, useValue: { politica$: of(politica), resumenPuntos: () => of({}) } },
       { provide: AvisosService, useValue: {} },
+      { provide: ConfigService, useValue: { ventasHabilitadas: () => ventas } },
       { provide: SesionService, useValue: { autenticado: () => false } },
     ],
   });
@@ -57,5 +59,15 @@ describe('Planes: interruptor Mensual / Anual', () => {
     mensual?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowRight', bubbles: true }));
     fixture.detectChanges();
     expect(el.querySelector('[role="radio"][aria-checked="true"]')?.textContent).toContain('Anual');
+  });
+});
+
+describe('Planes durante el lanzamiento sin cobro', () => {
+  it('muestra los planes sin botón de compra y con el aviso', () => {
+    const { el, texto } = montar(false);
+    expect(texto()).toContain('Durante el lanzamiento no cobramos.');
+    expect(texto()).toContain('Disponible después del lanzamiento');
+    const botones = Array.from(el.querySelectorAll('button')).map((b) => b.textContent ?? '');
+    expect(botones.some((t) => t.includes('Elegir Premium'))).toBe(false);
   });
 });

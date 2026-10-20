@@ -30,7 +30,7 @@ const politica = {
   diasCicloDenuncias: 30,
 };
 
-function montar() {
+function montar(ventas = true) {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
@@ -38,7 +38,7 @@ function montar() {
       { provide: CatalogoApi, useValue: {} },
       { provide: SubidasService, useValue: {} },
       { provide: AvisosService, useValue: {} },
-      { provide: ConfigService, useValue: { pagosDePrueba: () => false, subidasHabilitadas: () => false } },
+      { provide: ConfigService, useValue: { pagosDePrueba: () => false, subidasHabilitadas: () => false, ventasHabilitadas: () => ventas } },
       { provide: SesionService, useValue: { autenticado: () => false, usuario: () => null, correoVerificado: () => false } },
     ],
   });
@@ -80,5 +80,20 @@ describe('Cómo ganar puntos', () => {
     expect(seccion).toContain('+15 / +8');
     expect(seccion).toContain('Denuncia confirmada');
     expect(seccion).toContain('hasta 3 cada 30 días');
+  });
+});
+
+describe('Lanzamiento sin cobro', () => {
+  it('oculta la recarga y avisa que no se cobra dinero', () => {
+    const el = montar(false);
+    expect(el.querySelector('#titulo-recarga')).toBeNull();
+    expect(el.querySelector('#lanzamiento')?.textContent).toContain('no cobramos dinero');
+    expect(el.textContent).not.toContain('combínalos con pesos');
+  });
+
+  it('con ventas activas no muestra el aviso de lanzamiento', () => {
+    const el = montar();
+    expect(el.querySelector('#lanzamiento')).toBeNull();
+    expect(el.querySelector('#titulo-recarga')).not.toBeNull();
   });
 });

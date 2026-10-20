@@ -21,6 +21,13 @@ export class ConfigService {
   readonly tamanoMaximo = computed(() => this._config().tamanoMaximoArchivoBytes ?? 5 * 1024 * 1024);
   /** Pagos sin dinero real (sandbox de Wompi o pasarela simulada): la interfaz lo avisa. */
   readonly pagosDePrueba = computed(() => this._config().pagosDePrueba === true);
+  /**
+   * false = lanzamiento sin cobro: no se paga con dinero (planes, recargas). Solo se puede usar lo que cubren los
+   * Eco-Puntos. Si la API no respondió se asume true: el backend decide igual.
+   */
+  readonly ventasHabilitadas = computed(() => this._config().ventasHabilitadas !== false);
+  /** Enlace externo para aportes voluntarios ("Apoya el proyecto"); null = no se muestra. */
+  readonly donacionUrl = computed(() => this._config().donacionUrl ?? null);
   /** Llave pública VAPID para las notificaciones push (null = apagadas en el servidor). */
   readonly pushClavePublica = computed(() => this._config().pushClavePublica ?? null);
   /** Versiones vigentes de la política y los términos, y datos del responsable del tratamiento (null si la API no respondió). */

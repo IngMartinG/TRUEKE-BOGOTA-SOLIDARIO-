@@ -30,6 +30,9 @@ import { Logo } from '../shared/ui/logo';
               @for (e of col.enlaces; track e.ruta) {
                 <li><a [routerLink]="e.ruta" class="inline-block py-1.5 text-bosque-200/80 transition hover:text-white">{{ e.texto }}</a></li>
               }
+              @if ($first && donacionUrl()) {
+                <li><a routerLink="/apoya" class="inline-flex items-center gap-1.5 py-1.5 text-sol-300 transition hover:text-white"><app-icono nombre="heart" [tamano]="14" />Apoya el proyecto</a></li>
+              }
             </ul>
           </nav>
         }
@@ -54,7 +57,10 @@ import { Logo } from '../shared/ui/logo';
   `,
 })
 export class Pie {
-  protected readonly legal = inject(ConfigService).legal;
+  private readonly config = inject(ConfigService);
+  protected readonly legal = this.config.legal;
+  /** "Apoya el proyecto" solo aparece si hay un enlace de aportes configurado. */
+  protected readonly donacionUrl = this.config.donacionUrl;
   protected readonly anio = new Date().getFullYear();
   protected readonly columnas = [
     {

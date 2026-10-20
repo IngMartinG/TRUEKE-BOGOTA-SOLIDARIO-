@@ -5,6 +5,7 @@ import { catchError, firstValueFrom, of } from 'rxjs';
 import { CuentaApi } from '../../core/api/cuenta.api';
 import { AvisosService } from '../../core/avisos.service';
 import { mensajeDe } from '../../core/http/problema';
+import { ConfigService } from '../../core/config.service';
 import { SesionService } from '../../core/sesion.service';
 import { CopPipe, FechaPipe } from '../../shared/pipes';
 import { preguntasDe } from '../ayuda/conocimiento';
@@ -31,6 +32,12 @@ interface Fila {
           Publicar, intercambiar y donar es gratis para siempre. Los planes suman visibilidad y herramientas para quien publica seguido.
           Sin cobros automáticos: pagas solo cuando quieres renovar.
         </p>
+        @if (!ventas()) {
+          <p class="mx-auto mt-5 max-w-2xl rounded-2xl border border-bosque-200 bg-bosque-50 px-4 py-3 text-sm dark:border-bosque-700/50 dark:bg-bosque-900/40" role="note">
+            <strong>Durante el lanzamiento no cobramos.</strong> Los planes de pago se activarán más adelante y te avisaremos antes.
+            Mientras tanto puedes probar Premium gratis.
+          </p>
+        }
         @if (resumen.value()?.enPruebaPremium) {
           <p class="mt-5 inline-flex items-center gap-2 rounded-full bg-sol-100 px-4 py-2 text-sm font-semibold text-bosque-950 dark:bg-sol-500/20 dark:text-sol-100">
             <app-icono nombre="corona" [tamano]="16" />Estás probando Premium gratis hasta el {{ resumen.value()?.planVigenteHasta | fecha }}
@@ -94,9 +101,13 @@ interface Fila {
                   </button>
                   <p class="text-center text-xs text-tenue">Sin tarjeta y sin cobro al terminar. Una vez por cuenta.</p>
                 }
-                <button type="button" class="btn w-full" [class]="t.plan === 'Premium' && !pruebaDisponible() ? 'btn-sol' : 'btn-primario'" (click)="elegir(t.plan)">
-                  {{ planActual() === t.plan && !resumen.value()?.enPruebaPremium ? 'Renovar ' + t.titulo : 'Elegir ' + t.titulo }}
-                </button>
+                @if (ventas()) {
+                  <button type="button" class="btn w-full" [class]="t.plan === 'Premium' && !pruebaDisponible() ? 'btn-sol' : 'btn-primario'" (click)="elegir(t.plan)">
+                    {{ planActual() === t.plan && !resumen.value()?.enPruebaPremium ? 'Renovar ' + t.titulo : 'Elegir ' + t.titulo }}
+                  </button>
+                } @else {
+                  <p class="rounded-xl bg-superficie-2 py-2.5 text-center text-sm font-semibold text-tenue">Disponible después del lanzamiento</p>
+                }
               }
             </div>
           </article>
@@ -164,6 +175,8 @@ export default class Planes {
   private readonly router = inject(Router);
   private readonly avisos = inject(AvisosService);
   protected readonly sesion = inject(SesionService);
+  /** false = lanzamiento sin cobro: los planes se muestran, pero solo se puede tomar la prueba gratis. */
+  protected readonly ventas = inject(ConfigService).ventasHabilitadas;
   protected readonly planes: readonly Plan[] = ['Individual', 'Premium', 'Empresa'];
 
   protected readonly politica = toSignal(this.api.politica$.pipe(catchError(() => of(null))));

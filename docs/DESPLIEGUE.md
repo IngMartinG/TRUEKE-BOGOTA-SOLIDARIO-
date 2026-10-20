@@ -89,6 +89,7 @@ Después de esto, **cada merge a `main` se despliega solo** cuando pasan los che
 | reCAPTCHA v3 | [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin) → nuevo sitio → **v3** → dominios `ingmarting.github.io` y `localhost` | `Captcha__ClaveSitio`, `Captcha__ClaveSecreta` |
 | Correo (Brevo) | Ver §5.1 | `Correo__Brevo__ClaveApi`, `Correo__Remitente` |
 | Wompi (sandbox) | [comercios.wompi.co](https://comercios.wompi.co) → *Desarrolladores* → llaves de **prueba** (`pub_test_…`, `prv_test_…`, integridad, eventos) | `Pagos__Wompi__*` · URL de eventos: `https://<api>/api/v1/pagos/wompi/eventos` |
+| Aportes voluntarios (opcional) | Link de pago de Wompi o enlace de la llave Bre-B/Nequi (https). No da Eco-Puntos y no es deducible de impuestos | `Donaciones__Url` |
 | Google (opcional) | Ver `backend/README.md` §7.1; origen autorizado `https://ingmarting.github.io` | `Google__ClientId` |
 
 Más detalle de cada llave: [`backend/README.md` §7.1](../backend/README.md).

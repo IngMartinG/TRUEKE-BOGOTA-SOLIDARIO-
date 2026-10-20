@@ -222,7 +222,18 @@ interface Servicio {
         Publicar, intercambiar y donar es gratis: el plan Individual permite {{ politica()?.maxPublicacionesIndividual ?? 50 }} publicaciones activas.
         Tus Eco-Puntos valen {{ politica()?.copPorEcoPunto ?? 100 | cop }} cada uno en destacar y verificar: tú eliges cuántos usar al pagar.
       </p>
-      @if (config.pagosDePrueba()) {
+      @if (!ventas()) {
+        <div id="lanzamiento" class="mt-5 scroll-mt-24 rounded-2xl border border-bosque-200 bg-bosque-50 p-4 text-sm dark:border-bosque-700/50 dark:bg-bosque-900/40" role="note">
+          <p class="flex items-center gap-2 font-semibold text-bosque-800 dark:text-bosque-100">
+            <app-icono nombre="regalo" [tamano]="18" />Durante el lanzamiento no cobramos dinero
+          </p>
+          <p class="mt-1 text-tenue">
+            Los pagos en pesos y las recargas están pausados. Puedes destacar o verificar tu cuenta pagando el total con tus Eco-Puntos,
+            y probar Premium gratis. Te avisaremos antes de activar los planes de pago.
+          </p>
+        </div>
+      }
+      @if (config.pagosDePrueba() && ventas()) {
         <div id="pagos-de-prueba" class="mt-5 scroll-mt-24 rounded-2xl border border-cielo-100 bg-cielo-50 p-4 text-sm dark:border-cielo-700/40 dark:bg-cielo-700/20" role="note">
           <p class="flex items-center gap-2 font-semibold text-cielo-700 dark:text-cielo-100">
             <app-icono nombre="info" [tamano]="18" />Pagos en modo de prueba: no se cobra dinero real
@@ -276,6 +287,7 @@ interface Servicio {
           <a routerLink="/planes" class="btn btn-sol mt-6 w-full">{{ planActual() ? 'Ver o renovar mi plan' : 'Ver planes' }}</a>
         </article>
       </div>
+      @if (ventas()) {
       <p class="mt-4 text-xs text-tenue">
         Precios en pesos colombianos{{ politica()?.preciosIncluyenIva ? ', IVA (' + politica()?.ivaPorcentaje + ' %) incluido' : '' }}. Cada pago genera factura electrónica a
         "consumidor final"; si la quieres a tu nombre o al de tu empresa,
@@ -285,9 +297,11 @@ interface Servicio {
         el descuento, la gráfica diaria, el nombre comercial y los destacados gratis. Tienes derecho de retracto dentro de los 5 días hábiles siguientes a la compra
         (<a routerLink="/cuenta/soporte" [queryParams]="{ tipo: 'Retracto' }" class="enlace">solicitarlo</a>).
       </p>
+      }
     </section>
 
-    <!-- Recargar -->
+    <!-- Recargar (pausado durante el lanzamiento sin cobro) -->
+    @if (ventas()) {
     <section class="contenedor mt-16" aria-labelledby="titulo-recarga">
       <div class="tarjeta grid grid-cols-1 gap-6 p-6 sm:p-8 lg:grid-cols-2 lg:items-center">
         <div>
@@ -326,6 +340,7 @@ interface Servicio {
         </form>
       </div>
     </section>
+    }
 
     <!-- Confirmar compra -->
     <app-modal [(abierto)]="compraAbierta" [titulo]="tituloCompra()" subtitulo="Revisa el detalle antes de pagar.">
@@ -391,6 +406,11 @@ interface Servicio {
             }
             <div class="flex justify-between border-t border-borde pt-2 text-base font-bold"><dt>Total</dt><dd>{{ montoRecarga() | cop }}</dd></div>
           </dl>
+        } @else if (esPlan() && !ventas()) {
+          <p class="rounded-2xl bg-bosque-50 p-4 text-sm dark:bg-bosque-900/40">
+            Durante el lanzamiento los planes de pago están pausados. Mientras tanto puedes
+            <a routerLink="/planes" class="enlace">probar Premium gratis</a>.
+          </p>
         } @else if (esPlan()) {
           <dl class="space-y-2 rounded-2xl bg-superficie-2 p-4 text-sm">
             <div class="flex justify-between"><dt>{{ tituloCompra() }} · {{ duracionPlan() }} días</dt><dd>{{ precioPlan() | cop }}</dd></div>
@@ -407,7 +427,7 @@ interface Servicio {
           <fieldset class="space-y-3 rounded-2xl border border-borde p-4">
             <legend class="px-1 text-sm font-semibold">Usar mis Eco-Puntos <span class="font-normal text-tenue">· tienes {{ c.saldoEcoPuntos | numero }} · 1 punto = {{ copPorPunto() | cop }}</span></legend>
             @if (limiteParcial() > 0 || puedeCubrirTodo()) {
-              @if (!cubreTodo() && limiteParcial() > 0) {
+              @if (ventas() && !cubreTodo() && limiteParcial() > 0) {
                 <label for="puntos-usar" class="flex items-center justify-between text-sm">
                   <span>Puntos a usar</span><strong class="tabular-nums">{{ puntosAUsar() | numero }}</strong>
                 </label>
@@ -426,11 +446,17 @@ interface Servicio {
                   <button type="button" class="btn btn-fantasma btn-sm" (click)="puntosAUsar.set(0)">No usar puntos</button>
                 }
               </div>
-              @if (!puedeCubrirTodo()) {
+              @if (!puedeCubrirTodo() && ventas()) {
                 <p class="text-xs text-tenue">Con {{ c.puntosParaCubrirTodo | numero }} Eco-Puntos lo pagas completo. Si usas una parte, quedan al menos {{ politica()?.minimoCobroCop | cop }} por pagar.</p>
               }
-            } @else {
+            } @else if (ventas()) {
               <p class="text-sm text-tenue">Aún no tienes Eco-Puntos suficientes. Los ganas al completar intercambios o con una recarga.</p>
+            }
+            @if (!ventas() && !puedeCubrirTodo()) {
+              <p class="text-sm text-tenue">
+                Durante el lanzamiento solo se paga con Eco-Puntos: necesitas {{ c.puntosParaCubrirTodo | numero }} y tienes {{ c.saldoEcoPuntos | numero }}.
+                Los ganas al completar intercambios.
+              </p>
             }
           </fieldset>
           <dl class="space-y-2 rounded-2xl bg-superficie-2 p-4 text-sm">
@@ -529,6 +555,8 @@ export default class EcoPuntos {
   private readonly injector = inject(Injector);
   protected readonly sesion = inject(SesionService);
   protected readonly config = inject(ConfigService);
+  /** false = lanzamiento sin cobro: sin recargas ni pagos en pesos; Destacar y Verificar solo con Eco-Puntos al 100 %. */
+  protected readonly ventas = this.config.ventasHabilitadas;
 
   /** `?destacar=<id>` llega desde el detalle de una publicación propia. */
   readonly destacar = input<string>();
@@ -582,7 +610,8 @@ export default class EcoPuntos {
 
   protected readonly servicios = computed<Servicio[]>(() => {
     const p = this.politica();
-    const enPuntos = (puntos?: number) => `Págalo con ${puntos ?? 0} Eco-Puntos o combínalos con pesos`;
+    const enPuntos = (puntos?: number) =>
+      this.ventas() ? `Págalo con ${puntos ?? 0} Eco-Puntos o combínalos con pesos` : `Págalo con ${puntos ?? 0} Eco-Puntos`;
     return [
       {
         concepto: 'Destacar',
@@ -761,6 +790,7 @@ export default class EcoPuntos {
     stream: ({ params }) => this.api.cotizacion(params),
   });
   protected readonly compraLista = computed(() => {
+    if (!this.ventas() && !this.cubreTodo()) return false; // lanzamiento sin cobro: solo lo que cubren los Eco-Puntos
     if (!this.facturaLista() && !this.cubreTodo()) return false;
     switch (this.conceptoCompra()) {
       case 'Destacar':
