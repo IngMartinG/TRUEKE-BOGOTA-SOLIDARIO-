@@ -183,7 +183,7 @@ export class TiempoRealService {
     this.notificacionesNoLeidas.update((v) => v + 1);
     this.notificacion$.next(n);
     if (n.tipo && AFECTAN_PERFIL.has(n.tipo)) this.sesion.recargarUsuario();
-    if (n.tipo === 'IntercambioCompletado') this.avisos.puntos('¡Intercambio completado!', n.mensaje);
+    if (n.tipo === 'IntercambioCompletado') this.avisos.puntos('¡Intercambio completado! 🌿', n.mensaje);
     else if (n.tipo === 'InvitacionRecompensada') this.avisos.puntos('¡Invitación recompensada!', n.mensaje);
     else this.avisos.info('Nueva notificación', n.mensaje);
   }
