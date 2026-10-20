@@ -25,6 +25,8 @@ const AFECTAN_PERFIL = new Set([
   'VerificacionAprobada',
   'VerificacionRechazada',
   'CalificacionRecibida',
+  'EcoPuntosGanados',
+  'DenunciaRevisada',
 ]);
 
 /**
@@ -186,6 +188,7 @@ export class TiempoRealService {
     if (n.tipo === 'IntercambioCompletado') this.avisos.puntos('¡Intercambio completado! 🌿', n.mensaje);
     else if (n.tipo === 'InvitacionRecompensada') this.avisos.puntos('¡Invitación recompensada!', n.mensaje);
     else if (n.tipo === 'NivelAlcanzado') this.avisos.puntos('¡Nuevo nivel!', n.mensaje);
+    else if (n.tipo === 'EcoPuntosGanados') this.avisos.puntos('¡Ganaste Eco-Puntos!', n.mensaje);
     else this.avisos.info('Nueva notificación', n.mensaje);
   }
 

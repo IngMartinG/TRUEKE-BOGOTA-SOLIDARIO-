@@ -94,7 +94,8 @@ public class MonetizacionTests
         var vieja = await CrearAsync(e, ana, Pub(titulo: "Vieja"));
         await CrearAsync(e, ana, Pub(titulo: "Nueva"));
 
-        // con 10 puntos de bienvenida no alcanza (cuesta 20)
+        // con 10 puntos no alcanza (cuesta 20): se gasta el bono de perfil completo y queda solo la bienvenida
+        await e.ModificarUsuarioAsync(ana, u => u.DebitarEcoPuntos(PoliticaEcoPuntos.PuntosPerfilCompleto, ConceptoEcoPuntos.Impulsar));
         await Assert.ThrowsAsync<ReglaDeNegocioException>(() => e.EnScopeAsync<IPublicacionService, PublicacionDto>(s => s.ImpulsarAsync(ana, vieja.Id)));
 
         await e.PagarAsync(ana, new IniciarPagoRequest { FacturaANombre = false, AceptoConsumidorFinal = true, Concepto = ConceptoPagoDto.Recarga, MontoRecargaCop = 5_000 }); // +50 puntos
@@ -315,7 +316,7 @@ public class MonetizacionTests
         var super = (await e.RegistrarAsync("super")).Usuario.Id;
         await e.HacerModeradorAsync(super);
         await e.EnScopeAsync<IAdministracionService, PagoAdminDto>(s => s.MarcarReembolsadoAsync(super, referencia, "Reversión"));
-        Assert.Equal(PoliticaEcoPuntos.PuntosBienvenida, (await e.EnScopeAsync<IEcoPuntosService, EcoPuntosResumenDto>(s => s.ResumenAsync(ana))).Saldo);
+        Assert.Equal(EntornoNegocio.SaldoAlRegistrarse, (await e.EnScopeAsync<IEcoPuntosService, EcoPuntosResumenDto>(s => s.ResumenAsync(ana))).Saldo);
     }
 
     // ------------------------------------------------------------------ PQR

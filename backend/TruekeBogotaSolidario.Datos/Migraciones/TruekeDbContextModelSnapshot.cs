@@ -1381,6 +1381,12 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<bool>("BonoBienvenidaOtorgado")
                         .HasColumnType("boolean");
 
+                    b.Property<bool>("BonoPerfilCompletoOtorgado")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("BonoPrimeraPublicacionOtorgado")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("CalificacionesSuma")
                         .HasColumnType("integer");
 

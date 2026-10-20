@@ -70,6 +70,16 @@ public sealed class UsuarioRepository : IUsuarioRepository
                         && (u.RecordatorioVencimientoPara == null || u.RecordatorioVencimientoPara != u.FechaVencimientoSuscripcion))
             .OrderBy(u => u.FechaVencimientoSuscripcion).Take(Math.Clamp(maximo, 1, 500)).ToListAsync();
 
+    public async Task<IReadOnlyList<Guid>> ListarConBonosPendientesAsync(DateTime publicadaHastaUtc, DateTime ahoraUtc, int maximo)
+        => await _db.Usuarios.AsNoTracking()
+            .Where(u => !u.EstaEliminado && !(u.EstaSuspendido && (u.SuspendidoHasta == null || u.SuspendidoHasta > ahoraUtc))
+                        && ((!u.BonoPerfilCompletoOtorgado && u.CorreoVerificado && u.FotoUrl != null
+                             && u.Localidad != Usuario.LocalidadSinEspecificar && u.Localidad != "")
+                            || (!u.BonoPrimeraPublicacionOtorgado && _db.Publicaciones.Any(p => p.PropietarioId == u.Id && !p.EstaOculta
+                                && p.FechaPublicacion <= publicadaHastaUtc
+                                && (p.Estado == EstadoPublicacionEnum.Disponible || p.Estado == EstadoPublicacionEnum.EnNegociacion)))))
+            .OrderBy(u => u.FechaRegistro).Select(u => u.Id).Take(Math.Clamp(maximo, 1, 500)).ToListAsync();
+
     public async Task<(int Premium, int Empresa)> ContarPlanesVigentesAsync(DateTime ahoraUtc)
     {
         var conteos = await _db.Usuarios.AsNoTracking()
@@ -270,6 +280,12 @@ public sealed class PublicacionRepository : IPublicacionRepository
         => await _db.Publicaciones.Where(p => p.PropietarioId == propietarioId
             && (p.Estado == EstadoPublicacionEnum.Disponible || p.Estado == EstadoPublicacionEnum.EnNegociacion)).ToListAsync();
 
+    public Task<Publicacion?> PrimeraActivaDesdeAsync(Guid propietarioId, DateTime publicadaHastaUtc)
+        => _db.Publicaciones.AsNoTracking()
+            .Where(p => p.PropietarioId == propietarioId && !p.EstaOculta && p.FechaPublicacion <= publicadaHastaUtc
+                        && (p.Estado == EstadoPublicacionEnum.Disponible || p.Estado == EstadoPublicacionEnum.EnNegociacion))
+            .OrderBy(p => p.FechaPublicacion).FirstOrDefaultAsync();
+
     public void Agregar(Publicacion publicacion) => _db.Publicaciones.Add(publicacion);
 }
 
@@ -372,6 +388,9 @@ public sealed class MovimientoEcoPuntosRepository : IMovimientoEcoPuntosReposito
     public Task<int> SumarAsync(Guid usuarioId, ConceptoEcoPuntos concepto, Guid referenciaId)
         => _db.MovimientosEcoPuntos.Where(m => m.UsuarioId == usuarioId && m.Concepto == concepto && m.ReferenciaId == referenciaId)
             .SumAsync(m => m.Puntos);
+
+    public Task<int> ContarGanadosDesdeAsync(Guid usuarioId, ConceptoEcoPuntos concepto, DateTime desdeUtc)
+        => _db.MovimientosEcoPuntos.CountAsync(m => m.UsuarioId == usuarioId && m.Concepto == concepto && m.Puntos > 0 && m.FechaUtc >= desdeUtc);
 }
 
 public sealed class TransaccionRepository : ITransaccionRepository

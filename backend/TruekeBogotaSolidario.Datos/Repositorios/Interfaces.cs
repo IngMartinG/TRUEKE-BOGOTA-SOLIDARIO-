@@ -54,6 +54,11 @@ public interface IUsuarioRepository
     Task<IReadOnlyList<Guid>> ListarIdsModeradoresAsync();
     /// <summary>Con tracking: planes pagos que vencen entre las fechas y a los que aún no se les envió recordatorio.</summary>
     Task<IReadOnlyList<Usuario>> ListarPlanesPorVencerAsync(DateTime desdeUtc, DateTime hastaUtc, int maximo);
+    /// <summary>
+    /// Cuentas activas (ni eliminadas ni suspendidas) a las que les falta recibir un bono de una sola vez que ya ganaron: perfil
+    /// completo, o una publicación activa (visible, disponible o en negociación) desde <paramref name="publicadaHastaUtc"/> o antes.
+    /// </summary>
+    Task<IReadOnlyList<Guid>> ListarConBonosPendientesAsync(DateTime publicadaHastaUtc, DateTime ahoraUtc, int maximo);
     Task<(int Premium, int Empresa)> ContarPlanesVigentesAsync(DateTime ahoraUtc);
     Task<IReadOnlyList<Usuario>> ObtenerPorVerificacionAsync(EstadoVerificacion estado);
     Task<int> ContarPorRolAsync(RolUsuarioEnum rol);
@@ -96,6 +101,8 @@ public interface IPublicacionRepository
     Task<IReadOnlyList<Publicacion>> ListarDestacadasAsync(string? departamentoCodigo, string? municipioCodigo, int? categoriaId, int maximo, DateTime ahoraUtc);
     /// <summary>Disponibles o en negociación del usuario, CON tracking (para cancelarlas).</summary>
     Task<IReadOnlyList<Publicacion>> ListarActivasParaActualizarAsync(Guid propietarioId);
+    /// <summary>La publicación más antigua del usuario que sigue activa (visible, disponible o en negociación) desde la fecha o antes.</summary>
+    Task<Publicacion?> PrimeraActivaDesdeAsync(Guid propietarioId, DateTime publicadaHastaUtc);
     void Agregar(Publicacion publicacion);
 }
 
@@ -144,6 +151,8 @@ public interface IMovimientoEcoPuntosRepository
     Task<(IReadOnlyList<MovimientoEcoPuntos> Items, int Total)> ListarPorUsuarioAsync(Guid usuarioId, int pagina, int tamano);
     /// <summary>Puntos movidos por un concepto y una referencia (p. ej. el bono que dio una recarga).</summary>
     Task<int> SumarAsync(Guid usuarioId, ConceptoEcoPuntos concepto, Guid referenciaId);
+    /// <summary>Veces que el usuario ganó puntos por ese concepto desde la fecha (topes por día o por mes).</summary>
+    Task<int> ContarGanadosDesdeAsync(Guid usuarioId, ConceptoEcoPuntos concepto, DateTime desdeUtc);
 }
 
 /// <summary>Totales de intercambios completados para la página de impacto. Nunca incluye datos de personas.</summary>

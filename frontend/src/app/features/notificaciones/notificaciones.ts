@@ -35,6 +35,8 @@ function destino(n: NotificacionDto): { icono: string; color: string; ruta: unkn
   if (t === 'DeseoCoincidencia')
     return { icono: 'mira', color: 'bg-bosque-100 text-bosque-700 dark:bg-bosque-900 dark:text-bosque-200', ruta: n.recursoId ? ['/publicacion', n.recursoId] : ['/lo-que-busco'] };
   if (t === 'NivelAlcanzado') return { icono: 'brote', color: 'bg-bosque-100 text-bosque-700 dark:bg-bosque-900 dark:text-bosque-200', ruta: ['/eco-puntos'] };
+  if (t === 'EcoPuntosGanados')
+    return { icono: 'regalo', color: 'bg-sol-100 text-sol-600 dark:bg-sol-500/20 dark:text-sol-300', ruta: n.recursoId ? ['/publicacion', n.recursoId] : ['/eco-puntos'] };
   if (t === 'InvitacionRecompensada') return { icono: 'regalo', color: 'bg-sol-100 text-sol-600 dark:bg-sol-500/20 dark:text-sol-300', ruta: ['/eco-puntos'] };
   if (t === 'PlanPorVencer') return { icono: 'corona', color: 'bg-sol-100 text-sol-600 dark:bg-sol-500/20 dark:text-sol-300', ruta: ['/eco-puntos'] };
   if (t.startsWith('Pago')) return { icono: 'billetera', color: 'bg-cielo-100 text-cielo-700 dark:bg-cielo-700/30 dark:text-cielo-100', ruta: ['/eco-puntos'] };

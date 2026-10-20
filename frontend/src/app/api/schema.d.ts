@@ -6378,6 +6378,24 @@ export interface components {
             /** Format: int32 */
             diasCicloInvitaciones?: number;
             niveles?: components["schemas"]["NivelPoliticaDto"][] | null;
+            /** Format: int32 */
+            puntosPrimeraPublicacion?: number;
+            /** Format: int32 */
+            horasPrimeraPublicacionActiva?: number;
+            /** Format: int32 */
+            puntosPerfilCompleto?: number;
+            /** Format: int32 */
+            puntosCalificacionCincoEstrellas?: number;
+            /** Format: int32 */
+            puntosCalificacionCuatroEstrellas?: number;
+            /** Format: int32 */
+            diasEntreCalificacionesMismaPareja?: number;
+            /** Format: int32 */
+            puntosDenunciaConfirmada?: number;
+            /** Format: int32 */
+            maxDenunciasRecompensadasPorCiclo?: number;
+            /** Format: int32 */
+            diasCicloDenuncias?: number;
         };
         PqrAdminDto: {
             /** Format: uuid */

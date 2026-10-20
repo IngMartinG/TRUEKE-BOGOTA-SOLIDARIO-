@@ -9130,6 +9130,42 @@
               "$ref": "#/components/schemas/NivelPoliticaDto"
             },
             "nullable": true
+          },
+          "puntosPrimeraPublicacion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "horasPrimeraPublicacionActiva": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "puntosPerfilCompleto": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "puntosCalificacionCincoEstrellas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "puntosCalificacionCuatroEstrellas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "diasEntreCalificacionesMismaPareja": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "puntosDenunciaConfirmada": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "maxDenunciasRecompensadasPorCiclo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "diasCicloDenuncias": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false

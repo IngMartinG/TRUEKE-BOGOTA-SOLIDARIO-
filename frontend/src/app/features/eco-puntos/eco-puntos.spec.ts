@@ -18,6 +18,16 @@ const politica = {
     { montoCop: 20000, puntos: 200, bono: 30 },
     { montoCop: 50000, puntos: 500, bono: 100 },
   ],
+  maxTransaccionesConPuntosPorDia: 5,
+  puntosPrimeraPublicacion: 20,
+  horasPrimeraPublicacionActiva: 24,
+  puntosPerfilCompleto: 30,
+  puntosCalificacionCincoEstrellas: 15,
+  puntosCalificacionCuatroEstrellas: 8,
+  diasEntreCalificacionesMismaPareja: 30,
+  puntosDenunciaConfirmada: 20,
+  maxDenunciasRecompensadasPorCiclo: 3,
+  diasCicloDenuncias: 30,
 };
 
 function montar() {
@@ -55,5 +65,20 @@ describe('Recarga de Eco-Puntos con paquetes', () => {
     const el = montar();
     expect(el.querySelector('#monto')).not.toBeNull();
     expect((el.querySelector('#titulo-recarga')?.closest('section')?.textContent ?? '')).toContain('Sin bono');
+  });
+});
+
+describe('Cómo ganar puntos', () => {
+  it('muestra las demás formas de ganar con los valores de la política en vivo', () => {
+    const el = montar();
+    const seccion = el.querySelector('#titulo-ganar')?.closest('section')?.textContent ?? '';
+    expect(seccion).toContain('Más formas de ganar');
+    expect(seccion).toContain('Perfil completo');
+    expect(seccion).toContain('+30');
+    expect(seccion).toContain('Tu primera publicación');
+    expect(seccion).toContain('24 h');
+    expect(seccion).toContain('+15 / +8');
+    expect(seccion).toContain('Denuncia confirmada');
+    expect(seccion).toContain('hasta 3 cada 30 días');
   });
 });

@@ -1,4 +1,4 @@
-# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-18)
+# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-20)
 
 ## Hecho — backend completo para conectar el front
 **Base:**
@@ -440,6 +440,31 @@ Informe completo, con los hallazgos por severidad, en `docs/AUDITORIA_2026-10-18
 - **Aviso al subir de nivel:** notificación `NivelAlcanzado` cuando un intercambio (o una invitación) sube a alguien de nivel.
 - **Front:** insignia en el perfil público, en "Publicado por" del detalle y en el encabezado del chat (en Semilla solo se ve
   en el perfil). Barra de progreso en `/eco-puntos` con lo que falta para el siguiente nivel, y tabla de niveles.
+
+## Hecho el 2026-10-20 — más formas de ganar Eco-Puntos
+Cuatro conceptos nuevos en `ConceptoEcoPuntos`, con sus puntos en `PoliticaEcoPuntos` (publicados en `GET /eco-puntos/politica`).
+Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (decisión del dueño).
+- **Primera publicación (+20, una sola vez):** cuando una publicación propia lleva 24 h activa (visible, disponible o en
+  negociación; la revisa el mantenimiento cada hora) o cuando una publicación propia se intercambia con puntos, lo que pase
+  primero. Publicar y borrar, una publicación ocultada por moderación o un intercambio sin puntos por anti-farmeo no dan el bono.
+- **Perfil completo (+30, una sola vez):** foto, correo verificado y localidad (las cuentas de Google empiezan con
+  "Sin especificar"). Se evalúa en la entidad al completar el último requisito; quitar y volver a poner la foto no lo repite.
+  El mantenimiento también lo entrega, una vez, a las cuentas que ya estaban completas antes de este cambio.
+- **Calificación recibida (+15 por 5★, +8 por 4★):** solo por intercambios completados, solo si la calificación cuenta (una
+  por pareja cada 30 días), con tope de 5 al día y una sola vez por intercambio.
+- **Denuncia confirmada (+20 para quien denunció):** cuando un moderador la considera procedente; máximo 3 cada 30 días por
+  persona, nunca por una denuncia propia de quien la resuelve. El movimiento solo referencia la denuncia propia y el aviso
+  `DenunciaRevisada` dice que ganó puntos sin revelar nada a la persona denunciada. Si una apelación revierte la medida, los
+  puntos se conservan (quien denunció actuó de buena fe y lo decidió un moderador).
+- **Antiabuso e idempotencia:** marcas `BonoPerfilCompletoOtorgado` y `BonoPrimeraPublicacionOtorgado` en la cuenta (migración
+  `MasFormasDeGanarEcoPuntos`), `SumarAsync` por concepto y referencia, topes con `ContarGanadosDesdeAsync` y `RowVersion` de
+  la cuenta: un doble clic o un reintento no da puntos dos veces.
+- **Avisos:** `AvisosEcoPuntos` (en `Negocio/Comun`) reúne el aviso de nivel alcanzado que antes vivía en `SolicitudService` y
+  el aviso nuevo `EcoPuntosGanados` de los bonos de una sola vez. Lo usan intercambios, calificaciones, denuncias, perfil y
+  el mantenimiento.
+- **Front:** "Más formas de ganar" en `/eco-puntos` (leída en vivo de la política), etiquetas de los conceptos nuevos en el
+  historial y el aviso `EcoPuntosGanados` en notificaciones y en tiempo real.
+- Pruebas: `MasFormasDeGanarTests` (25 casos, cada regla con su antiabuso) y una del front para la sección.
 
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**

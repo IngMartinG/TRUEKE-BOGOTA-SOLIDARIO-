@@ -59,6 +59,14 @@ public enum ConceptoEcoPuntos
     BonoRecarga = 8,
     /// <summary>Invita y ganan los dos: la persona invitada completó su primer intercambio.</summary>
     Invitacion = 9,
+    /// <summary>Una sola vez: su primera publicación siguió activa 24 h o se intercambió (publicar y borrar no da puntos).</summary>
+    PrimeraPublicacion = 10,
+    /// <summary>Una sola vez: foto, correo verificado y localidad.</summary>
+    PerfilCompleto = 11,
+    /// <summary>Calificación de 4★ o 5★ recibida por un intercambio completado (una por pareja cada 30 días).</summary>
+    CalificacionRecibida = 12,
+    /// <summary>Una denuncia propia que un moderador consideró procedente (tope mensual).</summary>
+    DenunciaConfirmada = 13,
 }
 
 /// <summary>Nivel de la persona según los Eco-Puntos ganados participando (ver PoliticaEcoPuntos.Niveles).</summary>

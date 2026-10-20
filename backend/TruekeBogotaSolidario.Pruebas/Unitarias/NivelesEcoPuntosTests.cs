@@ -42,7 +42,11 @@ public class NivelesEcoPuntosTests
     {
         var cuentan = Enum.GetValues<ConceptoEcoPuntos>().Where(PoliticaEcoPuntos.CuentaParaNivel).ToHashSet();
         Assert.Equal(new HashSet<ConceptoEcoPuntos>
-            { ConceptoEcoPuntos.SaldoInicial, ConceptoEcoPuntos.Bienvenida, ConceptoEcoPuntos.Intercambio, ConceptoEcoPuntos.Invitacion }, cuentan);
+            {
+                ConceptoEcoPuntos.SaldoInicial, ConceptoEcoPuntos.Bienvenida, ConceptoEcoPuntos.Intercambio, ConceptoEcoPuntos.Invitacion,
+                ConceptoEcoPuntos.PrimeraPublicacion, ConceptoEcoPuntos.PerfilCompleto, ConceptoEcoPuntos.CalificacionRecibida,
+                ConceptoEcoPuntos.DenunciaConfirmada
+            }, cuentan);
     }
 
     [Fact]
@@ -55,7 +59,7 @@ public class NivelesEcoPuntosTests
 
         var r = await ResumenAsync(e, ana);
         Assert.True(r.Saldo > PoliticaEcoPuntos.Niveles[1].PuntosMinimos); // 500 + bono, alcanzaría Brote si contara
-        Assert.Equal(PoliticaEcoPuntos.PuntosBienvenida, r.Nivel!.PuntosParticipacion);
+        Assert.Equal(EntornoNegocio.SaldoAlRegistrarse, r.Nivel!.PuntosParticipacion);
         Assert.Equal("Semilla", r.Nivel.Nombre);
     }
 
@@ -70,7 +74,7 @@ public class NivelesEcoPuntosTests
         var r = await ResumenAsync(e, ana);
         Assert.Equal(0, r.Saldo);
         Assert.Equal("Brote", r.Nivel!.Nombre);
-        Assert.Equal(310, r.Nivel.PuntosParticipacion);
+        Assert.Equal(EntornoNegocio.SaldoAlRegistrarse + 300, r.Nivel.PuntosParticipacion);
     }
 
     [Fact]
@@ -78,7 +82,7 @@ public class NivelesEcoPuntosTests
     {
         using var e = new EntornoNegocio();
         var ana = (await e.RegistrarAsync("ana")).Usuario.Id;
-        await e.ModificarUsuarioAsync(ana, u => u.AcreditarEcoPuntos(340, ConceptoEcoPuntos.Intercambio)); // 350 en total
+        await e.ModificarUsuarioAsync(ana, u => u.AcreditarEcoPuntos(350 - EntornoNegocio.SaldoAlRegistrarse, ConceptoEcoPuntos.Intercambio)); // 350 en total
 
         var nivel = (await ResumenAsync(e, ana)).Nivel!;
         Assert.Equal(("Brote", 200, "Arbol", 500), (nivel.Nombre, nivel.PuntosMinimosNivel, nivel.SiguienteNivel, nivel.PuntosSiguienteNivel));
@@ -98,7 +102,7 @@ public class NivelesEcoPuntosTests
         using var e = new EntornoNegocio();
         var ana = (await e.RegistrarAsync("ana")).Usuario.Id;
         var beto = (await e.RegistrarAsync("beto")).Usuario.Id;
-        await e.ModificarUsuarioAsync(ana, u => u.AcreditarEcoPuntos(185, ConceptoEcoPuntos.Intercambio)); // 195: le faltan 5 para Brote
+        await e.ModificarUsuarioAsync(ana, u => u.AcreditarEcoPuntos(195 - EntornoNegocio.SaldoAlRegistrarse, ConceptoEcoPuntos.Intercambio)); // 195: le faltan 5 para Brote
 
         await CompletarTruekeAsync(e, ana, beto);
 

@@ -214,6 +214,8 @@ public sealed class AuthService : IAuthService
         ExigirNoSuspendido(usuario, ahora);
         // El segundo factor se exige ANTES de vincular: un código incorrecto no deja la cuenta vinculada a ese Google.
         var conDosFactores = !impostorPosible && await ExigirSegundoFactorAsync(usuario, r.CodigoDosFactores, ahora);
+        var avisosPuntos = new AvisosEcoPuntos(); // verificar el correo o importar la foto puede completar el perfil
+        avisosPuntos.Observar(usuario);
         if (vincular)
         {
             if (impostorPosible)
@@ -234,6 +236,7 @@ public sealed class AuthService : IAuthService
         var sesion = _emisor.Emitir(usuario, conDosFactores: conDosFactores);
         await _uow.GuardarCambiosAsync(); // índices únicos de correo y GoogleSub cubren dos altas simultáneas
         _sesiones.Invalidar(usuario.Id);
+        await avisosPuntos.EnviarAsync(_notificador);
         if (creada) _log.LogInformation("Usuario registrado con Google {UsuarioId}", usuario.Id);
         return sesion with { CuentaCreada = creada };
     }
@@ -303,8 +306,11 @@ public sealed class AuthService : IAuthService
     public async Task<UsuarioDto> ActualizarPerfilAsync(Guid actorId, ActualizarPerfilRequest r)
     {
         var u = await CargarAsync(actorId);
-        u.ActualizarPerfil(r.NombreCompleto, r.Localidad, r.MunicipioCodigo);
+        var avisosPuntos = new AvisosEcoPuntos();
+        avisosPuntos.Observar(u);
+        u.ActualizarPerfil(r.NombreCompleto, r.Localidad, r.MunicipioCodigo); // puede completar el perfil (Eco-Puntos una sola vez)
         await _uow.GuardarCambiosAsync();
+        await avisosPuntos.EnviarAsync(_notificador);
         return Mapeos.AUsuarioDto(u, Ahora);
     }
 

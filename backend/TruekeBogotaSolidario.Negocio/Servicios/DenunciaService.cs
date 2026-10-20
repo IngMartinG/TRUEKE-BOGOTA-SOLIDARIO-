@@ -39,13 +39,16 @@ public sealed class DenunciaService : IDenunciaService
     private readonly TimeProvider _reloj;
     private readonly ICalificacionRepository _calificacionesRepo;
     private readonly IDeseoRepository _deseos;
+    private readonly IMovimientoEcoPuntosRepository _movimientos;
     private readonly ILogger<DenunciaService> _log;
 
     public DenunciaService(IDenunciaRepository denuncias, IUsuarioRepository usuarios, IPublicacionRepository pubs, IComentarioRepository comentarios,
         IConversacionRepository conversaciones, IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, INotificador notificador,
-        TimeProvider reloj, ICalificacionRepository calificacionesRepo, ILogger<DenunciaService> log, IDeseoRepository deseos)
+        TimeProvider reloj, ICalificacionRepository calificacionesRepo, ILogger<DenunciaService> log, IDeseoRepository deseos,
+        IMovimientoEcoPuntosRepository movimientos)
     {
         _deseos = deseos;
+        _movimientos = movimientos;
         _calificacionesRepo = calificacionesRepo;
         _denuncias = denuncias; _usuarios = usuarios; _pubs = pubs; _comentarios = comentarios; _conversaciones = conversaciones;
         _auditoria = auditoria; _uow = uow; _notificador = notificador; _reloj = reloj; _log = log;
@@ -200,6 +203,30 @@ public sealed class DenunciaService : IDenunciaService
         return resultado;
     }
 
+    /// <summary>
+    /// Eco-Puntos para quien denunció algo que resultó procedente. Anti-abuso: nunca a quien resuelve (no se premia su propia
+    /// denuncia), tope de <see cref="PoliticaEcoPuntos.MaxDenunciasRecompensadasPorCiclo"/> por ciclo y una sola vez por denuncia.
+    /// El movimiento solo lleva la denuncia propia como referencia: nada de la persona denunciada. NO guarda.
+    /// </summary>
+    private async Task<HashSet<Guid>> RecompensarDenunciantesAsync(IReadOnlyList<Denuncia> grupo, Guid moderadorId, DateTime ahora,
+        AvisosEcoPuntos avisosPuntos)
+    {
+        var recompensados = new HashSet<Guid>();
+        foreach (var propia in grupo.Where(x => x.DenuncianteId != moderadorId).GroupBy(x => x.DenuncianteId).Select(g => g.First()))
+        {
+            var u = await _usuarios.ObtenerPorIdAsync(propia.DenuncianteId);
+            if (u is null || u.EstaEliminado || u.SuspensionVigente(ahora)) continue;
+            if (await _movimientos.ContarGanadosDesdeAsync(u.Id, ConceptoEcoPuntos.DenunciaConfirmada, ahora.AddDays(-PoliticaEcoPuntos.DiasCicloDenuncias))
+                >= PoliticaEcoPuntos.MaxDenunciasRecompensadasPorCiclo) continue;
+            if (await _movimientos.SumarAsync(u.Id, ConceptoEcoPuntos.DenunciaConfirmada, propia.Id) > 0) continue;
+            avisosPuntos.Observar(u);
+            u.AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosDenunciaConfirmada, ConceptoEcoPuntos.DenunciaConfirmada, propia.Id,
+                "Tu denuncia ayudó a cuidar la comunidad");
+            recompensados.Add(u.Id);
+        }
+        return recompensados;
+    }
+
     public async Task ResolverAsync(Guid moderadorId, Guid denunciaId, AccionDenunciaDto accion, string? nota)
     {
         await ExigirModeradorAsync(moderadorId);
@@ -258,12 +285,18 @@ public sealed class DenunciaService : IDenunciaService
         var grupo = await _denuncias.PendientesDelObjetivoAsync(d.Tipo, d.ObjetivoId);
         foreach (var x in grupo) x.Resolver(moderadorId, accionTomada, nota, ahora, resolucionId, denunciado);
         _auditoria.Agregar(new AuditoriaEvento(moderadorId, $"DENUNCIA_{accion.ToString().ToUpperInvariant()}", d.Tipo.ToString(), d.ObjetivoId, nota, ahora));
-        await _uow.GuardarCambiosAsync();
+        var avisosPuntos = new AvisosEcoPuntos();
+        var recompensados = procedente ? await RecompensarDenunciantesAsync(grupo, moderadorId, ahora, avisosPuntos) : [];
+        await _uow.GuardarCambiosAsync(); // con RowVersion: dos resoluciones a la vez no suman puntos dos veces (la segunda → 409)
         _log.LogInformation("Denuncias sobre {Tipo} {ObjetivoId} resueltas ({Accion}) por {ModeradorId}", d.Tipo, d.ObjetivoId, accion, moderadorId);
 
         foreach (var denunciante in grupo.Select(x => x.DenuncianteId).Distinct())
             await _notificador.NotificarAsync(denunciante, TiposNotificacion.DenunciaRevisada,
-                procedente ? "Revisamos tu denuncia y tomamos medidas. ¡Gracias por cuidar la comunidad!" : "Revisamos tu denuncia y no encontramos una infracción.");
+                !procedente ? "Revisamos tu denuncia y no encontramos una infracción."
+                : recompensados.Contains(denunciante)
+                    ? $"Revisamos tu denuncia y tomamos medidas. Ganaste {PoliticaEcoPuntos.PuntosDenunciaConfirmada} Eco-Puntos. ¡Gracias por cuidar la comunidad!"
+                    : "Revisamos tu denuncia y tomamos medidas. ¡Gracias por cuidar la comunidad!");
+        await avisosPuntos.EnviarAsync(_notificador);
 
         // La otra parte: solo si la denuncia fue procedente (si se descarta no hay nada que defender y avisar solo invitaría a represalias).
         // Nunca se dice quién denunció.
