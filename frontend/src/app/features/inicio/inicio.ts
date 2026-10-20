@@ -1,12 +1,14 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import { iconoCategoria, INFO_MODO, MODOS, type PublicacionCercanaDto } from '../../api/tipos';
 import { CatalogoApi } from '../../core/api/catalogo.api';
 import { CuentaApi } from '../../core/api/cuenta.api';
+import { ConfigService } from '../../core/config.service';
 import { SesionService } from '../../core/sesion.service';
+import { esRegresoWompi } from '../info/wompi-transaccion';
 import { NumeroPipe } from '../../shared/pipes';
 import { Icono } from '../../shared/ui/icono';
 import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-publicacion';
@@ -293,6 +295,27 @@ import { impactoVisible, ResumenImpacto } from '../../shared/ui/resumen-impacto'
       </div>
     </section>
 
+    <!-- ============ APOYA EL PROYECTO ============ -->
+    @if (config.donacionUrl()) {
+      <section class="contenedor mt-20" aria-labelledby="titulo-apoya">
+        <div class="relative isolate overflow-hidden rounded-[2rem] bg-bosque-950 p-8 text-white sm:p-12 dark:ring-1 dark:ring-white/10">
+          <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_85%_50%,#7a2e1d_0%,transparent_50%)] opacity-70"></div>
+          <div class="grid grid-cols-1 items-center gap-8 md:grid-cols-[1fr_auto]">
+            <div>
+              <h2 id="titulo-apoya" class="text-3xl font-extrabold text-white sm:text-4xl">Gratis para todos, sostenido por la comunidad</h2>
+              <p class="mt-3 max-w-xl text-bosque-100/85">
+                Trueke no cobra por publicar, intercambiar ni donar. Con un aporte voluntario, del valor que quieras, ayudas a pagar el servidor y a que siga en línea para tus vecinos.
+              </p>
+              <a routerLink="/apoya" class="btn btn-sol btn-lg mt-6"><app-icono nombre="heart" [tamano]="20" [relleno]="true" />Quiero apoyar</a>
+            </div>
+            <svg viewBox="0 0 24 24" class="hidden w-40 text-[#e25c3c] drop-shadow-[0_18px_40px_rgb(226_92_60/0.45)] md:block lg:w-48" aria-hidden="true">
+              <path fill="currentColor" d="M12 21s-7.5-4.6-9.6-9.3C1 8.4 3.1 4.5 6.8 4.5c2.1 0 3.6 1.1 4.2 2.3h2c.6-1.2 2.1-2.3 4.2-2.3 3.7 0 5.8 3.9 4.4 7.2C19.5 16.4 12 21 12 21Z" />
+            </svg>
+          </div>
+        </div>
+      </section>
+    }
+
     <!-- ============ CTA FINAL ============ -->
     @if (!sesion.autenticado()) {
       <section class="contenedor mt-20 text-center">
@@ -311,7 +334,16 @@ export default class Inicio {
   private readonly cuenta = inject(CuentaApi);
   private readonly router = inject(Router);
   protected readonly sesion = inject(SesionService);
+  protected readonly config = inject(ConfigService);
   protected readonly texto = signal('');
+
+  constructor() {
+    // El enlace de aportes de Wompi regresa al inicio con ?id=<transacción>&env=<test|prod>: se muestra el agradecimiento.
+    const q = inject(ActivatedRoute).snapshot.queryParamMap;
+    const id = q.get('id');
+    const env = q.get('env');
+    if (esRegresoWompi(id, env)) void this.router.navigate(['/apoya/gracias'], { queryParams: { id, env }, replaceUrl: true });
+  }
   protected readonly info = INFO_MODO;
   protected readonly modos = MODOS;
 

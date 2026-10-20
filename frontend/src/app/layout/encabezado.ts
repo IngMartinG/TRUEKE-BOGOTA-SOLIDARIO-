@@ -1,6 +1,7 @@
 import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { ConfigService } from '../core/config.service';
 import { SesionService } from '../core/sesion.service';
 import { TemaService } from '../core/tema.service';
 import { TiempoRealService } from '../core/tiempo-real.service';
@@ -34,6 +35,14 @@ import { Logo } from '../shared/ui/logo';
               >{{ e.texto }}</a
             >
           }
+          @if (config.donacionUrl()) {
+            <a
+              routerLink="/apoya"
+              routerLinkActive="bg-tierra-100 dark:bg-tierra-700/30"
+              class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold text-tierra-600 transition hover:bg-tierra-50 dark:text-tierra-500 dark:hover:bg-tierra-700/20"
+              ><app-icono nombre="heart" [tamano]="16" [relleno]="true" class="origin-center animate-latido [animation-iteration-count:4]" />Apoya</a
+            >
+          }
         </nav>
 
         <app-buscador
@@ -56,6 +65,12 @@ import { Logo } from '../shared/ui/logo';
             <app-icono [nombre]="tema.oscuroActivo() ? 'sol' : 'luna'" />
           </button>
 
+          @if (config.donacionUrl()) {
+            <!-- Celular y tablet: la barra inferior no tiene espacio; el corazón queda a la vista arriba -->
+            <a routerLink="/apoya" class="btn-icono text-tierra-600 lg:hidden dark:text-tierra-500" aria-label="Apoya el proyecto">
+              <app-icono nombre="heart" [relleno]="true" />
+            </a>
+          }
           @if (sesion.autenticado() && !sesion.correoVerificado()) {
             <a routerLink="/verifica-tu-correo" class="btn btn-sol hidden whitespace-nowrap sm:inline-flex">
               <app-icono nombre="correo" [tamano]="18" />Confirma tu correo
@@ -124,6 +139,11 @@ import { Logo } from '../shared/ui/logo';
               <app-icono [nombre]="item.icono" [tamano]="18" class="text-tenue" />{{ item.texto }}
             </a>
           }
+          @if (config.donacionUrl()) {
+            <a cdkMenuItem routerLink="/apoya" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-tierra-600 hover:bg-superficie-2 focus:bg-superficie-2 focus-visible:-outline-offset-2 dark:text-tierra-500">
+              <app-icono nombre="heart" [tamano]="18" [relleno]="true" />Apoya el proyecto
+            </a>
+          }
         } @else {
           <a cdkMenuItem routerLink="/verifica-tu-correo" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-superficie-2 focus:bg-superficie-2 focus-visible:-outline-offset-2">
             <app-icono nombre="correo" [tamano]="18" class="text-sol-600 dark:text-sol-300" />Confirma tu correo para usar tu cuenta
@@ -150,6 +170,7 @@ export class Encabezado {
   protected readonly sesion = inject(SesionService);
   protected readonly tema = inject(TemaService);
   protected readonly tiempoReal = inject(TiempoRealService);
+  protected readonly config = inject(ConfigService);
   private readonly router = inject(Router);
   protected readonly texto = signal('');
 
