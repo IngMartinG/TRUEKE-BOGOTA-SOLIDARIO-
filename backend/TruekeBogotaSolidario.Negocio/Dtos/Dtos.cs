@@ -657,7 +657,13 @@ public sealed record PerfilUsuarioDto(Guid Id, string Nombre, string Localidad, 
     DateTime MiembroDesde, int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas,
     decimal? CalificacionPromedio, int TotalCalificaciones, int PublicacionesActivas, string Municipio, string? NombreComercial,
     string? FotoUrl, SenalesConfianzaDto Confianza, bool NitRegistrado = false, string? Nit = null,
-    IReadOnlyList<DeseoPublicoDto>? Deseos = null, string Nivel = "Semilla");
+    IReadOnlyList<DeseoPublicoDto>? Deseos = null, string Nivel = "Semilla", IReadOnlyList<LogroDto>? Logros = null);
+
+/// <summary>
+/// Una medalla del perfil (solo reconocimiento). Grado = "Bronce", "Plata" u "Oro" en los logros por modo (null en los demás).
+/// Progreso/Meta = avance hacia el logro o hacia su siguiente grado. En el perfil público solo van los obtenidos.
+/// </summary>
+public sealed record LogroDto(string Clave, string Nombre, string Descripcion, string? Grado, bool Obtenido, int Progreso, int Meta);
 
 /// <summary>
 /// Lo que ayuda a confiar en alguien antes de intercambiar. Nunca expone datos privados: solo hechos verificables y agregados.

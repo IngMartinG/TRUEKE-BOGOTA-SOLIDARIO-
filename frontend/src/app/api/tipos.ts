@@ -214,4 +214,17 @@ export const INFO_NIVEL: Record<NivelEcoPuntos, { etiqueta: string; emoji: strin
   Bosque: { etiqueta: 'Bosque', emoji: '🌲', clase: 'insignia-agua' },
   Guardian: { etiqueta: 'Guardián', emoji: '🛡️', clase: 'insignia-sol' },
 };
+/** Ícono de cada logro (las claves vienen del backend; uno desconocido usa la estrella). */
+export const ICONO_LOGRO: Record<string, string> = {
+  'primer-intercambio': 'apreton',
+  truekero: 'repeat',
+  'corazon-solidario': 'heart',
+  'segunda-mano': 'bag',
+  'bien-calificado': 'estrella',
+  cumplidor: 'checkCirculo',
+  'responde-rapido': 'rayo',
+  'un-anio': 'calendario',
+  pionero: 'brote',
+};
+export const iconoLogro = (clave: string | null | undefined) => ICONO_LOGRO[clave ?? ''] ?? 'estrella';
 export const infoNivel = (n: string | null | undefined) => INFO_NIVEL[(n as NivelEcoPuntos) ?? 'Semilla'] ?? INFO_NIVEL.Semilla;

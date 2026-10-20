@@ -402,6 +402,15 @@ public sealed class TransaccionRepository : ITransaccionRepository
         => _db.Transacciones.CountAsync(t => t.FechaUtc >= desdeUtc
             && ((t.OferenteId == usuarioId && t.PuntosOtorgadosOferente) || (t.ReceptorId == usuarioId && t.PuntosOtorgadosReceptor)));
 
+    public async Task<(int Truekes, int Compras, int Donaciones)> ContarConPuntosPorModoAsync(Guid usuarioId)
+    {
+        var porModo = await _db.Transacciones.AsNoTracking()
+            .Where(t => (t.OferenteId == usuarioId && t.PuntosOtorgadosOferente) || (t.ReceptorId == usuarioId && t.PuntosOtorgadosReceptor))
+            .GroupBy(t => t.Modo).Select(g => new { Modo = g.Key, Total = g.Count() }).ToListAsync();
+        int Modo(ModoTransaccion m) => porModo.FirstOrDefault(x => x.Modo == m)?.Total ?? 0;
+        return (Modo(ModoTransaccion.Trueke), Modo(ModoTransaccion.Compra), Modo(ModoTransaccion.Donacion));
+    }
+
     public Task<bool> ExisteConPuntosEntreDesdeAsync(Guid usuarioA, Guid usuarioB, DateTime desdeUtc)
         => _db.Transacciones.AnyAsync(t => t.FechaUtc >= desdeUtc
             && ((t.OferenteId == usuarioA && t.ReceptorId == usuarioB) || (t.OferenteId == usuarioB && t.ReceptorId == usuarioA))

@@ -31,6 +31,8 @@ public interface IPublicacionService
     /// <summary>Perfil público; usuarios eliminados o suspendidos "no existen" (404).</summary>
     /// <summary>Perfil público. Si está en línea solo se informa a quien tiene sesión (no a cualquier visitante anónimo).</summary>
     Task<PerfilUsuarioDto> ObtenerPerfilAsync(Guid? actorId, Guid usuarioId);
+    /// <summary>Todos los logros de quien actúa, con su progreso (los obtenidos y los que le faltan).</summary>
+    Task<IReadOnlyList<LogroDto>> MisLogrosAsync(Guid actorId);
     Task<PaginaDto<PublicacionDto>> ListarDePerfilAsync(Guid? actorId, Guid usuarioId, int pagina, int tamano);
     Task MarcarFavoritaAsync(Guid actorId, Guid publicacionId);
     Task QuitarFavoritaAsync(Guid actorId, Guid publicacionId);
@@ -60,9 +62,10 @@ public sealed class PublicacionService : IPublicacionService
     public PublicacionService(IPublicacionRepository pubs, IUsuarioRepository usuarios, ICategoriaRepository categorias,
         ISolicitudRepository solicitudes, IFavoritoRepository favoritos, IEstadisticaRepository estadisticas, IUnidadDeTrabajo uow,
         IOptions<UrlsOpciones> urls, TimeProvider reloj, INotificador notificador, IAlmacenArchivos almacen, IRegistroVistas vistas,
-        ICalificacionRepository calificaciones, IPresencia presencia, ISolicitudService truekes, ISesionModeracion sesionModeracion)
+        ICalificacionRepository calificaciones, IPresencia presencia, ISolicitudService truekes, ISesionModeracion sesionModeracion,
+        ITransaccionRepository transacciones)
     {
-        _sesionModeracion = sesionModeracion;
+        _sesionModeracion = sesionModeracion; _transacciones = transacciones;
         _pubs = pubs; _usuarios = usuarios; _categorias = categorias; _solicitudes = solicitudes; _favoritos = favoritos;
         _estadisticas = estadisticas; _uow = uow; _urls = urls.Value; _reloj = reloj; _notificador = notificador; _almacen = almacen;
         _vistas = vistas; _calificaciones = calificaciones; _presencia = presencia; _truekes = truekes;
@@ -71,6 +74,7 @@ public sealed class PublicacionService : IPublicacionService
     private readonly ICalificacionRepository _calificaciones;
     private readonly IPresencia _presencia;
     private readonly ISesionModeracion _sesionModeracion;
+    private readonly ITransaccionRepository _transacciones;
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
@@ -404,7 +408,23 @@ public sealed class PublicacionService : IPublicacionService
         var u = await PerfilVisibleAsync(usuarioId);
         var ahora = Ahora;
         var (_, total) = await _pubs.ListarVisiblesDePropietarioAsync(usuarioId, 1, 1, ahora);
-        return Mapeos.APerfilUsuario(u, total, await SenalesConfianzaAsync(u, ahora, verPresencia: actorId.HasValue), ahora);
+        var confianza = await SenalesConfianzaAsync(u, ahora, verPresencia: actorId.HasValue);
+        return Mapeos.APerfilUsuario(u, total, confianza, ahora)
+            with { Logros = Logros.Obtenidos(await DatosLogrosAsync(u, confianza), ahora) };
+    }
+
+    public async Task<IReadOnlyList<LogroDto>> MisLogrosAsync(Guid actorId)
+    {
+        var u = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new NoEncontradoException("Usuario no encontrado.");
+        var ahora = Ahora;
+        return Logros.Evaluar(await DatosLogrosAsync(u, await SenalesConfianzaAsync(u, ahora, verPresencia: false)), ahora);
+    }
+
+    private async Task<DatosLogros> DatosLogrosAsync(Usuario u, SenalesConfianzaDto confianza)
+    {
+        var (truekes, compras, donaciones) = await _transacciones.ContarConPuntosPorModoAsync(u.Id);
+        return new DatosLogros(truekes, compras, donaciones, u.CalificacionPromedio, u.CalificacionesTotal,
+            confianza.TasaConcrecion, confianza.RespuestaHoras, u.FechaRegistro);
     }
 
     /// <summary>Hechos verificables y agregados del último año que ayudan a decidir si intercambiar con alguien.</summary>

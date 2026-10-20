@@ -472,6 +472,24 @@ Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (
   comunidad; `/impacto` sigue mostrando siempre los datos reales. Una sola petición: `impacto$` se comparte.
 - La tarjeta "Este mes" se oculta cuando el mes va en cero (a comienzo de mes restaba más de lo que sumaba).
 
+## Hecho el 2026-10-20 — logros en el perfil
+- **Solo reconocimiento** (decisión del dueño): no dan Eco-Puntos, permisos ni descuentos. Se calculan al vuelo en
+  `Negocio/Comun/Logros.cs` con hechos que el perfil ya mostraba; no hay tabla ni migración.
+- **Catálogo:** Primer intercambio; Truekero, Corazón solidario y Segunda mano con grados bronce, plata y oro (3, 10 y 30);
+  Bien calificado (4,5★ o más con 5 calificaciones); Cumplidor (90 % o más concretado, con 5 intercambios); Responde rápido
+  (mediana de 12 h o menos, con 3 intercambios); Un año en la comunidad; Vecino pionero (registro antes del 2027-01-01, que
+  no se puede ganar después y por eso nunca sale como pendiente).
+- **Antifarmeo:** los intercambios por modo cuentan solo los que dieron Eco-Puntos a esa persona
+  (`ContarConPuntosPorModoAsync`), así que el tope diario y el de la misma pareja también protegen las medallas.
+- **API:** `logros` en `GET /usuarios/{id}/perfil` (solo los obtenidos) y `GET /eco-puntos/logros` (todos con su progreso,
+  con sesión).
+- **Front:** `app-medallas-logros` en el perfil público y "Tus logros" en `/eco-puntos#logros`; el grado se dice en texto
+  ("de plata"), no solo con color, y la barra de avance es un `progressbar` accesible.
+- De paso, en el perfil público: "Miembro desde" muestra mes y año en UTC (antes salía el mes anterior por la zona
+  horaria) y la ubicación ya no deja una coma suelta.
+- Pruebas: `LogrosTests` (catálogo y grados), `LogrosPerfilTests` (perfil público, progreso propio y antifarmeo) y
+  `medallas-logros.spec.ts`.
+
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
 - **Registro de oferentes:** que el abogado revise el texto de la política y los términos (versión `2026-10-19`), si el
@@ -514,4 +532,4 @@ Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (
 
 **Producto (por decidir):**
 - Revisión de la monetización: planes, precios y beneficios.
-- Funciones grandes: logros, fotos en el chat.
+- Función grande: fotos en el chat.
