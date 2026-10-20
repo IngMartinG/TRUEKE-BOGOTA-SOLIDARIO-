@@ -55,6 +55,12 @@ import { Modal } from '../../shared/ui/modal';
           @if (d.vistaPrevia) {
             <blockquote class="mt-3 rounded-xl border-l-4 border-tierra-500 bg-superficie-2 p-3 text-sm break-words whitespace-pre-line">{{ d.vistaPrevia }}</blockquote>
           }
+          @if (d.fotoUrl) {
+            <!-- Foto privada del chat: el enlace firmado vence en una hora y solo llega a moderadores -->
+            <a [href]="d.fotoUrl" target="_blank" rel="noopener noreferrer" class="mt-3 inline-block overflow-hidden rounded-xl border border-borde">
+              <img [src]="d.fotoUrl" alt="Foto denunciada" loading="lazy" class="max-h-56 w-auto" />
+            </a>
+          }
           @if (d.detalles?.length) {
             <details class="mt-3 text-sm">
               <summary class="cursor-pointer font-semibold text-tenue">Comentarios de quienes reportaron ({{ d.detalles!.length }})</summary>

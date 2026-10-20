@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Datos.Repositorios;
+using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Dtos;
 
@@ -45,8 +46,9 @@ public sealed class DenunciaService : IDenunciaService
     public DenunciaService(IDenunciaRepository denuncias, IUsuarioRepository usuarios, IPublicacionRepository pubs, IComentarioRepository comentarios,
         IConversacionRepository conversaciones, IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, INotificador notificador,
         TimeProvider reloj, ICalificacionRepository calificacionesRepo, ILogger<DenunciaService> log, IDeseoRepository deseos,
-        IMovimientoEcoPuntosRepository movimientos)
+        IMovimientoEcoPuntosRepository movimientos, IAlmacenArchivos almacen)
     {
+        _almacen = almacen;
         _deseos = deseos;
         _movimientos = movimientos;
         _calificacionesRepo = calificacionesRepo;
@@ -173,13 +175,17 @@ public sealed class DenunciaService : IDenunciaService
         return actor;
     }
 
+    private readonly IAlmacenArchivos _almacen;
+
     private static string? Recortar(string? texto) => texto is null ? null : texto.Length > 200 ? texto[..200] + "…" : texto;
 
     private async Task<(bool Existe, string? Vista)> VistaPreviaAsync(TipoObjetoDenuncia tipo, Guid id) => tipo switch
     {
         TipoObjetoDenuncia.Publicacion => await _pubs.ObtenerPorIdAsync(id) is { } p ? (true, Recortar($"{p.Titulo}: {p.Descripcion}")) : (false, null),
         TipoObjetoDenuncia.Comentario => await _comentarios.ObtenerPorIdAsync(id) is { } c ? (true, Recortar(c.Texto)) : (false, null),
-        TipoObjetoDenuncia.Mensaje => await _conversaciones.ObtenerMensajeAsync(id) is { } m ? (true, Recortar(m.Texto)) : (false, null),
+        TipoObjetoDenuncia.Mensaje => await _conversaciones.ObtenerMensajeAsync(id) is { } m
+            ? (true, m.FotoUrl is null ? Recortar(m.Texto) : Recortar(m.Texto.Length == 0 ? "📷 Foto" : $"📷 Foto: {m.Texto}"))
+            : (false, null),
         TipoObjetoDenuncia.Usuario => await _usuarios.ObtenerPorIdAsync(id) is { } u ? (true, Mapeos.NombrePublico(u.NombreCompleto)) : (false, null),
         TipoObjetoDenuncia.Calificacion => await _calificacionesRepo.ObtenerAsync(id) is { } k ? (true, Recortar($"{k.Estrellas}★ {k.Comentario}")) : (false, null),
         TipoObjetoDenuncia.Deseo => await _deseos.ObtenerAsync(id) is { } w ? (true, Recortar($"Busca: {w.Texto}")) : (false, null),
@@ -191,16 +197,21 @@ public sealed class DenunciaService : IDenunciaService
         await ExigirModeradorAsync(moderadorId);
         var lista = await _denuncias.ListarPorEstadoAsync((EstadoDenuncia)(int)estado, 500);
         var resultado = new List<DenunciaAgrupadaDto>();
+        var fotos = new Dictionary<Guid, string>(); // denuncia → foto privada del mensaje (el moderador debe poder verla)
         foreach (var g in lista.GroupBy(d => (d.Tipo, d.ObjetivoId)).OrderByDescending(g => g.Count()).ThenBy(g => g.Min(d => d.FechaUtc)).Take(100))
         {
             var (existe, vista) = await VistaPreviaAsync(g.Key.Tipo, g.Key.ObjetivoId);
             var primera = g.OrderBy(d => d.FechaUtc).First();
+            if (g.Key.Tipo == TipoObjetoDenuncia.Mensaje && await _conversaciones.ObtenerMensajeAsync(g.Key.ObjetivoId) is { FotoUrl: { } foto })
+                fotos[primera.Id] = foto;
             resultado.Add(new DenunciaAgrupadaDto(primera.Id, g.Key.Tipo.ToString(), g.Key.ObjetivoId, g.Count(),
                 g.Select(d => d.Motivo.ToString()).Distinct().ToList(),
                 g.Where(d => d.Detalle is not null).Select(d => d.Detalle!).Take(10).ToList(),
                 vista, existe, primera.FechaUtc, g.Max(d => d.FechaUtc), primera.Estado.ToString()));
         }
-        return resultado;
+        if (fotos.Count == 0) return resultado;
+        var firmadas = await _almacen.UrlsLecturaChatAsync(fotos.Values.ToList());
+        return resultado.Select(d => fotos.TryGetValue(d.DenunciaId, out var f) && firmadas.TryGetValue(f, out var url) ? d with { FotoUrl = url } : d).ToList();
     }
 
     /// <summary>

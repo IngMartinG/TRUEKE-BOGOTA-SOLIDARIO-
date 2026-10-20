@@ -711,6 +711,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<DateTime>("FechaUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("FotoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<DateTime?>("LeidoUtc")
                         .HasColumnType("timestamp with time zone");
 

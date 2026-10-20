@@ -5736,6 +5736,7 @@ export interface components {
             /** Format: date-time */
             ultimaUtc?: string;
             estado?: string;
+            fotoUrl?: string | null;
         };
         DenunciaCreadaDto: {
             /** Format: uuid */
@@ -5834,9 +5835,10 @@ export interface components {
             cufe: string;
         };
         EnviarMensajeRequest: {
-            texto: string;
+            texto?: string;
             /** Format: uuid */
             respuestaAId?: string | null;
+            fotoUrl?: string | null;
         };
         EstadisticasPublicacionDto: {
             /** Format: uuid */
@@ -6126,6 +6128,8 @@ export interface components {
             oculto?: boolean;
             respuestaA?: components["schemas"]["MensajeCitadoDto"];
             estado?: components["schemas"]["EstadoMensajeDto"];
+            tieneFoto?: boolean;
+            fotoUrl?: string | null;
         };
         MensajeCitadoDto: {
             /** Format: uuid */
@@ -6684,7 +6688,7 @@ export interface components {
             dias?: number | null;
         };
         /** @enum {string} */
-        TipoArchivoDto: "Imagen" | "Documento";
+        TipoArchivoDto: "Imagen" | "Documento" | "FotoChat";
         /** @enum {string} */
         TipoDenunciaDto: "Publicacion" | "Comentario" | "Mensaje" | "Usuario" | "Calificacion" | "Deseo";
         /** @enum {string} */

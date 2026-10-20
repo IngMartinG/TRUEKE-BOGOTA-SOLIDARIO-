@@ -46,11 +46,16 @@ public class Mensaje
 
     private Mensaje() { Texto = ""; } // EF Core
 
+    public const int LongitudMaximaFoto = 500;
+
     /// <param name="respuestaA">Mensaje citado (como "responder" en WhatsApp). Debe ser de la misma conversación.</param>
-    public Mensaje(Guid conversacionId, Guid autorId, string texto, DateTime ahoraUtc, Mensaje? respuestaA = null)
+    /// <param name="fotoUrl">Foto ya validada y limpia (bucket privado del chat). Con foto, el texto es opcional (pie de foto).</param>
+    public Mensaje(Guid conversacionId, Guid autorId, string texto, DateTime ahoraUtc, Mensaje? respuestaA = null, string? fotoUrl = null)
     {
         texto = (texto ?? "").Trim();
-        if (texto.Length is < 1 or > LongitudMaxima)
+        fotoUrl = string.IsNullOrWhiteSpace(fotoUrl) ? null : fotoUrl.Trim();
+        if (fotoUrl is { Length: > LongitudMaximaFoto }) throw new ReglaDeNegocioException("La dirección de la foto no es válida.");
+        if (texto.Length > LongitudMaxima || (texto.Length == 0 && fotoUrl is null))
             throw new ReglaDeNegocioException($"El mensaje debe tener entre 1 y {LongitudMaxima} caracteres.");
         if (!TextoSeguro.EsSeguro(texto, multilinea: true))
             throw new ReglaDeNegocioException("El mensaje contiene caracteres no permitidos.");
@@ -60,6 +65,7 @@ public class Mensaje
         ConversacionId = conversacionId;
         AutorId = autorId;
         Texto = texto;
+        FotoUrl = fotoUrl;
         FechaUtc = ahoraUtc;
         RespuestaAId = respuestaA?.Id;
         RespuestaA = respuestaA;
@@ -70,6 +76,8 @@ public class Mensaje
     public Conversacion? Conversacion { get; private set; }
     public Guid AutorId { get; private set; }
     public string Texto { get; private set; }
+    /// <summary>Foto privada del chat: solo la ven las dos partes (y un moderador si la denuncian), con una URL firmada temporal.</summary>
+    public string? FotoUrl { get; private set; }
     public Guid? RespuestaAId { get; private set; }
     public Mensaje? RespuestaA { get; private set; }
     public DateTime FechaUtc { get; private set; }

@@ -231,6 +231,7 @@ public class TruekeDbContext : DbContext
             e.HasKey(x => x.Id);
             e.Property(x => x.Id).ValueGeneratedNever();
             e.Property(x => x.Texto).HasMaxLength(Mensaje.LongitudMaxima).IsRequired();
+            e.Property(x => x.FotoUrl).HasMaxLength(Mensaje.LongitudMaximaFoto);
             e.Property(x => x.MotivoOcultamiento).HasMaxLength(300);
             e.HasOne(x => x.Conversacion).WithMany().HasForeignKey(x => x.ConversacionId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.AutorId).OnDelete(DeleteBehavior.Restrict);

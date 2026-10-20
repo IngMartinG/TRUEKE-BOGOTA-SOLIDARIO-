@@ -490,6 +490,24 @@ Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (
 - Pruebas: `LogrosTests` (catálogo y grados), `LogrosPerfilTests` (perfil público, progreso propio y antifarmeo) y
   `medallas-logros.spec.ts`.
 
+## Hecho el 2026-10-20 — fotos en el chat
+- **Privadas:** subida tipo `FotoChat` con la misma URL firmada de siempre; al enviar, el servidor la valida, la re-codifica
+  (sin GPS ni EXIF, como las de las publicaciones) y la copia al bucket **privado** `chat` (`Almacenamiento:BucketChat`,
+  se crea solo). Nunca pasa por el bucket público.
+- **Lectura:** la API entrega a las dos partes una URL firmada de 1 hora, en una sola llamada por página de mensajes
+  (`UrlsLecturaChatAsync`). Un mensaje oculto por moderación no trae foto (`tieneFoto` = false). Si la foto ya no existe
+  (su autor eliminó la cuenta), el front muestra "Foto no disponible".
+- **Mensaje:** columna `Mensajes.FotoUrl` (migración `FotosEnChat`). Con foto, el texto es opcional (pie de foto). La bandeja
+  y las citas la resumen como "📷 Foto".
+- **Antiabuso:** máximo 20 fotos al día por persona (`ChatService.MaxFotosPorDia`), además del tope de mensajes por hora;
+  solo se aceptan fotos propias recién subidas.
+- **Denunciables:** se denuncian como cualquier mensaje; el moderador ve la foto en el panel (URL firmada) y "Ocultar
+  contenido" la quita del chat. Eliminar la cuenta borra también sus fotos del chat.
+- **Front:** botón de cámara en el chat (solo si el almacenamiento está activo), vista previa antes de enviar con el aviso
+  de privacidad, foto en la burbuja y visor a pantalla completa.
+- Pruebas: `FotosChatTests` (privacidad, fotos ajenas, moderación y tope) y una contra Supabase Storage real (bucket
+  privado, limpieza y firma por lotes).
+
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
 - **Registro de oferentes:** que el abogado revise el texto de la política y los términos (versión `2026-10-19`), si el
@@ -526,10 +544,10 @@ Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (
   - confirmar el régimen de IVA (`Facturacion:ResponsableIva`);
   - el tratamiento tributario de las recargas de Eco-Puntos;
   - la resolución de facturación de la DIAN;
-  - el texto final de los términos, la política de datos y la declaración de accesibilidad (versión 2026-10-18);
+  - el texto final de los términos, la política de datos y la declaración de accesibilidad (versión 2026-10-18), y si la
+    política debe nombrar las fotos del chat (privadas, sin metadatos) como dato tratado;
   - si el responsable debe inscribir las bases de datos en el RNBD (hoy no, por ser persona natural).
 - **Cuando haya contratos:** cobro recurrente con fuentes de pago de Wompi y factura electrónica automática con un proveedor.
 
 **Producto (por decidir):**
 - Revisión de la monetización: planes, precios y beneficios.
-- Función grande: fotos en el chat.

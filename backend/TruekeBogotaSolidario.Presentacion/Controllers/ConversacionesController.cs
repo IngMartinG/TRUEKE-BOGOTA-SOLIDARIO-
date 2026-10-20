@@ -28,7 +28,7 @@ public sealed class ConversacionesController : ControllerBase
 
     [HttpPost("{id:guid}/mensajes"), EnableRateLimiting(Politicas.LimiteEscritura)]
     public async Task<ActionResult<MensajeChatDto>> Enviar(Guid id, [FromBody] EnviarMensajeRequest r)
-        => StatusCode(StatusCodes.Status201Created, await _chat.EnviarAsync(User.IdActual(), id, r.Texto, r.RespuestaAId));
+        => StatusCode(StatusCodes.Status201Created, await _chat.EnviarAsync(User.IdActual(), id, r.Texto, r.RespuestaAId, r.FotoUrl));
 
     [HttpPost("{id:guid}/leer")]
     public async Task<IActionResult> Leer(Guid id)

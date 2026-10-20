@@ -22,6 +22,8 @@ public sealed class AlmacenamientoOpciones
     /// archivo, el servidor publica una copia propia (foto limpia o documento copiado) con un nombre nuevo y borra la subida.
     /// </summary>
     public string BucketSubidas { get; set; } = "subidas";
+    /// <summary>Bucket PRIVADO de las fotos del chat (limpias, sin metadatos). Solo se leen con URLs firmadas de corta vida.</summary>
+    public string BucketChat { get; set; } = "chat";
     public bool Configurado => !string.IsNullOrWhiteSpace(Url) && !string.IsNullOrWhiteSpace(LlaveServicio);
 
     /// <summary>https, o http solo hacia la propia máquina (Storage local en Docker para desarrollo y pruebas).</summary>
@@ -57,6 +59,11 @@ public interface IAlmacenArchivos
     Task<string> ValidarArchivoPropioAsync(string url, Guid usuarioId, TipoArchivoDto tipo, CancellationToken ct = default);
     /// <summary>URL de lectura válida 5 minutos (documentos privados para moderadores).</summary>
     Task<string?> UrlLecturaTemporalAsync(string url, CancellationToken ct = default);
+    /// <summary>
+    /// URLs firmadas (vigencia corta) para leer fotos del chat, en una sola llamada. Solo firma archivos del bucket del chat:
+    /// las URLs que no son de ahí, o cuyo archivo ya no existe, no aparecen en el resultado.
+    /// </summary>
+    Task<IReadOnlyDictionary<string, string>> UrlsLecturaChatAsync(IReadOnlyCollection<string> urls, CancellationToken ct = default);
     Task EliminarDelUsuarioAsync(Guid usuarioId, CancellationToken ct = default);
     /// <summary>Borra un documento privado (p. ej. el de identidad una vez resuelta la verificación). Ignora URLs ajenas.</summary>
     Task EliminarDocumentoAsync(string url, CancellationToken ct = default);
@@ -90,6 +97,8 @@ public sealed class AlmacenDeshabilitado : IAlmacenArchivos
         => throw new ReglaDeNegocioException("La subida de archivos no está configurada en este entorno.");
     public Task<string> ValidarArchivoPropioAsync(string url, Guid usuarioId, TipoArchivoDto tipo, CancellationToken ct = default) => Task.FromResult(url);
     public Task<string?> UrlLecturaTemporalAsync(string url, CancellationToken ct = default) => Task.FromResult<string?>(url);
+    public Task<IReadOnlyDictionary<string, string>> UrlsLecturaChatAsync(IReadOnlyCollection<string> urls, CancellationToken ct = default)
+        => Task.FromResult<IReadOnlyDictionary<string, string>>(urls.Distinct(StringComparer.Ordinal).ToDictionary(u => u, u => u, StringComparer.Ordinal));
     public Task EliminarDelUsuarioAsync(Guid usuarioId, CancellationToken ct = default) => Task.CompletedTask;
     public Task EliminarDocumentoAsync(string url, CancellationToken ct = default) => Task.CompletedTask;
     public Task EliminarImagenPropiaAsync(string url, Guid usuarioId, CancellationToken ct = default) => Task.CompletedTask;
