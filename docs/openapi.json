@@ -6566,6 +6566,13 @@
           },
           "legal": {
             "$ref": "#/components/schemas/LegalPublicoDto"
+          },
+          "ventasHabilitadas": {
+            "type": "boolean"
+          },
+          "donacionUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

@@ -43,6 +43,9 @@ services:
         value: https://trueke-api-yqbj.onrender.com
       - key: Pagos__Proveedor
         value: Wompi
+      # Lanzamiento sin cobro: ningún pago con dinero (solo lo que cubren los Eco-Puntos). "true" para empezar a cobrar.
+      - key: Pagos__VentasHabilitadas
+        value: "false"
       - key: Pagos__Wompi__BaseUrl # sandbox mientras Wompi no apruebe el comercio; luego https://production.wompi.co/v1
         value: https://sandbox.wompi.co/v1
       - key: Facturacion__Modo
@@ -101,6 +104,8 @@ services:
       - key: Pagos__Wompi__SecretoIntegridad
         sync: false
       - key: Pagos__Wompi__SecretoEventos
+        sync: false
+      - key: Donaciones__Url # opcional: enlace https de aportes voluntarios ("Apoya el proyecto"); vacío = no se muestra
         sync: false
       - key: Google__ClientId # opcional: botón "Continuar con Google"
         sync: false

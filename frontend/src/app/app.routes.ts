@@ -6,6 +6,7 @@ const paginas: Routes = [
   { path: 'explorar', title: 'Explorar', loadComponent: () => import('./features/catalogo/catalogo') },
   { path: 'como-funciona', title: 'Cómo funciona', loadComponent: () => import('./features/info/como-funciona') },
   { path: 'impacto', title: 'Impacto de la comunidad', loadComponent: () => import('./features/info/impacto') },
+  { path: 'apoya', title: 'Apoya el proyecto', loadComponent: () => import('./features/info/apoya') },
   { path: 'ayuda', title: 'Centro de ayuda', loadComponent: () => import('./features/info/ayuda') },
   { path: 'pqrs', title: 'PQRS: peticiones, quejas y reclamos', loadComponent: () => import('./features/info/pqrs') },
   { path: 'publicacion/:id', title: 'Publicación', loadComponent: () => import('./features/publicacion/detalle') },

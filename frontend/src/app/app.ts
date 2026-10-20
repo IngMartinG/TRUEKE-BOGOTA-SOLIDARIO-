@@ -47,7 +47,7 @@ import { LogroIntercambio } from './shared/ui/logro-intercambio';
         </div>
       </div>
     }
-    @if (config.pagosDePrueba()) {
+    @if (config.pagosDePrueba() && config.ventasHabilitadas()) {
       <div class="border-b border-cielo-100 bg-cielo-50 dark:border-cielo-700/40 dark:bg-cielo-700/20" role="note">
         <div class="contenedor flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2 text-center text-sm">
           <app-icono nombre="info" [tamano]="16" class="text-cielo-600" />

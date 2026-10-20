@@ -75,6 +75,17 @@ public sealed class NombreRealRequeridoException : Exception
         : base("Escribe tu nombre y apellido reales para seguir: así la comunidad sabe con quién intercambia. Hazlo en Mi cuenta → Perfil.") { }
 }
 
+/// <summary>
+/// Lanzamiento sin cobro (HTTP 403, codigo "ventas_pausadas"): los pagos con dinero están apagados por configuración;
+/// solo se puede pagar lo que los Eco-Puntos cubren por completo.
+/// </summary>
+public sealed class VentasPausadasException : Exception
+{
+    public const string Codigo = "ventas_pausadas";
+    public VentasPausadasException()
+        : base("Durante el lanzamiento los pagos con dinero están pausados. Puedes usar tus Eco-Puntos si alcanzan para el total.") { }
+}
+
 /// <param name="Codigo">Identificador estable para que el front reaccione sin depender del texto.</param>
 public sealed record ErrorTraducido(int Estado, string Titulo, bool EsInesperado, string? Codigo = null);
 
@@ -95,6 +106,7 @@ public static class TraductorErrores
         MenorDeEdadDetectadoException e => new(403, e.Message, false, MenorDeEdadDetectadoException.Codigo),
         NombreRealRequeridoException e => new(403, e.Message, false, NombreRealRequeridoException.Codigo),
         DatosOferenteRequeridosException e => new(403, e.Message, false, DatosOferenteRequeridosException.Codigo),
+        VentasPausadasException e => new(403, e.Message, false, VentasPausadasException.Codigo),
         AutenticacionException e => new(401, e.Message, false),
         ConflictoDeConcurrenciaException e => new(409, e.Message, false),
         _ => new(500, "Error interno del servidor.", true)

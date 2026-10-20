@@ -24,6 +24,8 @@ services:
       Database__Inicializacion: Migrate
       Jwt__Key: ${JWT_KEY:?Define JWT_KEY en .env}
       Pagos__Proveedor: ${PAGOS_PROVEEDOR:-Simulado}
+      Pagos__VentasHabilitadas: ${PAGOS_VENTAS_HABILITADAS:-true}
+      Donaciones__Url: ${DONACIONES_URL:-}
       Pagos__Wompi__BaseUrl: ${WOMPI_BASE_URL:-https://sandbox.wompi.co/v1}
       Pagos__Wompi__LlavePublica: ${WOMPI_LLAVE_PUBLICA:-}
       Pagos__Wompi__LlavePrivada: ${WOMPI_LLAVE_PRIVADA:-}

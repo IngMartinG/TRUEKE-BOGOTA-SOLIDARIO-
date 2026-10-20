@@ -5545,6 +5545,8 @@ export interface components {
             imagenesCdnUrl?: string | null;
             pushClavePublica?: string | null;
             legal?: components["schemas"]["LegalPublicoDto"];
+            ventasHabilitadas?: boolean;
+            donacionUrl?: string | null;
         };
         ConfirmarIdentidadRequest: {
             clave?: string | null;
