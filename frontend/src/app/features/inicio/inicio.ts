@@ -10,7 +10,7 @@ import { SesionService } from '../../core/sesion.service';
 import { NumeroPipe } from '../../shared/pipes';
 import { Icono } from '../../shared/ui/icono';
 import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-publicacion';
-import { ResumenImpacto } from '../../shared/ui/resumen-impacto';
+import { impactoVisible, ResumenImpacto } from '../../shared/ui/resumen-impacto';
 
 @Component({
   imports: [RouterLink, FormsModule, Icono, TarjetaPublicacion, TarjetaEsqueleto, NumeroPipe, ResumenImpacto],
@@ -72,6 +72,12 @@ import { ResumenImpacto } from '../../shared/ui/resumen-impacto';
               <div>
                 <dt class="text-xs text-bosque-200/70">Publicaciones activas</dt>
                 <dd class="font-display text-3xl font-extrabold">{{ totalPublicaciones() | numero }}</dd>
+              </div>
+            }
+            @if (impacto(); as i) {
+              <div>
+                <dt class="text-xs text-bosque-200/70">Objetos con nuevo hogar</dt>
+                <dd class="font-display text-3xl font-extrabold">{{ i.objetosConNuevoHogar | numero }}</dd>
               </div>
             }
             <div>
@@ -351,6 +357,7 @@ export default class Inicio {
     return d < 1 ? `${Math.max(100, Math.round((d * 1000) / 100) * 100)} m` : `${d.toLocaleString('es-CO', { maximumFractionDigits: 1 })} km`;
   }
   protected readonly totalPublicaciones = () => this.pagina()?.total ?? 0;
+  protected readonly impacto = impactoVisible(this.catalogo);
   protected readonly categorias = toSignal(this.catalogo.categorias$.pipe(catchError(() => of([]))), { initialValue: [] });
   protected readonly politica = toSignal(this.cuenta.politica$.pipe(catchError(() => of(null))));
   protected readonly ganancias = () =>
