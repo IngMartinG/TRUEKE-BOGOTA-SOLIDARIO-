@@ -18,11 +18,11 @@ public class HistorialEcoPuntosTests : IClassFixture<FabricaApi>
     {
         var c = await Api.RegistrarAsync(_fabrica, "historial");
 
-        // Bienvenida al verificar el correo
+        // Bienvenida al verificar el correo y bono de perfil completo al poner la foto (ya tenía localidad)
         var m = await MovimientosAsync(c);
-        var bienvenida = Assert.Single(m.GetProperty("items").EnumerateArray());
-        Assert.Equal("Bienvenida", bienvenida.GetProperty("concepto").GetString());
-        Assert.Equal(10, bienvenida.GetProperty("puntos").GetInt32());
+        var iniciales = m.GetProperty("items").EnumerateArray().ToList();
+        Assert.Equal(new (string?, int)[] { ("PerfilCompleto", 30), ("Bienvenida", 10) },
+            iniciales.Select(i => (i.GetProperty("concepto").GetString(), i.GetProperty("puntos").GetInt32())));
 
         // Recarga aprobada de un monto sin paquete (sin bono): +120
         var ini = await c.PostAsJsonAsync("/api/v1/pagos/iniciar", new { concepto = "Recarga", montoRecargaCop = 12000, facturaANombre = false, aceptoConsumidorFinal = true });
@@ -36,8 +36,8 @@ public class HistorialEcoPuntosTests : IClassFixture<FabricaApi>
 
         m = await MovimientosAsync(c);
         var items = m.GetProperty("items").EnumerateArray().ToList();
-        Assert.Equal(3, m.GetProperty("total").GetInt32());
-        Assert.Equal(new[] { "Impulsar", "Recarga", "Bienvenida" }, items.Select(i => i.GetProperty("concepto").GetString()));
+        Assert.Equal(4, m.GetProperty("total").GetInt32());
+        Assert.Equal(new[] { "Impulsar", "Recarga", "PerfilCompleto", "Bienvenida" }, items.Select(i => i.GetProperty("concepto").GetString()));
         Assert.Equal(-20, items[0].GetProperty("puntos").GetInt32());
         Assert.Equal(pub, items[0].GetProperty("referenciaId").GetGuid());
         Assert.Equal(120, items[1].GetProperty("puntos").GetInt32());
@@ -52,8 +52,8 @@ public class HistorialEcoPuntosTests : IClassFixture<FabricaApi>
     {
         var a = await Api.RegistrarAsync(_fabrica, "privada");
         var b = await Api.RegistrarAsync(_fabrica, "ajena");
-        Assert.Equal(1, (await MovimientosAsync(a)).GetProperty("total").GetInt32());
-        Assert.Equal(1, (await MovimientosAsync(b)).GetProperty("total").GetInt32()); // cada quien ve solo su bienvenida
+        Assert.Equal(2, (await MovimientosAsync(a)).GetProperty("total").GetInt32());
+        Assert.Equal(2, (await MovimientosAsync(b)).GetProperty("total").GetInt32()); // cada quien ve solo su bienvenida y su perfil completo
         Assert.Equal(HttpStatusCode.Unauthorized, (await _fabrica.CreateClient().GetAsync("/api/v1/eco-puntos/movimientos")).StatusCode);
     }
 }

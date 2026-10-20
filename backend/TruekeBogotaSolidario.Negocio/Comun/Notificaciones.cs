@@ -39,6 +39,8 @@ public static class TiposNotificacion
     public const string InvitacionRecompensada = "InvitacionRecompensada";
     /// <summary>La persona alcanzó un nivel nuevo de Eco-Puntos (Brote, Árbol, Bosque o Guardián).</summary>
     public const string NivelAlcanzado = "NivelAlcanzado";
+    /// <summary>Bono de una sola vez: perfil completo o primera publicación (RecursoId = PublicacionId en la primera publicación).</summary>
+    public const string EcoPuntosGanados = "EcoPuntosGanados";
     public const string IntercambioNoConcretado = "IntercambioNoConcretado";
     public const string CalificacionRecibida = "CalificacionRecibida";
     public const string PagoReembolsado = "PagoReembolsado";

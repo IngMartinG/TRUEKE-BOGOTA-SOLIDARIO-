@@ -61,14 +61,16 @@ public sealed class SolicitudService : ISolicitudService
     private readonly INotificador _notificador;
     private readonly IConversacionRepository _conversaciones;
     private readonly IBloqueoRepository _bloqueos;
+    private readonly IMovimientoEcoPuntosRepository _movimientos;
     private readonly ILogger<SolicitudService> _log;
 
     public SolicitudService(ISolicitudRepository solicitudes, IPublicacionRepository pubs, IUsuarioRepository usuarios,
         ITransaccionRepository transacciones, ICalificacionRepository calificaciones, IUnidadDeTrabajo uow, TimeProvider reloj,
-        INotificador notificador, IConversacionRepository conversaciones, IBloqueoRepository bloqueos, ILogger<SolicitudService> log)
+        INotificador notificador, IConversacionRepository conversaciones, IBloqueoRepository bloqueos, IMovimientoEcoPuntosRepository movimientos,
+        ILogger<SolicitudService> log)
     {
         _solicitudes = solicitudes; _pubs = pubs; _usuarios = usuarios; _transacciones = transacciones; _calificaciones = calificaciones;
-        _uow = uow; _reloj = reloj; _notificador = notificador; _conversaciones = conversaciones; _bloqueos = bloqueos; _log = log;
+        _uow = uow; _reloj = reloj; _notificador = notificador; _conversaciones = conversaciones; _bloqueos = bloqueos; _movimientos = movimientos; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
@@ -351,8 +353,10 @@ public sealed class SolicitudService : ISolicitudService
             puntosReceptor = false;
         }
 
-        // Nivel de cada persona antes de sumar puntos, para avisar a quien suba (quien invitó se agrega al recompensarlo).
-        var nivelesAntes = new Dictionary<Usuario, NivelEcoPuntos> { [oferente] = oferente.Nivel, [receptor] = receptor.Nivel };
+        // Estado de cada persona antes de sumar puntos, para avisar a quien suba de nivel (quien invitó se agrega al recompensarlo).
+        var avisosPuntos = new AvisosEcoPuntos();
+        avisosPuntos.Observar(oferente);
+        avisosPuntos.Observar(receptor);
         s.Completar(ahora);
         pub.ConfirmarIntercambio();
         // Trueke con objeto: el objeto ofrecido también cambió de manos (es un solo intercambio: los puntos se suman una vez).
@@ -360,9 +364,12 @@ public sealed class SolicitudService : ISolicitudService
         if (ofrecida is { Estado: EstadoPublicacionEnum.EnNegociacion }) ofrecida.ConfirmarIntercambio();
         oferente.RegistrarTransaccionCompletada(pub.Modo, puntosOferente, s.Id, pub.Titulo);
         receptor.RegistrarTransaccionCompletada(pub.Modo, puntosReceptor, s.Id, pub.Titulo);
+        // Primera publicación: si una publicación propia cambió de manos (con puntos) antes de cumplir 24 h activa.
+        if (puntosOferente) oferente.RecibirBonoPrimeraPublicacion(pub.Id, pub.Titulo);
+        if (puntosReceptor && ofrecida is not null) receptor.RecibirBonoPrimeraPublicacion(ofrecida.Id, ofrecida.Titulo);
         var invitaciones = new List<(Guid Invitado, Guid? Invitador)>();
         foreach (var (invitado, otro, conPuntos) in new[] { (oferente, receptor, puntosOferente), (receptor, oferente, puntosReceptor) })
-            if (await RecompensarInvitacionAsync(invitado, otro, conPuntos, s.Id, ahora, nivelesAntes) is { } recompensa)
+            if (await RecompensarInvitacionAsync(invitado, otro, conPuntos, s.Id, ahora, avisosPuntos) is { } recompensa)
                 invitaciones.Add(recompensa);
         _transacciones.Agregar(new Transaccion(pub.Id, s.Id, oferente.Id, receptor.Id, pub.Modo, puntosOferente, puntosReceptor, ahora));
         // Los objetos ya se entregaron: sus listas de espera se cierran (en el mismo guardado, todo o nada).
@@ -393,19 +400,8 @@ public sealed class SolicitudService : ISolicitudService
                 await _notificador.NotificarAsync(id, TiposNotificacion.InvitacionRecompensada,
                     $"Una persona que invitaste completó su primer intercambio: ganaste {PoliticaEcoPuntos.PuntosInvitacion} Eco-Puntos.");
         }
-        foreach (var (usuario, antes) in nivelesAntes)
-            if (usuario.Nivel > antes)
-                await _notificador.NotificarAsync(usuario.Id, TiposNotificacion.NivelAlcanzado, MensajeNivel(usuario.Nivel));
+        await avisosPuntos.EnviarAsync(_notificador);
     }
-
-    private static string MensajeNivel(NivelEcoPuntos nivel) => nivel switch
-    {
-        NivelEcoPuntos.Brote => "¡Subiste a Brote 🌿! Tus intercambios ya están dando fruto.",
-        NivelEcoPuntos.Arbol => "¡Subiste a Árbol 🌳! Eres parte de las raíces de la comunidad.",
-        NivelEcoPuntos.Bosque => "¡Subiste a Bosque 🌲! Tu aporte ya se nota en toda la comunidad.",
-        NivelEcoPuntos.Guardian => "¡Llegaste a Guardián 🛡️, el nivel más alto! Gracias por cuidar la economía circular.",
-        _ => "¡Subiste de nivel!"
-    };
 
     /// <summary>
     /// Invita y ganan los dos: el primer intercambio VÁLIDO de la persona invitada da puntos a ambos. No cuenta un intercambio con
@@ -414,7 +410,7 @@ public sealed class SolicitudService : ISolicitudService
     /// </summary>
     /// <returns>A quién avisar, o null si este intercambio no cierra la invitación.</returns>
     private async Task<(Guid Invitado, Guid? Invitador)?> RecompensarInvitacionAsync(Usuario invitado, Usuario otro, bool conPuntos, Guid solicitudId,
-        DateTime ahora, Dictionary<Usuario, NivelEcoPuntos> nivelesAntes)
+        DateTime ahora, AvisosEcoPuntos avisosPuntos)
     {
         if (!invitado.EsperaRecompensaInvitacion || !conPuntos || otro.Id == invitado.InvitadoPorId) return null;
         var invitador = await _usuarios.ObtenerPorIdAsync(invitado.InvitadoPorId!.Value);
@@ -423,8 +419,8 @@ public sealed class SolicitudService : ISolicitudService
                 < PoliticaEcoPuntos.MaxInvitacionesRecompensadasPorCiclo;
         invitado.RecibirRecompensaInvitacion(ahora, solicitudId);
         if (!invitadorGana) return (invitado.Id, null);
-        nivelesAntes.TryAdd(invitador!, invitador!.Nivel);
-        invitador.AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosInvitacion, ConceptoEcoPuntos.Invitacion, null,
+        avisosPuntos.Observar(invitador!);
+        invitador!.AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosInvitacion, ConceptoEcoPuntos.Invitacion, null,
             "Una persona que invitaste completó su primer intercambio");
         return (invitado.Id, invitador.Id);
     }
@@ -480,9 +476,33 @@ public sealed class SolicitudService : ISolicitudService
         var c = new Calificacion(s.Id, actorId, calificadoId, r.Estrellas, r.Comentario, ahora, cuenta);
         _calificaciones.Agregar(c);
         if (cuenta) calificado.RegistrarCalificacion(r.Estrellas);
-        await _uow.GuardarCambiosAsync(); // índice único (solicitud, autor): un doble envío simultáneo → 409
-        await NotificarAsync(calificadoId, TiposNotificacion.CalificacionRecibida, $"Recibiste una calificación de {r.Estrellas} estrella(s).", s.Id);
+        var avisosPuntos = new AvisosEcoPuntos();
+        var puntos = await PuntosPorCalificacionAsync(calificado, cuenta, r.Estrellas, s.Id, ahora);
+        if (puntos > 0)
+        {
+            avisosPuntos.Observar(calificado);
+            calificado.AcreditarEcoPuntos(puntos, ConceptoEcoPuntos.CalificacionRecibida, s.Id, s.Publicacion.Titulo);
+        }
+        // Índice único (solicitud, autor) y RowVersion de quien recibe: un doble envío simultáneo → 409 y los puntos se suman una vez.
+        await _uow.GuardarCambiosAsync();
+        await NotificarAsync(calificadoId, TiposNotificacion.CalificacionRecibida, puntos > 0
+            ? $"Recibiste una calificación de {r.Estrellas} estrellas y ganaste {puntos} Eco-Puntos."
+            : $"Recibiste una calificación de {r.Estrellas} estrella(s).", s.Id);
+        await avisosPuntos.EnviarAsync(_notificador);
         return new CalificacionDto(c.Id, Mapeos.APerfilPublico(autor, ahora), c.Estrellas, c.Comentario, c.FechaUtc);
+    }
+
+    /// <summary>
+    /// Eco-Puntos por una calificación de 4★ o 5★ (la llamada viene de un intercambio completado). Anti-farmeo: solo si la
+    /// calificación cuenta (una por pareja en la ventana), con tope diario y una sola vez por intercambio.
+    /// </summary>
+    private async Task<int> PuntosPorCalificacionAsync(Usuario calificado, bool cuenta, int estrellas, Guid solicitudId, DateTime ahora)
+    {
+        var puntos = PoliticaEcoPuntos.PuntosPorCalificacion(estrellas);
+        if (puntos == 0 || !cuenta || calificado.EstaEliminado || calificado.SuspensionVigente(ahora)) return 0;
+        if (await _movimientos.ContarGanadosDesdeAsync(calificado.Id, ConceptoEcoPuntos.CalificacionRecibida, ahora.AddHours(-24))
+            >= PoliticaEcoPuntos.MaxTransaccionesConPuntosPorDia) return 0;
+        return await _movimientos.SumarAsync(calificado.Id, ConceptoEcoPuntos.CalificacionRecibida, solicitudId) > 0 ? 0 : puntos;
     }
 
     public async Task<PaginaDto<CalificacionDto>> ListarCalificacionesAsync(Guid usuarioId, int pagina, int tamano)

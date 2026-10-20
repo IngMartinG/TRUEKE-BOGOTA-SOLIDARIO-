@@ -113,6 +113,10 @@ public sealed class EcoPuntosService : IEcoPuntosService
             PoliticaEcoPuntos.PaquetesRecarga
                 .Select(p => new PaqueteRecargaDto(p.MontoCop, p.MontoCop / PoliticaEcoPuntos.CopPorEcoPunto, p.Bono)).ToList(),
             PoliticaEcoPuntos.PuntosInvitacion, PoliticaEcoPuntos.MaxInvitacionesRecompensadasPorCiclo, PoliticaEcoPuntos.DiasCicloInvitaciones,
-            PoliticaEcoPuntos.Niveles.Select(n => new NivelPoliticaDto(n.Nivel.ToString(), n.PuntosMinimos)).ToList());
+            PoliticaEcoPuntos.Niveles.Select(n => new NivelPoliticaDto(n.Nivel.ToString(), n.PuntosMinimos)).ToList(),
+            PoliticaEcoPuntos.PuntosPrimeraPublicacion, PoliticaEcoPuntos.HorasPrimeraPublicacionActiva, PoliticaEcoPuntos.PuntosPerfilCompleto,
+            PoliticaEcoPuntos.PuntosCalificacionCincoEstrellas, PoliticaEcoPuntos.PuntosCalificacionCuatroEstrellas,
+            PoliticaEcoPuntos.DiasEntreCalificacionesMismaPareja, PoliticaEcoPuntos.PuntosDenunciaConfirmada,
+            PoliticaEcoPuntos.MaxDenunciasRecompensadasPorCiclo, PoliticaEcoPuntos.DiasCicloDenuncias);
     }
 }

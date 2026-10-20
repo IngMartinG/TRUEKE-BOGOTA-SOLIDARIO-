@@ -113,7 +113,7 @@ interface Servicio {
     <!-- Cómo ganar -->
     <section class="contenedor mt-14" aria-labelledby="titulo-ganar">
       <h2 id="titulo-ganar" class="titulo-seccion">Cómo ganar puntos</h2>
-      <p class="mt-1 text-tenue">Los puntos se acreditan cuando ambas partes confirman la entrega.</p>
+      <p class="mt-1 text-tenue">Los puntos de un intercambio se acreditan cuando ambas partes confirman la entrega.</p>
       <div class="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
         <div class="tarjeta p-5">
           <app-icono nombre="regalo" [tamano]="28" class="text-sol-500" />
@@ -128,6 +128,19 @@ interface Servicio {
           </div>
         }
       </div>
+      @if (otrasFormas().length) {
+        <h3 class="mt-8 font-display text-lg font-bold">Más formas de ganar</h3>
+        <ul class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          @for (f of otrasFormas(); track f.titulo) {
+            <li class="tarjeta p-5">
+              <app-icono [nombre]="f.icono" [tamano]="28" class="text-bosque-600 dark:text-bosque-300" />
+              <p class="mt-3 font-display text-3xl font-extrabold">{{ f.puntos }}</p>
+              <p class="text-sm font-semibold">{{ f.titulo }}</p>
+              <p class="mt-1 text-sm text-tenue">{{ f.detalle }}</p>
+            </li>
+          }
+        </ul>
+      }
       @if (politica(); as p) {
         <p class="mt-4 text-sm text-tenue">
           Ganas puntos en hasta {{ p.maxTransaccionesConPuntosPorDia }} intercambios al día, y con una misma persona una vez cada
@@ -513,6 +526,31 @@ export default class EcoPuntos {
   protected readonly infoNivel = infoNivel;
 
   protected readonly politica = toSignal(this.api.politica$.pipe(catchError(() => of(null))));
+  /** Formas de ganar además de los intercambios, leídas en vivo de la política (si el servidor no las trae, no se muestran). */
+  protected readonly otrasFormas = computed(() => {
+    const p = this.politica();
+    if (!p) return [];
+    const formas = [
+      {
+        icono: 'usuario', puntos: `+${p.puntosPerfilCompleto ?? 0}`, titulo: 'Perfil completo', valor: p.puntosPerfilCompleto,
+        detalle: 'Una vez: con tu foto, tu correo confirmado y tu localidad.',
+      },
+      {
+        icono: 'paquete', puntos: `+${p.puntosPrimeraPublicacion ?? 0}`, titulo: 'Tu primera publicación', valor: p.puntosPrimeraPublicacion,
+        detalle: `Una vez: cuando lleva ${p.horasPrimeraPublicacionActiva ?? 24} h publicada o cuando la intercambias, lo que pase primero.`,
+      },
+      {
+        icono: 'estrella', puntos: `+${p.puntosCalificacionCincoEstrellas ?? 0} / +${p.puntosCalificacionCuatroEstrellas ?? 0}`,
+        titulo: 'Te califican con 5★ / 4★', valor: p.puntosCalificacionCincoEstrellas,
+        detalle: `Por intercambios completados: una por persona cada ${p.diasEntreCalificacionesMismaPareja ?? 30} días y hasta ${p.maxTransaccionesConPuntosPorDia} al día.`,
+      },
+      {
+        icono: 'escudo', puntos: `+${p.puntosDenunciaConfirmada ?? 0}`, titulo: 'Denuncia confirmada', valor: p.puntosDenunciaConfirmada,
+        detalle: `Si un moderador confirma tu denuncia (hasta ${p.maxDenunciasRecompensadasPorCiclo ?? 3} cada ${p.diasCicloDenuncias ?? 30} días). Nadie sabe que fuiste tú.`,
+      },
+    ];
+    return formas.filter((f) => (f.valor ?? 0) > 0);
+  });
   protected readonly resumen = rxResource({
     params: () => (this.sesion.autenticado() ? true : undefined),
     stream: () => this.api.resumenPuntos(),

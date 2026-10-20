@@ -31,6 +31,33 @@ public static class PoliticaEcoPuntos
     /// <summary>Anti-farmeo: una persona solo cuenta una calificación por cada otra persona en esta ventana.</summary>
     public const int DiasEntreCalificacionesMismaPareja = 30;
 
+    /// <summary>
+    /// Una sola vez por persona: cuando una publicación suya lleva <see cref="HorasPrimeraPublicacionActiva"/> h activa o cuando se
+    /// intercambia con puntos (lo que pase primero). Publicar y borrar enseguida no da puntos.
+    /// </summary>
+    public const int PuntosPrimeraPublicacion = 20;
+    public const int HorasPrimeraPublicacionActiva = 24;
+    /// <summary>Una sola vez por persona: foto de perfil, correo verificado y localidad.</summary>
+    public const int PuntosPerfilCompleto = 30;
+    /// <summary>
+    /// Por calificación recibida en un intercambio completado. Solo cuenta una por pareja en <see cref="DiasEntreCalificacionesMismaPareja"/>
+    /// días y como máximo <see cref="MaxTransaccionesConPuntosPorDia"/> en 24 h.
+    /// </summary>
+    public const int PuntosCalificacionCincoEstrellas = 15;
+    public const int PuntosCalificacionCuatroEstrellas = 8;
+    /// <summary>Para quien denunció, cuando un moderador considera procedente la denuncia (nunca se revela quién fue).</summary>
+    public const int PuntosDenunciaConfirmada = 20;
+    /// <summary>Anti-abuso: denuncias recompensadas por persona en cada ventana de <see cref="DiasCicloDenuncias"/> días.</summary>
+    public const int MaxDenunciasRecompensadasPorCiclo = 3;
+    public const int DiasCicloDenuncias = 30;
+
+    public static int PuntosPorCalificacion(int estrellas) => estrellas switch
+    {
+        5 => PuntosCalificacionCincoEstrellas,
+        4 => PuntosCalificacionCuatroEstrellas,
+        _ => 0
+    };
+
     public static int PuntosPorModo(ModoTransaccion modo) => modo switch
     {
         ModoTransaccion.Compra => 5,
@@ -63,7 +90,9 @@ public static class PoliticaEcoPuntos
 
     /// <summary>Conceptos que suben de nivel: lo ganado por participar en la comunidad (nunca lo comprado).</summary>
     public static bool CuentaParaNivel(ConceptoEcoPuntos concepto) => concepto is
-        ConceptoEcoPuntos.SaldoInicial or ConceptoEcoPuntos.Bienvenida or ConceptoEcoPuntos.Intercambio or ConceptoEcoPuntos.Invitacion;
+        ConceptoEcoPuntos.SaldoInicial or ConceptoEcoPuntos.Bienvenida or ConceptoEcoPuntos.Intercambio or ConceptoEcoPuntos.Invitacion
+        or ConceptoEcoPuntos.PrimeraPublicacion or ConceptoEcoPuntos.PerfilCompleto or ConceptoEcoPuntos.CalificacionRecibida
+        or ConceptoEcoPuntos.DenunciaConfirmada;
 
     public static NivelEcoPuntos NivelPara(int puntosParticipacion)
     {

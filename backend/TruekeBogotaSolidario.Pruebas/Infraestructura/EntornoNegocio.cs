@@ -16,6 +16,8 @@ namespace TruekeBogotaSolidario.Pruebas.Infraestructura;
 public sealed class EntornoNegocio : IDisposable
 {
     public const string SecretoEventos = "secreto-eventos-pruebas";
+    /// <summary>Saldo de una cuenta recién creada con <see cref="RegistrarAsync"/>: bienvenida + perfil completo (foto, correo y localidad).</summary>
+    public const int SaldoAlRegistrarse = Datos.Common.PoliticaEcoPuntos.PuntosBienvenida + Datos.Common.PoliticaEcoPuntos.PuntosPerfilCompleto;
     private readonly ServiceProvider _sp;
 
     public EntornoNegocio(IProveedorPagos? proveedor = null, TimeProvider? reloj = null)

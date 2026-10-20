@@ -39,6 +39,10 @@ public class Usuario
 
     /// <summary>Los Eco-Puntos de bienvenida se dan una sola vez, al demostrar que el correo es propio.</summary>
     public bool BonoBienvenidaOtorgado { get; private set; }
+    /// <summary>Los Eco-Puntos de perfil completo (foto, correo verificado y localidad) se dan una sola vez.</summary>
+    public bool BonoPerfilCompletoOtorgado { get; private set; }
+    /// <summary>Los Eco-Puntos de la primera publicación (activa 24 h o intercambiada) se dan una sola vez.</summary>
+    public bool BonoPrimeraPublicacionOtorgado { get; private set; }
 
     // Perfil de empresa (solo se muestra con el plan Empresa vigente)
     public string? NombreComercial { get; private set; }
@@ -191,6 +195,37 @@ public class Usuario
     {
         (NombreCompleto, Localidad) = ValidarPerfil(nombreCompleto, localidad);
         if (municipioCodigo is not null) MunicipioCodigo = Divipola.Exigir(municipioCodigo).Codigo;
+        EvaluarPerfilCompleto();
+    }
+
+    /// <summary>Localidad de las cuentas creadas con Google (y de las eliminadas) hasta que la persona escriba la suya.</summary>
+    public const string LocalidadSinEspecificar = "Sin especificar";
+
+    /// <summary>Foto de perfil, correo verificado y localidad: lo que da los Eco-Puntos de perfil completo.</summary>
+    public bool PerfilCompleto => FotoUrl is not null && CorreoVerificado && !EstaEliminado
+        && !string.IsNullOrWhiteSpace(Localidad) && Localidad != LocalidadSinEspecificar;
+
+    /// <summary>
+    /// Se llama al cambiar cualquiera de los requisitos: al completar el último se acreditan los puntos, una sola vez
+    /// (quitar la foto y volver a ponerla no los repite). Devuelve true si los acreditó ahora.
+    /// </summary>
+    public bool EvaluarPerfilCompleto()
+    {
+        if (BonoPerfilCompletoOtorgado || !PerfilCompleto) return false;
+        BonoPerfilCompletoOtorgado = true;
+        AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosPerfilCompleto, ConceptoEcoPuntos.PerfilCompleto);
+        return true;
+    }
+
+    /// <summary>
+    /// Una publicación propia siguió activa 24 h o se intercambió con puntos: una sola vez por persona. Devuelve true si los acreditó ahora.
+    /// </summary>
+    public bool RecibirBonoPrimeraPublicacion(Guid publicacionId, string titulo)
+    {
+        if (BonoPrimeraPublicacionOtorgado || EstaEliminado) return false;
+        BonoPrimeraPublicacionOtorgado = true;
+        AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosPrimeraPublicacion, ConceptoEcoPuntos.PrimeraPublicacion, publicacionId, titulo);
+        return true;
     }
 
     /// <summary>La URL ya debe venir validada (archivo propio y limpio). Devuelve la foto anterior para borrarla.</summary>
@@ -199,6 +234,7 @@ public class Usuario
         if (string.IsNullOrWhiteSpace(url) || url.Length > 500) throw new ReglaDeNegocioException("La foto no es válida.");
         var anterior = FotoUrl;
         FotoUrl = url;
+        EvaluarPerfilCompleto();
         return anterior;
     }
 
@@ -352,6 +388,7 @@ public class Usuario
             AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosBienvenida, ConceptoEcoPuntos.Bienvenida);
             BonoBienvenidaOtorgado = true;
         }
+        EvaluarPerfilCompleto();
     }
 
     public void AceptarPoliticaDatos(string version, DateTime ahoraUtc)
@@ -456,7 +493,7 @@ public class Usuario
         {
             Id = Guid.NewGuid(),
             NombreCompleto = nombreValido,
-            Localidad = "Sin especificar",
+            Localidad = LocalidadSinEspecificar,
             MunicipioCodigo = Divipola.CodigoBogota,
             Correo = NormalizarCorreo(correo),
             CorreoCanonico = CanonizarCorreo(correo),
@@ -497,7 +534,7 @@ public class Usuario
     {
         if (EstaEliminado) throw new ReglaDeNegocioException("La cuenta ya fue eliminada.");
         NombreCompleto = "Usuario eliminado";
-        Localidad = "Sin especificar";
+        Localidad = LocalidadSinEspecificar;
         Correo = $"eliminado-{Id:N}@trueke.invalid";
         CorreoCanonico = Correo;
         ClaveHash = "";

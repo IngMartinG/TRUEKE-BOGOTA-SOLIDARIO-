@@ -39,6 +39,8 @@ public sealed class MantenimientoHostedService : BackgroundService
             catch (Exception ex) { _log.LogError(ex, "Fallo en el mantenimiento periódico"); }
             try { await CerrarSolicitudesVencidasAsync(ct); }
             catch (Exception ex) when (ex is not OperationCanceledException) { _log.LogError(ex, "Fallo cerrando solicitudes vencidas"); }
+            try { await OtorgarBonosEcoPuntosAsync(ct); }
+            catch (Exception ex) when (ex is not OperationCanceledException) { _log.LogError(ex, "Fallo entregando bonos de Eco-Puntos"); }
             try { await RecordarVencimientosAsync(); }
             catch (Exception ex) { _log.LogError(ex, "Fallo enviando recordatorios de vencimiento de planes"); }
             try
@@ -85,6 +87,28 @@ public sealed class MantenimientoHostedService : BackgroundService
             }
         }
         if (ids.Count > 0) _log.LogInformation("Cierre automático: {Total} solicitudes procesadas", ids.Count);
+        return ids.Count;
+    }
+
+    /// <summary>Bonos de una sola vez ya ganados (primera publicación con 24 h activa, perfil completo). Un scope por persona.</summary>
+    internal async Task<int> OtorgarBonosEcoPuntosAsync(CancellationToken ct)
+    {
+        IReadOnlyList<Guid> ids;
+        using (var scope = _fabrica.CreateScope())
+            ids = await scope.ServiceProvider.GetRequiredService<IBonosEcoPuntosService>().ListarPendientesAsync(200);
+        foreach (var id in ids)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                using var scope = _fabrica.CreateScope(); // un conflicto (409) con otra operación de la persona no frena al resto
+                await scope.ServiceProvider.GetRequiredService<IBonosEcoPuntosService>().OtorgarPendientesAsync(id);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _log.LogWarning(ex, "No se pudieron entregar los bonos de {UsuarioId}; se reintentará", id);
+            }
+        }
         return ids.Count;
     }
 

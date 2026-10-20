@@ -31,14 +31,14 @@ public class AntiFarmeoTests
         using var e = new EntornoNegocio();
         var ana = (await RegistrarAsync(e, "ana")).Usuario.Id;
         var inicial = await ResumenAsync(e, ana);
-        Assert.Equal(PoliticaEcoPuntos.PuntosBienvenida, inicial.Saldo);
+        Assert.Equal(EntornoNegocio.SaldoAlRegistrarse, inicial.Saldo);
 
         // con personas distintas (la misma pareja solo suma una vez: ver la prueba siguiente)
         for (var i = 0; i < PoliticaEcoPuntos.MaxTransaccionesConPuntosPorDia; i++)
             await CompletarTruekeAsync(e, ana, (await RegistrarAsync(e, $"vecino{i}")).Usuario.Id);
 
         var tras5 = await ResumenAsync(e, ana);
-        Assert.Equal(inicial.Saldo + 5 * PuntosTrueke, tras5.Saldo);
+        Assert.Equal(inicial.Saldo + 5 * PuntosTrueke + PoliticaEcoPuntos.PuntosPrimeraPublicacion, tras5.Saldo); // + su primera publicación intercambiada
         Assert.Equal(0, tras5.TransaccionesConPuntosRestantes);
 
         // la 6ª se completa (el intercambio es válido) pero no da puntos ni reputación
@@ -61,7 +61,7 @@ public class AntiFarmeoTests
         await CompletarTruekeAsync(e, ana, beto);
         var anaTras1 = await ResumenAsync(e, ana);
         var betoTras1 = await ResumenAsync(e, beto);
-        Assert.Equal(PoliticaEcoPuntos.PuntosBienvenida + PuntosTrueke, anaTras1.Saldo);
+        Assert.Equal(EntornoNegocio.SaldoAlRegistrarse + PuntosTrueke + PoliticaEcoPuntos.PuntosPrimeraPublicacion, anaTras1.Saldo);
 
         // segundo y tercer intercambio entre los mismos (en cualquier sentido): válidos, pero sin puntos ni reputación
         await CompletarTruekeAsync(e, beto, ana);

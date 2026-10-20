@@ -115,12 +115,14 @@ public sealed class CuentaService : ICuentaService
     private readonly TimeProvider _reloj;
     private readonly IVerificadorCaptcha _captcha;
     private readonly ILogger<CuentaService> _log;
+    private readonly INotificador _notificador;
 
     public CuentaService(IUsuarioRepository usuarios, ITokenUsoUnicoRepository tokens, ISesionRefreshRepository refrescos, IUnidadDeTrabajo uow,
         CorreosCuenta correos, ICorreoSaliente salida, ISesionService sesiones, TimeProvider reloj, IVerificadorCaptcha captcha,
-        ILogger<CuentaService> log)
+        ILogger<CuentaService> log, INotificador notificador)
     {
         _captcha = captcha;
+        _notificador = notificador;
         _usuarios = usuarios; _tokens = tokens; _refrescos = refrescos; _uow = uow; _correos = correos; _salida = salida;
         _sesiones = sesiones; _reloj = reloj; _log = log;
     }
@@ -141,9 +143,12 @@ public sealed class CuentaService : ICuentaService
     public async Task VerificarCorreoAsync(string token)
     {
         var (_, u) = await ConsumirAsync(token, PropositoToken.VerificarCorreo);
-        u.MarcarCorreoVerificado(Ahora);
+        var avisosPuntos = new AvisosEcoPuntos();
+        avisosPuntos.Observar(u);
+        u.MarcarCorreoVerificado(Ahora); // puede completar el perfil (Eco-Puntos una sola vez)
         await _uow.GuardarCambiosAsync();
         _log.LogInformation("Correo verificado {UsuarioId}", u.Id);
+        await avisosPuntos.EnviarAsync(_notificador);
     }
 
     public async Task ReenviarVerificacionAsync(Guid actorId)
@@ -172,6 +177,8 @@ public sealed class CuentaService : ICuentaService
     public async Task RestablecerClaveAsync(string token, string claveNueva)
     {
         var (_, u) = await ConsumirAsync(token, PropositoToken.RestablecerClave);
+        var avisosPuntos = new AvisosEcoPuntos();
+        avisosPuntos.Observar(u);
         u.EstablecerClave(claveNueva);       // sube VersionSeguridad: revoca los tokens de acceso
         u.RegistrarLoginExitoso();           // levanta un bloqueo por intentos fallidos
         u.MarcarCorreoVerificado(Ahora);     // demostró que el correo es suyo
@@ -179,5 +186,6 @@ public sealed class CuentaService : ICuentaService
         await _uow.GuardarCambiosAsync();
         _sesiones.Invalidar(u.Id);
         _log.LogInformation("Contraseña restablecida {UsuarioId}", u.Id);
+        await avisosPuntos.EnviarAsync(_notificador);
     }
 }

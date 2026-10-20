@@ -24,10 +24,12 @@ public sealed class FotoPerfilService : IFotoPerfilService
     private readonly IAlmacenArchivos _almacen;
     private readonly UrlsOpciones _urls;
     private readonly TimeProvider _reloj;
+    private readonly INotificador _notificador;
 
-    public FotoPerfilService(IUsuarioRepository usuarios, IUnidadDeTrabajo uow, IAlmacenArchivos almacen, IOptions<UrlsOpciones> urls, TimeProvider reloj)
+    public FotoPerfilService(IUsuarioRepository usuarios, IUnidadDeTrabajo uow, IAlmacenArchivos almacen, IOptions<UrlsOpciones> urls, TimeProvider reloj,
+        INotificador notificador)
     {
-        _usuarios = usuarios; _uow = uow; _almacen = almacen; _urls = urls.Value; _reloj = reloj;
+        _usuarios = usuarios; _uow = uow; _almacen = almacen; _urls = urls.Value; _reloj = reloj; _notificador = notificador;
     }
 
     private async Task<Datos.Entidades.Usuario> CargarAsync(Guid id)
@@ -43,9 +45,12 @@ public sealed class FotoPerfilService : IFotoPerfilService
             ValidadorUrls.ExigirHostPermitido(url, _urls.HostsPermitidosImagenes, "La foto");
             limpia = url;
         }
-        var anterior = u.CambiarFoto(limpia);
+        var avisosPuntos = new AvisosEcoPuntos();
+        avisosPuntos.Observar(u);
+        var anterior = u.CambiarFoto(limpia); // puede completar el perfil (Eco-Puntos una sola vez)
         await _uow.GuardarCambiosAsync();
         if (anterior is not null && anterior != limpia) await _almacen.EliminarImagenPropiaAsync(anterior, actorId);
+        await avisosPuntos.EnviarAsync(_notificador);
         return Mapeos.AUsuarioDto(u, _reloj.GetUtcNow().UtcDateTime);
     }
 

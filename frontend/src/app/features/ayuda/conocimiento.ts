@@ -188,12 +188,19 @@ export const CONOCIMIENTO: readonly EntradaConocimiento[] = [
       const gana = ganancias.length
         ? ` Por cada intercambio completado ganas ${lista(ganancias.map((g) => `${g.puntos} (${g.modo === 'Compra' ? 'compra' : g.modo === 'Donacion' ? 'donación' : 'trueke'})`))}.`
         : ' Los ganas al completar intercambios (más por donar).';
+      const otras = [
+        p?.puntosPerfilCompleto ? `${p.puntosPerfilCompleto} al completar tu perfil` : '',
+        p?.puntosPrimeraPublicacion ? `${p.puntosPrimeraPublicacion} por tu primera publicación` : '',
+        p?.puntosCalificacionCincoEstrellas ? `${p.puntosCalificacionCincoEstrellas} cuando te califican con 5 estrellas` : '',
+        p?.puntosDenunciaConfirmada ? `${p.puntosDenunciaConfirmada} si un moderador confirma una denuncia tuya` : '',
+      ].filter(Boolean);
+      const extra = otras.length ? ` También ganas ${lista(otras)}.` : '';
       const valor = p?.copPorEcoPunto ? `cada punto vale ${cop(p.copPorEcoPunto)}` : 'cada punto tiene un valor fijo en pesos';
       const paquetes = (p?.paquetesRecarga ?? []).filter((x) => x.bono).map((x) => cop(x.montoCop ?? 0));
       const recarga = p?.recargaMinimaCop
         ? ` También puedes recargar desde ${cop(p.recargaMinimaCop)}${paquetes.length ? `; los paquetes de ${lista(paquetes)} traen Eco-Puntos de bono` : ''}.`
         : ' También puedes recargar.';
-      return `La moneda interna de la comunidad.${gana} Sirven para impulsar publicaciones y para pagar destacar o verificar tu cuenta: ${valor} y tú eliges cuántos usar.${recarga} No se convierten en dinero.`;
+      return `La moneda interna de la comunidad.${gana}${extra} Sirven para impulsar publicaciones y para pagar destacar o verificar tu cuenta: ${valor} y tú eliges cuántos usar.${recarga} No se convierten en dinero.`;
     },
     accion: { texto: 'Ver mis Eco-Puntos', ruta: '/eco-puntos' },
     paginas: ['como-funciona'],

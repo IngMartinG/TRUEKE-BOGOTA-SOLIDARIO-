@@ -21,6 +21,10 @@ const CONCEPTOS: Record<string, { texto: string; icono: string }> = {
   Invitacion: { texto: 'Invitación', icono: 'usuarios' },
   Impulsar: { texto: 'Impulsaste', icono: 'cohete' },
   ReembolsoRecarga: { texto: 'Recarga reembolsada', icono: 'billetera' },
+  PrimeraPublicacion: { texto: 'Tu primera publicación', icono: 'paquete' },
+  PerfilCompleto: { texto: 'Perfil completo', icono: 'usuario' },
+  CalificacionRecibida: { texto: 'Te calificaron muy bien en', icono: 'estrella' },
+  DenunciaConfirmada: { texto: 'Denuncia confirmada', icono: 'escudo' },
 };
 
 /** Historial de Eco-Puntos: de dónde vino cada punto y en qué se usó, con el saldo después de cada movimiento. */

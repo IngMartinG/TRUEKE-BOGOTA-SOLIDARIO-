@@ -137,7 +137,7 @@ public class PlanAnualYBonosTests
         var ana = (await e.RegistrarAsync("ana")).Usuario.Id;
         await e.PagarAsync(ana, Recarga(monto));
 
-        Assert.Equal(PoliticaEcoPuntos.PuntosBienvenida + puntos + bono, (await ResumenAsync(e, ana)).Saldo);
+        Assert.Equal(EntornoNegocio.SaldoAlRegistrarse + puntos + bono, (await ResumenAsync(e, ana)).Saldo);
         var historial = await e.EnScopeAsync<IEcoPuntosService, PaginaDto<MovimientoEcoPuntosDto>>(s => s.MovimientosAsync(ana, 1, 20));
         Assert.Equal(puntos, Assert.Single(historial.Items, m => m.Concepto == "Recarga").Puntos);
         if (bono > 0) Assert.Equal(bono, Assert.Single(historial.Items, m => m.Concepto == "BonoRecarga").Puntos);
@@ -164,7 +164,7 @@ public class PlanAnualYBonosTests
 
         var super = await SuperAsync(e);
         await e.EnScopeAsync<IAdministracionService, PagoAdminDto>(s => s.MarcarReembolsadoAsync(super, referencia, "Reversión"));
-        Assert.Equal(PoliticaEcoPuntos.PuntosBienvenida, (await ResumenAsync(e, ana)).Saldo);
+        Assert.Equal(EntornoNegocio.SaldoAlRegistrarse, (await ResumenAsync(e, ana)).Saldo);
     }
 
     [Fact]

@@ -269,6 +269,26 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
     }
 
     [SkippableFact]
+    public async Task Las_consultas_de_los_bonos_de_Eco_Puntos_se_traducen_a_SQL()
+    {
+        Skip.IfNot(_sql.Disponible, _sql.MotivoNoDisponible);
+        await using var f = new FabricaApiPostgreSql(_sql.NuevaBase());
+        var c = await Api.RegistrarAsync(f, "sqlbonos");
+        var pub = await Api.CrearPublicacionAsync(c);
+        var id = (await c.GetFromJsonAsync<JsonElement>("/api/v1/usuarios/yo")).GetProperty("id").GetGuid();
+
+        using var scope = f.Services.CreateScope();
+        var sp = scope.ServiceProvider;
+        var ahora = DateTime.UtcNow;
+        // con un corte en el futuro, la publicación recién creada ya "cumple" el tiempo activa
+        Assert.Contains(id, await sp.GetRequiredService<IUsuarioRepository>().ListarConBonosPendientesAsync(ahora.AddHours(1), ahora, 50));
+        Assert.Equal(pub, (await sp.GetRequiredService<IPublicacionRepository>().PrimeraActivaDesdeAsync(id, ahora.AddHours(1)))!.Id);
+        Assert.Null(await sp.GetRequiredService<IPublicacionRepository>().PrimeraActivaDesdeAsync(id, ahora.AddHours(-1)));
+        Assert.Equal(1, await sp.GetRequiredService<IMovimientoEcoPuntosRepository>()
+            .ContarGanadosDesdeAsync(id, Datos.Entidades.ConceptoEcoPuntos.PerfilCompleto, ahora.AddHours(-1)));
+    }
+
+    [SkippableFact]
     public async Task El_indice_unico_de_correo_impide_duplicados()
     {
         Skip.IfNot(_sql.Disponible, _sql.MotivoNoDisponible);
