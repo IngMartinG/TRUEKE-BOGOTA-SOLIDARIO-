@@ -7,8 +7,23 @@ import { NumeroPipe } from '../pipes';
 import { Icono } from './icono';
 
 /**
+ * Desde cuántos objetos con nuevo hogar se presume el impacto en el inicio. Por debajo, una cifra pequeña
+ * ("3 objetos") hace ver vacía la comunidad; la página /impacto siempre muestra los datos reales.
+ */
+export const UMBRAL_IMPACTO = 25;
+
+/** El impacto que vale la pena mostrar en el inicio, o null si no llega al umbral o la API falló. */
+export function impactoVisible(api: CatalogoApi) {
+  const impacto = toSignal(api.impacto$.pipe(catchError(() => of(null))));
+  return computed(() => {
+    const d = impacto();
+    return d && (d.objetosConNuevoHogar ?? 0) >= UMBRAL_IMPACTO ? d : null;
+  });
+}
+
+/**
  * Resumen del impacto de la comunidad para el inicio. Solo cifras reales de intercambios completados;
- * no se muestra mientras no haya ninguno (nada de presumir ceros) ni si la API falla.
+ * no se muestra por debajo de UMBRAL_IMPACTO (nada de presumir ceros) ni si la API falla.
  */
 @Component({
   selector: 'app-resumen-impacto',
@@ -29,14 +44,17 @@ import { Icono } from './icono';
               <dt class="text-sm font-semibold text-tenue">{{ d.objetosConNuevoHogar === 1 ? 'Objeto con nuevo hogar' : 'Objetos con nuevo hogar' }}</dt>
               <dd class="mt-1 font-display text-5xl font-extrabold text-bosque-700 tabular-nums sm:text-6xl dark:text-bosque-300">{{ d.objetosConNuevoHogar | numero }}</dd>
             </div>
-            <div class="rounded-2xl bg-superficie p-5 sm:col-span-2">
+            <!-- "Este mes: 0" a comienzo de mes resta más de lo que suma: sin intercambios en el mes, esa tarjeta no sale -->
+            <div class="rounded-2xl bg-superficie p-5" [class.sm:col-span-2]="d.esteMes" [class.sm:col-span-3]="!d.esteMes">
               <dt class="text-sm font-semibold text-tenue">{{ d.personasQueIntercambiaron === 1 ? 'Persona que ha intercambiado' : 'Personas que han intercambiado' }}</dt>
               <dd class="mt-1 font-display text-3xl font-extrabold tabular-nums">{{ d.personasQueIntercambiaron | numero }}</dd>
             </div>
-            <div class="rounded-2xl bg-superficie p-5">
-              <dt class="text-sm font-semibold text-tenue">Este mes</dt>
-              <dd class="mt-1 font-display text-3xl font-extrabold tabular-nums">{{ d.esteMes | numero }}</dd>
-            </div>
+            @if (d.esteMes) {
+              <div class="rounded-2xl bg-superficie p-5">
+                <dt class="text-sm font-semibold text-tenue">Este mes</dt>
+                <dd class="mt-1 font-display text-3xl font-extrabold tabular-nums">{{ d.esteMes | numero }}</dd>
+              </div>
+            }
           </dl>
         </div>
       </section>
@@ -44,9 +62,5 @@ import { Icono } from './icono';
   `,
 })
 export class ResumenImpacto {
-  private readonly impacto = toSignal(inject(CatalogoApi).impacto$.pipe(catchError(() => of(null))));
-  protected readonly datos = computed(() => {
-    const d = this.impacto();
-    return d && (d.objetosConNuevoHogar ?? 0) > 0 ? d : null;
-  });
+  protected readonly datos = impactoVisible(inject(CatalogoApi));
 }
