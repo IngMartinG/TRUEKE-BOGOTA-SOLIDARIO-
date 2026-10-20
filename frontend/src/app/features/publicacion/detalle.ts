@@ -23,6 +23,7 @@ import { Denunciar } from '../../shared/ui/denunciar';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Estrellas } from '../../shared/ui/estrellas';
 import { Icono } from '../../shared/ui/icono';
+import { InsigniaNivel } from '../../shared/ui/insignia-nivel';
 import { VisorImagenes } from '../../shared/ui/visor-imagenes';
 import { ImagenPublicacion } from '../../shared/ui/imagen-publicacion';
 import { InsigniaModo } from '../../shared/ui/insignia-modo';
@@ -37,6 +38,7 @@ import { Volver } from '../../shared/ui/volver';
     RouterLink,
     FormsModule,
     Icono,
+    InsigniaNivel,
     VisorImagenes,
     ImagenPublicacion,
     InsigniaModo,
@@ -242,6 +244,7 @@ import { Volver } from '../../shared/ui/volver';
                   @if (p.propietario?.tipoCuenta && p.propietario.tipoCuenta !== 'Individual') {
                     <span class="insignia-sol">{{ p.propietario.tipoCuenta }}</span>
                   }
+                  <app-insignia-nivel [nivel]="p.propietario?.nivel" />
                 </div>
               </div>
               <app-icono nombre="derecha" class="text-tenue" />

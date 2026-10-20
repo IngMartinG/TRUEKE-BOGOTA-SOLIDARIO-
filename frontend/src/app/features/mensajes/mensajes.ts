@@ -28,13 +28,14 @@ import { Bloquear } from '../../shared/ui/bloquear';
 import { Denunciar } from '../../shared/ui/denunciar';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Icono } from '../../shared/ui/icono';
+import { InsigniaNivel } from '../../shared/ui/insignia-nivel';
 import { PuntosEncuentro } from '../../shared/ui/puntos-encuentro';
 import { desplazamiento } from '../../shared/movimiento';
 
 const TAMANO = 40;
 
 @Component({
-  imports: [FormsModule, RouterLink, Avatar, Icono, EstadoVacio, PuntosEncuentro, Denunciar, Bloquear, HacePipe, HoraPipe, FechaPipe],
+  imports: [FormsModule, RouterLink, Avatar, Icono, InsigniaNivel, EstadoVacio, PuntosEncuentro, Denunciar, Bloquear, HacePipe, HoraPipe, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor py-4 sm:py-8">
@@ -106,7 +107,7 @@ const TAMANO = 40;
                 <a [routerLink]="['/usuarios', c.contraparte?.id]" class="flex min-w-0 flex-1 items-center gap-3">
                   <app-avatar [nombre]="c.contraparte?.nombre" [foto]="c.contraparte?.fotoUrl" [tamano]="40" [verificado]="!!c.contraparte?.verificado" />
                   <div class="min-w-0">
-                    <p class="truncate font-semibold">{{ c.contraparte?.nombre }}</p>
+                    <p class="flex min-w-0 items-center gap-2"><span class="truncate font-semibold">{{ c.contraparte?.nombre }}</span><app-insignia-nivel [nivel]="c.contraparte?.nivel" class="shrink-0" /></p>
                     @if (tiempoReal.escribiendoEn().has(c.id ?? '')) {
                       <p class="truncate text-xs font-semibold text-bosque-600 italic dark:text-bosque-300" aria-live="polite">escribiendo…</p>
                     } @else if (estaEnLinea(c)) {

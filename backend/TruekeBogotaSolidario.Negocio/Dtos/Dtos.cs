@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Negocio.Comun;
@@ -651,13 +651,13 @@ public sealed record ResultadoAutenticacion(SesionDto Sesion, string TokenRefres
 /// <summary>Municipio = "Medellín, Antioquia". NombreComercial solo para cuentas con plan Empresa vigente.</summary>
 public sealed record PerfilPublicoDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
     decimal? CalificacionPromedio, int TotalCalificaciones, string Municipio, string? NombreComercial, string? FotoUrl = null,
-    bool NitRegistrado = false);
+    bool NitRegistrado = false, string Nivel = "Semilla");
 
 public sealed record PerfilUsuarioDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
     DateTime MiembroDesde, int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas,
     decimal? CalificacionPromedio, int TotalCalificaciones, int PublicacionesActivas, string Municipio, string? NombreComercial,
     string? FotoUrl, SenalesConfianzaDto Confianza, bool NitRegistrado = false, string? Nit = null,
-    IReadOnlyList<DeseoPublicoDto>? Deseos = null);
+    IReadOnlyList<DeseoPublicoDto>? Deseos = null, string Nivel = "Semilla");
 
 /// <summary>
 /// Lo que ayuda a confiar en alguien antes de intercambiar. Nunca expone datos privados: solo hechos verificables y agregados.
@@ -833,7 +833,18 @@ public sealed record ImpactoLocalidadDto(string Localidad, string Municipio, int
 
 public sealed record EcoPuntosResumenDto(int Saldo, decimal Reputacion, int TransaccionesConPuntosEnUltimas24h, int TransaccionesConPuntosRestantes,
     string TipoCuenta, DateTime? PlanVigenteHasta, int DestacadosGratisRestantes, int MaxPublicacionesActivas, int DescuentoPlanPorcentaje,
-    DateTime? ProximaRecargaDestacadosUtc = null, bool PruebaPremiumDisponible = false, bool EnPruebaPremium = false);
+    DateTime? ProximaRecargaDestacadosUtc = null, bool PruebaPremiumDisponible = false, bool EnPruebaPremium = false,
+    NivelEcoPuntosDto? Nivel = null);
+
+/// <summary>
+/// Nivel propio (solo lo ve su dueño): PuntosParticipacion es lo ganado participando, sin lo recargado.
+/// SiguienteNivel y PuntosSiguienteNivel son null en el nivel más alto; Progreso va de 0 a 100 dentro del nivel actual.
+/// </summary>
+public sealed record NivelEcoPuntosDto(string Nombre, int PuntosParticipacion, int PuntosMinimosNivel, string? SiguienteNivel,
+    int? PuntosSiguienteNivel, int Progreso);
+
+/// <summary>Un nivel de la tabla pública: desde cuántos puntos ganados participando se alcanza.</summary>
+public sealed record NivelPoliticaDto(string Nombre, int PuntosMinimos);
 
 /// <summary>Los precios incluyen IVA: IvaIncluidoCop es la parte del total que corresponde al impuesto.</summary>
 /// <summary>Precio de Destacar o Verificar. DescuentoPorcentaje es el del plan; los puntos los elige la persona.</summary>
@@ -901,7 +912,8 @@ public sealed record PoliticaEcoPuntosDto(
     int DiasPruebaPremium = 0, int DestacadosGratisPruebaPremium = 0,
     int PrecioPremiumAnualCop = 0, int PrecioEmpresaAnualCop = 0, int DuracionSuscripcionAnualDias = 0,
     IReadOnlyList<PaqueteRecargaDto>? PaquetesRecarga = null,
-    int PuntosInvitacion = 0, int MaxInvitacionesRecompensadasPorCiclo = 0, int DiasCicloInvitaciones = 0);
+    int PuntosInvitacion = 0, int MaxInvitacionesRecompensadasPorCiclo = 0, int DiasCicloInvitaciones = 0,
+    IReadOnlyList<NivelPoliticaDto>? Niveles = null);
 
 /// <summary>Invita y ganan los dos: el código propio y cuántas invitaciones ya dieron puntos (sin datos de las personas invitadas).</summary>
 public sealed record InvitacionDto(string Codigo, int Logradas, int RecompensadasEnCiclo, int MaxPorCiclo, int PuntosPorInvitacion, int DiasCiclo);

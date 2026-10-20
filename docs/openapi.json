@@ -7478,6 +7478,9 @@
           },
           "enPruebaPremium": {
             "type": "boolean"
+          },
+          "nivel": {
+            "$ref": "#/components/schemas/NivelEcoPuntosDto"
           }
         },
         "additionalProperties": false
@@ -8496,6 +8499,49 @@
         },
         "additionalProperties": false
       },
+      "NivelEcoPuntosDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "puntosParticipacion": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "puntosMinimosNivel": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "siguienteNivel": {
+            "type": "string",
+            "nullable": true
+          },
+          "puntosSiguienteNivel": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "progreso": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NivelPoliticaDto": {
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "type": "string"
+          },
+          "puntosMinimos": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "NoConcretadaRequest": {
         "required": [
           "motivo"
@@ -8818,6 +8864,9 @@
           },
           "nitRegistrado": {
             "type": "boolean"
+          },
+          "nivel": {
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -8901,6 +8950,9 @@
               "$ref": "#/components/schemas/DeseoPublicoDto"
             },
             "nullable": true
+          },
+          "nivel": {
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -9071,6 +9123,13 @@
           "diasCicloInvitaciones": {
             "type": "integer",
             "format": "int32"
+          },
+          "niveles": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NivelPoliticaDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false

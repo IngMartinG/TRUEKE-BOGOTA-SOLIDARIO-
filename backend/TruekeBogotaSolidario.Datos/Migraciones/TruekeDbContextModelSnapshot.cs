@@ -1581,6 +1581,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<DateTime?>("PruebaPremiumUsadaUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("PuntosParticipacion")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime?>("RecompensaInvitacionUtc")
                         .HasColumnType("timestamp with time zone");
 

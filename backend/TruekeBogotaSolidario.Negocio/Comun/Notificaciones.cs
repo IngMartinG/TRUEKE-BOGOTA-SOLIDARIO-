@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Datos.Repositorios;
 using TruekeBogotaSolidario.Negocio.Dtos;
@@ -37,6 +37,8 @@ public static class TiposNotificacion
     public const string IntercambioCompletado = "IntercambioCompletado";
     /// <summary>Invita y ganan los dos: a ambos, cuando la persona invitada completa su primer intercambio.</summary>
     public const string InvitacionRecompensada = "InvitacionRecompensada";
+    /// <summary>La persona alcanzó un nivel nuevo de Eco-Puntos (Brote, Árbol, Bosque o Guardián).</summary>
+    public const string NivelAlcanzado = "NivelAlcanzado";
     public const string IntercambioNoConcretado = "IntercambioNoConcretado";
     public const string CalificacionRecibida = "CalificacionRecibida";
     public const string PagoReembolsado = "PagoReembolsado";

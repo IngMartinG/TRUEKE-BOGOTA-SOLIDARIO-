@@ -204,3 +204,14 @@ export const MOTIVOS_DENUNCIA = [
   { valor: 'Acoso', etiqueta: 'Acoso o lenguaje ofensivo' },
   { valor: 'Otro', etiqueta: 'Otro motivo' },
 ] as const;
+
+/** Niveles por Eco-Puntos ganados participando (los puntos mínimos vienen de la política del backend). */
+export type NivelEcoPuntos = 'Semilla' | 'Brote' | 'Arbol' | 'Bosque' | 'Guardian';
+export const INFO_NIVEL: Record<NivelEcoPuntos, { etiqueta: string; emoji: string; clase: string }> = {
+  Semilla: { etiqueta: 'Semilla', emoji: '🌱', clase: 'insignia-donacion' },
+  Brote: { etiqueta: 'Brote', emoji: '🌿', clase: 'insignia-trueke' },
+  Arbol: { etiqueta: 'Árbol', emoji: '🌳', clase: 'insignia-trueke' },
+  Bosque: { etiqueta: 'Bosque', emoji: '🌲', clase: 'insignia-agua' },
+  Guardian: { etiqueta: 'Guardián', emoji: '🛡️', clase: 'insignia-sol' },
+};
+export const infoNivel = (n: string | null | undefined) => INFO_NIVEL[(n as NivelEcoPuntos) ?? 'Semilla'] ?? INFO_NIVEL.Semilla;

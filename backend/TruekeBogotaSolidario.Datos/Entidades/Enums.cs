@@ -60,3 +60,6 @@ public enum ConceptoEcoPuntos
     /// <summary>Invita y ganan los dos: la persona invitada completó su primer intercambio.</summary>
     Invitacion = 9,
 }
+
+/// <summary>Nivel de la persona según los Eco-Puntos ganados participando (ver PoliticaEcoPuntos.Niveles).</summary>
+public enum NivelEcoPuntos { Semilla = 1, Brote = 2, Arbol = 3, Bosque = 4, Guardian = 5 }

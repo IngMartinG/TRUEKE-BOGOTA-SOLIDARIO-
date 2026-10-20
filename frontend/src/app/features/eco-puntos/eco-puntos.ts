@@ -3,7 +3,7 @@ import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, firstValueFrom, of } from 'rxjs';
-import { INFO_MODO, type ConceptoPagoDto, type IniciarPagoRequest, type ModoDto } from '../../api/tipos';
+import { INFO_MODO, infoNivel, type ConceptoPagoDto, type IniciarPagoRequest, type ModoDto } from '../../api/tipos';
 import { CatalogoApi } from '../../core/api/catalogo.api';
 import { CuentaApi } from '../../core/api/cuenta.api';
 import { AvisosService } from '../../core/avisos.service';
@@ -63,6 +63,35 @@ interface Servicio {
               <div class="rounded-xl bg-white/5 p-3"><dt class="text-bosque-200">Canjes libres hoy</dt><dd class="mt-1 text-lg font-bold">{{ resumen.value()?.transaccionesConPuntosRestantes ?? '–' }}</dd></div>
               <div class="rounded-xl bg-white/5 p-3"><dt class="text-bosque-200">Cuenta</dt><dd class="mt-1 text-lg font-bold">{{ resumen.value()?.tipoCuenta ?? '–' }}</dd></div>
             </dl>
+            @if (resumen.value()?.nivel; as n) {
+              @let actual = infoNivel(n.nombre);
+              <div class="mt-3 rounded-xl bg-white/5 p-4">
+                <div class="flex items-baseline justify-between gap-3">
+                  <p class="flex items-center gap-2 font-display text-lg font-bold">
+                    <span class="text-2xl" aria-hidden="true">{{ actual.emoji }}</span>Nivel {{ actual.etiqueta }}
+                  </p>
+                  <p class="text-xs text-bosque-200">{{ n.puntosParticipacion | numero }} puntos ganados participando</p>
+                </div>
+                @if (n.siguienteNivel) {
+                  <div
+                    class="mt-3 h-2 overflow-hidden rounded-full bg-white/10"
+                    role="progressbar"
+                    [attr.aria-valuenow]="n.progreso"
+                    aria-valuemin="0"
+                    aria-valuemax="100"
+                    [attr.aria-label]="'Progreso hacia el nivel ' + infoNivel(n.siguienteNivel).etiqueta"
+                  >
+                    <div class="h-full rounded-full bg-sol-300 motion-safe:transition-[width] motion-safe:duration-700" [style.width.%]="n.progreso"></div>
+                  </div>
+                  <p class="mt-2 text-xs text-bosque-200">
+                    Te faltan {{ (n.puntosSiguienteNivel ?? 0) - (n.puntosParticipacion ?? 0) | numero }} para
+                    {{ infoNivel(n.siguienteNivel).emoji }} {{ infoNivel(n.siguienteNivel).etiqueta }}
+                  </p>
+                } @else {
+                  <p class="mt-2 text-xs text-bosque-200">Llegaste al nivel más alto. Gracias por cuidar la comunidad.</p>
+                }
+              </div>
+            }
             @if (resumen.value()?.planVigenteHasta) {
               <p class="mt-3 text-xs text-bosque-200">Plan vigente hasta el {{ resumen.value()?.planVigenteHasta | fecha }} · {{ resumen.value()?.destacadosGratisRestantes }} destacados gratis</p>
             }
@@ -114,6 +143,36 @@ interface Servicio {
       }
       <p class="mt-2 text-sm"><a routerLink="/impacto" class="enlace">Mira lo que la comunidad ya ha hecho circular</a></p>
     </section>
+
+    <!-- Niveles -->
+    @if (politica()?.niveles?.length) {
+      <section class="contenedor mt-14" aria-labelledby="titulo-niveles">
+        <h2 id="titulo-niveles" class="titulo-seccion">Niveles</h2>
+        <p class="mt-1 max-w-2xl text-tenue">
+          Subes de nivel con los puntos que ganas participando. Recargar no sube de nivel y gastar tus puntos nunca te baja.
+          El nivel es un reconocimiento: se ve en tu perfil y junto a tu nombre.
+        </p>
+        <ol class="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          @for (nv of politica()!.niveles!; track nv.nombre) {
+            @let info = infoNivel(nv.nombre);
+            @let esMio = resumen.value()?.nivel?.nombre === nv.nombre;
+            <li
+              class="tarjeta p-5"
+              [class.ring-2]="esMio"
+              [class.ring-bosque-500]="esMio"
+              [attr.aria-current]="esMio ? 'step' : null"
+            >
+              <span class="text-3xl" aria-hidden="true">{{ info.emoji }}</span>
+              <p class="mt-2 font-display text-lg font-bold">{{ info.etiqueta }}</p>
+              <p class="text-sm text-tenue">{{ nv.puntosMinimos ? 'Desde ' + (nv.puntosMinimos | numero) + ' puntos' : 'Al empezar' }}</p>
+              @if (esMio) {
+                <p class="mt-2 text-xs font-semibold text-bosque-700 dark:text-bosque-300">Tu nivel</p>
+              }
+            </li>
+          }
+        </ol>
+      </section>
+    }
 
     <!-- Usar puntos: impulsar -->
     <section class="contenedor mt-14" aria-labelledby="titulo-impulsar">
@@ -451,6 +510,7 @@ export default class EcoPuntos {
   /** `?periodo=anual` (con `?plan=`): la compra es del plan anual. */
   readonly periodo = input<string>();
   protected readonly planDe = planDe;
+  protected readonly infoNivel = infoNivel;
 
   protected readonly politica = toSignal(this.api.politica$.pipe(catchError(() => of(null))));
   protected readonly resumen = rxResource({

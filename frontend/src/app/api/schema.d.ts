@@ -5785,6 +5785,7 @@ export interface components {
             proximaRecargaDestacadosUtc?: string | null;
             pruebaPremiumDisponible?: boolean;
             enPruebaPremium?: boolean;
+            nivel?: components["schemas"]["NivelEcoPuntosDto"];
         };
         EliminarCuentaRequest: {
             confirmacion: string;
@@ -6134,6 +6135,23 @@ export interface components {
             /** Format: double */
             longitud?: number;
         };
+        NivelEcoPuntosDto: {
+            nombre?: string;
+            /** Format: int32 */
+            puntosParticipacion?: number;
+            /** Format: int32 */
+            puntosMinimosNivel?: number;
+            siguienteNivel?: string | null;
+            /** Format: int32 */
+            puntosSiguienteNivel?: number | null;
+            /** Format: int32 */
+            progreso?: number;
+        };
+        NivelPoliticaDto: {
+            nombre?: string;
+            /** Format: int32 */
+            puntosMinimos?: number;
+        };
         NoConcretadaRequest: {
             motivo: string;
         };
@@ -6247,6 +6265,7 @@ export interface components {
             nombreComercial?: string | null;
             fotoUrl?: string | null;
             nitRegistrado?: boolean;
+            nivel?: string;
         };
         PerfilUsuarioDto: {
             /** Format: uuid */
@@ -6278,6 +6297,7 @@ export interface components {
             nitRegistrado?: boolean;
             nit?: string | null;
             deseos?: components["schemas"]["DeseoPublicoDto"][] | null;
+            nivel?: string;
         };
         PoliticaEcoPuntosDto: {
             /** Format: int32 */
@@ -6357,6 +6377,7 @@ export interface components {
             maxInvitacionesRecompensadasPorCiclo?: number;
             /** Format: int32 */
             diasCicloInvitaciones?: number;
+            niveles?: components["schemas"]["NivelPoliticaDto"][] | null;
         };
         PqrAdminDto: {
             /** Format: uuid */
@@ -6813,6 +6834,8 @@ export type MotivoRequest = components['schemas']['MotivoRequest'];
 export type MovimientoEcoPuntosDto = components['schemas']['MovimientoEcoPuntosDto'];
 export type MovimientoEcoPuntosDtoPaginaDto = components['schemas']['MovimientoEcoPuntosDtoPaginaDto'];
 export type MunicipioDto = components['schemas']['MunicipioDto'];
+export type NivelEcoPuntosDto = components['schemas']['NivelEcoPuntosDto'];
+export type NivelPoliticaDto = components['schemas']['NivelPoliticaDto'];
 export type NoConcretadaRequest = components['schemas']['NoConcretadaRequest'];
 export type NotificacionDto = components['schemas']['NotificacionDto'];
 export type NotificacionDtoPaginaDto = components['schemas']['NotificacionDtoPaginaDto'];
