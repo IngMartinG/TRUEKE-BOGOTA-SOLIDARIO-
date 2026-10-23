@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Options;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Negocio.Archivos;
+using TruekeBogotaSolidario.Negocio.Asistente;
 using TruekeBogotaSolidario.Negocio.Comun;
 
 namespace TruekeBogotaSolidario.Negocio.Servicios;
@@ -13,7 +14,7 @@ public sealed record ConfiguracionPublicaDto(string? CaptchaClaveSitio, string? 
     bool SubidaArchivosHabilitada, int MaxImagenesPorPublicacion, long TamanoMaximoArchivoBytes,
     int DiasCierreConUnaConfirmacion, int DiasCierreSinConfirmacion, bool PagosDePrueba,
     string? ImagenesOrigenUrl = null, string? ImagenesCdnUrl = null, string? PushClavePublica = null, LegalPublicoDto? Legal = null,
-    bool VentasHabilitadas = true, string? DonacionUrl = null);
+    bool VentasHabilitadas = true, string? DonacionUrl = null, bool AsistenteIa = false);
 
 /// <summary>
 /// Datos legales para la política, los términos y el pie de página: versiones vigentes y responsable del tratamiento.
@@ -37,13 +38,15 @@ public sealed class ConfiguracionService : IConfiguracionService
     private readonly AlmacenamientoOpciones _almacenamiento;
     private readonly Push.PushOpciones _push;
     private readonly DonacionesOpciones _donaciones;
+    private readonly IModeloLenguaje _modelo;
 
     public ConfiguracionService(IOptions<CaptchaOpciones> captcha, IOptions<GoogleOpciones> google, IOptions<LegalOpciones> legal,
         IOptions<PagosOpciones> pagos, IAlmacenArchivos almacen, IOptions<AlmacenamientoOpciones> almacenamiento, IOptions<Push.PushOpciones> push,
-        IOptions<DonacionesOpciones> donaciones)
+        IOptions<DonacionesOpciones> donaciones, IModeloLenguaje modelo)
     {
         _captcha = captcha.Value; _google = google.Value; _legal = legal.Value; _pagos = pagos.Value; _almacen = almacen;
         _almacenamiento = almacenamiento.Value; _push = push.Value; _donaciones = donaciones.Value;
+        _modelo = modelo;
     }
 
     /// <summary>Con CDN, el front reemplaza el prefijo de origen por el de la CDN al mostrar las fotos.</summary>
@@ -66,7 +69,8 @@ public sealed class ConfiguracionService : IConfiguracionService
             Vacio(_legal.ResponsableNombre), Vacio(_legal.ResponsableDocumento), Vacio(_legal.Domicilio), Vacio(_legal.CorreoContacto),
             Vacio(_legal.Telefono)),
         _pagos.VentasHabilitadas,
-        Vacio(_donaciones.Url));
+        Vacio(_donaciones.Url),
+        _modelo.Habilitado);
 
     private static string? Vacio(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 }

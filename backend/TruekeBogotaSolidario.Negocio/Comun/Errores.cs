@@ -86,6 +86,25 @@ public sealed class VentasPausadasException : Exception
         : base("Durante el lanzamiento los pagos con dinero están pausados. Puedes usar tus Eco-Puntos si alcanzan para el total.") { }
 }
 
+/// <summary>Se acabaron las preguntas al asistente con IA por hoy (HTTP 429, codigo "limite_asistente"): el front usa la ayuda local.</summary>
+public sealed class LimiteAsistenteException : Exception
+{
+    public const string Codigo = "limite_asistente";
+    public LimiteAsistenteException()
+        : base("Por hoy ya usaste todas las preguntas del asistente inteligente. Mañana vuelve a estar disponible.") { }
+}
+
+/// <summary>
+/// El asistente con IA está apagado, sin cupo en el proveedor o no respondió a tiempo (HTTP 503, codigo
+/// "asistente_no_disponible"): el front responde con la ayuda local.
+/// </summary>
+public sealed class AsistenteNoDisponibleException : Exception
+{
+    public const string Codigo = "asistente_no_disponible";
+    public AsistenteNoDisponibleException(Exception? causa = null)
+        : base("El asistente inteligente no está disponible en este momento.", causa) { }
+}
+
 /// <param name="Codigo">Identificador estable para que el front reaccione sin depender del texto.</param>
 public sealed record ErrorTraducido(int Estado, string Titulo, bool EsInesperado, string? Codigo = null);
 
@@ -107,6 +126,8 @@ public static class TraductorErrores
         NombreRealRequeridoException e => new(403, e.Message, false, NombreRealRequeridoException.Codigo),
         DatosOferenteRequeridosException e => new(403, e.Message, false, DatosOferenteRequeridosException.Codigo),
         VentasPausadasException e => new(403, e.Message, false, VentasPausadasException.Codigo),
+        LimiteAsistenteException e => new(429, e.Message, false, LimiteAsistenteException.Codigo),
+        AsistenteNoDisponibleException e => new(503, e.Message, false, AsistenteNoDisponibleException.Codigo),
         AutenticacionException e => new(401, e.Message, false),
         ConflictoDeConcurrenciaException e => new(409, e.Message, false),
         _ => new(500, "Error interno del servidor.", true)

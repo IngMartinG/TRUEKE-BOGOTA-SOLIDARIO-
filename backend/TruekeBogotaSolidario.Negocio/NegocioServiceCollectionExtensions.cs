@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 using TruekeBogotaSolidario.Datos.Contexto;
 using TruekeBogotaSolidario.Datos.Repositorios;
 using TruekeBogotaSolidario.Negocio.Archivos;
+using TruekeBogotaSolidario.Negocio.Asistente;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Correo;
 using TruekeBogotaSolidario.Negocio.Pagos;
@@ -82,6 +83,29 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<IPushService, PushService>();
         services.AddScoped<IAvisosPush, AvisosPush>();
         services.AddHostedService<EnvioPushHostedService>();
+
+        // Asistente de ayuda con IA (Groq, nivel gratis): apagado por defecto; sin él, el front responde con la ayuda local.
+        services.AddOptions<AsistenteOpciones>().Bind(config.GetSection(AsistenteOpciones.Seccion)).ValidateDataAnnotations()
+            .Validate(o => o.EsGroq || string.Equals(o.Proveedor, "Desactivado", StringComparison.OrdinalIgnoreCase),
+                "Asistente:Proveedor debe ser 'Groq' o 'Desactivado'.")
+            .ValidateOnStart();
+        var asistente = config.GetSection(AsistenteOpciones.Seccion).Get<AsistenteOpciones>() ?? new AsistenteOpciones();
+        if (asistente.EsGroq)
+        {
+            if (string.IsNullOrWhiteSpace(asistente.Groq.ClaveApi))
+                throw new InvalidOperationException("Asistente:Groq:ClaveApi es obligatoria con Asistente:Proveedor=Groq (variable Asistente__Groq__ClaveApi).");
+            if (!Uri.TryCreate(asistente.Groq.Url, UriKind.Absolute, out var urlGroq) || urlGroq.Scheme != Uri.UriSchemeHttps)
+                throw new InvalidOperationException("Asistente:Groq:Url debe ser https.");
+            // Sin seguir redirecciones: la llave solo viaja al host configurado.
+            services.AddHttpClient(ModeloGroq.ClienteHttp, c => c.Timeout = TimeSpan.FromSeconds(15))
+                .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
+            services.AddSingleton<IModeloLenguaje, ModeloGroq>();
+        }
+        else
+        {
+            services.AddSingleton<IModeloLenguaje, ModeloDesactivado>();
+        }
+        services.AddScoped<IAsistenteService, AsistenteService>();
 
         services.AddSingleton<ColaCorreo>();
         services.AddSingleton<ICorreoSaliente>(sp => sp.GetRequiredService<ColaCorreo>());

@@ -1,4 +1,4 @@
-# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-20)
+# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-23)
 
 ## Hecho — backend completo para conectar el front
 **Base:**
@@ -508,6 +508,33 @@ Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (
 - Pruebas: `FotosChatTests` (privacidad, fotos ajenas, moderación y tope) y una contra Supabase Storage real (bucket
   privado, limpieza y firma por lotes).
 
+## Hecho el 2026-10-23 — asistente de ayuda con IA (Groq, nivel gratis)
+- **Quién la usa** (decisiones del dueño del 2026-10-23): solo cuentas con sesión y correo verificado; los visitantes siguen
+  con la guía local. Puede leer **solo los datos de quien pregunta** y **solo orienta**: responde, busca y da botones a rutas
+  de la app; nunca publica, acepta ni paga por la persona.
+- **Backend:** `POST /api/v1/asistente/preguntar` (`AsistenteController` → `AsistenteService`). El historial lo envía el front
+  (máximo 10 turnos, se usan los últimos `Asistente:MaxTurnos`) y no se guarda en el servidor. Herramientas de solo lectura
+  con el actor del JWT: `buscar_publicaciones` (catálogo público, máximo 5), `mi_resumen_eco_puntos`, `mis_solicitudes` y
+  `mis_publicaciones`, reducidas a lo mínimo (sin correos, coordenadas ni nombres de la otra parte). Máximo 3 rondas de
+  herramientas por pregunta. Los botones llegan como `[[ruta|Texto]]` y solo pasan las rutas de una lista blanca y
+  `/publicacion/{id}` (máximo 3).
+- **Instrucciones** (`InstruccionesAsistente`): reglas, resumen de la guía y cifras vivas de `PoliticaEcoPuntos` (y el aviso de
+  pagos pausados si `VentasHabilitadas=false`), cortas por el límite de tokens por minuto del nivel gratis.
+- **Groq** (`ModeloGroq`): API compatible con OpenAI, modelo `openai/gpt-oss-120b` con `reasoning_effort=low`
+  (configurables), timeout de 15 s y sin redirecciones. Cualquier falla (429 por cupo, error, demora) responde 503
+  `asistente_no_disponible`. Cupo por persona: `Asistente:MensajesPorDia` (20) en memoria, 429 `limite_asistente`; además
+  la política de límite `asistente` (6 por minuto, `RateLimiting__AsistentePorMinuto`).
+- **Configuración:** `Asistente__Proveedor=Groq` + `Asistente__Groq__ClaveApi`. Por defecto `Desactivado`: el front no llama a
+  la IA (`asistenteIa` en `GET /configuracion`). Con `Groq` y sin clave, la API no arranca.
+- **Front:** `ProveedorIA` pregunta a la IA solo si está activa y el correo verificado; ante 429, 503, demora o sin red,
+  contesta la guía local con un aviso. Los temas frecuentes siguen saliendo de la guía local. Texto plano (nunca HTML),
+  botones de la respuesta, "¿Te sirvió?" y escalado a PQRS con el comienzo de la respuesta de la IA. Aviso "no escribas datos
+  personales" en el encabezado.
+- **Privacidad:** Groq agregado a los encargados de la política de datos.
+- Pruebas: `AsistenteTests` (integración con un modelo de mentiras: enlaces, actor del JWT, rondas, correo verificado, cupo,
+  503 y validación), `AsistenteGroqTests` (petición, llamadas a herramientas, errores y lista blanca) y
+  `proveedor-respuestas.spec.ts` en el front.
+
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
 - **Registro de oferentes:** que el abogado revise el texto de la política y los términos (versión `2026-10-19`), si el
@@ -516,6 +543,9 @@ Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (
 - **Producto:** como respaldo del workflow, un monitor externo de `/health/ready` (el sitemap ya está en Search Console).
 
 **Despliegue y operación:**
+- **Asistente con IA:** crear la cuenta gratis en console.groq.com, generar la API key, activar *Zero Data Retention* en
+  *Data Controls* y poner `Asistente__Proveedor=Groq` y `Asistente__Groq__ClaveApi` en Render (`docs/DESPLIEGUE.md` §5.2).
+  Que el abogado confirme si nombrar a Groq como encargado exige subir la versión de la política (hoy no se subió).
 - **Versión legal en Render:** si `Legal__VersionPoliticaDatos`, `Legal__VersionTerminos` o `Legal__FechaVigencia` están
   definidas allí, cambiarlas a `2026-10-19` al desplegar el registro de oferentes (si no, se usa la de `appsettings.json`).
 - **Configurar en Render** `Legal__ResponsableNombre`, `Legal__Domicilio`, `Legal__CorreoContacto` y `Legal__Telefono` (y, si

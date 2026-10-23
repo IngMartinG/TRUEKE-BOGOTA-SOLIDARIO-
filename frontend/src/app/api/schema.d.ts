@@ -1026,6 +1026,49 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/asistente/preguntar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["PreguntaAsistenteRequest"];
+                    "text/json": components["schemas"]["PreguntaAsistenteRequest"];
+                    "application/*+json": components["schemas"]["PreguntaAsistenteRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["RespuestaAsistenteDto"];
+                        "application/json": components["schemas"]["RespuestaAsistenteDto"];
+                        "text/json": components["schemas"]["RespuestaAsistenteDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/auth/registrar": {
         parameters: {
             query?: never;
@@ -5547,6 +5590,7 @@ export interface components {
             legal?: components["schemas"]["LegalPublicoDto"];
             ventasHabilitadas?: boolean;
             donacionUrl?: string | null;
+            asistenteIa?: boolean;
         };
         ConfirmarIdentidadRequest: {
             clave?: string | null;
@@ -5835,6 +5879,10 @@ export interface components {
         EmitirFacturaRequest: {
             numeroDian: string;
             cufe: string;
+        };
+        EnlaceAsistenteDto: {
+            texto?: string;
+            ruta?: string;
         };
         EnviarMensajeRequest: {
             texto?: string;
@@ -6507,6 +6555,10 @@ export interface components {
             planes?: boolean;
             novedades?: boolean;
         };
+        PreguntaAsistenteRequest: {
+            pregunta: string;
+            historial?: components["schemas"]["TurnoAsistenteRequest"][];
+        };
         PublicacionCercanaDto: {
             publicacion?: components["schemas"]["PublicacionDto"];
             /** Format: double */
@@ -6608,12 +6660,18 @@ export interface components {
         ResponderPqrRequest: {
             respuesta: string;
         };
+        RespuestaAsistenteDto: {
+            texto?: string;
+            enlaces?: components["schemas"]["EnlaceAsistenteDto"][];
+        };
         RestablecerClaveRequest: {
             token: string;
             claveNueva: string;
         };
         /** @enum {string} */
         RolDto: "Cliente" | "Administrador" | "SuperUsuario";
+        /** @enum {string} */
+        RolTurnoAsistenteDto: "Usuario" | "Asistente";
         SenalesConfianzaDto: {
             correoVerificado?: boolean;
             identidadVerificada?: boolean;
@@ -6710,6 +6768,10 @@ export interface components {
             recibiPuntos?: boolean;
             /** Format: date-time */
             fechaUtc?: string;
+        };
+        TurnoAsistenteRequest: {
+            rol?: components["schemas"]["RolTurnoAsistenteDto"];
+            texto: string;
         };
         UsuarioAdminDto: {
             /** Format: uuid */
@@ -6873,6 +6935,7 @@ export type DeseoPublicoDto = components['schemas']['DeseoPublicoDto'];
 export type EcoPuntosResumenDto = components['schemas']['EcoPuntosResumenDto'];
 export type EliminarCuentaRequest = components['schemas']['EliminarCuentaRequest'];
 export type EmitirFacturaRequest = components['schemas']['EmitirFacturaRequest'];
+export type EnlaceAsistenteDto = components['schemas']['EnlaceAsistenteDto'];
 export type EnviarMensajeRequest = components['schemas']['EnviarMensajeRequest'];
 export type EstadisticasPublicacionDto = components['schemas']['EstadisticasPublicacionDto'];
 export type EstadoApelacionDto = components['schemas']['EstadoApelacionDto'];
@@ -6928,6 +6991,7 @@ export type PqrAdminDto = components['schemas']['PqrAdminDto'];
 export type PqrAdminDtoPaginaDto = components['schemas']['PqrAdminDtoPaginaDto'];
 export type PqrDto = components['schemas']['PqrDto'];
 export type PreferenciasAvisosDto = components['schemas']['PreferenciasAvisosDto'];
+export type PreguntaAsistenteRequest = components['schemas']['PreguntaAsistenteRequest'];
 export type PublicacionCercanaDto = components['schemas']['PublicacionCercanaDto'];
 export type PublicacionDto = components['schemas']['PublicacionDto'];
 export type PublicacionDtoPaginaDto = components['schemas']['PublicacionDtoPaginaDto'];
@@ -6939,8 +7003,10 @@ export type RegistroRequest = components['schemas']['RegistroRequest'];
 export type ResolverApelacionRequest = components['schemas']['ResolverApelacionRequest'];
 export type ResolverDenunciaRequest = components['schemas']['ResolverDenunciaRequest'];
 export type ResponderPqrRequest = components['schemas']['ResponderPqrRequest'];
+export type RespuestaAsistenteDto = components['schemas']['RespuestaAsistenteDto'];
 export type RestablecerClaveRequest = components['schemas']['RestablecerClaveRequest'];
 export type RolDto = components['schemas']['RolDto'];
+export type RolTurnoAsistenteDto = components['schemas']['RolTurnoAsistenteDto'];
 export type SenalesConfianzaDto = components['schemas']['SenalesConfianzaDto'];
 export type SesionDto = components['schemas']['SesionDto'];
 export type SolicitarSubidaRequest = components['schemas']['SolicitarSubidaRequest'];
@@ -6954,6 +7020,7 @@ export type TipoDocumentoFiscalDto = components['schemas']['TipoDocumentoFiscalD
 export type TipoPqrDto = components['schemas']['TipoPqrDto'];
 export type TokenRequest = components['schemas']['TokenRequest'];
 export type TransaccionExportDto = components['schemas']['TransaccionExportDto'];
+export type TurnoAsistenteRequest = components['schemas']['TurnoAsistenteRequest'];
 export type UsuarioAdminDto = components['schemas']['UsuarioAdminDto'];
 export type UsuarioAdminDtoPaginaDto = components['schemas']['UsuarioAdminDtoPaginaDto'];
 export type UsuarioDto = components['schemas']['UsuarioDto'];

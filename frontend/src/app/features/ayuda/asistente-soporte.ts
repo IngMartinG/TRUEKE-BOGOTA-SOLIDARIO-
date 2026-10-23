@@ -4,12 +4,13 @@ import { FormsModule } from '@angular/forms';
 import { NavigationEnd, Router } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { TIPOS_PQR, type TipoPqrDto } from '../../api/tipos';
+import { ConfigService } from '../../core/config.service';
 import { SesionService } from '../../core/sesion.service';
 import { Icono } from '../../shared/ui/icono';
 import { BorradorPqrs, escalarAPqrs, type TurnoConversacion } from './borrador-pqrs';
 import { entradaPorId, type AccionAyuda, type EntradaConocimiento } from './conocimiento';
 import { tipoParaEscalar } from './motor';
-import { ProveedorRespuestas, type RespuestaAsistente } from './proveedor-respuestas';
+import { ProveedorRespuestas, type RespuestaAsistente, type TurnoHistorial } from './proveedor-respuestas';
 
 interface Turno extends TurnoConversacion {
   id: number;
@@ -18,6 +19,28 @@ interface Turno extends TurnoConversacion {
   texto: string;
   relacionadas: EntradaConocimiento[];
   tipoPqr: TipoPqrDto;
+  ia?: boolean;
+  enlaces?: AccionAyuda[];
+  nota?: string;
+}
+
+/** Lo que ya se habló, para que la IA entienda preguntas como "¿y cómo lo hago?" (máximo 1.000 caracteres por turno). */
+export function historialDe(turnos: readonly Pick<Turno, 'pregunta' | 'texto' | 'cargando'>[]): TurnoHistorial[] {
+  return turnos
+    .filter((t) => !t.cargando && t.texto.trim())
+    .slice(-3)
+    .flatMap((t): TurnoHistorial[] => [
+      { rol: 'Usuario', texto: t.pregunta.slice(0, 1000) },
+      { rol: 'Asistente', texto: t.texto.slice(0, 1000) },
+    ]);
+}
+
+/** Para la PQRS: la pregunta frecuente con la que respondió la guía, o el comienzo de la respuesta de la IA. */
+function respondioCon(r: RespuestaAsistente): string | null {
+  if (r.entrada) return r.entrada.pregunta;
+  if (!r.ia || !r.texto.trim()) return null;
+  const t = r.texto.replace(/\s+/g, ' ').trim();
+  return t.length > 160 ? `${t.slice(0, 157)}…` : t;
 }
 
 /** Preguntas que se ofrecen de entrada, según la sección donde está la persona. */
@@ -223,7 +246,9 @@ const SIN_LANZADOR = /^\/(mensajes\/[^/]+|publicar|publicacion\/[^/]+\/editar)(\
           </span>
           <div class="min-w-0 flex-1">
             <h2 id="asistente-titulo" class="font-bold leading-tight">Asistente de ayuda</h2>
-            <p id="asistente-descripcion" class="text-xs text-tenue">Respuestas de la guía de Trueke, al instante</p>
+            <p id="asistente-descripcion" class="text-xs text-tenue">
+              {{ conIa() ? 'Con inteligencia artificial · no escribas datos personales' : 'Respuestas de la guía de Trueke, al instante' }}
+            </p>
           </div>
           <button type="button" class="btn-icono -mr-1" (click)="cerrar()" aria-label="Cerrar el asistente">
             <app-icono nombre="x" />
@@ -258,7 +283,30 @@ const SIN_LANZADOR = /^\/(mensajes\/[^/]+|publicar|publicacion\/[^/]+\/editar)(\
             } @else {
               <div class="burbuja max-w-[92%] space-y-3 rounded-2xl rounded-tl-md bg-superficie-2 px-3.5 py-3 text-sm">
                 <span class="sr-only">Asistente: </span>
-                @if (t.entrada; as e) {
+                @if (t.nota) {
+                  <p class="text-xs text-tenue">{{ t.nota }}</p>
+                }
+                @if (t.ia) {
+                  <p class="leading-relaxed break-words whitespace-pre-line">{{ t.texto }}</p>
+                  @if (t.enlaces?.length) {
+                    <div class="flex flex-wrap gap-2">
+                      @for (a of t.enlaces; track a.ruta) {
+                        <button type="button" class="btn btn-secundario btn-sm" (click)="irA(a)">
+                          {{ a.texto }}<app-icono nombre="derecha" [tamano]="14" />
+                        </button>
+                      }
+                    </div>
+                  }
+                  @if (t.sirvio === null) {
+                    <div class="flex flex-wrap items-center gap-2 border-t border-borde pt-3" role="group" aria-label="¿Te sirvió la respuesta?">
+                      <span class="mr-1 text-xs font-semibold text-tenue">¿Te sirvió?</span>
+                      <button type="button" class="chip" (click)="valorar(t, true)">Sí</button>
+                      <button type="button" class="chip" (click)="valorar(t, false)">No</button>
+                    </div>
+                  } @else if (t.sirvio) {
+                    <p class="border-t border-borde pt-3 text-xs text-tenue">¡Qué bien! Si necesitas algo más, aquí estoy.</p>
+                  }
+                } @else if (t.entrada; as e) {
                   <p class="font-semibold">{{ e.pregunta }}</p>
                   <p class="leading-relaxed text-tenue">{{ t.texto }}</p>
                   @if (e.accion; as a) {
@@ -278,7 +326,7 @@ const SIN_LANZADOR = /^\/(mensajes\/[^/]+|publicar|publicacion\/[^/]+\/editar)(\
                 } @else {
                   <p class="leading-relaxed">No encontré una respuesta para eso en la guía. Puedes escribirlo de otra forma o pedirle al equipo que lo revise.</p>
                 }
-                @if (t.relacionadas.length && (t.sirvio === false || !t.entrada)) {
+                @if (t.relacionadas.length && (t.sirvio === false || (!t.entrada && !t.ia))) {
                   <div>
                     <p class="mb-1.5 text-xs font-semibold text-tenue">Quizá buscabas</p>
                     <ul class="flex flex-wrap gap-2">
@@ -289,7 +337,7 @@ const SIN_LANZADOR = /^\/(mensajes\/[^/]+|publicar|publicacion\/[^/]+\/editar)(\
                   </div>
                 }
               </div>
-              @if (ultimo && (t.sirvio === false || !t.entrada)) {
+              @if (ultimo && (t.sirvio === false || (!t.entrada && !t.ia))) {
                 <div class="burbuja rounded-2xl border border-sol-500/40 bg-sol-50 p-4 text-sm dark:bg-sol-600/10">
                   <p class="flex items-center gap-2 font-semibold"><app-icono nombre="soporte" [tamano]="18" class="text-sol-600 dark:text-sol-300" />Lo revisa una persona del equipo</p>
                   <p class="mt-1 text-tenue">
@@ -331,6 +379,7 @@ export class AsistenteSoporte {
   private readonly borrador = inject(BorradorPqrs);
   private readonly router = inject(Router);
   private readonly sesion = inject(SesionService);
+  private readonly config = inject(ConfigService);
   private readonly dialogo = viewChild.required<ElementRef<HTMLDialogElement>>('dialogo');
   private readonly lanzador = viewChild<ElementRef<HTMLButtonElement>>('lanzador');
   private readonly historial = viewChild.required<ElementRef<HTMLElement>>('historial');
@@ -353,6 +402,7 @@ export class AsistenteSoporte {
     const ids = SUGERIDAS.find(([re]) => re.test(this.url()))?.[1] ?? [];
     return ids.map(entradaPorId).filter((e): e is EntradaConocimiento => !!e);
   });
+  protected readonly conIa = computed(() => this.config.asistenteIa() && this.sesion.autenticado() && this.sesion.correoVerificado());
   protected readonly nombre = computed(() => this.sesion.usuario()?.nombreCompleto?.split(' ')[0] ?? '');
 
   protected abrir(): void {
@@ -382,7 +432,8 @@ export class AsistenteSoporte {
     const pregunta = this.texto().trim();
     if (!pregunta) return;
     this.texto.set('');
-    void this.responder(pregunta, () => this.proveedor.responder(pregunta));
+    const historial = historialDe(this.turnos());
+    void this.responder(pregunta, () => this.proveedor.responder(pregunta, historial));
   }
 
   protected elegir(e: EntradaConocimiento): void {
@@ -398,7 +449,7 @@ export class AsistenteSoporte {
     this.bajar();
     const r = await obtener();
     this.turnos.update((ts) =>
-      ts.map((t) => (t.id === id ? { ...t, ...r, cargando: false, respondio: r.entrada?.pregunta ?? null } : t)),
+      ts.map((t) => (t.id === id ? { ...t, ...r, cargando: false, respondio: respondioCon(r) } : t)),
     );
     this.bajar();
   }

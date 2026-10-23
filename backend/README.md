@@ -201,6 +201,7 @@ Todo se configura por variables de entorno (Azure: *App Settings* o referencias 
 | `Correo__Proveedor`, `Correo__Remitente` | ✅ | `Brevo` (API HTTPS) o `Smtp` |
 | `Correo__Brevo__ClaveApi` | Con Brevo | Clave API de Brevo (`xkeysib-…`) |
 | `Correo__Smtp__Host`, `__Puerto`, `__Usuario`, `__Clave` | Con Smtp | SMTP con TLS |
+| `Asistente__Proveedor`, `Asistente__Groq__ClaveApi` | Opcional | `Groq` y la API key (`gsk_…`) para el asistente con IA; sin ellas, `Desactivado` (solo la guía local) |
 | `Urls__Frontend` | ✅ | URL **https** del front (enlaces de los correos) |
 | `Almacenamiento__Url`, `Almacenamiento__LlaveServicio` | ✅ | `https://<ref>.supabase.co/storage/v1` y la llave secreta del proyecto (`sb_secret_…`) |
 | `Cors__Origenes__0..n` | ✅ | Origen(es) del front |
@@ -234,6 +235,7 @@ Ninguna llave se escribe en el código ni en `appsettings.json`. En local: `dotn
 | **reCAPTCHA v3** | [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin) → nuevo sitio → **reCAPTCHA v3** → dominios `localhost` y el del front | Clave del sitio → `Captcha__ClaveSitio` · Clave secreta → `Captcha__ClaveSecreta` |
 | **PostgreSQL (producción)** | [supabase.com](https://supabase.com) → *New project* (región East US, **Data API desactivada**) → botón **Connect** → **Session pooler** (IPv4). Pasos en `docs/DESPLIEGUE.md` §2. | `ConnectionStrings__TruekeDb=Host=aws-N-<region>.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.<ref>;Password=…;SSL Mode=Require;Maximum Pool Size=10`. Deja `Database__Inicializacion=Migrate` (aplica las migraciones al arrancar) o `None` + script idempotente en el despliegue si hay varias instancias. |
 | Correo | [Brevo](https://www.brevo.com) (API HTTPS: `Correo__Proveedor=Brevo`, `Correo__Brevo__ClaveApi`; pasos en `docs/DESPLIEGUE.md` §5.1) o cualquier SMTP con TLS (`Correo__Proveedor=Smtp`: `Correo__Smtp__Host`, `__Usuario`, `__Clave`) | `Correo__Remitente` = remitente verificado en Brevo o la cuenta SMTP |
+| Asistente con IA (opcional) | [console.groq.com](https://console.groq.com) → *API Keys* (cuenta gratis; activar *Zero Data Retention* en *Data Controls*). Pasos en `docs/DESPLIEGUE.md` §5.2. | `Asistente__Proveedor=Groq` · `Asistente__Groq__ClaveApi=gsk_…` |
 | Supabase Storage | El mismo proyecto de la base → *Project Settings → API Keys → Secret keys*. Los buckets los crea la API (`docs/DESPLIEGUE.md` §3). | `Almacenamiento__Url=https://<ref>.supabase.co/storage/v1` · `Almacenamiento__LlaveServicio=sb_secret_…` |
 
 ## 8. Base de datos y migraciones

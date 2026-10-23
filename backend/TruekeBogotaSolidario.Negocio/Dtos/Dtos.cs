@@ -941,3 +941,25 @@ public sealed record InvitacionDto(string Codigo, int Logradas, int Recompensada
 
 /// <summary>Paquete de recarga: pagas MontoCop y recibes Puntos + Bono.</summary>
 public sealed record PaqueteRecargaDto(int MontoCop, int Puntos, int Bono);
+
+// ---------- Asistente de ayuda con IA ----------
+public enum RolTurnoAsistenteDto { Usuario = 1, Asistente = 2 }
+
+/// <summary>Un turno anterior de la conversación (el historial vive en el navegador; el servidor no lo guarda).</summary>
+public sealed class TurnoAsistenteRequest
+{
+    [EnumDataType(typeof(RolTurnoAsistenteDto))] public RolTurnoAsistenteDto Rol { get; init; }
+    [Required, StringLength(1000, MinimumLength = 1)] public string Texto { get; init; } = "";
+}
+
+public sealed class PreguntaAsistenteRequest
+{
+    [Required, StringLength(500, MinimumLength = 2)] public string Pregunta { get; init; } = "";
+    [MaxLength(10)] public IReadOnlyList<TurnoAsistenteRequest> Historial { get; init; } = [];
+}
+
+/// <summary>Ruta interna de la app (siempre de una lista permitida) para el botón de la respuesta.</summary>
+public sealed record EnlaceAsistenteDto(string Texto, string Ruta);
+
+/// <summary>Texto plano: el front nunca lo pinta como HTML.</summary>
+public sealed record RespuestaAsistenteDto(string Texto, IReadOnlyList<EnlaceAsistenteDto> Enlaces);

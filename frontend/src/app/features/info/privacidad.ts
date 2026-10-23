@@ -99,6 +99,7 @@ export default class Privacidad {
           'Brevo (Francia, Unión Europea): envío de correos.',
           'Wompi (Colombia): procesamiento de los pagos. Los datos de tu tarjeta o cuenta los recibe directamente Wompi; nosotros no los vemos ni los guardamos.',
           'Google (Estados Unidos): inicio de sesión con Google, si lo eliges, y verificación contra robots (reCAPTCHA).',
+          'Groq (Estados Unidos): asistente de ayuda con inteligencia artificial, solo si tienes sesión y le escribes. Recibe tu pregunta, lo que hablaste antes con el asistente y, cuando hace falta para responderte, tu saldo de Eco-Puntos y el estado de tus publicaciones y solicitudes. No recibe tu correo, tu documento ni tu ubicación, y nosotros no guardamos la conversación.',
         ],
       },
       {

@@ -20,6 +20,7 @@ flowchart TB
     GOOGLE["🔐 Google<br/>Inicio de sesión (OIDC)<br/>y reCAPTCHA v3"]:::externo
     SMTP["✉️ Correo SMTP<br/>Verificación, avisos, PQR"]:::externo
     DIAN["🧾 Facturación electrónica<br/>(registro manual del CUFE hoy)"]:::externo
+    GROQ["🤖 Groq<br/>IA del asistente de ayuda<br/>(opcional, nivel gratis)"]:::externo
 
     U1 -->|"HTTPS"| SYS
     U2 -->|"HTTPS"| SYS
@@ -27,6 +28,7 @@ flowchart TB
     SYS -->|"Valida ID token y captcha"| GOOGLE
     SYS -->|"Envía correos"| SMTP
     SYS -.->|"Factura de cada pago aprobado"| DIAN
+    SYS -.->|"Pregunta + datos propios mínimos<br/>(sin correos ni ubicación)"| GROQ
 
     classDef persona fill:#1e3a8a,color:#fff,stroke:#3b82f6;
     classDef system fill:#1f7a4d,color:#fff,stroke:#7bcfa3,stroke-width:2px;
@@ -53,6 +55,7 @@ flowchart TB
     WOMPI["💳 Wompi"]:::externo
     GOOGLE["🔐 Google"]:::externo
     SMTP["✉️ SMTP"]:::externo
+    GROQ["🤖 Groq"]:::externo
 
     U -->|"HTTPS"| FE
     U -->|"PUT de fotos con URL firmada"| STORAGE
@@ -63,6 +66,7 @@ flowchart TB
     API --> WOMPI
     API --> GOOGLE
     API --> SMTP
+    API -.->|"Asistente con IA (opcional)"| GROQ
 
     classDef persona fill:#1e3a8a,color:#fff,stroke:#3b82f6;
     classDef contenedor fill:#0f172a,color:#7dd3fc,stroke:#38bdf8;
@@ -87,7 +91,7 @@ flowchart LR
         C2["Publicaciones · Comentarios · Ubicaciones · Perfiles"]:::componente
         C3["Solicitudes · Conversaciones"]:::componente
         C4["EcoPuntos · Pagos · Facturacion · Pqr"]:::componente
-        C5["Denuncias · Administracion · Notificaciones · Archivos · Configuracion"]:::componente
+        C5["Denuncias · Administracion · Notificaciones · Archivos · Configuracion · Asistente"]:::componente
         HUB["NotificacionesHub (SignalR)"]:::componente
     end
 
@@ -97,8 +101,8 @@ flowchart LR
         S2["PublicacionService · ComentarioService · UbicacionService<br/>FotoPerfilService · ArchivoService"]:::componente
         S3["SolicitudService · ChatService · BloqueoService"]:::componente
         S4["EcoPuntosService · PagoService · FacturacionService · PqrService"]:::componente
-        S5["DenunciaService · AdministracionService · NotificacionService<br/>DatosPersonalesService · ConfiguracionService"]:::componente
-        T["Transversales: INotificador · IAvisosCorreo · IPresencia<br/>IEmisorTiempoReal · IVerificadorCaptcha · IAlmacenArchivos"]:::componente
+        S5["DenunciaService · AdministracionService · NotificacionService<br/>DatosPersonalesService · ConfiguracionService<br/>AsistenteService (solo lectura de S2 · S3 · S4)"]:::componente
+        T["Transversales: INotificador · IAvisosCorreo · IPresencia<br/>IEmisorTiempoReal · IVerificadorCaptcha · IAlmacenArchivos<br/>IModeloLenguaje (Groq)"]:::componente
         BG["Tareas en segundo plano: Mantenimiento · EnvioCorreos<br/>ReconciliadorPagos · VolcadoVistas"]:::componente
     end
 
