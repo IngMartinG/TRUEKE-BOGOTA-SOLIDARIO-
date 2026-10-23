@@ -26,6 +26,8 @@ export class ConfigService {
    * Eco-Puntos. Si la API no respondió se asume true: el backend decide igual.
    */
   readonly ventasHabilitadas = computed(() => this._config().ventasHabilitadas !== false);
+  /** El asistente de ayuda puede responder con IA (solo para cuentas con correo verificado). */
+  readonly asistenteIa = computed(() => this._config().asistenteIa === true);
   /** Enlace externo para aportes voluntarios ("Apoya el proyecto"); null = no se muestra. */
   readonly donacionUrl = computed(() => this._config().donacionUrl ?? null);
   /** Llave pública VAPID para las notificaciones push (null = apagadas en el servidor). */

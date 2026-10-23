@@ -36,4 +36,5 @@ public static class Politicas
     public const string LimiteEscritura = "escritura";
     public const string LimiteRefresco = "refresco";
     public const string LimitePqrPublica = "pqr-publica";
+    public const string LimiteAsistente = "asistente";
 }

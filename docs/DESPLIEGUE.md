@@ -90,6 +90,7 @@ Después de esto, **cada merge a `main` se despliega solo** cuando pasan los che
 | Correo (Brevo) | Ver §5.1 | `Correo__Brevo__ClaveApi`, `Correo__Remitente` |
 | Wompi (sandbox) | [comercios.wompi.co](https://comercios.wompi.co) → *Desarrolladores* → llaves de **prueba** (`pub_test_…`, `prv_test_…`, integridad, eventos) | `Pagos__Wompi__*` · URL de eventos: `https://<api>/api/v1/pagos/wompi/eventos` |
 | Aportes voluntarios (opcional) | Link de pago de Wompi o enlace de la llave Bre-B/Nequi (https). No da Eco-Puntos y no es deducible de impuestos | `Donaciones__Url` |
+| Asistente con IA (opcional) | Ver §5.2 | `Asistente__Proveedor=Groq`, `Asistente__Groq__ClaveApi` |
 | Google (opcional) | Ver `backend/README.md` §7.1; origen autorizado `https://ingmarting.github.io` | `Google__ClientId` |
 
 Más detalle de cada llave: [`backend/README.md` §7.1](../backend/README.md).
@@ -111,6 +112,15 @@ Render gratis **bloquea el SMTP** (puertos 25, 465 y 587), así que Gmail por SM
 **Con un Gmail como remitente**, Brevo puede cambiar el dominio del remitente por `brevosend.com` para cumplir las reglas de Gmail y Yahoo (DMARC), y algunos correos pueden caer en spam. Con **dominio propio** (§8): Brevo → *Domains* → *Add a domain* → publicar los registros DNS (DKIM y DMARC) que pide → remitente `no-responder@tudominio`. Si 300 al día no alcanzan, el plan Starter de Brevo sube el límite sin cambiar el código.
 
 En un plan pago de Render se puede usar también cualquier SMTP: `Correo__Proveedor=Smtp` en `render.yaml` y `Correo__Smtp__Host`, `Correo__Smtp__Usuario`, `Correo__Smtp__Clave` (por ejemplo Gmail con contraseña de aplicación) y `Correo__Remitente` = esa cuenta.
+
+### 5.2 Asistente de ayuda con IA (Groq, gratis)
+Sin esto, el botón "Ayuda" responde solo con la guía local. Con la IA activa, las cuentas con correo verificado reciben respuestas de Groq; si se acaba el cupo gratis o Groq falla, el asistente vuelve solo a la guía.
+1. Crear la cuenta gratis en [console.groq.com](https://console.groq.com) (sin tarjeta).
+2. **Settings → Data Controls** → activar *Zero Data Retention* si está disponible (Groq no guarda las preguntas).
+3. **API Keys** → *Create API Key* (`gsk_…`). Es un secreto: no va en el repositorio.
+4. **Render** → *trueke-api* → *Environment*: `Asistente__Proveedor` = `Groq` y `Asistente__Groq__ClaveApi` = la clave → *Save, rebuild, and deploy*. **Si falta la clave con `Groq`, la API no arranca.**
+5. Opcional: `Asistente__MensajesPorDia` (20 por persona), `Asistente__Groq__Modelo` (`openai/gpt-oss-120b`). Los límites del nivel gratis se ven en *Settings → Limits*.
+6. **Probar:** ingresar con una cuenta verificada, abrir "Ayuda" y preguntar "¿cuántos Eco-Puntos tengo?". Si en los logs de Render sale `Asistente no disponible: Groq rechazó la petición (HTTP 401)`, revisar la clave; con `HTTP 429`, se acabó el cupo del día o del minuto.
 
 ## 6. Conectar el front con la API
 1. GitHub → repositorio → **Settings** → **Secrets and variables** → **Actions** → pestaña **Variables** → *New repository variable*: `API_URL` = la URL de Render (sin `/` al final). No es secreta: el navegador la ve igual.

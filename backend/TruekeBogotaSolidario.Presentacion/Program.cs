@@ -167,11 +167,16 @@ builder.Services.AddRateLimiter(o =>
     var limiteRefresco = limites.Refresco;
     var limitePqrMinuto = limites.PqrPublica;
     var limitePqrHora = limites.PqrPublicaPorHora;
+    var limiteAsistente = config.GetValue("RateLimiting:AsistentePorMinuto", 6);
     o.AddPolicy(Politicas.LimiteRefresco, c => RateLimitPartition.GetFixedWindowLimiter(Ip(c),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = limiteRefresco, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     o.AddPolicy(Politicas.LimiteEscritura, c => RateLimitPartition.GetFixedWindowLimiter(
         c.User.FindFirst("sub")?.Value ?? Ip(c),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = limiteEscritura, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
+    // Asistente con IA: por persona (siempre hay sesión); el cupo diario lo lleva AsistenteService.
+    o.AddPolicy(Politicas.LimiteAsistente, c => RateLimitPartition.GetFixedWindowLimiter(
+        c.User.FindFirst("sub")?.Value ?? Ip(c),
+        _ => new FixedWindowRateLimiterOptions { PermitLimit = limiteAsistente, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     o.AddPolicy(Politicas.LimiteAuth, c => RateLimitPartition.GetFixedWindowLimiter(Ip(c),
         _ => new FixedWindowRateLimiterOptions { PermitLimit = limiteAuth, Window = TimeSpan.FromMinutes(1), QueueLimit = 0 }));
     // PQRS pública: límite propio (no comparte el del ingreso, para que el abuso desde una IP compartida no deje sin

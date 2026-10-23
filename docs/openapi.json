@@ -1199,6 +1199,54 @@
         }
       }
     },
+    "/api/v1/asistente/preguntar": {
+      "post": {
+        "tags": [
+          "Asistente"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreguntaAsistenteRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PreguntaAsistenteRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/PreguntaAsistenteRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaAsistenteDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaAsistenteDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RespuestaAsistenteDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/auth/registrar": {
       "post": {
         "tags": [
@@ -6573,6 +6621,9 @@
           "donacionUrl": {
             "type": "string",
             "nullable": true
+          },
+          "asistenteIa": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -7574,6 +7625,18 @@
           "cufe": {
             "maxLength": 120,
             "minLength": 10,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EnlaceAsistenteDto": {
+        "type": "object",
+        "properties": {
+          "texto": {
+            "type": "string"
+          },
+          "ruta": {
             "type": "string"
           }
         },
@@ -9417,6 +9480,27 @@
         },
         "additionalProperties": false
       },
+      "PreguntaAsistenteRequest": {
+        "required": [
+          "pregunta"
+        ],
+        "type": "object",
+        "properties": {
+          "pregunta": {
+            "maxLength": 500,
+            "minLength": 2,
+            "type": "string"
+          },
+          "historial": {
+            "maxItems": 10,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TurnoAsistenteRequest"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "PublicacionCercanaDto": {
         "type": "object",
         "properties": {
@@ -9741,6 +9825,21 @@
         },
         "additionalProperties": false
       },
+      "RespuestaAsistenteDto": {
+        "type": "object",
+        "properties": {
+          "texto": {
+            "type": "string"
+          },
+          "enlaces": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/EnlaceAsistenteDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "RestablecerClaveRequest": {
         "required": [
           "claveNueva",
@@ -9766,6 +9865,13 @@
           "Cliente",
           "Administrador",
           "SuperUsuario"
+        ],
+        "type": "string"
+      },
+      "RolTurnoAsistenteDto": {
+        "enum": [
+          "Usuario",
+          "Asistente"
         ],
         "type": "string"
       },
@@ -10077,6 +10183,23 @@
           "fechaUtc": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "TurnoAsistenteRequest": {
+        "required": [
+          "texto"
+        ],
+        "type": "object",
+        "properties": {
+          "rol": {
+            "$ref": "#/components/schemas/RolTurnoAsistenteDto"
+          },
+          "texto": {
+            "maxLength": 1000,
+            "minLength": 1,
+            "type": "string"
           }
         },
         "additionalProperties": false
