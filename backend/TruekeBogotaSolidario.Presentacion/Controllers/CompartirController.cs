@@ -19,7 +19,7 @@ namespace TruekeBogotaSolidario.Presentacion.Controllers;
 public sealed class CompartirController : ControllerBase
 {
     private const string Marca = "Trueke Bogotá Solidario";
-    private const string DescripcionGeneral = "Intercambia, compra y dona en tu ciudad. Economía circular hecha comunidad.";
+    private const string DescripcionGeneral = "Intercambia, compra, vende y dona en tu ciudad. Economía circular hecha comunidad.";
 
     private readonly IVistaPreviaService _vistaPrevia;
     private readonly UrlsOpciones _urls;

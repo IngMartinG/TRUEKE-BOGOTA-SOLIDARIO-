@@ -56,7 +56,7 @@ export default class Privacidad {
           'Contenido que publicas: publicaciones, fotos, comentarios, mensajes del chat, calificaciones y denuncias.',
           'Actividad en la plataforma: intercambios, Eco-Puntos, pagos, facturas y solicitudes de soporte.',
           'Datos de facturación, si los registras: tipo y número de documento, nombre o razón social, correo y dirección.',
-          'Registro de vendedor, solo si vendes en modo Compra: nombre o razón social, tipo y número de documento, dirección de notificaciones, municipio y teléfono. El documento, la dirección y el teléfono se guardan cifrados y nunca se muestran a otras personas de la comunidad.',
+          'Registro de vendedor, solo si vendes en modo Compra y venta: nombre o razón social, tipo y número de documento, dirección de notificaciones, municipio y teléfono. El documento, la dirección y el teléfono se guardan cifrados y nunca se muestran a otras personas de la comunidad.',
           'Datos técnicos: dirección IP, tipo de dispositivo y registros de seguridad (inicios de sesión, cambios de contraseña), para proteger tu cuenta y prevenir fraudes.',
         ],
       },

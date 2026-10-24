@@ -124,7 +124,7 @@ public sealed class BusquedaGuardadaService : IBusquedaGuardadaService
     {
         var partes = new List<string>();
         if (b.Texto is not null) partes.Add(b.Texto);
-        if (b.Modo is { } m) partes.Add(m switch { ModoTransaccion.Donacion => "Donación", ModoTransaccion.Compra => "Compra", _ => "Trueke" });
+        if (b.Modo is { } m) partes.Add(m switch { ModoTransaccion.Donacion => "Donación", ModoTransaccion.Compra => "Compra y venta", _ => "Trueke" });
         if (b.CategoriaId is { } c && categorias.TryGetValue(c, out var cat)) partes.Add(cat);
         if (b.MunicipioCodigo is not null) partes.Add(Divipola.NombreCompleto(b.MunicipioCodigo));
         else if (Divipola.ObtenerDepartamento(b.DepartamentoCodigo) is { } d) partes.Add(d.Nombre);

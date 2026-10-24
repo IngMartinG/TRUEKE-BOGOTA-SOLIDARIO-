@@ -12,14 +12,14 @@ async function elegir(page: Page, nombre: string | RegExp): Promise<void> {
   await expect(radio).toBeChecked();
 }
 
-test('vender por primera vez: la publicación en Compra pide el registro de vendedor y luego se publica', async ({ page }) => {
+test('vender por primera vez: la publicación en Compra y venta pide el registro de vendedor y luego se publica', async ({ page }) => {
   const titulo = `Lámpara de escritorio E2E ${randomBytes(3).toString('hex')}`;
   const cuenta = await cuentaLista(page, 'Valeria');
   await ingresar(page, cuenta);
 
-  await test.step('elige Compra y ve el aviso del registro', async () => {
+  await test.step('elige Compra y venta y ve el aviso del registro', async () => {
     await page.goto('/publicar');
-    await elegir(page, /^Compra\b/);
+    await elegir(page, /^Compra y venta\b/);
     await expect(page.getByText('Para vender, la ley pide registrar una sola vez')).toBeVisible();
     await page.getByRole('button', { name: 'Continuar' }).click();
 

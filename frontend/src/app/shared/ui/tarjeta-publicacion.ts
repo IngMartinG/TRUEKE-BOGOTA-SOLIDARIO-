@@ -16,7 +16,7 @@ import { InsigniaModo } from './insignia-modo';
     @let p = publicacion();
     <article class="group tarjeta-interactiva relative flex h-full flex-col overflow-hidden">
       <a [routerLink]="['/publicacion', p.id]" class="absolute inset-0 z-10" [attr.aria-label]="'Ver ' + p.titulo"></a>
-      <div class="relative aspect-[4/3]">
+      <div class="@container relative aspect-[4/3]">
         <app-imagen-publicacion
           class="size-full"
           [src]="p.imagenes?.[0]"
@@ -26,7 +26,7 @@ import { InsigniaModo } from './insignia-modo';
           [categoriaId]="p.categoria?.id"
           claseImagen="group-hover:scale-105"
         />
-        <div class="absolute top-3 left-3 flex flex-wrap gap-1.5">
+        <div class="insignias-tarjeta absolute right-12 flex flex-wrap items-start gap-1.5 pointer-coarse:right-14">
           <app-insignia-modo [modo]="p.modo" class="shadow-sm" />
           @if (p.destacada) {
             <span class="insignia-sol shadow-sm"><app-icono nombre="destello" [tamano]="12" />Destacada</span>

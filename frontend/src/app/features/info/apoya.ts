@@ -174,6 +174,6 @@ export default class Apoya {
   ];
 
   protected compartir(): void {
-    void this.compartirProyecto.compartir('Trueke Bogotá Solidario: intercambia, compra de segunda mano o dona con tus vecinos. Es gratis.');
+    void this.compartirProyecto.compartir('Trueke Bogotá Solidario: intercambia, compra y vende de segunda mano o dona con tus vecinos. Es gratis.');
   }
 }

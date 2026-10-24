@@ -86,7 +86,7 @@ export class Invitar {
     if (!url) return;
     if (this.puedeCompartir) {
       try {
-        await navigator.share({ title: 'Trueke Bogotá Solidario', text: 'Te invito a Trueke Bogotá Solidario: intercambia, compra o dona y gana Eco-Puntos.', url });
+        await navigator.share({ title: 'Trueke Bogotá Solidario', text: 'Te invito a Trueke Bogotá Solidario: intercambia, compra, vende o dona y gana Eco-Puntos.', url });
         return;
       } catch (e) {
         if (e instanceof DOMException && e.name === 'AbortError') return;

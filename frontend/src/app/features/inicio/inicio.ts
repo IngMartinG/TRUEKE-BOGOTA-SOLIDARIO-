@@ -38,7 +38,7 @@ import { impactoVisible, ResumenImpacto } from '../../shared/ui/resumen-impacto'
             a lo que ya no usas
           </h1>
           <p class="mt-6 max-w-xl text-lg text-bosque-100/85">
-            Intercambia, compra de segunda mano o dona con tus vecinos. Cada objeto que circula es un residuo menos y te suma
+            Intercambia, compra y vende de segunda mano o dona con tus vecinos. Cada objeto que circula es un residuo menos y te suma
             <strong class="text-sol-300">Eco-Puntos</strong>.
           </p>
 

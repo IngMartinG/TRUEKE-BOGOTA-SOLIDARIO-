@@ -44,7 +44,7 @@ public static class PlantillaCorreo
         if (pie is not null) html.Append("<p style=\"margin:16px 0 0;font-size:13px;color:#5b6b61\">").Append(H(pie)).Append("</p>");
         html.Append("</td></tr>")
             .Append("<tr><td style=\"padding:16px 28px;background:#f8faf9;font-size:12px;color:#7a887f\">")
-            .Append("Economía circular para Bogotá: Trueke · Compra · Donación. Este es un mensaje automático; no lo respondas con datos sensibles.")
+            .Append("Economía circular para Bogotá: Trueke · Compra y venta · Donación. Este es un mensaje automático; no lo respondas con datos sensibles.")
             .Append("</td></tr></table></td></tr></table></body></html>");
 
         return new MensajeCorreo(para, asunto, texto.ToString().TrimEnd(), html.ToString());

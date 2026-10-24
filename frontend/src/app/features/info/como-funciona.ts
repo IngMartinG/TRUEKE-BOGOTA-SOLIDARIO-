@@ -83,7 +83,7 @@ export default class ComoFunciona {
   protected readonly modos = MODOS;
   protected readonly pasos = [
     { icono: 'usuario', titulo: 'Crea tu cuenta', texto: 'Regístrate con tu correo o con Google y confirma tu correo. Recibes Eco-Puntos de bienvenida.' },
-    { icono: 'camara', titulo: 'Publica lo que ya no usas', texto: 'Sube hasta 5 fotos, describe el estado del objeto, indica si es nuevo, usado o reparado, elige Trueke, Compra o Donación y marca tu ciudad y barrio. Tu ubicación exacta nunca se muestra en público.' },
+    { icono: 'camara', titulo: 'Publica lo que ya no usas', texto: 'Sube hasta 5 fotos, describe el estado del objeto, indica si es nuevo, usado o reparado, elige Trueke, Compra y venta o Donación y marca tu ciudad y barrio. Tu ubicación exacta nunca se muestra en público.' },
     { icono: 'buscar', titulo: 'Explora y solicita', texto: 'Busca por categoría, ciudad, estado del producto o cerca de ti. Cuando algo te guste, envía una solicitud con un mensaje.' },
     { icono: 'mensaje', titulo: 'Acuerden por el chat', texto: 'Si el dueño acepta, se abre un chat privado para coordinar la entrega. No necesitas compartir tu teléfono ni tu correo.' },
     { icono: 'apreton', titulo: 'Confirmen la entrega', texto: 'Cuando el objeto cambie de manos, ambas personas confirman en la app. Si alguien olvida confirmar, el intercambio se cierra automáticamente tras unos días.' },

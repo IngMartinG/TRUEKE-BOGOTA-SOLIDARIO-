@@ -9,6 +9,6 @@ export class TituloEstrategia extends TitleStrategy {
 
   override updateTitle(estado: RouterStateSnapshot): void {
     const titulo = this.buildTitle(estado);
-    this.title.setTitle(titulo ? `${titulo} · Trueke Bogotá Solidario` : 'Trueke Bogotá Solidario · Intercambia, compra y dona');
+    this.title.setTitle(titulo ? `${titulo} · Trueke Bogotá Solidario` : 'Trueke Bogotá Solidario · Intercambia, compra, vende y dona');
   }
 }

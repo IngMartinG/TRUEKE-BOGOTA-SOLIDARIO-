@@ -55,7 +55,7 @@ public class CompartirTests : IClassFixture<FabricaApi>
         var html = await r.Content.ReadAsStringAsync();
         Assert.Contains("<meta property=\"og:title\" content=\"Televisor &lt;b&gt;&quot;32&quot;&lt;/b&gt;\">", html);
         Assert.DoesNotContain("<b>", html);
-        Assert.Contains("Compra · $50.000 · Kennedy", html);
+        Assert.Contains("Compra y venta · $50.000 · Kennedy", html);
         Assert.Contains("Funciona perfecto. Incluye control.", html);  // una sola línea
         Assert.Contains($"/compartir/publicaciones/{id}/imagen.jpg\"", html);
         Assert.Matches("og:image\" content=\"https?://", html);         // absoluta: WhatsApp no resuelve rutas relativas
