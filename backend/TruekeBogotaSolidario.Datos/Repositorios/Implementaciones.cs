@@ -360,6 +360,17 @@ public sealed class SolicitudRepository : ISolicitudRepository
                     || (s.ConfirmadaPorDuenioUtc == null && s.ConfirmadaPorSolicitanteUtc == null && s.FechaAceptacionUtc < limiteSinConfirmacion)))
             .OrderBy(s => s.FechaAceptacionUtc).Take(maximo).Select(s => s.Id).ToListAsync();
 
+    public async Task<IReadOnlyList<Guid>> ListarParaRecordatorioAsync(DateTime limiteEntrega, DateTime limiteCierreConConfirmacion,
+        DateTime limiteCierreSinConfirmacion, int maximo)
+        => await _db.Solicitudes.AsNoTracking()
+            .Where(s => s.Estado == EstadoSolicitud.Aceptada && s.FechaAceptacionUtc != null
+                && (s.ConfirmadaPorDuenioUtc == null || s.ConfirmadaPorSolicitanteUtc == null)
+                && ((s.RecordatorioEntregaUtc == null && s.FechaAceptacionUtc <= limiteEntrega)
+                    || (s.RecordatorioCierreUtc == null
+                        && (((s.ConfirmadaPorDuenioUtc != null || s.ConfirmadaPorSolicitanteUtc != null) && s.FechaAceptacionUtc <= limiteCierreConConfirmacion)
+                            || (s.ConfirmadaPorDuenioUtc == null && s.ConfirmadaPorSolicitanteUtc == null && s.FechaAceptacionUtc <= limiteCierreSinConfirmacion)))))
+            .OrderBy(s => s.FechaAceptacionUtc).Take(maximo).Select(s => s.Id).ToListAsync();
+
     public async Task<IReadOnlyList<Solicitud>> ListarPendientesDelUsuarioAsync(Guid usuarioId)
         => await _db.Solicitudes.Include(s => s.Publicacion)
             .Where(s => (s.Estado == EstadoSolicitud.Pendiente || s.Estado == EstadoSolicitud.Aceptada)

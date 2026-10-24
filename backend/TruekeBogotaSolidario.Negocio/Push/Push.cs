@@ -253,7 +253,7 @@ public sealed class AvisosPush : IAvisosPush
     private static readonly HashSet<string> TiposIntercambio = new(StringComparer.Ordinal)
     {
         TiposNotificacion.SolicitudNueva, TiposNotificacion.SolicitudAceptada, TiposNotificacion.SolicitudRechazada,
-        TiposNotificacion.SolicitudCancelada, TiposNotificacion.EntregaConfirmada, TiposNotificacion.IntercambioCompletado,
+        TiposNotificacion.SolicitudCancelada, TiposNotificacion.EntregaConfirmada, TiposNotificacion.EntregaPendiente, TiposNotificacion.IntercambioCompletado,
         TiposNotificacion.IntercambioNoConcretado, TiposNotificacion.CalificacionRecibida
     };
 

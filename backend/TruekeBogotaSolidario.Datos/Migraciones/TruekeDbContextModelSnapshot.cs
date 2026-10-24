@@ -1223,6 +1223,12 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<Guid?>("PublicacionOfrecidaId")
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("RecordatorioCierreUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("RecordatorioEntregaUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<uint>("RowVersion")
                         .IsConcurrencyToken()
                         .ValueGeneratedOnAddOrUpdate()

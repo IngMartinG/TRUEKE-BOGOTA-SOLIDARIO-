@@ -138,6 +138,12 @@ public interface ISolicitudRepository
     /// (se completan), o SIN confirmaciones y aceptadas antes de <paramref name="limiteSinConfirmacion"/> (no concretadas).
     /// </summary>
     Task<IReadOnlyList<Guid>> ListarParaCierreAutomaticoAsync(DateTime limiteConConfirmacion, DateTime limiteSinConfirmacion, int maximo);
+    /// <summary>
+    /// Aceptadas sin las dos confirmaciones que ya deben recibir un recordatorio: el de entrega (aceptadas antes de
+    /// <paramref name="limiteEntrega"/>) o el de cierre (a un día del cierre automático, con o sin una confirmación).
+    /// </summary>
+    Task<IReadOnlyList<Guid>> ListarParaRecordatorioAsync(DateTime limiteEntrega, DateTime limiteCierreConConfirmacion,
+        DateTime limiteCierreSinConfirmacion, int maximo);
     /// <summary>En curso (Pendientes o Aceptadas) enviadas o recibidas por el usuario, CON tracking e incluyendo la Publicacion.</summary>
     Task<IReadOnlyList<Solicitud>> ListarPendientesDelUsuarioAsync(Guid usuarioId);
     /// <summary>Total de solicitudes que ha recibido la publicación (interés), en cualquier estado.</summary>

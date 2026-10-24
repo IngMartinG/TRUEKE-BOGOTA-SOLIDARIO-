@@ -91,6 +91,67 @@ public class EntregaTests
         Assert.Equal("Completada", (await SolicitudAsync(e, solicitante, sol)).Estado);
     }
 
+    private static async Task<IReadOnlyList<NotificacionDto>> RecordatoriosAsync(EntornoNegocio e, Guid id)
+        => (await e.EnScopeAsync<INotificacionService, PaginaDto<NotificacionDto>>(s => s.ListarAsync(id, false, 1, 50)))
+            .Items.Where(n => n.Tipo == TiposNotificacion.EntregaPendiente).ToList();
+
+    private static async Task RecordarTodosAsync(EntornoNegocio e)
+    {
+        foreach (var id in await e.EnScopeAsync<ISolicitudService, IReadOnlyList<Guid>>(s => s.ListarParaRecordatorioAsync(100)))
+            await e.EnScopeAsync<ISolicitudService>(s => s.RecordarEntregaAsync(id));
+    }
+
+    [Fact]
+    public async Task Recuerda_la_entrega_a_los_3_dias_y_un_dia_antes_del_cierre_solo_a_quien_no_confirmo()
+    {
+        var reloj = new RelojFalso();
+        using var e = new EntornoNegocio(reloj: reloj);
+        var (duenio, solicitante, sol, _) = await AcordarAsync(e);
+
+        reloj.Avanzar(TimeSpan.FromDays(2));
+        await RecordarTodosAsync(e);
+        Assert.Empty(await RecordatoriosAsync(e, solicitante)); // aún no
+
+        reloj.Avanzar(TimeSpan.FromDays(1.5));
+        await RecordarTodosAsync(e);
+        await RecordarTodosAsync(e); // la tarea corre cada hora: el mismo aviso no se repite
+        Assert.Single(await RecordatoriosAsync(e, duenio));
+        var primero = Assert.Single(await RecordatoriosAsync(e, solicitante));
+        Assert.Equal(sol, primero.RecursoId);
+        Assert.Contains("¿Ya se hizo la entrega", primero.Mensaje);
+
+        // El dueño confirma: el cierre pasa a los 7 días y solo a quien falta le llega el aviso de la víspera
+        await e.EnScopeAsync<ISolicitudService, SolicitudDto>(s => s.ConfirmarEntregaAsync(duenio, sol));
+        reloj.Avanzar(TimeSpan.FromDays(3)); // día 6.5
+        await RecordarTodosAsync(e);
+        Assert.Single(await RecordatoriosAsync(e, duenio));
+        var avisos = await RecordatoriosAsync(e, solicitante);
+        Assert.Equal(2, avisos.Count);
+        Assert.Contains(avisos, n => n.Mensaje.StartsWith("Mañana se completa solo"));
+        Assert.Empty(await e.EnScopeAsync<ISolicitudService, IReadOnlyList<Guid>>(s => s.ListarParaRecordatorioAsync(100)));
+    }
+
+    [Fact]
+    public async Task Sin_confirmaciones_avisa_a_ambos_la_vispera_del_cierre_y_nada_tras_completar()
+    {
+        var reloj = new RelojFalso();
+        using var e = new EntornoNegocio(reloj: reloj);
+        var (duenio, solicitante, sol, _) = await AcordarAsync(e);
+        reloj.Avanzar(TimeSpan.FromDays(29.5));
+        await RecordarTodosAsync(e);
+        // A la víspera sale solo el aviso de cierre (reemplaza al de entrega que no alcanzó a salir)
+        foreach (var id in new[] { duenio, solicitante })
+            Assert.StartsWith("Mañana se cierra como no concretado", Assert.Single(await RecordatoriosAsync(e, id)).Mensaje);
+
+        // Un intercambio completado no recibe recordatorios
+        var (d2, s2, sol2, _) = await AcordarAsync(e);
+        await e.EnScopeAsync<ISolicitudService, SolicitudDto>(s => s.ConfirmarEntregaAsync(d2, sol2));
+        await e.EnScopeAsync<ISolicitudService, SolicitudDto>(s => s.ConfirmarEntregaAsync(s2, sol2));
+        reloj.Avanzar(TimeSpan.FromDays(4));
+        Assert.DoesNotContain(sol2, await e.EnScopeAsync<ISolicitudService, IReadOnlyList<Guid>>(s => s.ListarParaRecordatorioAsync(100)));
+        Assert.Empty(await RecordatoriosAsync(e, s2));
+    }
+
     [Fact]
     public async Task Sin_confirmaciones_queda_no_concretada_a_los_30_dias()
     {

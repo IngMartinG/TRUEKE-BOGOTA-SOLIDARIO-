@@ -159,4 +159,8 @@ public static class Limites
     public const int DiasCierreConUnaConfirmacion = 7;
     /// <summary>Si nadie confirmó la entrega, el acuerdo se da por no concretado pasados estos días.</summary>
     public const int DiasCierreSinConfirmacion = 30;
+    /// <summary>A quien no ha confirmado la entrega se le recuerda pasados estos días desde que se aceptó.</summary>
+    public const int DiasRecordatorioEntrega = 3;
+    /// <summary>Segundo recordatorio: este tiempo antes del cierre automático.</summary>
+    public static readonly TimeSpan AnticipacionRecordatorioCierre = TimeSpan.FromDays(1);
 }

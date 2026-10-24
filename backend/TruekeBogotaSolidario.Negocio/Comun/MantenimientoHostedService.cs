@@ -39,6 +39,8 @@ public sealed class MantenimientoHostedService : BackgroundService
             catch (Exception ex) { _log.LogError(ex, "Fallo en el mantenimiento periódico"); }
             try { await CerrarSolicitudesVencidasAsync(ct); }
             catch (Exception ex) when (ex is not OperationCanceledException) { _log.LogError(ex, "Fallo cerrando solicitudes vencidas"); }
+            try { await RecordarEntregasAsync(ct); }
+            catch (Exception ex) when (ex is not OperationCanceledException) { _log.LogError(ex, "Fallo enviando recordatorios de entrega"); }
             try { await OtorgarBonosEcoPuntosAsync(ct); }
             catch (Exception ex) when (ex is not OperationCanceledException) { _log.LogError(ex, "Fallo entregando bonos de Eco-Puntos"); }
             try { await RecordarVencimientosAsync(); }
@@ -87,6 +89,28 @@ public sealed class MantenimientoHostedService : BackgroundService
             }
         }
         if (ids.Count > 0) _log.LogInformation("Cierre automático: {Total} solicitudes procesadas", ids.Count);
+        return ids.Count;
+    }
+
+    /// <summary>A los 3 días de aceptada y un día antes del cierre automático, a quien aún no confirmó la entrega.</summary>
+    internal async Task<int> RecordarEntregasAsync(CancellationToken ct)
+    {
+        IReadOnlyList<Guid> ids;
+        using (var scope = _fabrica.CreateScope())
+            ids = await scope.ServiceProvider.GetRequiredService<ISolicitudService>().ListarParaRecordatorioAsync(200);
+        foreach (var id in ids)
+        {
+            ct.ThrowIfCancellationRequested();
+            try
+            {
+                using var scope = _fabrica.CreateScope();
+                await scope.ServiceProvider.GetRequiredService<ISolicitudService>().RecordarEntregaAsync(id);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                _log.LogWarning(ex, "No se pudo recordar la entrega de la solicitud {SolicitudId}; se reintentará", id);
+            }
+        }
         return ids.Count;
     }
 
