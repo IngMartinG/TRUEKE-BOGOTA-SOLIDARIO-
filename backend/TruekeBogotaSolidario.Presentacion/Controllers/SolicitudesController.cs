@@ -29,9 +29,20 @@ public sealed class SolicitudesController : ControllerBase
     [HttpGet("recibidas")]
     public async Task<ActionResult<IReadOnlyList<SolicitudDto>>> Recibidas() => Ok(await _solicitudes.ListarRecibidasAsync(User.IdActual()));
 
-    /// <summary>El dueño acepta: queda Aceptada para coordinar la entrega (todavía no hay Eco-Puntos).</summary>
+    /// <summary>
+    /// Acepta la propuesta vigente quien debe responderla (el dueño la solicitud; quien solicita, la contraoferta del dueño):
+    /// queda Aceptada para coordinar la entrega (todavía no hay Eco-Puntos).
+    /// </summary>
     [HttpPost("{id:guid}/aceptar")]
     public async Task<ActionResult<SolicitudDto>> Aceptar(Guid id) => Ok(await _solicitudes.AceptarAsync(User.IdActual(), id));
+
+    /// <summary>
+    /// Contraoferta de quien debe responder: otro precio (Compra) u otros objetos de quien solicita, de 1 a 3 (Trueke).
+    /// Pasa el turno a la otra parte; máximo 5 por solicitud. En una donación no hay contraofertas.
+    /// </summary>
+    [HttpPost("{id:guid}/contraoferta"), EnableRateLimiting(Politicas.LimiteEscritura)]
+    public async Task<ActionResult<SolicitudDto>> Contraoferta(Guid id, [FromBody] ContraofertaRequest r)
+        => Ok(await _solicitudes.ContraofertarAsync(User.IdActual(), id, r));
 
     [HttpPost("{id:guid}/rechazar")]
     public async Task<IActionResult> Rechazar(Guid id, [FromBody] RechazarSolicitudRequest? r)

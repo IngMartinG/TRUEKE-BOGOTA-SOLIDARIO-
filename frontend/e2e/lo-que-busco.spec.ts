@@ -40,7 +40,7 @@ test('lo que busco: anotar un deseo, encontrar el trueke mutuo y proponerlo con 
 
   await test.step('La propuesta se abre con su casco ya elegido', async () => {
     await expect(ana.page).toHaveURL(new RegExp(`/publicacion/${idBicicleta}\\?ofrecer=`));
-    await expect(ana.page.getByRole('radio', { name: `Ofrecer ${casco}` })).toBeChecked();
+    await expect(ana.page.getByRole('checkbox', { name: `Ofrecer ${casco}` })).toBeChecked();
   });
 
   await test.step('En el perfil de Beto, Ana ve lo que busca y que ella lo tiene', async () => {

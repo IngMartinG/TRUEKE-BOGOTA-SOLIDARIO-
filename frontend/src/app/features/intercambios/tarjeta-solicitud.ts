@@ -1,18 +1,18 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { ETIQUETA_ESTADO_SOLICITUD, infoCondicion, INFO_MODO, type ModoDto, type SolicitudDto } from '../../api/tipos';
-import { FechaPipe, HacePipe } from '../../shared/pipes';
+import { CopPipe, FechaPipe, HacePipe } from '../../shared/pipes';
 import { Avatar } from '../../shared/ui/avatar';
 import { Estrellas } from '../../shared/ui/estrellas';
 import { Icono } from '../../shared/ui/icono';
 import { ImagenPublicacion } from '../../shared/ui/imagen-publicacion';
 import { InsigniaModo } from '../../shared/ui/insignia-modo';
 
-export type AccionSolicitud = 'aceptar' | 'rechazar' | 'cancelar' | 'confirmar' | 'noConcretada' | 'calificar';
+export type AccionSolicitud = 'aceptar' | 'contraofertar' | 'rechazar' | 'cancelar' | 'confirmar' | 'noConcretada' | 'calificar';
 
 @Component({
   selector: 'app-tarjeta-solicitud',
-  imports: [RouterLink, Avatar, Icono, ImagenPublicacion, InsigniaModo, Estrellas, HacePipe, FechaPipe],
+  imports: [RouterLink, Avatar, Icono, ImagenPublicacion, InsigniaModo, Estrellas, HacePipe, FechaPipe, CopPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @let s = solicitud();
@@ -38,17 +38,38 @@ export type AccionSolicitud = 'aceptar' | 'rechazar' | 'cancelar' | 'confirmar' 
             </span>
           </a>
           <blockquote class="mt-4 rounded-2xl rounded-tl-sm bg-superficie-2 p-3 text-sm break-words whitespace-pre-line">{{ s.mensaje }}</blockquote>
-          @if (s.ofrecida; as o) {
-            <a [routerLink]="['/publicacion', o.id]" class="mt-3 flex items-center gap-3 rounded-2xl border-2 border-bosque-200 p-2 transition hover:border-bosque-400 dark:border-bosque-800"
-              [attr.aria-label]="(s.soyDuenio ? 'Te ofrece: ' : 'Ofreces: ') + o.titulo">
-              <app-imagen-publicacion class="size-14 shrink-0 rounded-xl" [src]="o.foto" [miniatura]="true" modo="Trueke" />
-              <span class="min-w-0">
-                <span class="block text-xs font-semibold text-bosque-700 dark:text-bosque-200">{{ s.soyDuenio ? 'Te ofrece a cambio' : 'Ofreces a cambio' }}</span>
-                <span class="block truncate font-semibold">{{ o.titulo }}</span>
-                <span class="block text-xs text-tenue">{{ condicion(o.condicion) }}</span>
-              </span>
-              <app-icono nombre="derecha" [tamano]="16" class="ml-auto shrink-0 text-tenue" />
-            </a>
+          @if (s.ofrecidas?.length) {
+            <p class="mt-3 text-xs font-semibold text-bosque-700 dark:text-bosque-200">{{ s.soyDuenio ? 'Te ofrece a cambio' : 'Ofreces a cambio' }}</p>
+            <ul class="mt-1.5 grid gap-2">
+              @for (o of s.ofrecidas; track o.id) {
+                <li>
+                  <a [routerLink]="['/publicacion', o.id]" class="flex items-center gap-3 rounded-2xl border-2 border-bosque-200 p-2 transition hover:border-bosque-400 dark:border-bosque-800"
+                    [attr.aria-label]="(s.soyDuenio ? 'Te ofrece: ' : 'Ofreces: ') + o.titulo">
+                    <app-imagen-publicacion class="size-12 shrink-0 rounded-xl" [src]="o.foto" [miniatura]="true" modo="Trueke" />
+                    <span class="min-w-0">
+                      <span class="block truncate font-semibold">{{ o.titulo }}</span>
+                      <span class="block text-xs text-tenue">{{ condicion(o.condicion) }}</span>
+                    </span>
+                    <app-icono nombre="derecha" [tamano]="16" class="ml-auto shrink-0 text-tenue" />
+                  </a>
+                </li>
+              }
+            </ul>
+          }
+          @if (s.modo === 'Compra' && (s.precioPropuestoCop || s.precioPublicadoCop)) {
+            <p class="mt-3 flex flex-wrap items-baseline gap-x-2 text-sm">
+              <span class="text-tenue">{{ s.estado === 'Pendiente' ? 'Precio propuesto' : 'Precio acordado' }}</span>
+              <span class="font-display text-xl font-extrabold tabular-nums">{{ s.precioPropuestoCop ?? s.precioPublicadoCop | cop }}</span>
+              @if (s.precioPropuestoCop && s.precioPublicadoCop) {
+                <span class="text-xs text-tenue line-through">{{ s.precioPublicadoCop | cop }}</span>
+              }
+            </p>
+          }
+          @if (negociacion(); as n) {
+            <p class="mt-3 flex items-start gap-2 rounded-xl px-3 py-2 text-sm" [class]="n.meToca ? 'bg-sol-50 dark:bg-sol-500/10' : 'bg-superficie-2'">
+              <app-icono [nombre]="n.meToca ? 'alerta' : 'reloj'" [tamano]="16" class="mt-0.5 shrink-0" [class]="n.meToca ? 'text-sol-600 dark:text-sol-300' : 'text-tenue'" />
+              <span>{{ n.texto }}</span>
+            </p>
           }
           <p class="mt-2 text-xs text-tenue">Enviada {{ s.fechaSolicitud | hace }}</p>
           @if (s.motivoRechazo) {
@@ -85,7 +106,7 @@ export type AccionSolicitud = 'aceptar' | 'rechazar' | 'cancelar' | 'confirmar' 
             }
           </p>
         </div>
-      } @else if (s.estado === 'Pendiente' && s.soyDuenio) {
+      } @else if (s.estado === 'Pendiente' && s.soyDuenio && s.meTocaResponder) {
         <p class="mx-5 mb-4 text-xs text-tenue">
           Al aceptar, la publicación se reserva para esta persona y sale del catálogo. Si hay más interesados, quedan en lista de espera por si no se concreta.
         </p>
@@ -156,16 +177,35 @@ export class TarjetaSolicitud {
     return { numero: n, texto: h[n - 1]?.texto ?? '' };
   });
 
+  /** Quién debe responder mientras se negocia (no aplica en lista de espera: ahí nadie puede aceptar todavía). */
+  protected readonly negociacion = computed(() => {
+    const s = this.solicitud();
+    if (s.estado !== 'Pendiente' || s.enEspera) return null;
+    const n = s.contraofertas ?? 0;
+    const ronda = n > 0 ? ` (contraoferta ${n} de ${n + (s.contraofertasRestantes ?? 0)})` : '';
+    const nombre = this.otra()?.nombre ?? 'la otra persona';
+    if (!s.meTocaResponder) return { meToca: false, texto: `Esperando la respuesta de ${nombre}${ronda}.` };
+    if (n === 0) return null; // la primera propuesta al dueño ya se explica con el aviso de aceptar
+    return {
+      meToca: true,
+      texto: `${nombre} te hizo una contraoferta${ronda}. Acéptala${s.contraofertasRestantes ? ', contraoferta' : ''} o retírate.`,
+    };
+  });
+
   protected readonly acciones = computed(() => {
     const s = this.solicitud();
     const lista: { accion: AccionSolicitud; texto: string; icono: string; clase: string }[] = [];
     if (s.estado === 'Pendiente') {
-      if (s.soyDuenio) {
-        lista.push({ accion: 'rechazar', texto: 'Rechazar', icono: 'x', clase: 'btn-fantasma' });
-        // Mientras se concreta con otra persona no se puede elegir a una segunda.
-        if (!s.enEspera) lista.push({ accion: 'aceptar', texto: 'Aceptar y reservar', icono: 'check', clase: 'btn-primario' });
-      } else {
-        lista.push({ accion: 'cancelar', texto: 'Retirar solicitud', icono: 'x', clase: 'btn-fantasma' });
+      lista.push(s.soyDuenio
+        ? { accion: 'rechazar', texto: 'Rechazar', icono: 'x', clase: 'btn-fantasma' }
+        : { accion: 'cancelar', texto: 'Retirar solicitud', icono: 'x', clase: 'btn-fantasma' });
+      // Mientras se concreta con otra persona no se puede elegir a una segunda ni negociar.
+      if (s.meTocaResponder && !s.enEspera) {
+        if (s.modo !== 'Donacion' && s.contraofertasRestantes)
+          lista.push({ accion: 'contraofertar', texto: 'Contraofertar', icono: 'repeat', clase: 'btn-secundario' });
+        lista.push(s.soyDuenio
+          ? { accion: 'aceptar', texto: 'Aceptar y reservar', icono: 'check', clase: 'btn-primario' }
+          : { accion: 'aceptar', texto: 'Aceptar contraoferta', icono: 'check', clase: 'btn-primario' });
       }
     }
     // Quien ya confirmó no puede desdecirse; quien no ha confirmado puede indicar que no se concretó.

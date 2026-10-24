@@ -158,11 +158,20 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
             e.HasOne(x => x.Publicacion).WithMany().HasForeignKey(x => x.PublicacionId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Solicitante).WithMany().HasForeignKey(x => x.SolicitanteId).OnDelete(DeleteBehavior.Restrict);
-            e.HasOne(x => x.PublicacionOfrecida).WithMany().HasForeignKey(x => x.PublicacionOfrecidaId).OnDelete(DeleteBehavior.Restrict);
-            e.HasIndex(x => new { x.PublicacionOfrecidaId, x.Estado });
+            e.Property(x => x.PrecioPropuestoCop).HasPrecision(18, 2);
+            e.HasMany(x => x.Ofrecidas).WithOne().HasForeignKey(o => o.SolicitudId).OnDelete(DeleteBehavior.Cascade);
+            e.Navigation(x => x.Ofrecidas).UsePropertyAccessMode(PropertyAccessMode.Field);
             e.HasIndex(x => new { x.PublicacionId, x.Estado });
             e.HasIndex(x => new { x.SolicitanteId, x.Estado });
             if (postgres) e.Property(x => x.RowVersion).IsRowVersion(); else e.Ignore(x => x.RowVersion);
+        });
+
+        mb.Entity<SolicitudObjeto>(e =>
+        {
+            e.ToTable("SolicitudObjetos");
+            e.HasKey(x => new { x.SolicitudId, x.PublicacionId });
+            e.HasOne(x => x.Publicacion).WithMany().HasForeignKey(x => x.PublicacionId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.PublicacionId);
         });
 
         mb.Entity<Comentario>(e =>

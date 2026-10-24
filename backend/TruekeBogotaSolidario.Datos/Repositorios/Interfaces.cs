@@ -108,7 +108,7 @@ public interface IPublicacionRepository
 
 public interface ISolicitudRepository
 {
-    /// <summary>Incluye Publicacion y Solicitante.</summary>
+    /// <summary>Incluye Publicacion (con su dueño), Solicitante y los objetos ofrecidos.</summary>
     Task<Solicitud?> ObtenerPorIdAsync(Guid id);
     Task<IReadOnlyList<Solicitud>> ListarPorSolicitanteAsync(Guid solicitanteId);
     Task<IReadOnlyList<Solicitud>> ListarRecibidasAsync(Guid propietarioId);

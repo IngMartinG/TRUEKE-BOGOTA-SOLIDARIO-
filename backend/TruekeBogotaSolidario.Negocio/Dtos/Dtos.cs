@@ -272,8 +272,21 @@ public sealed class CrearSolicitudRequest
 {
     public Guid PublicacionId { get; init; }
     [Required, StringLength(500, MinimumLength = 1)] public string Mensaje { get; init; } = "";
-    /// <summary>Solo en un Trueke y opcional: una publicación propia y disponible que se ofrece a cambio.</summary>
+    /// <summary>Solo en un Trueke y opcional: hasta 3 publicaciones propias y disponibles que se ofrecen a cambio.</summary>
+    [MaxLength(3)] public List<Guid>? PublicacionesOfrecidasIds { get; init; }
+    /// <summary>Compatibilidad con la versión anterior del front (un solo objeto): se suma a PublicacionesOfrecidasIds.</summary>
     public Guid? PublicacionOfrecidaId { get; init; }
+    /// <summary>Solo en una Compra y opcional: el precio que se propone (sin él, vale el publicado).</summary>
+    [Range(1, 1_000_000_000)] public decimal? PrecioPropuestoCop { get; init; }
+}
+
+/// <summary>
+/// Contraoferta a la propuesta vigente: en una Compra, otro precio; en un Trueke, otros objetos de quien solicita (1 a 3).
+/// </summary>
+public sealed class ContraofertaRequest
+{
+    [MaxLength(3)] public List<Guid>? PublicacionesOfrecidasIds { get; init; }
+    [Range(1, 1_000_000_000)] public decimal? PrecioPropuestoCop { get; init; }
 }
 
 public sealed class RechazarSolicitudRequest
@@ -819,10 +832,16 @@ public sealed record PaginaDto<T>(IReadOnlyList<T> Items, int Total, int Pagina,
 /// Estado: Pendiente → Aceptada (coordinando la entrega) → Completada | NoConcretada; o Rechazada | Cancelada.
 /// CierreAutomaticoUtc: si sigue Aceptada, cuándo se cerrará sola (completada si alguien confirmó; no concretada si nadie).
 /// </summary>
+/// <summary>
+/// Ofrecidas = objetos de la propuesta vigente (trueke). PrecioPropuestoCop = precio de la propuesta vigente (compra; null =
+/// el publicado, PrecioPublicadoCop). MeTocaResponder: soy quien puede aceptar o contraofertar ahora (solo si está pendiente).
+/// </summary>
 public sealed record SolicitudDto(Guid Id, Guid PublicacionId, string PublicacionTitulo, string Modo, PerfilPublicoDto Propietario,
     PerfilPublicoDto Solicitante, bool SoyDuenio, DateTime FechaSolicitud, string Mensaje, string Estado, string? MotivoRechazo,
     Guid? ConversacionId, DateTime? FechaAceptacionUtc, bool ConfirmadaPorDuenio, bool ConfirmadaPorSolicitante,
-    DateTime? FechaCierreUtc, DateTime? CierreAutomaticoUtc, bool PuedoCalificar, bool EnEspera, PublicacionResumenDto? Ofrecida = null);
+    DateTime? FechaCierreUtc, DateTime? CierreAutomaticoUtc, bool PuedoCalificar, bool EnEspera,
+    IReadOnlyList<PublicacionResumenDto> Ofrecidas, decimal? PrecioPublicadoCop, decimal? PrecioPropuestoCop,
+    bool MeTocaResponder, int Contraofertas, int ContraofertasRestantes);
 
 /// <summary>Lo que se ofrece a cambio en un trueke: datos que ya son públicos en el catálogo.</summary>
 public sealed record PublicacionResumenDto(Guid Id, string Titulo, string? Foto, string Condicion, string Estado);

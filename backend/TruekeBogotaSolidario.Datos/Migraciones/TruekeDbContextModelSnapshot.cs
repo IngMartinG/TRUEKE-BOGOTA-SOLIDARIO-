@@ -1194,6 +1194,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<DateTime?>("ConfirmadaPorSolicitanteUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<int>("Contraofertas")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Estado")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -1217,10 +1220,11 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
 
-                    b.Property<Guid>("PublicacionId")
-                        .HasColumnType("uuid");
+                    b.Property<decimal?>("PrecioPropuestoCop")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
 
-                    b.Property<Guid?>("PublicacionOfrecidaId")
+                    b.Property<Guid>("PublicacionId")
                         .HasColumnType("uuid");
 
                     b.Property<DateTime?>("RecordatorioCierreUtc")
@@ -1238,15 +1242,34 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<Guid>("SolicitanteId")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("TurnoDuenio")
+                        .HasColumnType("boolean");
+
                     b.HasKey("Id");
 
                     b.HasIndex("PublicacionId", "Estado");
 
-                    b.HasIndex("PublicacionOfrecidaId", "Estado");
-
                     b.HasIndex("SolicitanteId", "Estado");
 
                     b.ToTable("Solicitudes");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.SolicitudObjeto", b =>
+                {
+                    b.Property<Guid>("SolicitudId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("PublicacionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("Orden")
+                        .HasColumnType("integer");
+
+                    b.HasKey("SolicitudId", "PublicacionId");
+
+                    b.HasIndex("PublicacionId");
+
+                    b.ToTable("SolicitudObjetos", (string)null);
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.SuscripcionPush", b =>
@@ -1981,11 +2004,6 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Publicacion", "PublicacionOfrecida")
-                        .WithMany()
-                        .HasForeignKey("PublicacionOfrecidaId")
-                        .OnDelete(DeleteBehavior.Restrict);
-
                     b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", "Solicitante")
                         .WithMany()
                         .HasForeignKey("SolicitanteId")
@@ -1994,9 +2012,24 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
                     b.Navigation("Publicacion");
 
-                    b.Navigation("PublicacionOfrecida");
-
                     b.Navigation("Solicitante");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.SolicitudObjeto", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Publicacion", "Publicacion")
+                        .WithMany()
+                        .HasForeignKey("PublicacionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Solicitud", null)
+                        .WithMany("Ofrecidas")
+                        .HasForeignKey("SolicitudId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Publicacion");
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.SuscripcionPush", b =>
@@ -2030,6 +2063,11 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasForeignKey("ReceptorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Solicitud", b =>
+                {
+                    b.Navigation("Ofrecidas");
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Usuario", b =>

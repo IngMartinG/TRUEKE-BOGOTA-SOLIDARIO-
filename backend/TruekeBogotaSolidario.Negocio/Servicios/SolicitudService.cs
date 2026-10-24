@@ -12,7 +12,7 @@ public interface ISolicitudService
     Task<SolicitudDto> CrearAsync(Guid actorId, CrearSolicitudRequest r);
     Task<IReadOnlyList<SolicitudDto>> ListarEnviadasAsync(Guid actorId);
     Task<IReadOnlyList<SolicitudDto>> ListarRecibidasAsync(Guid actorId);
-    /// <summary>El dueño acepta: queda "Aceptada" para coordinar la entrega por chat. Aún NO se otorgan puntos.</summary>
+    /// <summary>Quien debe responder acepta la propuesta vigente: queda "Aceptada" para coordinar la entrega por chat. Aún NO se otorgan puntos.</summary>
     Task<SolicitudDto> AceptarAsync(Guid actorId, Guid solicitudId);
     Task RechazarAsync(Guid actorId, Guid solicitudId, string? motivo);
     Task CancelarAsync(Guid actorId, Guid solicitudId);
@@ -37,8 +37,13 @@ public interface ISolicitudService
     /// después envía los avisos devueltos.
     /// </summary>
     Task<AvisosDiferidos> RetirarOfertasAsync(Guid publicacionId, string motivo, bool incluirAceptadas);
-    /// <summary>Un trueke aceptado no se concretó: el objeto ofrecido (si había) vuelve al catálogo. NO guarda.</summary>
-    Task<AvisosDiferidos> LiberarOfrecidaAsync(Solicitud noConcretada);
+    /// <summary>Un trueke aceptado no se concretó: los objetos ofrecidos (menos <paramref name="exceptoId"/>) vuelven al catálogo. NO guarda.</summary>
+    Task<AvisosDiferidos> LiberarOfrecidasAsync(Solicitud noConcretada, Guid? exceptoId = null);
+    /// <summary>
+    /// Quien debe responder la propuesta vigente la reemplaza: otro precio (Compra) u otros objetos de quien solicita (Trueke).
+    /// Pasa el turno a la otra parte; máximo <see cref="Solicitud.MaxContraofertas"/> por solicitud.
+    /// </summary>
+    Task<SolicitudDto> ContraofertarAsync(Guid actorId, Guid solicitudId, ContraofertaRequest r);
 }
 
 /// <summary>Avisos que se envían DESPUÉS de guardar (si el guardado falla, nadie recibe un aviso falso).</summary>
@@ -102,11 +107,16 @@ public sealed class SolicitudService : ISolicitudService
         if (await _solicitudes.ContarPendientesPorSolicitanteAsync(actorId) >= Limites.MaxSolicitudesPendientesPorUsuario)
             throw new ReglaDeNegocioException($"Tienes {Limites.MaxSolicitudesPendientesPorUsuario} solicitudes pendientes. Espera respuesta o cancela alguna.");
 
-        var ofrecida = await ValidarOfrecidaAsync(r.PublicacionOfrecidaId, pub, actorId);
+        var ids = (r.PublicacionesOfrecidasIds ?? new List<Guid>())
+            .Concat(r.PublicacionOfrecidaId is { } una ? new[] { una } : Array.Empty<Guid>()).Distinct().ToList();
+        var ofrecidas = await ValidarOfrecidasAsync(ids, pub, actorId);
+        if (r.PrecioPropuestoCop is not null && pub.Modo != ModoTransaccion.Compra)
+            throw new ReglaDeNegocioException("Solo en una compra se propone un precio.");
+        var precio = r.PrecioPropuestoCop == pub.PrecioReferenciaCop ? null : r.PrecioPropuestoCop;
 
         // Varias personas pueden estar interesadas a la vez: la publicación sigue en el catálogo hasta que el dueño elija a una.
-        // El objeto ofrecido también sigue disponible (se puede ofrecer en varios truekes) hasta que alguno se acepte.
-        var solicitud = new Solicitud(pub.Id, actorId, r.Mensaje, ofrecida?.Id);
+        // Los objetos ofrecidos también siguen disponibles (se pueden ofrecer en varios truekes) hasta que alguno se acepte.
+        var solicitud = new Solicitud(pub.Id, actorId, r.Mensaje, ofrecidas.Select(o => o.Id).ToList(), precio);
         _solicitudes.Agregar(solicitud);
 
         // El chat nace con la solicitud; su mensaje es el primero de la conversación.
@@ -115,23 +125,86 @@ public sealed class SolicitudService : ISolicitudService
         _conversaciones.AgregarMensaje(new Mensaje(conversacion.Id, actorId, solicitud.Mensaje, ahora));
         await _uow.GuardarCambiosAsync();
 
-        await NotificarAsync(pub.PropietarioId, TiposNotificacion.SolicitudNueva, ofrecida is null
-            ? $"Nueva solicitud para \"{pub.Titulo}\"."
-            : $"Nueva propuesta de trueke para \"{pub.Titulo}\": te ofrecen \"{ofrecida.Titulo}\".", solicitud.Id);
-        return ADto(solicitud, pub, solicitante, actorId, conversacion.Id, puedoCalificar: false, ahora, ofrecida);
+        await NotificarAsync(pub.PropietarioId, TiposNotificacion.SolicitudNueva, ofrecidas.Count > 0
+            ? $"Nueva propuesta de trueke para \"{pub.Titulo}\": te ofrecen {Titulos(ofrecidas)}."
+            : precio is { } p ? $"Nueva solicitud para \"{pub.Titulo}\": te ofrecen {Cop(p)}." : $"Nueva solicitud para \"{pub.Titulo}\".", solicitud.Id);
+        return ADto(solicitud, pub, solicitante, actorId, conversacion.Id, puedoCalificar: false, ahora, ofrecidas);
     }
 
-    /// <summary>Lo que se ofrece en un trueke: una publicación PROPIA, disponible y visible (null si no se ofrece nada).</summary>
-    private async Task<Publicacion?> ValidarOfrecidaAsync(Guid? ofrecidaId, Publicacion pedida, Guid actorId)
+    /// <summary>
+    /// Lo que se ofrece en un trueke: publicaciones de QUIEN SOLICITA, disponibles y visibles, hasta 3 (lista vacía = nada).
+    /// En una contraoferta del dueño también son de quien solicita: elige cuáles de sus objetos prefiere.
+    /// </summary>
+    private async Task<IReadOnlyList<Publicacion>> ValidarOfrecidasAsync(IReadOnlyList<Guid> ids, Publicacion pedida, Guid solicitanteId)
     {
-        if (ofrecidaId is null) return null;
+        if (ids.Count == 0) return Array.Empty<Publicacion>();
         if (pedida.Modo != ModoTransaccion.Trueke)
-            throw new ReglaDeNegocioException("Solo en un trueke se ofrece un objeto a cambio.");
-        var o = await _pubs.ObtenerPorIdAsync(ofrecidaId.Value);
-        if (o is null || o.PropietarioId != actorId) throw new NoEncontradoException("No encontramos el objeto que quieres ofrecer.");
-        if (o.Id == pedida.Id || o.Estado != EstadoPublicacionEnum.Disponible || o.EstaOculta)
-            throw new ReglaDeNegocioException("Ese objeto no está disponible para ofrecerlo: debe estar publicado y sin reservar.");
-        return o;
+            throw new ReglaDeNegocioException("Solo en un trueke se ofrecen objetos a cambio.");
+        if (ids.Count > Solicitud.MaxObjetosOfrecidos)
+            throw new ReglaDeNegocioException($"Puedes ofrecer hasta {Solicitud.MaxObjetosOfrecidos} objetos.");
+        var lista = new List<Publicacion>();
+        foreach (var id in ids.Distinct())
+        {
+            var o = await _pubs.ObtenerPorIdAsync(id);
+            if (o is null || o.PropietarioId != solicitanteId) throw new NoEncontradoException("No encontramos uno de los objetos ofrecidos.");
+            if (o.Id == pedida.Id || o.Estado != EstadoPublicacionEnum.Disponible || o.EstaOculta)
+                throw new ReglaDeNegocioException($"\"{o.Titulo}\" no está disponible para ofrecerlo: debe estar publicado y sin reservar.");
+            lista.Add(o);
+        }
+        return lista;
+    }
+
+    private static string Titulos(IEnumerable<Publicacion> pubs) => string.Join(" + ", pubs.Select(p => $"\"{p.Titulo}\""));
+
+    private static readonly System.Globalization.CultureInfo Colombia = System.Globalization.CultureInfo.GetCultureInfo("es-CO");
+    private static string Cop(decimal valor) => "$" + valor.ToString("N0", Colombia);
+
+    // ---------------- Contraofertas ----------------
+    public async Task<SolicitudDto> ContraofertarAsync(Guid actorId, Guid solicitudId, ContraofertaRequest r)
+    {
+        var s = await CargarComoParticipanteAsync(actorId, solicitudId);
+        var pub = s.Publicacion!;
+        var esDuenio = pub.PropietarioId == actorId;
+        var actor = esDuenio ? pub.Propietario! : s.Solicitante!;
+        Guardas.ExigirCuentaCompleta(actor);
+        if (s.Estado != EstadoSolicitud.Pendiente) throw new ReglaDeNegocioException("Solo se negocia una solicitud pendiente.");
+        if (pub.Estado != EstadoPublicacionEnum.Disponible)
+            throw new ReglaDeNegocioException("La publicación está reservada para otra persona: por ahora no se puede negociar.");
+
+        var ids = (r.PublicacionesOfrecidasIds ?? new List<Guid>()).Distinct().ToList();
+        IReadOnlyList<Publicacion> ofrecidas = Array.Empty<Publicacion>();
+        decimal? precio = null;
+        string resumen;
+        switch (pub.Modo)
+        {
+            case ModoTransaccion.Trueke:
+                if (r.PrecioPropuestoCop is not null) throw new ReglaDeNegocioException("En un trueke se proponen objetos, no dinero.");
+                if (ids.Count == 0) throw new ReglaDeNegocioException("Elige al menos un objeto para la contraoferta.");
+                if (ids.ToHashSet().SetEquals(s.Ofrecidas.Select(o => o.PublicacionId)))
+                    throw new ReglaDeNegocioException("Esa es la misma propuesta: si te sirve, acéptala.");
+                ofrecidas = await ValidarOfrecidasAsync(ids, pub, s.SolicitanteId);
+                resumen = esDuenio ? $"prefiere {Titulos(ofrecidas)} a cambio" : $"ahora ofrece {Titulos(ofrecidas)}";
+                break;
+            case ModoTransaccion.Compra:
+                if (ids.Count > 0) throw new ReglaDeNegocioException("En una compra se propone un precio, no objetos.");
+                precio = r.PrecioPropuestoCop ?? throw new ReglaDeNegocioException("Escribe el precio que propones.");
+                if (precio == (s.PrecioPropuestoCop ?? pub.PrecioReferenciaCop))
+                    throw new ReglaDeNegocioException("Ese es el mismo precio: si te sirve, acepta la propuesta.");
+                resumen = $"propone {Cop(precio.Value)}";
+                if (precio == pub.PrecioReferenciaCop) precio = null; // volver al publicado
+                break;
+            default:
+                throw new ReglaDeNegocioException("En una donación no hay contraofertas: acepta o conversa por el chat.");
+        }
+
+        s.Contraofertar(esDuenio, ofrecidas.Select(o => o.Id).ToList(), precio);
+        await _uow.GuardarCambiosAsync();
+        var otra = esDuenio ? s.SolicitanteId : pub.PropietarioId;
+        var restantes = Solicitud.MaxContraofertas - s.Contraofertas;
+        await NotificarAsync(otra, TiposNotificacion.SolicitudContraoferta,
+            $"Contraoferta por \"{pub.Titulo}\": {Mapeos.NombrePublico(actor.NombreCompleto)} {resumen}. Acéptala, contraoferta o retírate"
+            + (restantes > 0 ? "." : " (ya no quedan más contraofertas)."), s.Id);
+        return await UnaAsync(actorId, s);
     }
 
     private async Task<IReadOnlyList<SolicitudDto>> MapearAsync(Guid actorId, IReadOnlyList<Solicitud> lista)
@@ -142,7 +215,7 @@ public sealed class SolicitudService : ISolicitudService
         var calificadas = await _calificaciones.SolicitudesCalificadasPorAsync(actorId, ids);
         return lista.Select(s => ADto(s, s.Publicacion!, s.Solicitante!, actorId,
             conversaciones.TryGetValue(s.Id, out var c) ? c : null,
-            PuedeCalificar(s, ahora) && !calificadas.Contains(s.Id), ahora, s.PublicacionOfrecida)).ToList();
+            PuedeCalificar(s, ahora) && !calificadas.Contains(s.Id), ahora, Ofrecidas(s))).ToList();
     }
 
     public async Task<IReadOnlyList<SolicitudDto>> ListarEnviadasAsync(Guid actorId)
@@ -152,6 +225,10 @@ public sealed class SolicitudService : ISolicitudService
         => await MapearAsync(actorId, await _solicitudes.ListarRecibidasAsync(actorId));
 
     private async Task<SolicitudDto> UnaAsync(Guid actorId, Solicitud s) => (await MapearAsync(actorId, new[] { s }))[0];
+
+    /// <summary>Los objetos de la propuesta vigente, en el orden en que se eligieron (requiere Ofrecidas.Publicacion cargada).</summary>
+    private static IReadOnlyList<Publicacion> Ofrecidas(Solicitud s)
+        => s.Ofrecidas.OrderBy(o => o.Orden).Select(o => o.Publicacion).OfType<Publicacion>().ToList();
 
     // ---------------- Respuesta del dueño ----------------
     private async Task<Solicitud> CargarComoDuenioAsync(Guid actorId, Guid solicitudId)
@@ -169,31 +246,44 @@ public sealed class SolicitudService : ISolicitudService
         return s;
     }
 
+    /// <summary>
+    /// Acepta la propuesta vigente quien debe responderla: el dueño la solicitud (o la contraoferta de quien solicita), o
+    /// quien solicita la contraoferta del dueño. En los dos casos el resultado es el mismo: el acuerdo queda Aceptado.
+    /// </summary>
     public async Task<SolicitudDto> AceptarAsync(Guid actorId, Guid solicitudId)
     {
-        var s = await CargarComoDuenioAsync(actorId, solicitudId);
+        var s = await CargarComoParticipanteAsync(actorId, solicitudId);
         var pub = s.Publicacion!;
+        var esDuenio = pub.PropietarioId == actorId;
         Guardas.ExigirCuentaCompleta(pub.Propietario!); // quien entrega también debe mostrar su cara (publicaciones anteriores a la regla)
+        if (!esDuenio) Guardas.ExigirCuentaCompleta(s.Solicitante!);
         if (pub.Estado == EstadoPublicacionEnum.EnNegociacion)
-            throw new ReglaDeNegocioException("Ya elegiste a otra persona para esta publicación. Si no se concreta, podrás elegir a alguien de la lista de espera.");
-        var ofrecida = s.PublicacionOfrecida;
-        if (ofrecida is not null && (ofrecida.Estado != EstadoPublicacionEnum.Disponible || ofrecida.EstaOculta))
-            throw new ReglaDeNegocioException("El objeto que te ofrecieron ya no está disponible. Puedes rechazar la propuesta o conversar por el chat.");
+            throw new ReglaDeNegocioException(esDuenio
+                ? "Ya elegiste a otra persona para esta publicación. Si no se concreta, podrás elegir a alguien de la lista de espera."
+                : "El dueño está concretando con otra persona. Si no se concreta, podrás aceptar.");
+        var ofrecidas = Ofrecidas(s);
+        if (ofrecidas.FirstOrDefault(o => o.Estado != EstadoPublicacionEnum.Disponible || o.EstaOculta) is { } noDisponible)
+            throw new ReglaDeNegocioException($"\"{noDisponible.Titulo}\" ya no está disponible. Contraoferta con otros objetos, retírate o conversen por el chat.");
 
-        // Elegir a alguien reserva la publicación y la saca del catálogo. RowVersion: dos aceptaciones simultáneas → una recibe 409.
+        // Aceptar reserva la publicación y la saca del catálogo. RowVersion: dos aceptaciones simultáneas → una recibe 409.
+        s.Aceptar(esDuenio, Ahora);
         pub.MarcarEnNegociacion();
-        s.Aceptar(Ahora);
         var avisos = new AvisosDiferidos();
-        avisos.Agregar(s.SolicitanteId, TiposNotificacion.SolicitudAceptada, ofrecida is null
-            ? $"¡Aceptaron tu solicitud para \"{pub.Titulo}\"! Coordinen la entrega por el chat y confírmala cuando ocurra."
-            : $"¡Aceptaron tu trueke: \"{ofrecida.Titulo}\" por \"{pub.Titulo}\"! Los dos objetos quedan reservados. Coordinen la entrega por el chat.", s.Id);
+        var precio = s.PrecioPropuestoCop is { } p ? $" por {Cop(p)}" : "";
+        if (esDuenio)
+            avisos.Agregar(s.SolicitanteId, TiposNotificacion.SolicitudAceptada, ofrecidas.Count == 0
+                ? $"¡Aceptaron tu solicitud para \"{pub.Titulo}\"{precio}! Coordinen la entrega por el chat y confírmala cuando ocurra."
+                : $"¡Aceptaron tu trueke: {Titulos(ofrecidas)} por \"{pub.Titulo}\"! Todos los objetos quedan reservados. Coordinen la entrega por el chat.", s.Id);
+        else
+            avisos.Agregar(pub.PropietarioId, TiposNotificacion.SolicitudAceptada,
+                $"¡Aceptaron tu contraoferta por \"{pub.Titulo}\"{precio}! Queda reservada: coordinen la entrega por el chat.", s.Id);
         await PonerEnEsperaAsync(pub, exceptoId: s.Id, avisos);
         // Un objeto reservado ya no puede entregarse en otro trueke: se cierran las propuestas donde se ofrecía.
         await CancelarOfertasPendientesAsync(pub.Id, s.Id, $"\"{pub.Titulo}\" quedó reservado en otro intercambio.", avisos);
 
-        if (ofrecida is not null)
+        foreach (var ofrecida in ofrecidas)
         {
-            // El objeto ofrecido también se reserva: sale del catálogo y quienes lo pidieron quedan en lista de espera.
+            // Los objetos ofrecidos también se reservan: salen del catálogo y quienes los pidieron quedan en lista de espera.
             ofrecida.MarcarEnNegociacion();
             await PonerEnEsperaAsync(ofrecida, exceptoId: null, avisos);
             await CancelarOfertasPendientesAsync(ofrecida.Id, s.Id, $"Ofreciste \"{ofrecida.Titulo}\" en otro trueke que ya fue aceptado.", avisos);
@@ -232,23 +322,25 @@ public sealed class SolicitudService : ISolicitudService
         foreach (var s in await _solicitudes.ListarEnCursoQueOfrecenAsync(publicacionId, incluirAceptada: true))
         {
             if (s.Estado != EstadoSolicitud.Aceptada) continue;
-            // El objeto ofrecido ya no se entregará: el trueke no se concreta y lo pedido vuelve al catálogo.
+            // Ese objeto ofrecido ya no se entregará: el trueke no se concreta y lo pedido (y los demás objetos) vuelven al catálogo.
             s.MarcarNoConcretada(motivo, Ahora);
             s.Publicacion!.VolverADisponible();
             avisos.Agregar(s.Publicacion.PropietarioId, TiposNotificacion.IntercambioNoConcretado,
                 $"El trueke por \"{s.Publicacion.Titulo}\" no se concretará: {motivo} Tu publicación volvió al catálogo.", s.Id);
             await AgregarAvisosListaDeEsperaAsync(s.Publicacion, avisos);
+            avisos.Agregar(await LiberarOfrecidasAsync(s, exceptoId: publicacionId));
         }
         return avisos;
     }
 
-    public async Task<AvisosDiferidos> LiberarOfrecidaAsync(Solicitud noConcretada)
+    public async Task<AvisosDiferidos> LiberarOfrecidasAsync(Solicitud noConcretada, Guid? exceptoId = null)
     {
         var avisos = new AvisosDiferidos();
-        var ofrecida = noConcretada.PublicacionOfrecida;
-        if (ofrecida is null || ofrecida.Estado != EstadoPublicacionEnum.EnNegociacion) return avisos;
-        ofrecida.VolverADisponible();
-        await AgregarAvisosListaDeEsperaAsync(ofrecida, avisos);
+        foreach (var ofrecida in Ofrecidas(noConcretada).Where(o => o.Id != exceptoId && o.Estado == EstadoPublicacionEnum.EnNegociacion))
+        {
+            ofrecida.VolverADisponible();
+            await AgregarAvisosListaDeEsperaAsync(ofrecida, avisos);
+        }
         return avisos;
     }
 
@@ -320,7 +412,7 @@ public sealed class SolicitudService : ISolicitudService
         var avisos = new AvisosDiferidos();
         noConcretada.Publicacion!.VolverADisponible();
         await AgregarAvisosListaDeEsperaAsync(noConcretada.Publicacion, avisos);
-        avisos.Agregar(await LiberarOfrecidaAsync(noConcretada));
+        avisos.Agregar(await LiberarOfrecidasAsync(noConcretada));
         return avisos;
     }
 
@@ -363,14 +455,14 @@ public sealed class SolicitudService : ISolicitudService
         avisosPuntos.Observar(receptor);
         s.Completar(ahora);
         pub.ConfirmarIntercambio();
-        // Trueke con objeto: el objeto ofrecido también cambió de manos (es un solo intercambio: los puntos se suman una vez).
-        var ofrecida = s.PublicacionOfrecida;
-        if (ofrecida is { Estado: EstadoPublicacionEnum.EnNegociacion }) ofrecida.ConfirmarIntercambio();
+        // Trueke con objetos: los ofrecidos también cambiaron de manos (es un solo intercambio: los puntos se suman una vez).
+        var ofrecidas = Ofrecidas(s);
+        foreach (var o in ofrecidas.Where(o => o.Estado == EstadoPublicacionEnum.EnNegociacion)) o.ConfirmarIntercambio();
         oferente.RegistrarTransaccionCompletada(pub.Modo, puntosOferente, s.Id, pub.Titulo);
         receptor.RegistrarTransaccionCompletada(pub.Modo, puntosReceptor, s.Id, pub.Titulo);
         // Primera publicación: si una publicación propia cambió de manos (con puntos) antes de cumplir 24 h activa.
         if (puntosOferente) oferente.RecibirBonoPrimeraPublicacion(pub.Id, pub.Titulo);
-        if (puntosReceptor && ofrecida is not null) receptor.RecibirBonoPrimeraPublicacion(ofrecida.Id, ofrecida.Titulo);
+        if (puntosReceptor && ofrecidas.Count > 0) receptor.RecibirBonoPrimeraPublicacion(ofrecidas[0].Id, ofrecidas[0].Titulo);
         var invitaciones = new List<(Guid Invitado, Guid? Invitador)>();
         foreach (var (invitado, otro, conPuntos) in new[] { (oferente, receptor, puntosOferente), (receptor, oferente, puntosReceptor) })
             if (await RecompensarInvitacionAsync(invitado, otro, conPuntos, s.Id, ahora, avisosPuntos) is { } recompensa)
@@ -378,7 +470,7 @@ public sealed class SolicitudService : ISolicitudService
         _transacciones.Agregar(new Transaccion(pub.Id, s.Id, oferente.Id, receptor.Id, pub.Modo, puntosOferente, puntosReceptor, ahora));
         // Los objetos ya se entregaron: sus listas de espera se cierran (en el mismo guardado, todo o nada).
         var avisos = new AvisosDiferidos();
-        foreach (var entregada in new[] { pub, ofrecida }.OfType<Publicacion>())
+        foreach (var entregada in ofrecidas.Prepend(pub))
         {
             foreach (var otra in await _solicitudes.ListarEnCursoPorPublicacionAsync(entregada.Id, incluirAceptada: false))
             {
@@ -559,18 +651,22 @@ public sealed class SolicitudService : ISolicitudService
     }
 
     private static SolicitudDto ADto(Solicitud s, Publicacion pub, Usuario solicitante, Guid actorId, Guid? conversacionId, bool puedoCalificar,
-        DateTime ahora, Publicacion? ofrecida = null)
+        DateTime ahora, IReadOnlyList<Publicacion> ofrecidas)
     {
-        var resumen = ofrecida is null ? null : new PublicacionResumenDto(ofrecida.Id, ofrecida.Titulo,
-            ofrecida.Imagenes.OrderBy(i => i.Orden).Select(i => i.Url).FirstOrDefault(), ofrecida.Condicion.ToString(), ofrecida.Estado.ToString());
+        var resumenes = ofrecidas.Select(o => new PublicacionResumenDto(o.Id, o.Titulo,
+            o.Imagenes.OrderBy(i => i.Orden).Select(i => i.Url).FirstOrDefault(), o.Condicion.ToString(), o.Estado.ToString())).ToList();
+        var soyDuenio = pub.PropietarioId == actorId;
         DateTime? cierre = null;
         if (s.Estado == EstadoSolicitud.Aceptada && s.FechaAceptacionUtc is { } aceptada)
             cierre = aceptada.AddDays(s.ConfirmadaPorDuenioUtc is not null || s.ConfirmadaPorSolicitanteUtc is not null
                 ? Limites.DiasCierreConUnaConfirmacion : Limites.DiasCierreSinConfirmacion);
         return new(s.Id, pub.Id, pub.Titulo, pub.Modo.ToString(), Mapeos.APerfilPublico(pub.Propietario!, ahora),
-            Mapeos.APerfilPublico(solicitante, ahora), pub.PropietarioId == actorId, s.FechaSolicitud, s.Mensaje, s.Estado.ToString(),
+            Mapeos.APerfilPublico(solicitante, ahora), soyDuenio, s.FechaSolicitud, s.Mensaje, s.Estado.ToString(),
             s.MotivoRechazo, conversacionId, s.FechaAceptacionUtc, s.ConfirmadaPorDuenioUtc is not null, s.ConfirmadaPorSolicitanteUtc is not null,
             s.FechaCierreUtc, cierre, puedoCalificar,
-            EnEspera: s.Estado == EstadoSolicitud.Pendiente && pub.Estado == EstadoPublicacionEnum.EnNegociacion, Ofrecida: resumen);
+            EnEspera: s.Estado == EstadoSolicitud.Pendiente && pub.Estado == EstadoPublicacionEnum.EnNegociacion, resumenes,
+            pub.Modo == ModoTransaccion.Compra ? pub.PrecioReferenciaCop : null, s.PrecioPropuestoCop,
+            MeTocaResponder: s.Estado == EstadoSolicitud.Pendiente && s.TurnoDuenio == soyDuenio, s.Contraofertas,
+            Math.Max(0, Solicitud.MaxContraofertas - s.Contraofertas));
     }
 }

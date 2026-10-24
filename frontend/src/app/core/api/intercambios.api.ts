@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import type {
   CalificacionDto,
+  ContraofertaRequest,
   ConversacionDto,
   CrearSolicitudRequest,
   MensajeChatDto,
@@ -16,6 +17,9 @@ export class IntercambiosApi {
   enviadas = () => this.api.get<SolicitudDto[]>('/solicitudes/enviadas');
   recibidas = () => this.api.get<SolicitudDto[]>('/solicitudes/recibidas');
   aceptar = (id: string) => this.api.post<SolicitudDto>(`/solicitudes/${seg(id)}/aceptar`);
+  /** Otro precio (Compra) u otros objetos de quien solicita (Trueke): pasa el turno a la otra parte. */
+  contraofertar = (id: string, r: ContraofertaRequest) =>
+    this.api.post<SolicitudDto>(`/solicitudes/${seg(id)}/contraoferta`, r, { silencioso: true });
   rechazar = (id: string, motivo: string | null) =>
     this.api.post<void>(`/solicitudes/${seg(id)}/rechazar`, { motivo });
   cancelar = (id: string) => this.api.post<void>(`/solicitudes/${seg(id)}/cancelar`);

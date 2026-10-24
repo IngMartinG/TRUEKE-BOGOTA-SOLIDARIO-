@@ -4951,6 +4951,65 @@
         }
       }
     },
+    "/api/v1/solicitudes/{id}/contraoferta": {
+      "post": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContraofertaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ContraofertaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/ContraofertaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SolicitudDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/solicitudes/{id}/rechazar": {
       "post": {
         "tags": [
@@ -6671,6 +6730,28 @@
         },
         "additionalProperties": false
       },
+      "ContraofertaRequest": {
+        "type": "object",
+        "properties": {
+          "publicacionesOfrecidasIds": {
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          },
+          "precioPropuestoCop": {
+            "maximum": 1000000000,
+            "minimum": 1,
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ConversacionDto": {
         "type": "object",
         "properties": {
@@ -6995,9 +7076,25 @@
             "minLength": 1,
             "type": "string"
           },
+          "publicacionesOfrecidasIds": {
+            "maxItems": 3,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            },
+            "nullable": true
+          },
           "publicacionOfrecidaId": {
             "type": "string",
             "format": "uuid",
+            "nullable": true
+          },
+          "precioPropuestoCop": {
+            "maximum": 1000000000,
+            "minimum": 1,
+            "type": "number",
+            "format": "double",
             "nullable": true
           }
         },
@@ -10081,8 +10178,32 @@
           "enEspera": {
             "type": "boolean"
           },
-          "ofrecida": {
-            "$ref": "#/components/schemas/PublicacionResumenDto"
+          "ofrecidas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicacionResumenDto"
+            }
+          },
+          "precioPublicadoCop": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "precioPropuestoCop": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "meTocaResponder": {
+            "type": "boolean"
+          },
+          "contraofertas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "contraofertasRestantes": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
