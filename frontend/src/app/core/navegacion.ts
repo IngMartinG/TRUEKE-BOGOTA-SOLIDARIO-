@@ -1,4 +1,4 @@
-import { inject } from '@angular/core';
+import { ErrorHandler, inject } from '@angular/core';
 import type { NavigationError } from '@angular/router';
 import { AvisosService } from './avisos.service';
 
@@ -23,7 +23,7 @@ export function esFalloDeCarga(error: unknown): boolean {
  */
 export function manejarErrorNavegacion(e: NavigationError): void {
   if (!esFalloDeCarga(e.error)) {
-    console.error(e.error);
+    inject(ErrorHandler).handleError(e.error); // consola y, si está activo, monitoreo de errores
     return;
   }
   const ahora = Date.now();

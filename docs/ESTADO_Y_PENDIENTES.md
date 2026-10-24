@@ -535,28 +535,46 @@ Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (
 - Pruebas: `AsistenteTests` (integración con un modelo de mentiras: enlaces, actor del JWT, rondas, correo verificado, cupo,
   503 y validación), `AsistenteGroqTests` (petición, llamadas a herramientas, errores y lista blanca) y
   `proveedor-respuestas.spec.ts` en el front.
+- **En producción desde el 2026-10-23:** clave de Groq configurada en Render y probada.
+
+## Hecho el 2026-10-23 — monitoreo de errores (Sentry, plan gratis)
+- **Por qué:** solo había logs de Render (pocos días) y nadie se enteraba de un error. Con Sentry, cada falla llega agrupada,
+  con la ruta y la versión, y avisa por correo. Es opcional: sin DSN queda apagado (desarrollo, pruebas, Docker local).
+- **API:** `MonitoreoErrores` (Sentry.AspNetCore) se activa con `Sentry__Dsn`. Reporta lo mismo que ya iba al log como error
+  (los 500 de `ManejoErroresMiddleware` y los procesos en segundo plano), nunca los 4xx de dominio. Versión = commit de Render.
+- **Front:** `core/monitoreo.ts` (`@sentry/browser`) se activa con `monitoreoDsn` en `config.json`: variable del repositorio
+  `SENTRY_DSN_FRONT` (Pages) o la misma variable en la imagen Docker. El SDK se descarga aparte y después de arrancar: sin
+  DSN no pesa nada. `ManejadorErrores` reemplaza el `ErrorHandler` de Angular (errores de la app, de la ventana y de las
+  promesas, y de navegación). No reporta errores de la API (ni los de `resource()` que los envuelven) ni fragmentos que no
+  cargaron. La CSP solo abre el host de ingesta del DSN.
+- **Sin datos personales (Ley 1581):** sin usuario, IP, cabeceras, cookies, cuerpo ni consola; sin query ni fragmento en las
+  URL (de la página, de las migas y de las URL citadas en los mensajes); los correos se reemplazan por `[correo]`. Sin
+  trazas de rendimiento. Sentry agregado a los encargados de la política de datos (región de la Unión Europea).
+- **Configuración:** `docs/DESPLIEGUE.md` §7.1 (cuenta en la región UE, dos proyectos, no guardar IP, DSN en Render y en
+  GitHub).
+- Pruebas: `MonitoreoErroresTests` (un 500 llega sin token, cookie, JWT ni correo; un 404 no se reporta; sin DSN no se
+  activa; migas) y `monitoreo.spec.ts`. Verificado en el navegador con un receptor local: llega un evento por error y limpio.
 
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
 - **Registro de oferentes:** que el abogado revise el texto de la política y los términos (versión `2026-10-19`), si el
   registro debe conservarse un tiempo tras eliminar la cuenta, y si las ventas publicadas antes del registro deben pedirlo
   (hoy se pide al crear o editar una venta).
-- **Producto:** como respaldo del workflow, un monitor externo de `/health/ready` (el sitemap ya está en Search Console).
 
 **Despliegue y operación:**
-- **Asistente con IA:** crear la cuenta gratis en console.groq.com, generar la API key, activar *Zero Data Retention* en
-  *Data Controls* y poner `Asistente__Proveedor=Groq` y `Asistente__Groq__ClaveApi` en Render (`docs/DESPLIEGUE.md` §5.2).
-  Que el abogado confirme si nombrar a Groq como encargado exige subir la versión de la política (hoy no se subió).
+- **Monitoreo de errores (del dueño):** crear la cuenta de Sentry en la región de la Unión Europea, los dos proyectos y poner
+  `Sentry__Dsn` en Render y la variable `SENTRY_DSN_FRONT` en GitHub (`docs/DESPLIEGUE.md` §7.1). Mientras no esté, queda
+  apagado.
 - **Versión legal en Render:** si `Legal__VersionPoliticaDatos`, `Legal__VersionTerminos` o `Legal__FechaVigencia` están
   definidas allí, cambiarlas a `2026-10-19` al desplegar el registro de oferentes (si no, se usa la de `appsettings.json`).
-- **Configurar en Render** `Legal__ResponsableNombre`, `Legal__Domicilio`, `Legal__CorreoContacto` y `Legal__Telefono` (y, si
-  se quiere, `Legal__ResponsableDocumento`) **antes** de desplegar la fase legal: sin ellos la API no arranca.
+- **Responsable en Render (del dueño):** `Legal__ResponsableNombre` todavía dice "Equipo de Trueke Bogota Solidario". Como
+  opera una persona natural, debe ir su nombre, y en `Legal__ResponsableDocumento` su cédula.
 - **Cuando exista la SAS** (Cámara de Comercio y RUT): cambiar las variables `Legal__*` a la razón social, el NIT y la dirección
   de la sociedad; subir la versión de la política y los términos si el abogado lo indica; y replantear la Fase 4 (aportes),
   que hoy supone que el dinero lo recibe una persona natural.
 - **Brevo con un Gmail como remitente:** algunos correos pueden caer en spam. Con dominio propio, autenticarlo en Brevo (DKIM y DMARC) y usar `no-responder@tudominio`.
-- **Monitoreo de errores:** solo hay logs de Render. Si hace falta más, un servicio de errores con plan gratis.
-- **Supabase Free pausa el proyecto tras 7 días sin actividad:** se reactiva con *Restore project* (los datos no se pierden). Un monitor de `/health/ready` lo evita (`docs/DESPLIEGUE.md` §7.2).
+- **API despierta y Supabase activo:** resuelto el 2026-10-23 con un monitor de cron-job.org a `/health/ready` cada 10 min.
+  El workflow de GitHub queda de respaldo: en la práctica corre cada 3 a 5 horas (`docs/DESPLIEGUE.md` §7.2).
 - **Dominio propio:**
   - resuelve la cookie de sesión entre sitios distintos (Safari/iPhone);
   - permite cambiar la cookie a `SameSite=Strict`.
@@ -568,7 +586,6 @@ Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (
   - cambiar `BaseUrl` en `render.yaml` y poner las llaves de producción;
   - **antes**, borrar los datos de prueba, como promete la interfaz.
 - **Después de cada despliegue:** verificar en producción la subida de fotos, por el `ngsw-bypass`.
-- **Dependabot:** revisar y probar juntos los PR abiertos (102 a 108), como se hizo en #83.
 
 **Con terceros:**
 - **Contador / abogado:**
@@ -577,7 +594,9 @@ Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (
   - la resolución de facturación de la DIAN;
   - el texto final de los términos, la política de datos y la declaración de accesibilidad (versión 2026-10-18), y si la
     política debe nombrar las fotos del chat (privadas, sin metadatos) como dato tratado;
-  - si el responsable debe inscribir las bases de datos en el RNBD (hoy no, por ser persona natural).
+  - si el responsable debe inscribir las bases de datos en el RNBD (hoy no, por ser persona natural);
+  - si nombrar a Groq (asistente) y a Sentry (monitoreo de errores) como encargados exige subir la versión de la política
+    (hoy no se subió).
 - **Cuando haya contratos:** cobro recurrente con fuentes de pago de Wompi y factura electrónica automática con un proveedor.
 
 **Producto (por decidir):**

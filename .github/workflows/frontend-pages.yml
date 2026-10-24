@@ -52,16 +52,24 @@ jobs:
       # URL de la API: variable del repositorio (Settings → Secrets and variables → Actions → Variables → API_URL),
       # p. ej. https://trueke-api.onrender.com. No es secreta (el navegador la ve). Tras cambiarla, re-ejecutar este
       # workflow (Actions → "Front en GitHub Pages" → Run workflow). Sin la variable se publica el config.json del repo.
+      # Monitoreo de errores (opcional): variable SENTRY_DSN_FRONT con el DSN del proyecto de Sentry del front
+      # (docs/DESPLIEGUE.md §7.1). No es secreto: el navegador lo ve. Sin la variable queda apagado.
       - name: Conectar con la API
         if: ${{ vars.API_URL != '' }}
         env:
           API_URL: ${{ vars.API_URL }}
+          SENTRY_DSN_FRONT: ${{ vars.SENTRY_DSN_FRONT }}
+          VERSION: ${{ github.sha }}
         run: |
           case "$API_URL" in
             https://*) ;;
             *) echo "::error::API_URL debe empezar por https:// (valor actual: $API_URL)"; exit 1 ;;
           esac
-          printf '{\n  "apiUrl": "%s"\n}\n' "${API_URL%/}" > dist/trueke-web/browser/config.json
+          if [ -n "$SENTRY_DSN_FRONT" ] && ! printf '%s' "$SENTRY_DSN_FRONT" | grep -Eq '^https://[0-9a-f]+@[a-z0-9.-]+\.sentry\.io/[0-9]+$'; then
+            echo "::error::SENTRY_DSN_FRONT no parece un DSN de Sentry (https://clave@oNNN.ingest.sentry.io/NNN)"; exit 1
+          fi
+          printf '{\n  "apiUrl": "%s",\n  "monitoreoDsn": "%s",\n  "version": "%s"\n}\n' \
+            "${API_URL%/}" "$SENTRY_DSN_FRONT" "$VERSION" > dist/trueke-web/browser/config.json
           cat dist/trueke-web/browser/config.json
 
       # WhatsApp y Facebook no resuelven URLs relativas en og:image/og:url. URL pública: variable FRONT_URL del
@@ -89,6 +97,7 @@ jobs:
         env:
           API_URL: ${{ vars.API_URL }}
           STORAGE_ORIGEN: ${{ vars.STORAGE_ORIGEN }}
+          SENTRY_DSN_FRONT: ${{ vars.SENTRY_DSN_FRONT }}
         run: |
           storage="https://*.supabase.co"
           if [ -n "$STORAGE_ORIGEN" ]; then
@@ -99,9 +108,13 @@ jobs:
             origen=$(printf '%s' "$API_URL" | sed -E 's#^(https://[^/]+).*#\1#')
             api="$origen $(printf '%s' "$origen" | sed 's#^https://#wss://#')"   # wss: SignalR
           fi
+          monitoreo=""   # solo el host de ingesta del DSN: https://clave@HOST/123 → https://HOST
+          if [ -n "$SENTRY_DSN_FRONT" ]; then
+            monitoreo=$(printf '%s' "$SENTRY_DSN_FRONT" | sed -E 's#^https://[^@]+@([^/]+)/.*#https://\1#')
+          fi
           index=dist/trueke-web/browser/index.html
           hashes=$(node scripts/csp-hash-inline.mjs "$index")   # el importmap de Angular (integridad de los chunks)
-          csp="default-src 'self'; script-src 'self' ${hashes} https://accounts.google.com/gsi/client https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org ${storage} https://*.googleusercontent.com; font-src 'self'; connect-src 'self' ${api} ${storage} https://accounts.google.com/gsi/ https://www.google.com/recaptcha/ https://production.wompi.co https://sandbox.wompi.co; frame-src https://accounts.google.com/gsi/ https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"
+          csp="default-src 'self'; script-src 'self' ${hashes} https://accounts.google.com/gsi/client https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/; style-src 'self' 'unsafe-inline' https://accounts.google.com/gsi/style; img-src 'self' data: blob: https://tile.openstreetmap.org https://*.tile.openstreetmap.org ${storage} https://*.googleusercontent.com; font-src 'self'; connect-src 'self' ${api} ${storage} ${monitoreo} https://accounts.google.com/gsi/ https://www.google.com/recaptcha/ https://production.wompi.co https://sandbox.wompi.co; frame-src https://accounts.google.com/gsi/ https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'"
           sed -i -E "s#<meta charset=\"utf-8\" ?/?>#&\n    <meta http-equiv=\"Content-Security-Policy\" content=\"${csp}\">#" "$index"
           grep -q 'http-equiv="Content-Security-Policy"' "$index" || { echo "::error::No se pudo insertar la CSP"; exit 1; }
           grep -o '<meta http-equiv="Content-Security-Policy"[^>]*>' "$index"

@@ -21,7 +21,8 @@ ENV API_URL="" \
     CSP_CONNECT_EXTRA="" \
     CSP_IMG_EXTRA="" \
     MAPA_TESELAS="" \
-    MAPA_ATRIBUCION=""
+    MAPA_ATRIBUCION="" \
+    SENTRY_DSN_FRONT=""
 COPY docker/nginx.conf.template /etc/nginx/templates/default.conf.template
 COPY docker/seguridad.inc.template /etc/nginx/templates/seguridad.inc.template
 COPY docker/config.json.template /etc/trueke/config.json.template

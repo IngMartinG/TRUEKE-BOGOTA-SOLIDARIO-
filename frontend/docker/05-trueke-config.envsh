@@ -8,11 +8,16 @@ trueke_api_origen=""
 if [ -n "${API_URL:-}" ]; then
   trueke_api_origen="$API_URL $(printf '%s' "$API_URL" | sed -e 's#^https://#wss://#' -e 's#^http://#ws://#')"
 fi
-export CSP_CONNECT="'self' ${trueke_api_origen} https://accounts.google.com/gsi/ https://www.google.com/recaptcha/ https://production.wompi.co https://sandbox.wompi.co ${CSP_CONNECT_EXTRA:-}"
+# Monitoreo de errores (opcional): solo el host de ingesta del DSN de Sentry (https://clave@HOST/123 → https://HOST).
+trueke_monitoreo=""
+if [ -n "${SENTRY_DSN_FRONT:-}" ]; then
+  trueke_monitoreo="$(printf '%s' "$SENTRY_DSN_FRONT" | sed -E 's#^https://[^@]+@([^/]+)/.*#https://\1#')"
+fi
+export CSP_CONNECT="'self' ${trueke_api_origen} ${trueke_monitoreo} https://accounts.google.com/gsi/ https://www.google.com/recaptcha/ https://production.wompi.co https://sandbox.wompi.co ${CSP_CONNECT_EXTRA:-}"
 # Calculados al compilar: permiten SOLO el importmap de Angular, sin abrir 'unsafe-inline'.
 CSP_SCRIPT_HASHES="$(cat /etc/trueke/csp-script-hashes 2>/dev/null || true)"
 export CSP_SCRIPT_HASHES
 
-envsubst '${API_URL} ${MAPA_TESELAS} ${MAPA_ATRIBUCION}' \
+envsubst '${API_URL} ${MAPA_TESELAS} ${MAPA_ATRIBUCION} ${SENTRY_DSN_FRONT}' \
   < /etc/trueke/config.json.template > /tmp/trueke-config.json
-unset trueke_api_origen
+unset trueke_api_origen trueke_monitoreo

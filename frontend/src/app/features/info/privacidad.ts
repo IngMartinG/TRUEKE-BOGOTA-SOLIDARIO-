@@ -97,6 +97,7 @@ export default class Privacidad {
           'Render (Estados Unidos): servidor donde funciona la aplicación.',
           'GitHub Pages (Estados Unidos): publicación de la página web.',
           'Brevo (Francia, Unión Europea): envío de correos.',
+          'Sentry (Alemania, Unión Europea): registro de fallas técnicas de la aplicación para corregirlas. Recibe la descripción técnica de la falla, la página donde ocurrió (sin parámetros) y el tipo de navegador. No recibe tu nombre, tu correo, tu documento, tu ubicación ni tu dirección IP.',
           'Wompi (Colombia): procesamiento de los pagos. Los datos de tu tarjeta o cuenta los recibe directamente Wompi; nosotros no los vemos ni los guardamos.',
           'Google (Estados Unidos): inicio de sesión con Google, si lo eliges, y verificación contra robots (reCAPTCHA).',
           'Groq (Estados Unidos): asistente de ayuda con inteligencia artificial, solo si tienes sesión y le escribes. Recibe tu pregunta, lo que hablaste antes con el asistente y, cuando hace falta para responderte, tu saldo de Eco-Puntos y el estado de tus publicaciones y solicitudes. No recibe tu correo, tu documento ni tu ubicación, y nosotros no guardamos la conversación.',
