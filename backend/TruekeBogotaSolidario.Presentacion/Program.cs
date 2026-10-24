@@ -68,6 +68,9 @@ builder.WebHost.ConfigureKestrel(k =>
     k.Limits.RequestHeadersTimeout = TimeSpan.FromSeconds(15);
 });
 
+// ---------- Monitoreo de errores (Sentry), solo si hay Sentry:Dsn ----------
+builder.UsarMonitoreoErrores();
+
 // ---------- Negocio (que internamente registra Datos) ----------
 builder.Services.AddNegocio(config);
 builder.Services.AddAutenticacionJwt();

@@ -107,6 +107,8 @@ services:
         sync: false
       - key: Donaciones__Url # opcional: enlace https de aportes voluntarios ("Apoya el proyecto"); vacío = no se muestra
         sync: false
+      - key: Sentry__Dsn # opcional: monitoreo de errores (docs/DESPLIEGUE.md §7.1). Vacío = apagado
+        sync: false
       - key: Google__ClientId # opcional: botón "Continuar con Google"
         sync: false
       - key: Legal__CorreoContacto # obligatorio: atención de PQRS y contacto del responsable

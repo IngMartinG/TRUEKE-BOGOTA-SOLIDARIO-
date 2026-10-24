@@ -11,12 +11,18 @@ export interface Entorno {
   mapaTeselas: string;
   /** Atribución que exige el proveedor de teselas (HTML fijo de configuración, no de usuarios). */
   mapaAtribucion: string;
+  /** DSN público de Sentry para el monitoreo de errores del navegador. Vacío = apagado. */
+  monitoreoDsn: string;
+  /** Versión publicada (commit), para asociar cada error a su despliegue. */
+  version: string;
 }
 
 const POR_DEFECTO: Entorno = {
   apiUrl: '',
   mapaTeselas: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
   mapaAtribucion: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+  monitoreoDsn: '',
+  version: '',
 };
 
 let entorno: Entorno = { ...POR_DEFECTO };
@@ -30,6 +36,8 @@ export async function cargarEntorno(): Promise<void> {
         apiUrl: (datos.apiUrl ?? '').replace(/\/+$/, ''),
         mapaTeselas: datos.mapaTeselas || POR_DEFECTO.mapaTeselas,
         mapaAtribucion: datos.mapaAtribucion || POR_DEFECTO.mapaAtribucion,
+        monitoreoDsn: datos.monitoreoDsn ?? '',
+        version: datos.version ?? '',
       };
     }
   } catch {
@@ -47,6 +55,10 @@ export const urlCompartirPublicacion = (id: string): string | null =>
   entorno.apiUrl ? `${entorno.apiUrl}/compartir/publicaciones/${encodeURIComponent(id)}` : null;
 // ?ngsw-bypass: la negociación y el respaldo por long polling no pasan por el service worker (PWA).
 export const hubUrl = (): string => `${entorno.apiUrl}/hubs/notificaciones?ngsw-bypass=true`;
+export const monitoreo = (): { dsn: string; version: string } => ({
+  dsn: entorno.monitoreoDsn,
+  version: entorno.version,
+});
 export const mapaTeselas = (): { url: string; atribucion: string } => ({
   url: entorno.mapaTeselas,
   atribucion: entorno.mapaAtribucion,

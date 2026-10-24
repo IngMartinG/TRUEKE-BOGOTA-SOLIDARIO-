@@ -1,5 +1,6 @@
 {
   "apiUrl": "${API_URL}",
   "mapaTeselas": "${MAPA_TESELAS}",
-  "mapaAtribucion": "${MAPA_ATRIBUCION}"
+  "mapaAtribucion": "${MAPA_ATRIBUCION}",
+  "monitoreoDsn": "${SENTRY_DSN_FRONT}"
 }

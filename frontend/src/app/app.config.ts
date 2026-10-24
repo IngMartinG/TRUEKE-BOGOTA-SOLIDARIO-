@@ -3,6 +3,7 @@ import { registerLocaleData } from '@angular/common';
 import localeEsCo from '@angular/common/locales/es-CO';
 import {
   ApplicationConfig,
+  ErrorHandler,
   inject,
   isDevMode,
   LOCALE_ID,
@@ -21,6 +22,7 @@ import {
 import { provideServiceWorker } from '@angular/service-worker';
 import { routes } from './app.routes';
 import { ConfigService } from './core/config.service';
+import { ManejadorErrores } from './core/monitoreo';
 import { manejarErrorNavegacion } from './core/navegacion';
 import { NotificacionesPushService } from './core/notificaciones-push.service';
 import { PwaService } from './core/pwa.service';
@@ -34,6 +36,7 @@ registerLocaleData(localeEsCo);
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
+    { provide: ErrorHandler, useClass: ManejadorErrores },
     { provide: LOCALE_ID, useValue: 'es-CO' },
     provideRouter(
       routes,

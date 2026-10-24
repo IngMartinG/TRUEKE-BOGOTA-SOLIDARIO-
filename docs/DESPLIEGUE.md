@@ -148,19 +148,31 @@ Sin esto, el botón "Ayuda" responde solo con la guía local. Con la IA activa, 
 - El servidor solo envía a los servicios de push reconocidos (`fcm.googleapis.com`, `*.push.services.mozilla.com`, `*.notify.windows.com`, `*.push.apple.com`): nunca a una URL arbitraria.
 
 ## 7. Limitaciones de la fase gratis
-- **Arranque en frío:** tras 15 min sin uso, la primera petición tarda 30-60 s. Lo evita el workflow *Mantener la API despierta* (§7.2); mientras tanto, la pantalla de carga del front explica que el servidor está despertando.
+- **Arranque en frío:** tras 15 min sin uso, la primera petición tarda 30-60 s. Lo evita el monitor de cron-job.org (§7.2); mientras tanto, la pantalla de carga del front explica que el servidor está despertando.
 - **iPhone/Safari:** el front (`github.io`) y la API (`onrender.com`) son sitios distintos, y Safari bloquea esa cookie de sesión "de terceros". En Safari la sesión se cierra cuando vence el token (15 min). En Chrome, Edge y Firefox funciona bien. **Se resuelve con dominio propio** (§8).
 - **Pausa de Supabase por inactividad:** si el proyecto pasa 7 días sin actividad, Supabase lo pausa y avisa por correo. La API sigue viva, pero `/health/ready` y todo lo que use la base fallan. Para reactivarlo: panel de Supabase → proyecto → **Restore project** (1-2 minutos). Los datos no se pierden. Con usuarios entrando cada semana no pasa. Además: 500 MB de base (las fotos van aparte) y 5 GB de salida al mes; el consumo se ve en *Project Settings → Usage*.
 - Sin Redis: el límite de intentos es por instancia (correcto mientras haya una sola).
-- **API despierta:** el workflow *Mantener la API despierta* consulta `/health/ready` cada 10 min (750 horas gratis al mes alcanzan para una sola instancia encendida siempre) y, de paso, evita la pausa de Supabase. Ver §7.2.
+- **API despierta:** el monitor externo consulta `/health/ready` cada 10 min (750 horas gratis al mes alcanzan para una sola instancia encendida siempre) y, de paso, evita la pausa de Supabase. Ver §7.2.
 
-### 7.1 Monitoreo
-Application Insights se quitó al salir de Azure. Los errores quedan en los **logs de Render** (*trueke-api → Logs*; el plan gratis guarda los últimos días). El chequeo de disponibilidad (§7.2) avisa si la API se cae.
+### 7.1 Monitoreo de errores (Sentry, gratis: 5.000 errores al mes)
+Sin esto, los errores solo quedan en los **logs de Render** (*trueke-api → Logs*; el plan gratis guarda pocos días) y nadie se entera. Con Sentry, cada error 500 de la API y cada fallo de JavaScript en el navegador llega agrupado, con la ruta y la versión, y avisa por correo. Es opcional: sin DSN queda apagado.
+
+**Qué se envía (Ley 1581):** el tipo y el mensaje técnico del error, la pila de llamadas, la ruta **sin parámetros** (los enlaces de verificación y las URL firmadas llevan tokens en la query) y el navegador. **Nunca** usuario, correo (se reemplaza por `[correo]` si aparece en un mensaje), cabeceras, cookies, cuerpo de la petición ni la consola. No se miden tiempos (sin cupo de rendimiento). Los 4xx de dominio y los errores de la API vistos desde el navegador no se reportan (la API ya reporta los suyos).
+
+1. Crear la cuenta gratis en [sentry.io](https://sentry.io/signup/) (plan *Developer*, sin tarjeta) eligiendo la región de datos **European Union (Frankfurt)**. La política de privacidad nombra a Sentry en la Unión Europea, y la región no se puede cambiar después.
+2. Crear **dos proyectos**: `trueke-api` (plataforma *ASP.NET Core*) y `trueke-web` (plataforma *Browser JavaScript*). Así cada uno tiene su DSN y sus alertas.
+3. En **cada proyecto** → *Settings* → *Security & Privacy*: activar **Prevent Storing of IP Addresses**, **Data Scrubber** y **Use Default Scrubbers** (filtro extra de contraseñas y tokens).
+4. **API:** *trueke-api* → *Settings* → *Client Keys (DSN)* → copiar el DSN. **Render** → *trueke-api* → *Environment*: `Sentry__Dsn` = el DSN → *Save, rebuild, and deploy*. Cada error queda asociado al commit desplegado (`RENDER_GIT_COMMIT`).
+5. **Front:** copiar el DSN de *trueke-web*. **GitHub** → *Settings* → *Secrets and variables* → *Actions* → *Variables*: `SENTRY_DSN_FRONT` = el DSN, y volver a ejecutar *Front en GitHub Pages*. El DSN no es secreto (el navegador lo ve): solo permite enviar errores. El workflow agrega su host a la CSP (`connect-src`). Con la imagen Docker del front, la variable es la misma (`SENTRY_DSN_FRONT`).
+6. **Alertas:** cada proyecto → *Alerts* → la regla por defecto ("un problema nuevo") ya avisa por correo.
+7. **Probar:** en la API, un error real aparece en *Issues* en segundos. En el front, abrir la app con el DSN configurado y, en la consola del navegador, ejecutar `window.dispatchEvent(new ErrorEvent('error', { error: new Error('prueba de monitoreo') }))`: debe aparecer en *trueke-web → Issues*.
+
+Si se agota el cupo del mes, Sentry descarta los errores nuevos hasta el mes siguiente; la app no se afecta.
 
 ### 7.2 Chequeo de disponibilidad y API despierta
-- **Ya activo:** `.github/workflows/mantener-despierta.yml` consulta `<API_URL>/health/ready` cada 10 min (usa la variable del repositorio `API_URL`). Si la API no responde 200 en 3 intentos, la ejecución falla y GitHub avisa por correo. Límites: el cron de GitHub puede retrasarse en horas pico y **se desactiva tras 60 días sin commits** (se reactiva en *Actions → Mantener la API despierta → Enable workflow*). Por eso conviene también el monitor externo de abajo.
-- **Gratis:** [UptimeRobot](https://uptimerobot.com) (cuenta propia) → monitor HTTP(s) a `https://<API>/health/live` cada 5 min, con aviso por correo. `/health/live` no toca la base; `/health/ready` sí.
-- Con Supabase ya no hay cuota de cómputo que cuidar: se puede activar en la fase gratis. Usar `/health/ready` si además se quiere mantener activa la base.
+- **Monitor principal (activo desde el 2026-10-23):** [cron-job.org](https://cron-job.org) (cuenta propia, gratis) consulta `https://<API>/health/ready` cada 10 min. Así la API no se duerme y Supabase no se pausa. Conviene activar en el trabajo el aviso por correo cuando falle.
+- **Respaldo:** `.github/workflows/mantener-despierta.yml` consulta la misma URL (variable del repositorio `API_URL`). Si la API no responde 200 en 3 intentos, la ejecución falla y GitHub avisa por correo. **No basta solo:** aunque pide cada 10 min, en la práctica GitHub lo ejecuta cada 3 a 5 horas, y **se desactiva tras 60 días sin commits** (se reactiva en *Actions → Mantener la API despierta → Enable workflow*).
+- Alternativa al monitor principal: [UptimeRobot](https://uptimerobot.com) a la misma URL cada 5 min. `/health/live` no toca la base; `/health/ready` sí (por eso mantiene activa a Supabase).
 
 ## 8. Pasar a pago (producción real)
 1. **Dominio propio** (p. ej. `trueke.co`, ~US$15-30/año en un registrador o en Cloudflare): `trueke.co` → front y `api.trueke.co` → API. Al quedar en el mismo sitio, cambiar `Auth__CookieSameSite` a `Strict`, y `Cors__Origenes__0` / `Urls__Frontend` al dominio nuevo. Agregar el dominio en reCAPTCHA y en Google.
