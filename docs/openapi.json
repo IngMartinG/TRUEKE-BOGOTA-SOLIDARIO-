@@ -7759,6 +7759,23 @@
         ],
         "type": "string"
       },
+      "FactorImpactoDto": {
+        "type": "object",
+        "properties": {
+          "categoria": {
+            "type": "string"
+          },
+          "kgPorObjeto": {
+            "type": "number",
+            "format": "double"
+          },
+          "kgCo2PorObjeto": {
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "FacturaAdminDto": {
         "type": "object",
         "properties": {
@@ -8156,6 +8173,21 @@
           "calculadoUtc": {
             "type": "string",
             "format": "date-time"
+          },
+          "kgReutilizados": {
+            "type": "number",
+            "format": "double"
+          },
+          "kgCo2Evitado": {
+            "type": "number",
+            "format": "double"
+          },
+          "factores": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FactorImpactoDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -8172,6 +8204,24 @@
           "intercambios": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "ImpactoPersonalDto": {
+        "type": "object",
+        "properties": {
+          "objetos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "kgReutilizados": {
+            "type": "number",
+            "format": "double"
+          },
+          "kgCo2Evitado": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -9112,6 +9162,9 @@
               "$ref": "#/components/schemas/LogroDto"
             },
             "nullable": true
+          },
+          "impacto": {
+            "$ref": "#/components/schemas/ImpactoPersonalDto"
           }
         },
         "additionalProperties": false

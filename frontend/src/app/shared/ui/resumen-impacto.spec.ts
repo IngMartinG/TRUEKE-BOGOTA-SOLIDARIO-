@@ -24,6 +24,14 @@ describe('ResumenImpacto', () => {
     expect(el.querySelector('a')?.getAttribute('href')).toBe('/impacto');
   });
 
+  it('muestra los kilos y el CO₂ como estimación y enlaza al cálculo', () => {
+    const el = crear(of({ objetosConNuevoHogar: 300, personasQueIntercambiaron: 120, esteMes: 5, kgReutilizados: 412.4, kgCo2Evitado: 2350 } as ImpactoDto));
+    expect(el.textContent).toContain('≈ 412 kg');
+    expect(el.textContent).toContain('≈ 2,4 t');
+    expect(el.textContent).toContain('estimación');
+    expect(el.querySelector('a[href="/impacto#calculo"]')).not.toBeNull();
+  });
+
   it('no presume ceros: se oculta si todavía no hay intercambios', () => {
     const el = crear(of({ objetosConNuevoHogar: 0, personasQueIntercambiaron: 0, esteMes: 0 } as ImpactoDto));
     expect(el.querySelector('section')).toBeNull();
@@ -37,10 +45,10 @@ describe('ResumenImpacto', () => {
     expect(justo.querySelector('section')).not.toBeNull();
   });
 
-  it('sin intercambios en el mes no muestra "Este mes: 0"', () => {
+  it('sin intercambios en el mes no muestra "0 este mes"', () => {
     const el = crear(of({ objetosConNuevoHogar: 300, personasQueIntercambiaron: 120, esteMes: 0 } as ImpactoDto));
     expect(el.querySelector('section')).not.toBeNull();
-    expect(el.textContent).not.toContain('Este mes');
+    expect(el.textContent).not.toContain('este mes');
   });
 
   it('se oculta si la API falla', () => {

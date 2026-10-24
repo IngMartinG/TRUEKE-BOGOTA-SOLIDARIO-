@@ -1,4 +1,4 @@
-# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-23)
+# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-24)
 
 ## Hecho — backend completo para conectar el front
 **Base:**
@@ -557,6 +557,22 @@ Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (
 - **En producción desde el 2026-10-24:** cuenta en la región de la UE, proyectos `trueke-api` y `trueke-web`, sin guardar IP
   y con los filtros de datos activos en la organización, DSN en Render y en GitHub. Probado desde la página publicada: el
   error de prueba llegó a Sentry.
+
+## Hecho el 2026-10-24 — impacto ambiental (kilos y CO₂)
+- **Estimación por categoría** (`Negocio/Comun/ImpactoAmbiental.cs`): cada intercambio completado suma un objeto (lo
+  publicado, igual que "Objetos con nuevo hogar") con el peso y el CO₂ de fabricación de uno típico de su categoría. Son
+  factores a la baja, del orden de los estudios de ciclo de vida (WRAP, EPA). Una categoría nueva sin factor usa la de "Otros".
+- **API:** `GET /impacto` agrega `kgReutilizados`, `kgCo2Evitado` y `factores` (la tabla, para que el cálculo sea
+  verificable). El perfil (`GET /usuarios/{id}/perfil`) agrega `impacto` (objetos, kilos y CO₂ de los intercambios en los que
+  la persona entregó o recibió). Solo totales; sin migración.
+- **Front:** el resumen del inicio muestra el peso y el CO₂ (siempre con "≈" y el enlace "Cómo lo calculamos"); "Este mes"
+  pasa a ir junto a la cifra principal. `/impacto` tiene las dos cifras y la sección `#calculo` con la tabla. El perfil
+  muestra "Tu impacto" / "Su impacto" desde el primer intercambio; en el propio, sin intercambios, una invitación a
+  explorar. Pipe `kilos` ("8,5 kg", "350 kg", "1,2 t").
+- **Arreglado de paso:** `/impacto` mostraba siempre "No pudimos cargar las cifras": el recurso llamaba a `inject()` dentro
+  de `stream`, fuera del contexto de inyección (`NG0203`). Ahora tiene prueba (`impacto.spec.ts`).
+- Pruebas: `ImpactoAmbientalTests`, `ImpactoTests` (totales, factores y perfil de quien entrega y de quien recibe) y las del
+  front (`resumen-impacto.spec.ts`, `impacto.spec.ts`).
 
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**

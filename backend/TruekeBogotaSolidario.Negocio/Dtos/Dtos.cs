@@ -664,7 +664,8 @@ public sealed record PerfilUsuarioDto(Guid Id, string Nombre, string Localidad, 
     DateTime MiembroDesde, int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas,
     decimal? CalificacionPromedio, int TotalCalificaciones, int PublicacionesActivas, string Municipio, string? NombreComercial,
     string? FotoUrl, SenalesConfianzaDto Confianza, bool NitRegistrado = false, string? Nit = null,
-    IReadOnlyList<DeseoPublicoDto>? Deseos = null, string Nivel = "Semilla", IReadOnlyList<LogroDto>? Logros = null);
+    IReadOnlyList<DeseoPublicoDto>? Deseos = null, string Nivel = "Semilla", IReadOnlyList<LogroDto>? Logros = null,
+    ImpactoPersonalDto? Impacto = null);
 
 /// <summary>
 /// Una medalla del perfil (solo reconocimiento). Grado = "Bronce", "Plata" u "Oro" en los logros por modo (null en los demás).
@@ -845,10 +846,19 @@ public sealed record VerificacionPendienteDto(Guid UsuarioId, string NombreCompl
 /// <summary>Un movimiento del historial de Eco-Puntos: Puntos es positivo si se ganaron y negativo si se gastaron.</summary>
 public sealed record MovimientoEcoPuntosDto(Guid Id, string Concepto, int Puntos, string? Detalle, Guid? ReferenciaId, int SaldoResultante, DateTime FechaUtc);
 
-/// <summary>Página de impacto (pública): intercambios completados en la comunidad. Sin datos de personas.</summary>
+/// <summary>
+/// Página de impacto (pública): intercambios completados en la comunidad. Sin datos de personas.
+/// KgReutilizados y KgCo2Evitado son una estimación con los factores por categoría que van en Factores.
+/// </summary>
 public sealed record ImpactoDto(int ObjetosConNuevoHogar, int Truekes, int Compras, int Donaciones, int PersonasQueIntercambiaron,
-    int EsteMes, IReadOnlyList<ImpactoLocalidadDto> LocalidadesMasActivas, DateTime CalculadoUtc);
+    int EsteMes, IReadOnlyList<ImpactoLocalidadDto> LocalidadesMasActivas, DateTime CalculadoUtc,
+    decimal KgReutilizados = 0, decimal KgCo2Evitado = 0, IReadOnlyList<FactorImpactoDto>? Factores = null);
 public sealed record ImpactoLocalidadDto(string Localidad, string Municipio, int Intercambios);
+/// <summary>Cómo se estima el impacto de un objeto de esta categoría (se publica para que el cálculo sea verificable).</summary>
+public sealed record FactorImpactoDto(string Categoria, decimal KgPorObjeto, decimal KgCo2PorObjeto);
+
+/// <summary>Impacto estimado de los intercambios completados de una persona (entregó o recibió). Solo totales.</summary>
+public sealed record ImpactoPersonalDto(int Objetos, decimal KgReutilizados, decimal KgCo2Evitado);
 
 public sealed record EcoPuntosResumenDto(int Saldo, decimal Reputacion, int TransaccionesConPuntosEnUltimas24h, int TransaccionesConPuntosRestantes,
     string TipoCuenta, DateTime? PlanVigenteHasta, int DestacadosGratisRestantes, int MaxPublicacionesActivas, int DescuentoPlanPorcentaje,

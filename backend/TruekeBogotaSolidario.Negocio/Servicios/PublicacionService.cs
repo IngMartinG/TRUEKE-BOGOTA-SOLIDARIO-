@@ -409,8 +409,9 @@ public sealed class PublicacionService : IPublicacionService
         var ahora = Ahora;
         var (_, total) = await _pubs.ListarVisiblesDePropietarioAsync(usuarioId, 1, 1, ahora);
         var confianza = await SenalesConfianzaAsync(u, ahora, verPresencia: actorId.HasValue);
+        var (objetos, kg, co2) = ImpactoAmbiental.Estimar(await _transacciones.ContarPorCategoriaDeUsuarioAsync(u.Id));
         return Mapeos.APerfilUsuario(u, total, confianza, ahora)
-            with { Logros = Logros.Obtenidos(await DatosLogrosAsync(u, confianza), ahora) };
+            with { Logros = Logros.Obtenidos(await DatosLogrosAsync(u, confianza), ahora), Impacto = new ImpactoPersonalDto(objetos, kg, co2) };
     }
 
     public async Task<IReadOnlyList<LogroDto>> MisLogrosAsync(Guid actorId)

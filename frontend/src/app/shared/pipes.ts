@@ -29,6 +29,21 @@ export class NumeroPipe implements PipeTransform {
   }
 }
 
+const formatoUnDecimal = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 1 });
+const formatoEntero = new Intl.NumberFormat('es-CO', { maximumFractionDigits: 0 });
+
+/** Un peso legible: "2,5 kg", "350 kg", "1,2 t" (desde 1.000 kg pasa a toneladas). */
+export const kilos = (kg: number | null | undefined): string => {
+  const v = kg ?? 0;
+  if (v >= 1000) return `${formatoUnDecimal.format(v / 1000)} t`;
+  return `${(v < 10 ? formatoUnDecimal : formatoEntero).format(v)} kg`;
+};
+
+@Pipe({ name: 'kilos' })
+export class KilosPipe implements PipeTransform {
+  transform = kilos;
+}
+
 /** "hace 5 minutos", "ayer", "12 sept 2026". Las fechas de la API vienen en UTC con Z. */
 @Pipe({ name: 'hace' })
 export class HacePipe implements PipeTransform {

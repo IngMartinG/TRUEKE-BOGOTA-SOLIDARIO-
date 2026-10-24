@@ -45,9 +45,42 @@ public class ImpactoTests : IClassFixture<FabricaApi>
         var chapinero = d.GetProperty("localidadesMasActivas").EnumerateArray().FirstOrDefault(l => l.GetProperty("localidad").GetString() == "Chapinero");
         Assert.Equal(JsonValueKind.Object, chapinero.ValueKind);
         Assert.Equal("Bogotá, D.C.", chapinero.GetProperty("municipio").GetString());
+        // Estimación ambiental: las publicaciones de prueba son de Ropa y calzado (0,5 kg y 5 kg de CO₂ cada una)
+        Assert.True(d.GetProperty("kgReutilizados").GetDecimal() >= 1.5m);
+        Assert.True(d.GetProperty("kgCo2Evitado").GetDecimal() >= 15m);
+        var factores = d.GetProperty("factores").EnumerateArray().ToList();
+        Assert.Equal(7, factores.Count);
+        Assert.Equal("Ropa y calzado", factores[0].GetProperty("categoria").GetString());
+        Assert.Equal(5m, factores[0].GetProperty("kgCo2PorObjeto").GetDecimal());
         // Nada que identifique a alguien
         Assert.DoesNotContain("impacto-", json);
         Assert.DoesNotContain("@", json);
         Assert.DoesNotContain("\"id\"", json, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public async Task El_perfil_muestra_el_impacto_de_quien_entrega_y_de_quien_recibe()
+    {
+        var dani = await Api.RegistrarAsync(_fabrica, "impacto-dani");
+        var eva = await Api.RegistrarAsync(_fabrica, "impacto-eva");
+        var fer = await Api.RegistrarAsync(_fabrica, "impacto-fer");
+        await CompletarIntercambioAsync(dani, eva, "Donacion");
+        await CompletarIntercambioAsync(fer, dani, "Trueke");
+
+        async Task<JsonElement> ImpactoDe(HttpClient c)
+        {
+            var id = (await c.GetFromJsonAsync<JsonElement>("/api/v1/usuarios/yo")).GetProperty("id").GetGuid();
+            return (await _fabrica.CreateClient().GetFromJsonAsync<JsonElement>($"/api/v1/usuarios/{id}/perfil")).GetProperty("impacto");
+        }
+
+        var deDani = await ImpactoDe(dani); // entregó una y recibió otra
+        Assert.Equal(2, deDani.GetProperty("objetos").GetInt32());
+        Assert.Equal(1m, deDani.GetProperty("kgReutilizados").GetDecimal());
+        Assert.Equal(10m, deDani.GetProperty("kgCo2Evitado").GetDecimal());
+        var deEva = await ImpactoDe(eva);
+        Assert.Equal(1, deEva.GetProperty("objetos").GetInt32());
+        Assert.Equal(5m, deEva.GetProperty("kgCo2Evitado").GetDecimal());
+        var nuevo = await ImpactoDe(await Api.RegistrarAsync(_fabrica, "impacto-gina"));
+        Assert.Equal(0, nuevo.GetProperty("objetos").GetInt32());
     }
 }

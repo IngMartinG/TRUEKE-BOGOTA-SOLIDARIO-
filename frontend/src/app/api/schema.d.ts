@@ -5919,6 +5919,13 @@ export interface components {
         EstadoPagoDto: "Pendiente" | "Aprobado" | "Rechazado" | "Expirado" | "RequiereRevision" | "Reembolsado";
         /** @enum {string} */
         EstadoPqrDto: "Abierta" | "Respondida" | "EnTramite";
+        FactorImpactoDto: {
+            categoria?: string;
+            /** Format: double */
+            kgPorObjeto?: number;
+            /** Format: double */
+            kgCo2PorObjeto?: number;
+        };
         FacturaAdminDto: {
             /** Format: uuid */
             id?: string;
@@ -6058,12 +6065,25 @@ export interface components {
             localidadesMasActivas?: components["schemas"]["ImpactoLocalidadDto"][];
             /** Format: date-time */
             calculadoUtc?: string;
+            /** Format: double */
+            kgReutilizados?: number;
+            /** Format: double */
+            kgCo2Evitado?: number;
+            factores?: components["schemas"]["FactorImpactoDto"][] | null;
         };
         ImpactoLocalidadDto: {
             localidad?: string;
             municipio?: string;
             /** Format: int32 */
             intercambios?: number;
+        };
+        ImpactoPersonalDto: {
+            /** Format: int32 */
+            objetos?: number;
+            /** Format: double */
+            kgReutilizados?: number;
+            /** Format: double */
+            kgCo2Evitado?: number;
         };
         IngresoConceptoDto: {
             concepto?: string;
@@ -6401,6 +6421,7 @@ export interface components {
             deseos?: components["schemas"]["DeseoPublicoDto"][] | null;
             nivel?: string;
             logros?: components["schemas"]["LogroDto"][] | null;
+            impacto?: components["schemas"]["ImpactoPersonalDto"];
         };
         PoliticaEcoPuntosDto: {
             /** Format: int32 */
@@ -6945,6 +6966,7 @@ export type EstadoFacturaDto = components['schemas']['EstadoFacturaDto'];
 export type EstadoMensajeDto = components['schemas']['EstadoMensajeDto'];
 export type EstadoPagoDto = components['schemas']['EstadoPagoDto'];
 export type EstadoPqrDto = components['schemas']['EstadoPqrDto'];
+export type FactorImpactoDto = components['schemas']['FactorImpactoDto'];
 export type FacturaAdminDto = components['schemas']['FacturaAdminDto'];
 export type FacturaAdminDtoPaginaDto = components['schemas']['FacturaAdminDtoPaginaDto'];
 export type FacturaDto = components['schemas']['FacturaDto'];
@@ -6955,6 +6977,7 @@ export type GuardarBusquedaRequest = components['schemas']['GuardarBusquedaReque
 export type GuardarDeseoRequest = components['schemas']['GuardarDeseoRequest'];
 export type ImpactoDto = components['schemas']['ImpactoDto'];
 export type ImpactoLocalidadDto = components['schemas']['ImpactoLocalidadDto'];
+export type ImpactoPersonalDto = components['schemas']['ImpactoPersonalDto'];
 export type IngresoConceptoDto = components['schemas']['IngresoConceptoDto'];
 export type IngresoMesDto = components['schemas']['IngresoMesDto'];
 export type IngresosDto = components['schemas']['IngresosDto'];
