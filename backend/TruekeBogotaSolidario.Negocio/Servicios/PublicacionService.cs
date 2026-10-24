@@ -63,9 +63,9 @@ public sealed class PublicacionService : IPublicacionService
         ISolicitudRepository solicitudes, IFavoritoRepository favoritos, IEstadisticaRepository estadisticas, IUnidadDeTrabajo uow,
         IOptions<UrlsOpciones> urls, TimeProvider reloj, INotificador notificador, IAlmacenArchivos almacen, IRegistroVistas vistas,
         ICalificacionRepository calificaciones, IPresencia presencia, ISolicitudService truekes, ISesionModeracion sesionModeracion,
-        ITransaccionRepository transacciones)
+        ITransaccionRepository transacciones, IFundacionService fundaciones)
     {
-        _sesionModeracion = sesionModeracion; _transacciones = transacciones;
+        _sesionModeracion = sesionModeracion; _transacciones = transacciones; _fundaciones = fundaciones;
         _pubs = pubs; _usuarios = usuarios; _categorias = categorias; _solicitudes = solicitudes; _favoritos = favoritos;
         _estadisticas = estadisticas; _uow = uow; _urls = urls.Value; _reloj = reloj; _notificador = notificador; _almacen = almacen;
         _vistas = vistas; _calificaciones = calificaciones; _presencia = presencia; _truekes = truekes;
@@ -75,6 +75,7 @@ public sealed class PublicacionService : IPublicacionService
     private readonly IPresencia _presencia;
     private readonly ISesionModeracion _sesionModeracion;
     private readonly ITransaccionRepository _transacciones;
+    private readonly IFundacionService _fundaciones;
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
@@ -150,6 +151,10 @@ public sealed class PublicacionService : IPublicacionService
         var pub = new Publicacion(actorId, Datos(r, categoria, actor, imagenes));
         _pubs.Agregar(pub);
         await _uow.GuardarCambiosAsync();
+
+        // Desde "Tengo esto": solo se avisa a la fundación; la publicación no se reserva ni se muestra distinto a nadie.
+        if (r.Modo == ModoDto.Donacion && r.ParaNecesidadId is { } necesidad)
+            await _fundaciones.AvisarDonacionAsync(actorId, pub.Id, pub.Titulo, necesidad);
 
         var creada = await _pubs.ObtenerPorIdAsync(pub.Id) ?? throw new NoEncontradoException("Publicación no encontrada.");
         return Mapeos.APublicacionDto(creada, actorId, veExacto: true, veModeracion: false, ahora, vistas: 0);

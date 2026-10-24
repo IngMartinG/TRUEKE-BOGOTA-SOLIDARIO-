@@ -44,6 +44,8 @@ function destino(n: NotificacionDto): { icono: string; color: string; ruta: unkn
   if (t.startsWith('Pago')) return { icono: 'billetera', color: 'bg-cielo-100 text-cielo-700 dark:bg-cielo-700/30 dark:text-cielo-100', ruta: ['/eco-puntos'] };
   if (t === 'ComentarioNuevo' && n.recursoId) return { icono: 'mensaje', color: 'bg-bosque-100 text-bosque-700 dark:bg-bosque-900 dark:text-bosque-200', ruta: ['/publicacion', n.recursoId] };
   if (t.startsWith('Publicacion') && n.recursoId) return { icono: 'escudo', color: 'bg-agua-100 text-agua-700 dark:bg-agua-700/30 dark:text-agua-100', ruta: ['/publicacion', n.recursoId] };
+  if (t === 'DonacionParaFundacion' && n.recursoId)
+    return { icono: 'regalo', color: 'bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100', ruta: ['/publicacion', n.recursoId] };
   if (t === 'FundacionPorRevisar') return { icono: 'heart', color: 'bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100', ruta: ['/admin/fundaciones'] };
   if (t.startsWith('Fundacion')) return { icono: 'heart', color: 'bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100', ruta: ['/cuenta/fundacion'] };
   if (t.startsWith('Verificacion')) return { icono: 'verificado', color: 'bg-agua-100 text-agua-700 dark:bg-agua-700/30 dark:text-agua-100', ruta: ['/cuenta/perfil'] };

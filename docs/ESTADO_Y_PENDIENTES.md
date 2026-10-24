@@ -636,6 +636,19 @@ páginas públicas sin sesión; donarle a una fundación no da puntos extra (ant
   esto") y la E2E `fundaciones.spec.ts` (solicitud con el certificado subido a Storage). La aprobación no tiene E2E: el
   ambiente E2E no tiene SuperUsuario con 2FA.
 
+## Hecho el 2026-10-24 — aviso a la fundación al donarle desde "Tengo esto"
+- "Tengo esto" agrega `fundacion` y `necesidad` a la URL de Publicar; al crear una **Donación**, Publicar envía
+  `CrearPublicacionRequest.ParaNecesidadId` (se ignora al editar y en los otros modos). En la revisión se avisa que la
+  fundación se enterará.
+- Si la necesidad existe, su fundación está aprobada, la cuenta no está suspendida ni eliminada, no es la misma persona y no
+  hay bloqueo en ninguna dirección, la fundación recibe `DonacionParaFundacion` (RecursoId = PublicacionId) con el nombre
+  público de quien dona (nunca su correo), el título y la necesidad; también por push (abre `/publicacion/<id>`) y por correo
+  si tiene activos los avisos de intercambios. Límite: un aviso por donante y fundación cada 24 h (se cuenta sobre las
+  notificaciones guardadas, sin tabla nueva). El aviso nunca hace fallar la publicación.
+- La publicación no se reserva ni se muestra distinto: la fundación la pide como cualquier persona. Sin Eco-Puntos extra.
+- Pruebas: `DonacionesParaFundacionTests` (aviso con enlace y correo sin el correo del donante, límite de 24 h, fundación
+  retirada, bloqueo en las dos direcciones, otro modo y necesidad inexistente), `publicar.spec.ts` y `fundaciones.spec.ts`.
+
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
 - **Registro de oferentes:** que el abogado revise el texto de la política y los términos (versión `2026-10-19`), si el
@@ -645,10 +658,7 @@ páginas públicas sin sesión; donarle a una fundación no da puntos extra (ant
 **Fundaciones verificadas:**
 - **Abogado:** revisar los textos nuevos de la política y los términos (versión `2026-10-24`) y si el certificado o la
   decisión deben conservarse más tiempo.
-- **Versión legal en Render:** si `Legal__VersionPoliticaDatos`, `Legal__VersionTerminos` o `Legal__FechaVigencia` están
-  definidas allí, cambiarlas a `2026-10-24` al desplegar (si no, se usa la de `appsettings.json`).
-- **Ideas para después:** avisar a la fundación cuando alguien publique una donación desde "Tengo esto" (hoy la fundación la
-  encuentra en el catálogo); moderar por denuncia el texto de las necesidades (hoy solo se puede retirar la insignia).
+- **Ideas para después:** moderar por denuncia el texto de las necesidades (hoy solo se puede retirar la insignia).
 
 **Despliegue y operación:**
 - **Responsable en Render (del dueño):** `Legal__ResponsableNombre` todavía dice "Equipo de Trueke Bogota Solidario". Como

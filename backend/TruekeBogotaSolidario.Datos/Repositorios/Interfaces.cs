@@ -282,6 +282,8 @@ public interface INotificacionRepository
     /// <summary>Marca (sin guardar) hasta 1000 notificaciones no leídas.</summary>
     Task MarcarTodasLeidasAsync(Guid usuarioId, DateTime ahoraUtc);
     Task<int> PurgarLeidasAsync(DateTime leidasAntesDeUtc, int maximo);
+    /// <summary>¿El usuario recibió desde esa fecha una notificación de ese tipo sobre alguna publicación de ese propietario?</summary>
+    Task<bool> ExisteSobrePublicacionDeAsync(Guid usuarioId, string tipo, Guid propietarioId, DateTime desdeUtc);
     void Agregar(Notificacion notificacion);
 }
 
@@ -389,6 +391,8 @@ public interface IFundacionRepository
     Task<IReadOnlyList<NecesidadFundacion>> NecesidadesAsync(Guid fundacionId);
     /// <summary>Cuántas necesidades (y cuántas urgentes) tiene cada fundación.</summary>
     Task<IReadOnlyDictionary<Guid, (int Total, int Urgentes)>> ContarNecesidadesAsync(IReadOnlyCollection<Guid> fundacionIds);
+    /// <summary>La necesidad con la fundación que la publicó (sin tracking); null si ya no existe.</summary>
+    Task<(NecesidadFundacion Necesidad, Fundacion Fundacion)?> NecesidadConFundacionAsync(Guid necesidadId);
     void Agregar(Fundacion f);
     void Quitar(Fundacion f);
     void AgregarNecesidad(NecesidadFundacion n);

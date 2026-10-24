@@ -730,6 +730,10 @@ public sealed class NotificacionRepository : INotificacionRepository
     public Task<int> ContarNoLeidasAsync(Guid usuarioId)
         => _db.Notificaciones.CountAsync(n => n.UsuarioId == usuarioId && n.LeidaUtc == null);
 
+    public Task<bool> ExisteSobrePublicacionDeAsync(Guid usuarioId, string tipo, Guid propietarioId, DateTime desdeUtc)
+        => _db.Notificaciones.AnyAsync(n => n.UsuarioId == usuarioId && n.Tipo == tipo && n.FechaUtc >= desdeUtc
+            && _db.Publicaciones.Any(p => p.Id == n.RecursoId && p.PropietarioId == propietarioId));
+
     public async Task MarcarTodasLeidasAsync(Guid usuarioId, DateTime ahoraUtc)
     {
         foreach (var n in await _db.Notificaciones.Where(n => n.UsuarioId == usuarioId && n.LeidaUtc == null).Take(1000).ToListAsync())
@@ -971,6 +975,13 @@ public sealed class FundacionRepository : IFundacionRepository
             .GroupBy(n => n.FundacionId)
             .Select(g => new { g.Key, Total = g.Count(), Urgentes = g.Count(n => n.Urgente) }).ToListAsync();
         return conteos.ToDictionary(c => c.Key, c => (c.Total, c.Urgentes));
+    }
+
+    public async Task<(NecesidadFundacion Necesidad, Fundacion Fundacion)?> NecesidadConFundacionAsync(Guid necesidadId)
+    {
+        var x = await _db.NecesidadesFundacion.AsNoTracking().Where(n => n.Id == necesidadId)
+            .Join(_db.Fundaciones.AsNoTracking(), n => n.FundacionId, f => f.Id, (n, f) => new { n, f }).FirstOrDefaultAsync();
+        return x is null ? null : (x.n, x.f);
     }
 
     public void Agregar(Fundacion f) => _db.Fundaciones.Add(f);

@@ -256,6 +256,11 @@ public sealed class CrearPublicacionRequest
     [Range(-180, 180)] public double? Longitud { get; init; }
     /// <summary>Hasta 5 URLs obtenidas con POST /archivos/subidas. La primera es la foto principal. Al editar, reemplaza la lista completa.</summary>
     [MaxLength(5)] public List<string>? Imagenes { get; init; }
+    /// <summary>
+    /// Opcional, solo al crear una Donación desde "Tengo esto": la necesidad de una fundación verificada que cubre. Se le avisa a la
+    /// fundación con un enlace a la publicación (como mucho un aviso por donante cada 24 h); la publicación es igual a cualquier otra.
+    /// </summary>
+    public Guid? ParaNecesidadId { get; init; }
 }
 
 public sealed class CancelarPublicacionRequest

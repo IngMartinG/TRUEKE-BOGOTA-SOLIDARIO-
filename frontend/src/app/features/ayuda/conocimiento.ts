@@ -116,7 +116,7 @@ export const CONOCIMIENTO: readonly EntradaConocimiento[] = [
     pregunta: '¿Cómo verifico una fundación o dono a una?',
     variantes: ['soy una fundación', 'verificar mi fundación', 'insignia de fundación', 'donar a una fundación', 'qué necesitan las fundaciones'],
     palabrasClave: ['fundacion', 'fundaciones', 'esal', 'ong', 'nit', 'camara', 'comercio', 'necesitamos', 'donar', 'insignia'],
-    respuesta: 'En Fundaciones ves las entidades sin ánimo de lucro verificadas y lo que necesitan: en cada necesidad, «Tengo esto» abre Publicar como donación y la fundación te la pide. Donarle a una fundación da los mismos Eco-Puntos que cualquier donación. Si tu cuenta representa a una fundación, pide la verificación gratis en Cuenta → Fundación con la razón social, el NIT y el certificado de existencia de la Cámara de Comercio; el equipo lo revisa y el certificado se borra al decidir.',
+    respuesta: 'En Fundaciones ves las entidades sin ánimo de lucro verificadas y lo que necesitan: en cada necesidad, «Tengo esto» abre Publicar como donación; al publicarla le avisamos a la fundación y ella te la pide. Donarle a una fundación da los mismos Eco-Puntos que cualquier donación. Si tu cuenta representa a una fundación, pide la verificación gratis en Cuenta → Fundación con la razón social, el NIT y el certificado de existencia de la Cámara de Comercio; el equipo lo revisa y el certificado se borra al decidir.',
     accion: { texto: 'Ver las fundaciones', ruta: '/fundaciones' },
   },
   // ── Intercambios ────────────────────────────────────────────────────────────────────────────────────────────────
