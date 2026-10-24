@@ -554,6 +554,9 @@ Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (
   GitHub).
 - Pruebas: `MonitoreoErroresTests` (un 500 llega sin token, cookie, JWT ni correo; un 404 no se reporta; sin DSN no se
   activa; migas) y `monitoreo.spec.ts`. Verificado en el navegador con un receptor local: llega un evento por error y limpio.
+- **En producción desde el 2026-10-24:** cuenta en la región de la UE, proyectos `trueke-api` y `trueke-web`, sin guardar IP
+  y con los filtros de datos activos en la organización, DSN en Render y en GitHub. Probado desde la página publicada: el
+  error de prueba llegó a Sentry.
 
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
@@ -562,13 +565,11 @@ Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (
   (hoy se pide al crear o editar una venta).
 
 **Despliegue y operación:**
-- **Monitoreo de errores (del dueño):** crear la cuenta de Sentry en la región de la Unión Europea, los dos proyectos y poner
-  `Sentry__Dsn` en Render y la variable `SENTRY_DSN_FRONT` en GitHub (`docs/DESPLIEGUE.md` §7.1). Mientras no esté, queda
-  apagado.
 - **Versión legal en Render:** si `Legal__VersionPoliticaDatos`, `Legal__VersionTerminos` o `Legal__FechaVigencia` están
   definidas allí, cambiarlas a `2026-10-19` al desplegar el registro de oferentes (si no, se usa la de `appsettings.json`).
 - **Responsable en Render (del dueño):** `Legal__ResponsableNombre` todavía dice "Equipo de Trueke Bogota Solidario". Como
-  opera una persona natural, debe ir su nombre, y en `Legal__ResponsableDocumento` su cédula.
+  opera una persona natural, debe ir su nombre, y en `Legal__ResponsableDocumento` su cédula. El dueño decidió dejarlo así por
+  ahora (2026-10-24); cambiarlo al crecer, ante una queja ante la SIC o al crear la SAS.
 - **Cuando exista la SAS** (Cámara de Comercio y RUT): cambiar las variables `Legal__*` a la razón social, el NIT y la dirección
   de la sociedad; subir la versión de la política y los términos si el abogado lo indica; y replantear la Fase 4 (aportes),
   que hoy supone que el dinero lo recibe una persona natural.
