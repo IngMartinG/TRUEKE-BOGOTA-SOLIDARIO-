@@ -574,6 +574,15 @@ Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (
 - Pruebas: `ImpactoAmbientalTests`, `ImpactoTests` (totales, factores y perfil de quien entrega y de quien recibe) y las del
   front (`resumen-impacto.spec.ts`, `impacto.spec.ts`).
 
+## Hecho el 2026-10-24 — recordatorio para confirmar la entrega
+- **Dos avisos, solo a quien no ha confirmado** (decisión del dueño): a los 3 días de aceptado ("¿Ya se hizo la entrega?") y
+  un día antes del cierre automático (7 días con una confirmación, 30 sin ninguna), diciendo qué pasará mañana. Cada uno sale
+  una sola vez (`Solicitud.RecordatorioEntregaUtc` y `RecordatorioCierreUtc`, migración `RecordatorioEntrega`); si el de la
+  víspera llega primero, reemplaza al otro.
+- Lo envía la tarea de mantenimiento de cada hora (`RecordarEntregasAsync`), con el tipo `EntregaPendiente`: en la app, push
+  y correo si la persona no está en línea y tiene activos los avisos de intercambios.
+- El asistente explica los plazos. Pruebas en `EntregaTests` (tiempos, sin repetir, solo a quien falta y nada tras completar).
+
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
 - **Registro de oferentes:** que el abogado revise el texto de la política y los términos (versión `2026-10-19`), si el

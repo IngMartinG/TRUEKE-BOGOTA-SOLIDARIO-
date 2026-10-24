@@ -126,7 +126,7 @@ export const CONOCIMIENTO: readonly EntradaConocimiento[] = [
     pregunta: '¿Cuándo se completa un intercambio?',
     variantes: ['cómo confirmo la entrega', 'no me dieron los puntos', 'cuándo me dan los eco-puntos'],
     palabrasClave: ['completar', 'confirmar', 'entrega', 'recibido', 'calificar'],
-    respuesta: 'Cuando las dos partes confirman la entrega en la app. En ese momento se suman los Eco-Puntos y la reputación, y pueden calificarse. Si alguien olvida confirmar, el intercambio se cierra automáticamente tras unos días.',
+    respuesta: 'Cuando las dos partes confirman la entrega en la app. En ese momento se suman los Eco-Puntos y la reputación, y pueden calificarse. Si alguien olvida confirmar, te lo recordamos a los 3 días y otra vez un día antes de que el intercambio se cierre solo: a los 7 días si una parte ya confirmó, o a los 30 si ninguna lo hizo.',
     accion: { texto: 'Ir a mis intercambios', ruta: '/intercambios', conSesion: true },
   },
   {

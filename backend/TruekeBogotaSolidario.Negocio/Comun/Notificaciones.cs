@@ -32,6 +32,8 @@ public static class TiposNotificacion
     public const string DenunciaRecibida = "DenunciaRecibida";
     public const string ApelacionResuelta = "ApelacionResuelta";
     public const string EntregaConfirmada = "EntregaConfirmada";
+    /// <summary>Recordatorio a quien no ha confirmado la entrega de un intercambio aceptado (RecursoId = SolicitudId).</summary>
+    public const string EntregaPendiente = "EntregaPendiente";
     /// <summary>La moderación revisó la cuenta en revisión por mayoría de edad y descartó la marca.</summary>
     public const string CuentaRevisada = "CuentaRevisada";
     public const string IntercambioCompletado = "IntercambioCompletado";

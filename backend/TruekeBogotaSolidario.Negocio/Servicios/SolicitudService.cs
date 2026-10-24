@@ -25,6 +25,10 @@ public interface ISolicitudService
     /// <summary>Tarea en segundo plano: cierra las aceptadas que vencieron.</summary>
     Task<IReadOnlyList<Guid>> ListarParaCierreAutomaticoAsync(int maximo);
     Task CerrarAutomaticamenteAsync(Guid solicitudId);
+    /// <summary>Tarea en segundo plano: aceptadas a las que les toca un recordatorio de entrega o de cierre.</summary>
+    Task<IReadOnlyList<Guid>> ListarParaRecordatorioAsync(int maximo);
+    /// <summary>Recuerda confirmar la entrega a quien aún no lo hizo (cada recordatorio sale una sola vez).</summary>
+    Task RecordarEntregaAsync(Guid solicitudId);
 
     /// <summary>
     /// La publicación deja de estar disponible por fuera de un trueke (su dueño la retiró o moderación la ocultó): se cierran
@@ -452,6 +456,44 @@ public sealed class SolicitudService : ISolicitudService
                     $"El intercambio de \"{s.Publicacion.Titulo}\" se cerró sin confirmación de entrega.", s.Id);
             await avisos.EnviarAsync(_notificador);
         }
+    }
+
+    public async Task<IReadOnlyList<Guid>> ListarParaRecordatorioAsync(int maximo)
+    {
+        var ahora = Ahora;
+        var antes = Limites.AnticipacionRecordatorioCierre;
+        return await _solicitudes.ListarParaRecordatorioAsync(ahora.AddDays(-Limites.DiasRecordatorioEntrega),
+            ahora.AddDays(-Limites.DiasCierreConUnaConfirmacion).Add(antes), ahora.AddDays(-Limites.DiasCierreSinConfirmacion).Add(antes), maximo);
+    }
+
+    public async Task RecordarEntregaAsync(Guid solicitudId)
+    {
+        var s = await _solicitudes.ObtenerPorIdAsync(solicitudId);
+        if (s is null || s.Estado != EstadoSolicitud.Aceptada || s.FechaAceptacionUtc is not { } aceptada) return;
+        var pendientes = new[] { (s.Publicacion!.PropietarioId, s.ConfirmadaPorDuenioUtc), (s.SolicitanteId, s.ConfirmadaPorSolicitanteUtc) }
+            .Where(p => p.Item2 is null).Select(p => p.Item1).ToList();
+        if (pendientes.Count == 0) return;
+        var ahora = Ahora;
+        var titulo = s.Publicacion.Titulo;
+        var unaConfirmo = pendientes.Count == 1;
+        var cierre = aceptada.AddDays(unaConfirmo ? Limites.DiasCierreConUnaConfirmacion : Limites.DiasCierreSinConfirmacion);
+        string mensaje;
+        if (s.RecordatorioCierreUtc is null && cierre - ahora <= Limites.AnticipacionRecordatorioCierre)
+        {
+            s.MarcarRecordatorioCierre(ahora);
+            mensaje = unaConfirmo
+                ? $"Mañana se completa solo el intercambio de \"{titulo}\": la otra parte ya confirmó la entrega. Si no se concretó, márcalo hoy en Mis intercambios."
+                : $"Mañana se cierra como no concretado el intercambio de \"{titulo}\" porque nadie confirmó la entrega. Si ya se hizo, confírmala hoy.";
+        }
+        else if (s.RecordatorioEntregaUtc is null && aceptada <= ahora.AddDays(-Limites.DiasRecordatorioEntrega))
+        {
+            s.MarcarRecordatorioEntrega(ahora);
+            mensaje = $"¿Ya se hizo la entrega de \"{titulo}\"? Confírmala en Mis intercambios para cerrar el intercambio y sumar Eco-Puntos. Si no se concretó, también puedes indicarlo.";
+        }
+        else return;
+        // Guardar antes de avisar: con RowVersion, dos procesos a la vez no envían el mismo recordatorio dos veces.
+        await _uow.GuardarCambiosAsync();
+        foreach (var id in pendientes) await NotificarAsync(id, TiposNotificacion.EntregaPendiente, mensaje, s.Id);
     }
 
     // ---------------- Calificaciones ----------------

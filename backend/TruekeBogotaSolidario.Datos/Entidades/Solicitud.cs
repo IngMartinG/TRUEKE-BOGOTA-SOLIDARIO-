@@ -44,6 +44,10 @@ public class Solicitud
     public DateTime? ConfirmadaPorDuenioUtc { get; private set; }
     public DateTime? ConfirmadaPorSolicitanteUtc { get; private set; }
     public DateTime? FechaCierreUtc { get; private set; }
+    /// <summary>Aviso de "¿ya se hizo la entrega?" a quien no había confirmado (una sola vez).</summary>
+    public DateTime? RecordatorioEntregaUtc { get; private set; }
+    /// <summary>Aviso de "mañana se cierra solo" a quien no había confirmado (una sola vez).</summary>
+    public DateTime? RecordatorioCierreUtc { get; private set; }
     public uint RowVersion { get; private set; }
 
     public bool EstaEnCurso => Estado is EstadoSolicitud.Pendiente or EstadoSolicitud.Aceptada;
@@ -103,6 +107,15 @@ public class Solicitud
         Estado = EstadoSolicitud.NoConcretada;
         MotivoRechazo = Recortar(motivo);
         FechaCierreUtc = ahoraUtc;
+    }
+
+    public void MarcarRecordatorioEntrega(DateTime ahoraUtc) => RecordatorioEntregaUtc ??= ahoraUtc;
+
+    /// <summary>El de cierre reemplaza al de entrega si aún no había salido: nadie recibe los dos el mismo día.</summary>
+    public void MarcarRecordatorioCierre(DateTime ahoraUtc)
+    {
+        RecordatorioCierreUtc ??= ahoraUtc;
+        RecordatorioEntregaUtc ??= ahoraUtc;
     }
 
     private static string? Recortar(string? motivo)
