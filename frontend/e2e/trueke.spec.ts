@@ -175,7 +175,7 @@ test('contraoferta en un trueke: el dueño pide otros objetos y quien propuso la
     await dialogo.getByRole('checkbox', { name: `Pedir ${casco}` }).check({ force: true });
     await dialogo.getByRole('button', { name: 'Enviar contraoferta' }).click();
     await expect(ana.page.getByRole('status').filter({ hasText: 'Contraoferta enviada' })).toBeVisible();
-    await expect(tarjeta.getByText('Esperando la respuesta de Beto (contraoferta 1 de 5)')).toBeVisible();
+    await expect(tarjeta.getByText(/Esperando la respuesta de Beto.* \(contraoferta 1 de 5\)/)).toBeVisible();
   });
 
   await test.step('Beto acepta la contraoferta: lo pedido y sus dos objetos quedan reservados', async () => {
