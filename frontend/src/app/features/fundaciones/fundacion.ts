@@ -103,7 +103,7 @@ const formatoMesAnio = new Intl.DateTimeFormat('es-CO', { month: 'long', year: '
                     </p>
                   </div>
                   @if (!esMia()) {
-                    <a routerLink="/publicar" [queryParams]="{ modo: 'Donacion', titulo: n.texto, categoria: n.categoriaId }"
+                    <a routerLink="/publicar" [queryParams]="{ modo: 'Donacion', titulo: n.texto, categoria: n.categoriaId, fundacion: id(), necesidad: n.id }"
                       class="btn btn-primario btn-sm col-start-2 justify-self-start sm:col-start-auto"[attr.aria-label]="'Donar: ' + n.texto">
                       <app-icono nombre="regalo" [tamano]="14" />Tengo esto
                     </a>

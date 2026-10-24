@@ -32,6 +32,12 @@ public interface IFundacionService
     Task<FundacionPublicaDto> ObtenerAsync(Guid usuarioId);
     /// <summary>Al suprimir la cuenta (Ley 1581): quita su fundación sin guardar (lo guarda quien llama).</summary>
     Task QuitarDeCuentaAsync(Guid usuarioId);
+    /// <summary>
+    /// Tras publicar una Donación desde "Tengo esto": avisa a la fundación con un enlace a la publicación si la necesidad existe, la
+    /// fundación sigue verificada y visible y no hay bloqueo entre las dos cuentas. Como mucho un aviso por donante y fundación cada
+    /// 24 h. Nunca falla: la publicación ya quedó creada.
+    /// </summary>
+    Task AvisarDonacionAsync(Guid donanteId, Guid publicacionId, string titulo, Guid necesidadId);
 
     // Solo SuperUsuario
     Task<IReadOnlyList<FundacionAdminDto>> ListarParaRevisionAsync(Guid actorId, EstadoFundacionDto estado);
@@ -45,12 +51,15 @@ public sealed class FundacionService : IFundacionService
     public const int MaxListado = 200;
     private const int MaxRevision = 100;
     private static readonly TimeSpan DuracionCache = TimeSpan.FromMinutes(2);
+    public static readonly TimeSpan VentanaAvisoDonacion = TimeSpan.FromHours(24);
     private const string ClaveCache = "fundaciones:lista";
 
     private readonly IFundacionRepository _fundaciones;
     private readonly IUsuarioRepository _usuarios;
     private readonly ICategoriaRepository _categorias;
     private readonly IAuditoriaRepository _auditoria;
+    private readonly IBloqueoRepository _bloqueos;
+    private readonly INotificacionRepository _notificaciones;
     private readonly IUnidadDeTrabajo _uow;
     private readonly IAlmacenArchivos _almacen;
     private readonly INotificador _notificador;
@@ -61,8 +70,10 @@ public sealed class FundacionService : IFundacionService
 
     public FundacionService(IFundacionRepository fundaciones, IUsuarioRepository usuarios, ICategoriaRepository categorias,
         IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, IAlmacenArchivos almacen, INotificador notificador, IMemoryCache cache,
-        IOptions<UrlsOpciones> urls, TimeProvider reloj, ILogger<FundacionService> log)
+        IOptions<UrlsOpciones> urls, TimeProvider reloj, ILogger<FundacionService> log, IBloqueoRepository bloqueos,
+        INotificacionRepository notificaciones)
     {
+        _bloqueos = bloqueos; _notificaciones = notificaciones;
         _fundaciones = fundaciones; _usuarios = usuarios; _categorias = categorias; _auditoria = auditoria; _uow = uow;
         _almacen = almacen; _notificador = notificador; _cache = cache; _urls = urls.Value; _reloj = reloj; _log = log;
     }
@@ -170,6 +181,27 @@ public sealed class FundacionService : IFundacionService
         _fundaciones.QuitarNecesidad(n);
         await _uow.GuardarCambiosAsync();
         _cache.Remove(ClaveCache);
+    }
+
+    public async Task AvisarDonacionAsync(Guid donanteId, Guid publicacionId, string titulo, Guid necesidadId)
+    {
+        try
+        {
+            if (await _fundaciones.NecesidadConFundacionAsync(necesidadId) is not (var necesidad, var f) || !f.EstaAprobada || f.UsuarioId == donanteId) return;
+            var cuenta = await _usuarios.ObtenerPorIdAsync(f.UsuarioId);
+            var donante = await _usuarios.ObtenerPorIdAsync(donanteId);
+            if (cuenta is null || cuenta.EstaEliminado || cuenta.EstaSuspendido || donante is null) return;
+            if (await _bloqueos.ExisteEntreAsync(donanteId, f.UsuarioId)) return;
+            if (await _notificaciones.ExisteSobrePublicacionDeAsync(f.UsuarioId, TiposNotificacion.DonacionParaFundacion, donanteId, Ahora - VentanaAvisoDonacion))
+                return; // anti-spam: la publicación igual queda en el catálogo para cualquiera
+            // Solo el nombre público de quien dona (nunca su correo): la fundación la pide desde la publicación, como cualquier persona.
+            await _notificador.NotificarAsync(f.UsuarioId, TiposNotificacion.DonacionParaFundacion,
+                $"{Mapeos.NombrePublico(donante.NombreCompleto)} publicó «{titulo}» para «{necesidad.Texto}». Ábrela y pídela si les sirve.", publicacionId);
+        }
+        catch (Exception ex)
+        {
+            _log.LogWarning(ex, "No se pudo avisar a la fundación de la necesidad {NecesidadId}", necesidadId);
+        }
     }
 
     // ---------------- Páginas públicas ----------------

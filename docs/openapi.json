@@ -7548,6 +7548,11 @@
               "type": "string"
             },
             "nullable": true
+          },
+          "paraNecesidadId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         },
         "additionalProperties": false

@@ -68,6 +68,7 @@ interface Foto {
 }
 
 const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
+const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 @Component({
   imports: [Volver, ReactiveFormsModule, RouterLink, Icono, ErrorCampo, CampoAccesible, Mapa, InsigniaModo, ImagenPublicacion, CopPipe, HacePipe, SelectorMunicipio],
@@ -391,6 +392,12 @@ const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
                   <app-icono nombre="moneda" class="shrink-0 text-sol-500" />
                   <p>Cuando completes este {{ info[modoActual()].etiqueta.toLowerCase() }}, tú y la otra persona ganarán <strong>+{{ info[modoActual()].puntos }} Eco-Puntos</strong>.</p>
                 </div>
+                @if (paraNecesidad()) {
+                  <div class="mt-3 flex items-start gap-3 rounded-2xl bg-tierra-50 p-4 text-sm dark:bg-tierra-700/20" data-aviso-fundacion>
+                    <app-icono nombre="heart" class="shrink-0 text-tierra-600 dark:text-tierra-100" />
+                    <p>Le avisaremos a la fundación para que pueda pedírtela. Tu publicación queda en el catálogo como cualquier otra.</p>
+                  </div>
+                }
                 @if (error()) {
                   <p class="mt-4 rounded-xl bg-tierra-50 p-3 text-sm text-tierra-700 dark:bg-tierra-700/20 dark:text-tierra-100" role="alert">{{ error() }}</p>
                 }
@@ -446,6 +453,8 @@ export default class Publicar {
   readonly modo = input<string>();
   readonly titulo = input<string>();
   readonly categoria = input<string>();
+  /** …&fundacion=…&necesidad=…: al publicar la donación se le avisa a la fundación de esa necesidad (el backend comprueba el resto). */
+  readonly necesidad = input<string>();
 
   protected readonly pasos = PASOS;
   protected readonly modos = MODOS;
@@ -485,6 +494,11 @@ export default class Publicar {
 
   protected readonly categorias = toSignal(this.api.categorias$.pipe(catchError(() => of([]))), { initialValue: [] });
   protected readonly modoActual = toSignal(this.form.controls.modo.valueChanges, { initialValue: this.form.controls.modo.value });
+  /** La necesidad de la fundación que cubre esta donación (solo al crear y solo en modo Donación). */
+  protected readonly paraNecesidad = computed(() => {
+    const n = this.necesidad();
+    return !this.id() && this.modoActual() === 'Donacion' && n && GUID.test(n) ? n : null;
+  });
   protected readonly categoriaActual = toSignal(this.form.controls.categoriaId.valueChanges, { initialValue: null });
   protected readonly condicionActual = toSignal(this.form.controls.condicion.valueChanges, { initialValue: null });
   protected readonly requiereDetalle = computed(() => infoCondicion(this.condicionActual()).requiereDetalle && !!this.condicionActual());
@@ -811,6 +825,7 @@ export default class Publicar {
       latitud: u?.[0] ?? null,
       longitud: u?.[1] ?? null,
       imagenes: this.fotosListas(),
+      ...(this.paraNecesidad() ? { paraNecesidadId: this.paraNecesidad() } : {}),
     };
     this.enviando.set(true);
     this.error.set(null);
@@ -821,7 +836,10 @@ export default class Publicar {
         this.guardarBorrador = false;
         this.borrarBorrador();
       }
-      this.avisos.exito(id ? 'Cambios guardados' : '¡Tu publicación ya está visible!', id ? undefined : 'Te avisaremos cuando alguien la solicite.');
+      this.avisos.exito(
+        id ? 'Cambios guardados' : '¡Tu publicación ya está visible!',
+        id ? undefined : cuerpo.paraNecesidadId ? 'Le avisamos a la fundación para que pueda pedírtela.' : 'Te avisaremos cuando alguien la solicite.',
+      );
       await this.router.navigate(['/publicacion', p.id]);
     } catch (e) {
       const errores = erroresDeCampos(e);

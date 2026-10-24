@@ -244,7 +244,7 @@ public sealed class EnvioPushHostedService : BackgroundService
 /// </summary>
 public interface IAvisosPush
 {
-    Task NotificacionAsync(Guid usuarioId, string tipo, string mensaje);
+    Task NotificacionAsync(Guid usuarioId, string tipo, string mensaje, Guid? recursoId = null);
     Task MensajeChatAsync(Guid receptorId, Guid conversacionId, string nombreAutor);
 }
 
@@ -270,12 +270,13 @@ public sealed class AvisosPush : IAvisosPush
     private async Task<bool> DebeAvisarAsync(Guid usuarioId)
         => _o.Habilitado && !(await _presencia.EnLineaAsync(new[] { usuarioId })).Contains(usuarioId);
 
-    public async Task NotificacionAsync(Guid usuarioId, string tipo, string mensaje)
+    public async Task NotificacionAsync(Guid usuarioId, string tipo, string mensaje, Guid? recursoId = null)
     {
         try
         {
             if (!await DebeAvisarAsync(usuarioId)) return;
-            var (titulo, ruta) = tipo == TiposNotificacion.BusquedaGuardada ? ("Novedades en tus búsquedas", "cuenta/busquedas")
+            var (titulo, ruta) = tipo == TiposNotificacion.DonacionParaFundacion && recursoId is { } pub ? ("Una donación para tu fundación", $"publicacion/{pub}")
+                : tipo == TiposNotificacion.BusquedaGuardada ? ("Novedades en tus búsquedas", "cuenta/busquedas")
                 : tipo == TiposNotificacion.ComentarioNuevo ? ("Nuevo comentario en tu publicación", "notificaciones")
                 : TiposIntercambio.Contains(tipo) ? ("Novedades en tu intercambio", "intercambios")
                 : ("Trueke Bogotá Solidario", "notificaciones");

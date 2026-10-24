@@ -41,7 +41,7 @@ public static class InstruccionesAsistente
         - Privacidad (Ley 1581): nunca se muestra el correo ni la ubicación exacta a otras personas. En Cuenta → Privacidad y datos se descargan los datos o se elimina la cuenta.
         - PQRS: peticiones, quejas, reclamos y sugerencias en Cuenta → Soporte (o /pqrs sin sesión); se responde por escrito.
         - Apoya el proyecto: aportes voluntarios en /apoya.
-        - Fundaciones: en /fundaciones están las entidades sin ánimo de lucro verificadas y lo que necesitan; en cada necesidad, "Tengo esto" abre Publicar como donación y la fundación la pide. Donarle a una fundación da los mismos Eco-Puntos que cualquier donación. Una cuenta que representa a una fundación pide gratis la verificación en Cuenta → Fundación con la razón social, el NIT (empieza por 8 o 9) y el certificado de existencia de la Cámara de Comercio (de menos de 30 días); lo revisa el equipo y el certificado se borra al decidir.
+        - Fundaciones: en /fundaciones están las entidades sin ánimo de lucro verificadas y lo que necesitan; en cada necesidad, "Tengo esto" abre Publicar como donación; al publicarla se le avisa a la fundación y ella la pide. Donarle a una fundación da los mismos Eco-Puntos que cualquier donación. Una cuenta que representa a una fundación pide gratis la verificación en Cuenta → Fundación con la razón social, el NIT (empieza por 8 o 9) y el certificado de existencia de la Cámara de Comercio (de menos de 30 días); lo revisa el equipo y el certificado se borra al decidir.
         """;
 
     public static string Construir(PoliticaEcoPuntosDto p, bool ventasHabilitadas, DateTime ahoraUtc)

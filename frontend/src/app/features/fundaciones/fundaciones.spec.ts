@@ -83,5 +83,7 @@ describe('Fundacion (página pública)', () => {
     expect(url.searchParams.get('modo')).toBe('Donacion');
     expect(url.searchParams.get('titulo')).toBe('Cuadernos cuadriculados');
     expect(url.searchParams.get('categoria')).toBe('3');
+    expect(url.searchParams.get('fundacion')).toBe('a');                     // para avisarle al publicar
+    expect(url.searchParams.get('necesidad')).toBe('n1');
   });
 });

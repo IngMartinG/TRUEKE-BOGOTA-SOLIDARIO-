@@ -13,7 +13,7 @@ namespace TruekeBogotaSolidario.Negocio.Comun;
 /// </summary>
 public interface IAvisosCorreo
 {
-    Task NotificacionAsync(Guid usuarioId, string tipo, string mensaje);
+    Task NotificacionAsync(Guid usuarioId, string tipo, string mensaje, Guid? recursoId = null);
     Task MensajeChatAsync(Guid receptorId, Guid conversacionId, string nombreAutor);
 }
 
@@ -61,17 +61,23 @@ public sealed class AvisosCorreo : IAvisosCorreo
 
     private async Task<bool> EnLineaAsync(Guid usuarioId) => (await _presencia.EnLineaAsync(new[] { usuarioId })).Contains(usuarioId);
 
-    public async Task NotificacionAsync(Guid usuarioId, string tipo, string mensaje)
+    public async Task NotificacionAsync(Guid usuarioId, string tipo, string mensaje, Guid? recursoId = null)
     {
-        if (!TiposIntercambio.Contains(tipo)) return;
+        var donacion = tipo == TiposNotificacion.DonacionParaFundacion && recursoId is not null;
+        if (!donacion && !TiposIntercambio.Contains(tipo)) return;
         try
         {
             var u = await _usuarios.ObtenerPorIdAsync(usuarioId);
             if (u is null || u.EstaEliminado || !u.CorreoVerificado || !u.AvisosCorreoIntercambios) return;
             if (await EnLineaAsync(usuarioId)) return; // ya lo vio en la app
-            _correo.Encolar(PlantillaCorreo.Crear(u.Correo, "Novedades en tu intercambio", $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:",
-                new[] { mensaje, "Entra a Trueke para ver los detalles y responder." },
-                ("Ver mis intercambios", $"{Front}/intercambios"), Pie));
+            // Sin datos de contacto de quien dona: la fundación la pide desde la publicación, como cualquier solicitud.
+            _correo.Encolar(donacion
+                ? PlantillaCorreo.Crear(u.Correo, "Alguien quiere donarles algo que necesitan", $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:",
+                    new[] { mensaje, "Ábrela en Trueke y pídela si les sirve: así coordinan la entrega por el chat de la plataforma." },
+                    ("Ver la donación", $"{Front}/publicacion/{recursoId}"), Pie)
+                : PlantillaCorreo.Crear(u.Correo, "Novedades en tu intercambio", $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:",
+                    new[] { mensaje, "Entra a Trueke para ver los detalles y responder." },
+                    ("Ver mis intercambios", $"{Front}/intercambios"), Pie));
         }
         catch (Exception ex)
         {

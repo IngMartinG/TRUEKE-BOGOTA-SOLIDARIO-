@@ -6188,6 +6188,8 @@ export interface components {
             /** Format: double */
             longitud?: number | null;
             imagenes?: string[] | null;
+            /** Format: uuid */
+            paraNecesidadId?: string | null;
         };
         CrearSolicitudRequest: {
             /** Format: uuid */

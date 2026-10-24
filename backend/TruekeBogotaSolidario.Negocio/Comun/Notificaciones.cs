@@ -58,6 +58,8 @@ public static class TiposNotificacion
     public const string FundacionRechazada = "FundacionRechazada";
     /// <summary>La moderación retiró la insignia de fundación verificada (el motivo se ve en la cuenta).</summary>
     public const string FundacionRetirada = "FundacionRetirada";
+    /// <summary>A la fundación, cuando alguien publica una donación desde "Tengo esto" en una de sus necesidades (RecursoId = PublicacionId).</summary>
+    public const string DonacionParaFundacion = "DonacionParaFundacion";
     // Solo para moderadores
     public const string AlertaPagoEnRevision = "AlertaPagoEnRevision";
     public const string PqrNueva = "PqrNueva";
@@ -142,8 +144,8 @@ public sealed class NotificadorPersistente : INotificador
             _log.LogWarning(ex, "No se pudo enviar en tiempo real la notificación {Tipo} al usuario {UsuarioId}", tipo, usuarioId);
         }
         // Si no tiene la app abierta: también por correo (según sus preferencias) y push a sus dispositivos (nunca falla la operación)
-        await _avisosCorreo.NotificacionAsync(usuarioId, tipo, n.Mensaje);
-        await _avisosPush.NotificacionAsync(usuarioId, tipo, n.Mensaje);
+        await _avisosCorreo.NotificacionAsync(usuarioId, tipo, n.Mensaje, recursoId);
+        await _avisosPush.NotificacionAsync(usuarioId, tipo, n.Mensaje, recursoId);
     }
 
     public static NotificacionDto ADto(Notificacion n) => new(n.Id, n.Tipo, n.Mensaje, n.RecursoId, n.FechaUtc, n.LeidaUtc is not null);
