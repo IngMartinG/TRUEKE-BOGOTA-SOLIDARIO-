@@ -583,6 +583,27 @@ Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (
   y correo si la persona no está en línea y tiene activos los avisos de intercambios.
 - El asistente explica los plazos. Pruebas en `EntregaTests` (tiempos, sin repetir, solo a quien falta y nada tras completar).
 
+## Hecho el 2026-10-24 — contraofertas y trueke de varios objetos
+Decisiones del dueño: negocian las dos partes por turnos, hasta 3 objetos por trueke, sin mezclar objetos y dinero, máximo
+5 contraofertas por solicitud.
+- **Al pedir:** en un Trueke se ofrecen de 0 a 3 objetos propios disponibles (`PublicacionesOfrecidasIds`; el campo viejo
+  `PublicacionOfrecidaId` se sigue aceptando); en una Compra se puede proponer otro precio (`PrecioPropuestoCop`, sin él vale
+  el publicado). En una Donación no hay ni lo uno ni lo otro.
+- **Por turnos** (`Solicitud.TurnoDuenio`): quien debe responder la propuesta vigente la acepta (`POST …/aceptar`, ahora
+  también para quien solicitó), contraoferta (`POST …/contraoferta`) o se retira (el dueño rechaza, quien solicitó cancela).
+  En un trueke la contraoferta siempre son objetos de quien solicitó: el dueño elige cuáles prefiere. Cada contraoferta
+  reemplaza la anterior y avisa a la otra parte (`SolicitudContraoferta`, también por push y correo). No se negocia mientras
+  la publicación está reservada para otra persona.
+- **Varios objetos:** tabla `SolicitudObjetos` (migración `Contraofertas`, que copia el objeto de cada solicitud existente y
+  activa RLS como las demás tablas). Al aceptar se reservan todos; al completarse se intercambian todos; si no se concreta,
+  o si se retira uno de ellos, vuelven al catálogo.
+- **Front:** selector de hasta 3 objetos al proponer y al contraofertar (`SelectorObjetos`), precio propuesto en las compras,
+  la tarjeta muestra todos los objetos, el precio, a quién le toca y cuántas contraofertas van, y el diálogo "Hacer una
+  contraoferta". El aviso de contraoferta abre la pestaña correcta (`/intercambios?ver=<id>`). El asistente lo explica.
+- Pruebas: `ContraofertasTests` (precio por turnos, objetos y reservas, retiro de uno de los objetos, máximo 5, donación),
+  `TruekeConObjetoTests`, la migración probada en PostgreSQL (subir con datos, bajar y volver a subir), `tarjeta-solicitud.spec.ts`,
+  `selector-objetos.spec.ts` y la E2E de contraoferta en `trueke.spec.ts`.
+
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
 - **Registro de oferentes:** que el abogado revise el texto de la política y los términos (versión `2026-10-19`), si el

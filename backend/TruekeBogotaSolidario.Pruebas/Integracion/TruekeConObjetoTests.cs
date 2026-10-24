@@ -38,13 +38,13 @@ public class TruekeConObjetoTests : IClassFixture<FabricaApi>
 
         // Beto ofrece el mismo objeto en dos truekes; Diego pide el objeto de Beto
         var aAna = await ProponerAsync(beto, pubAna, pubBeto);
-        Assert.Equal(pubBeto, aAna.GetProperty("ofrecida").GetProperty("id").GetGuid());
+        Assert.Equal(pubBeto, aAna.GetProperty("ofrecidas")[0].GetProperty("id").GetGuid());
         var aCarla = (await ProponerAsync(beto, pubCarla, pubBeto)).GetProperty("id").GetGuid();
         var deDiego = (await ProponerAsync(diego, pubBeto, null)).GetProperty("id").GetGuid();
 
         // Ana ve lo que le ofrecen y acepta
         var recibida = await SolicitudAsync(ana, "recibidas", aAna.GetProperty("id").GetGuid());
-        Assert.Equal("Bicicleta usada", recibida.GetProperty("ofrecida").GetProperty("titulo").GetString());
+        Assert.Equal("Bicicleta usada", recibida.GetProperty("ofrecidas")[0].GetProperty("titulo").GetString());
         (await ana.PostAsync($"/api/v1/solicitudes/{aAna.GetProperty("id").GetGuid()}/aceptar", null)).EnsureSuccessStatusCode();
 
         Assert.Equal("EnNegociacion", await EstadoAsync(ana, pubAna));

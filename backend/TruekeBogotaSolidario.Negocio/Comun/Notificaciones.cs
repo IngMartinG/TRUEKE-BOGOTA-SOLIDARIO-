@@ -12,6 +12,8 @@ public static class TiposNotificacion
     public const string SolicitudAceptada = "SolicitudAceptada";
     public const string SolicitudRechazada = "SolicitudRechazada";
     public const string SolicitudCancelada = "SolicitudCancelada";
+    /// <summary>La otra parte contraofertó: ahora te toca aceptar, contraofertar o retirarte (RecursoId = SolicitudId).</summary>
+    public const string SolicitudContraoferta = "SolicitudContraoferta";
     /// <summary>El dueño aceptó a otra persona: la solicitud queda en lista de espera por si no se concreta.</summary>
     public const string SolicitudEnEspera = "SolicitudEnEspera";
     /// <summary>El intercambio con otra persona no se concretó: la publicación volvió y el dueño puede elegir de la lista.</summary>

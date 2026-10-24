@@ -339,7 +339,7 @@ public sealed class PublicacionService : IPublicacionService
             if (s.Estado == EstadoSolicitud.Aceptada)
             {
                 s.MarcarNoConcretada(aviso, ahora);
-                avisos.Agregar(await _truekes.LiberarOfrecidaAsync(s)); // el objeto que le ofrecieron vuelve al catálogo
+                avisos.Agregar(await _truekes.LiberarOfrecidasAsync(s)); // el objeto que le ofrecieron vuelve al catálogo
             }
             else s.Rechazar(aviso);
         }

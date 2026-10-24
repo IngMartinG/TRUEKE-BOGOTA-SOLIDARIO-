@@ -38,7 +38,7 @@ public sealed class AvisosCorreo : IAvisosCorreo
     private static readonly HashSet<string> TiposIntercambio = new(StringComparer.Ordinal)
     {
         TiposNotificacion.SolicitudNueva, TiposNotificacion.SolicitudAceptada, TiposNotificacion.SolicitudRechazada,
-        TiposNotificacion.SolicitudCancelada, TiposNotificacion.EntregaConfirmada, TiposNotificacion.EntregaPendiente, TiposNotificacion.IntercambioCompletado,
+        TiposNotificacion.SolicitudCancelada, TiposNotificacion.SolicitudContraoferta, TiposNotificacion.EntregaConfirmada, TiposNotificacion.EntregaPendiente, TiposNotificacion.IntercambioCompletado,
         TiposNotificacion.IntercambioNoConcretado, TiposNotificacion.CalificacionRecibida
     };
     private const string Pie = "Puedes elegir qué correos recibes en Cuenta → Avisos.";

@@ -4427,6 +4427,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/solicitudes/{id}/contraoferta": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ContraofertaRequest"];
+                    "text/json": components["schemas"]["ContraofertaRequest"];
+                    "application/*+json": components["schemas"]["ContraofertaRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["SolicitudDto"];
+                        "application/json": components["schemas"]["SolicitudDto"];
+                        "text/json": components["schemas"]["SolicitudDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/solicitudes/{id}/rechazar": {
         parameters: {
             query?: never;
@@ -5602,6 +5647,11 @@ export interface components {
             correo: string;
             captchaToken?: string | null;
         };
+        ContraofertaRequest: {
+            publicacionesOfrecidasIds?: string[] | null;
+            /** Format: double */
+            precioPropuestoCop?: number | null;
+        };
         ConversacionDto: {
             /** Format: uuid */
             id?: string;
@@ -5696,8 +5746,11 @@ export interface components {
             /** Format: uuid */
             publicacionId?: string;
             mensaje: string;
+            publicacionesOfrecidasIds?: string[] | null;
             /** Format: uuid */
             publicacionOfrecidaId?: string | null;
+            /** Format: double */
+            precioPropuestoCop?: number | null;
         };
         DatosFacturacionDto: {
             completos?: boolean;
@@ -6746,7 +6799,16 @@ export interface components {
             cierreAutomaticoUtc?: string | null;
             puedoCalificar?: boolean;
             enEspera?: boolean;
-            ofrecida?: components["schemas"]["PublicacionResumenDto"];
+            ofrecidas?: components["schemas"]["PublicacionResumenDto"][];
+            /** Format: double */
+            precioPublicadoCop?: number | null;
+            /** Format: double */
+            precioPropuestoCop?: number | null;
+            meTocaResponder?: boolean;
+            /** Format: int32 */
+            contraofertas?: number;
+            /** Format: int32 */
+            contraofertasRestantes?: number;
         };
         SubidaArchivoDto: {
             urlSubida?: string;
@@ -6931,6 +6993,7 @@ export type ConfiguracionDosFactoresDto = components['schemas']['ConfiguracionDo
 export type ConfiguracionPublicaDto = components['schemas']['ConfiguracionPublicaDto'];
 export type ConfirmarIdentidadRequest = components['schemas']['ConfirmarIdentidadRequest'];
 export type ConsultarPqrRequest = components['schemas']['ConsultarPqrRequest'];
+export type ContraofertaRequest = components['schemas']['ContraofertaRequest'];
 export type ConversacionDto = components['schemas']['ConversacionDto'];
 export type CorregirCompradorFacturaRequest = components['schemas']['CorregirCompradorFacturaRequest'];
 export type CotizacionDto = components['schemas']['CotizacionDto'];

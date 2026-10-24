@@ -110,7 +110,7 @@ test('trueke con objeto: ofrecer uno propio, verlo, aceptarlo y que ambos objeto
     await beto.page.goto(`/publicacion/${idPedida}`);
     await beto.page.getByRole('button', { name: 'Proponer trueke' }).click();
     await beto.page.getByLabel('Tu mensaje').fill('Te la cambio por mi patineta.');
-    await beto.page.getByRole('radio', { name: `Ofrecer ${ofrecida}` }).check({ force: true });
+    await beto.page.getByRole('checkbox', { name: `Ofrecer ${ofrecida}` }).check({ force: true });
     await beto.page.getByRole('button', { name: 'Enviar solicitud' }).click();
     await expect(beto.page.locator('app-tarjeta-solicitud', { hasText: pedida }).getByText('Ofreces a cambio')).toBeVisible();
   });
@@ -139,5 +139,54 @@ test('trueke con objeto: ofrecer uno propio, verlo, aceptarlo y que ambos objeto
     await beto.page.getByRole('dialog').getByRole('button', { name: 'Sí, confirmar entrega' }).click();
     await expect.poll(() => estado(beto, idOfrecida)).toBe('Intercambiada');
     await expect.poll(() => estado(ana, idPedida)).toBe('Intercambiada');
+  });
+});
+
+test('contraoferta en un trueke: el dueño pide otros objetos y quien propuso la acepta', async ({ browser, contextOptions, viewport, userAgent, isMobile, hasTouch }) => {
+  const dispositivo = { ...contextOptions, viewport, userAgent, isMobile, hasTouch };
+  const sufijo = randomBytes(3).toString('hex');
+  const pedida = `Teclado E2E ${sufijo}`;
+  const patineta = `Patineta E2E ${sufijo}`;
+  const casco = `Casco E2E ${sufijo}`;
+  const ana = await persona(browser, 'Ana', dispositivo);
+  const beto = await persona(browser, 'Beto', dispositivo);
+  const idPedida = await publicar(ana.page.request, ana.cuenta, pedida);
+  const idPatineta = await publicar(beto.page.request, beto.cuenta, patineta);
+  const idCasco = await publicar(beto.page.request, beto.cuenta, casco);
+  const estado = async (quien: { page: Page; cuenta: Cuenta }, id: string) => {
+    const r = await quien.page.request.get('/api/v1/publicaciones/mias', { headers: { Authorization: `Bearer ${quien.cuenta.token}` } });
+    return ((await r.json()) as { id: string; estado: string }[]).find((p) => p.id === id)?.estado;
+  };
+
+  await test.step('Beto ofrece solo la patineta', async () => {
+    await beto.page.goto(`/publicacion/${idPedida}`);
+    await beto.page.getByRole('button', { name: 'Proponer trueke' }).click();
+    await beto.page.getByLabel('Tu mensaje').fill('¿Te sirve mi patineta?');
+    await beto.page.getByRole('checkbox', { name: `Ofrecer ${patineta}` }).check({ force: true });
+    await beto.page.getByRole('button', { name: 'Enviar solicitud' }).click();
+    await expect(beto.page.locator('app-tarjeta-solicitud', { hasText: pedida }).getByText('Esperando la respuesta de Ana')).toBeVisible();
+  });
+
+  await test.step('Ana contraoferta pidiendo la patineta y el casco', async () => {
+    await ana.page.goto('/intercambios');
+    const tarjeta = ana.page.locator('app-tarjeta-solicitud', { hasText: pedida });
+    await tarjeta.getByRole('button', { name: 'Contraofertar' }).click();
+    const dialogo = ana.page.getByRole('dialog');
+    await dialogo.getByRole('checkbox', { name: `Pedir ${casco}` }).check({ force: true });
+    await dialogo.getByRole('button', { name: 'Enviar contraoferta' }).click();
+    await expect(ana.page.getByRole('status').filter({ hasText: 'Contraoferta enviada' })).toBeVisible();
+    await expect(tarjeta.getByText('Esperando la respuesta de Beto (contraoferta 1 de 5)')).toBeVisible();
+  });
+
+  await test.step('Beto acepta la contraoferta: lo pedido y sus dos objetos quedan reservados', async () => {
+    await beto.page.goto('/intercambios?tab=enviadas');
+    const tarjeta = beto.page.locator('app-tarjeta-solicitud', { hasText: pedida });
+    await expect(tarjeta.getByRole('link', { name: `Ofreces: ${casco}` })).toBeVisible();
+    await tarjeta.getByRole('button', { name: 'Aceptar contraoferta' }).click();
+    await beto.page.getByRole('dialog').getByRole('button', { name: 'Aceptar contraoferta' }).click();
+    await expect(tarjeta.getByRole('button', { name: 'Confirmar entrega' })).toBeVisible();
+    await expect.poll(() => estado(beto, idPatineta)).toBe('EnNegociacion');
+    await expect.poll(() => estado(beto, idCasco)).toBe('EnNegociacion');
+    await expect.poll(() => estado(ana, idPedida)).toBe('EnNegociacion');
   });
 });

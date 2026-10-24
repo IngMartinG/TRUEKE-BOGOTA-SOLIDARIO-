@@ -121,6 +121,15 @@ export const CONOCIMIENTO: readonly EntradaConocimiento[] = [
     accion: { texto: 'Ir a mis intercambios', ruta: '/intercambios', conSesion: true },
   },
   {
+    id: 'contraoferta',
+    tema: 'intercambios',
+    pregunta: '¿Puedo negociar el precio o los objetos?',
+    variantes: ['hacer una contraoferta', 'ofrecer menos dinero', 'ofrecer varios objetos', 'regatear', 'pedir otro objeto a cambio'],
+    palabrasClave: ['contraoferta', 'negociar', 'regatear', 'precio', 'varios', 'objetos', 'descuento'],
+    respuesta: 'Sí. En una compra puedes proponer otro precio al pedirla, y en un trueke ofrecer hasta 3 de tus objetos a cambio de uno. Quien recibe la propuesta la acepta, se retira o hace una contraoferta: otro precio, o en un trueke otros objetos de quien pidió. Se responden por turnos, con un máximo de 5 contraofertas; después solo queda aceptar o retirarse. En las donaciones no hay contraofertas. El precio acordado se paga en persona al entregar.',
+    accion: { texto: 'Ir a mis intercambios', ruta: '/intercambios', conSesion: true },
+  },
+  {
     id: 'completar',
     tema: 'intercambios',
     pregunta: '¿Cuándo se completa un intercambio?',

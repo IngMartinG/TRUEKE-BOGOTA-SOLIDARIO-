@@ -296,28 +296,28 @@ public sealed class SolicitudRepository : ISolicitudRepository
 
     public Task<Solicitud?> ObtenerPorIdAsync(Guid id)
         => _db.Solicitudes.Include(s => s.Publicacion).ThenInclude(p => p!.Propietario).Include(s => s.Solicitante)
-            .Include(s => s.PublicacionOfrecida).FirstOrDefaultAsync(s => s.Id == id);
+            .Include(s => s.Ofrecidas).ThenInclude(o => o.Publicacion).FirstOrDefaultAsync(s => s.Id == id);
 
     public async Task<IReadOnlyList<Solicitud>> ListarPorSolicitanteAsync(Guid solicitanteId)
         => await _db.Solicitudes.AsNoTracking().Include(s => s.Publicacion).ThenInclude(p => p!.Propietario).Include(s => s.Solicitante)
-            .Include(s => s.PublicacionOfrecida)
+            .Include(s => s.Ofrecidas).ThenInclude(o => o.Publicacion)
             .Where(s => s.SolicitanteId == solicitanteId).OrderByDescending(s => s.FechaSolicitud).Take(200).ToListAsync();
 
     public async Task<IReadOnlyList<Solicitud>> ListarRecibidasAsync(Guid propietarioId)
         => await _db.Solicitudes.AsNoTracking().Include(s => s.Publicacion).ThenInclude(p => p!.Propietario).Include(s => s.Solicitante)
-            .Include(s => s.PublicacionOfrecida)
+            .Include(s => s.Ofrecidas).ThenInclude(o => o.Publicacion)
             .Where(s => s.Publicacion!.PropietarioId == propietarioId).OrderByDescending(s => s.FechaSolicitud).Take(200).ToListAsync();
 
     public Task<bool> SeLeOfrecioAsync(Guid publicacionOfrecidaId, Guid duenioPedidaId)
-        => _db.Solicitudes.AnyAsync(s => s.PublicacionOfrecidaId == publicacionOfrecidaId && s.Publicacion!.PropietarioId == duenioPedidaId
+        => _db.Solicitudes.AnyAsync(s => s.Ofrecidas.Any(o => o.PublicacionId == publicacionOfrecidaId) && s.Publicacion!.PropietarioId == duenioPedidaId
             && (s.Estado == EstadoSolicitud.Pendiente || s.Estado == EstadoSolicitud.Aceptada || s.Estado == EstadoSolicitud.Completada));
 
     public async Task<IReadOnlyList<Solicitud>> ListarEnCursoQueOfrecenAsync(Guid publicacionId, bool incluirAceptada)
-        => await _db.Solicitudes.Include(s => s.Publicacion).Include(s => s.PublicacionOfrecida).Where(s => s.PublicacionOfrecidaId == publicacionId
+        => await _db.Solicitudes.Include(s => s.Publicacion).Include(s => s.Ofrecidas).ThenInclude(o => o.Publicacion).Where(s => s.Ofrecidas.Any(o => o.PublicacionId == publicacionId)
             && (s.Estado == EstadoSolicitud.Pendiente || (incluirAceptada && s.Estado == EstadoSolicitud.Aceptada))).ToListAsync();
 
     public async Task<IReadOnlyList<Solicitud>> ListarEnCursoPorPublicacionAsync(Guid publicacionId, bool incluirAceptada)
-        => await _db.Solicitudes.Where(s => s.PublicacionId == publicacionId
+        => await _db.Solicitudes.Include(s => s.Ofrecidas).ThenInclude(o => o.Publicacion).Where(s => s.PublicacionId == publicacionId
             && (s.Estado == EstadoSolicitud.Pendiente || (incluirAceptada && s.Estado == EstadoSolicitud.Aceptada))).ToListAsync();
 
     public async Task<IReadOnlyDictionary<Guid, int>> ContarPendientesPorPublicacionAsync(IReadOnlyCollection<Guid> publicacionIds)

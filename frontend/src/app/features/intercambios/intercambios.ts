@@ -3,14 +3,20 @@ import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { filter, firstValueFrom, type Observable } from 'rxjs';
-import type { SolicitudDto } from '../../api/tipos';
+import type { PublicacionDto, SolicitudDto } from '../../api/tipos';
+import { CatalogoApi } from '../../core/api/catalogo.api';
+import { CuentaApi } from '../../core/api/cuenta.api';
 import { IntercambiosApi } from '../../core/api/intercambios.api';
 import { AvisosService } from '../../core/avisos.service';
+import { mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
 import { TiempoRealService } from '../../core/tiempo-real.service';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Estrellas } from '../../shared/ui/estrellas';
 import { Modal } from '../../shared/ui/modal';
+import { Icono } from '../../shared/ui/icono';
+import { SelectorObjetos } from '../../shared/ui/selector-objetos';
+import { cop } from '../../shared/pipes';
 import { TarjetaSolicitud, type AccionSolicitud } from './tarjeta-solicitud';
 import { Volver } from '../../shared/ui/volver';
 
@@ -18,7 +24,7 @@ type Pestana = 'recibidas' | 'enviadas';
 const TIPOS_SOLICITUD = /^(Solicitud|Entrega|Intercambio|Calificacion)/;
 
 @Component({
-  imports: [Volver, FormsModule, RouterLink, TarjetaSolicitud, EstadoVacio, Modal, Estrellas],
+  imports: [Volver, FormsModule, RouterLink, TarjetaSolicitud, EstadoVacio, Modal, Estrellas, Icono, SelectorObjetos],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor max-w-4xl py-8 sm:py-10">
@@ -101,6 +107,45 @@ const TIPOS_SOLICITUD = /^(Solicitud|Entrega|Intercambio|Calificacion)/;
       </div>
     </app-modal>
 
+    <!-- Contraofertar: otro precio (Compra) u otros objetos de quien solicita (Trueke) -->
+    <app-modal [(abierto)]="contraofertaAbierta" titulo="Hacer una contraoferta" [subtitulo]="subtituloContraoferta()">
+      <form id="form-contraoferta" (ngSubmit)="enviarContraoferta()" class="space-y-4">
+        @if (contraoferta()?.modo === 'Compra') {
+          <div class="campo">
+            <label for="precio-contraoferta" class="etiqueta">Precio que propones</label>
+            <div class="relative">
+              <span class="pointer-events-none absolute inset-y-0 left-3 grid place-items-center text-tenue" aria-hidden="true">$</span>
+              <input id="precio-contraoferta" name="precio" type="number" inputmode="numeric" min="1" step="1" required class="entrada pl-7"
+                [(ngModel)]="precioContraoferta" aria-describedby="ayuda-precio-contraoferta" />
+            </div>
+            <p id="ayuda-precio-contraoferta" class="ayuda">{{ ayudaPrecio() }}</p>
+          </div>
+        } @else {
+          <fieldset>
+            <legend class="etiqueta">{{ contraoferta()?.soyDuenio ? '¿Qué objetos de ' + (contraoferta()?.solicitante?.nombre ?? 'esta persona') + ' prefieres?' : '¿Qué objetos ofreces ahora?' }}</legend>
+            <p class="ayuda mb-2">Elige de 1 a 3. {{ contraoferta()?.soyDuenio ? 'Solo aparecen sus publicaciones disponibles.' : 'Si aceptan, quedan reservados.' }}</p>
+            <app-selector-objetos [objetos]="objetosContraoferta()" [(seleccion)]="seleccionContraoferta"
+              [prefijo]="contraoferta()?.soyDuenio ? 'Pedir' : 'Ofrecer'">
+              <p class="text-sm text-tenue">{{ contraoferta()?.soyDuenio ? 'No tiene otros objetos disponibles. Puedes aceptar, rechazar o conversar por el chat.' : 'No tienes objetos disponibles para ofrecer.' }}</p>
+            </app-selector-objetos>
+          </fieldset>
+        }
+        <p class="text-xs text-tenue">
+          La propuesta anterior se reemplaza y le toca responder a la otra persona.
+          {{ (contraoferta()?.contraofertasRestantes ?? 0) === 1 ? 'Es la última contraoferta posible: después solo queda aceptar o retirarse.' : 'Quedan ' + contraoferta()?.contraofertasRestantes + ' contraofertas entre los dos.' }}
+        </p>
+        @if (errorContraoferta()) {
+          <p class="error-campo" role="alert">{{ errorContraoferta() }}</p>
+        }
+      </form>
+      <div pie class="flex justify-end gap-2 border-t border-borde p-4">
+        <button type="button" class="btn btn-fantasma" (click)="contraofertaAbierta.set(false)">Volver</button>
+        <button type="submit" form="form-contraoferta" class="btn btn-primario" [disabled]="!contraofertaValida() || ocupado()">
+          <app-icono nombre="repeat" [tamano]="16" />Enviar contraoferta
+        </button>
+      </div>
+    </app-modal>
+
     <!-- Calificar -->
     <app-modal [(abierto)]="calificarAbierto" titulo="¿Cómo te fue?" subtitulo="Tu calificación ayuda a que la comunidad sea más confiable.">
       <form id="form-calificar" (ngSubmit)="enviarCalificacion()" class="space-y-5">
@@ -128,6 +173,8 @@ export default class Intercambios {
 
   readonly tab = input<string>();
   readonly calificar = input<string>();
+  /** ?ver=<id> (aviso de contraoferta): el aviso no sabe si fue recibida o enviada; se busca en la otra pestaña si hace falta. */
+  readonly ver = input<string>();
   protected readonly pestana = computed<Pestana>(() => (this.tab() === 'enviadas' ? 'enviadas' : 'recibidas'));
   protected readonly filtroEstado = signal<'activas' | 'todas' | 'cerradas'>('activas');
   protected readonly filtros = [
@@ -180,6 +227,13 @@ export default class Intercambios {
     const s = this.solicitudConfirmar();
     const objeto = s?.publicacionTitulo ?? 'el objeto';
     const otra = (s?.soyDuenio ? s.solicitante?.nombre : s?.propietario?.nombre) ?? 'la otra persona';
+    if (this.accionConfirmar() === 'aceptar' && !s?.soyDuenio)
+      return {
+        titulo: '¿Aceptar la contraoferta?',
+        subtitulo: `${objeto} · con ${otra}`,
+        cuerpo: 'El acuerdo queda cerrado con esta propuesta y la publicación se reserva para ti. Coordinen la entrega por el chat.',
+        boton: 'Aceptar contraoferta',
+      };
     if (this.accionConfirmar() === 'aceptar')
       return {
         titulo: `¿Aceptar a ${otra}?`,
@@ -195,6 +249,38 @@ export default class Intercambios {
     };
   });
   private seleccionada: SolicitudDto | null = null;
+
+  // Contraoferta
+  private readonly catalogo = inject(CatalogoApi);
+  private readonly cuenta = inject(CuentaApi);
+  protected readonly contraofertaAbierta = signal(false);
+  protected readonly contraoferta = signal<SolicitudDto | null>(null);
+  protected readonly precioContraoferta = signal<number | null>(null);
+  /** Publicaciones disponibles de quien solicita (null = cargando). */
+  protected readonly objetosContraoferta = signal<PublicacionDto[] | null>(null);
+  protected readonly seleccionContraoferta = signal<string[]>([]);
+  protected readonly errorContraoferta = signal<string | null>(null);
+  protected readonly subtituloContraoferta = computed(() => {
+    const s = this.contraoferta();
+    const otra = (s?.soyDuenio ? s.solicitante?.nombre : s?.propietario?.nombre) ?? 'la otra persona';
+    return `${s?.publicacionTitulo ?? ''} · con ${otra}`;
+  });
+  protected readonly ayudaPrecio = computed(() => {
+    const s = this.contraoferta();
+    const actual = cop(s?.precioPropuestoCop ?? s?.precioPublicadoCop);
+    const publicado = s?.precioPropuestoCop ? `; publicado en ${cop(s.precioPublicadoCop)}` : '';
+    return `Propuesta actual: ${actual}${publicado}. Se paga en persona al entregar.`;
+  });
+  protected readonly contraofertaValida = computed(() => {
+    const s = this.contraoferta();
+    if (s?.modo === 'Compra') {
+      const p = this.precioContraoferta();
+      return !!p && p > 0 && Math.round(p) !== (s.precioPropuestoCop ?? s.precioPublicadoCop);
+    }
+    const sel = this.seleccionContraoferta();
+    const actual = (s?.ofrecidas ?? []).map((o) => o.id);
+    return sel.length > 0 && !(sel.length === actual.length && sel.every((id) => actual.includes(id)));
+  });
 
   constructor() {
     const tiempoReal = inject(TiempoRealService);
@@ -227,6 +313,21 @@ export default class Intercambios {
     });
   }
 
+  private verBuscadoEnOtra = false;
+  private readonly irASolicitud = effect(() => {
+    const id = this.ver();
+    const lista = this.lista.value();
+    if (!id || !lista || this.lista.isLoading()) return;
+    untracked(() => {
+      if (lista.some((x) => x.id === id)) {
+        void this.router.navigate([], { queryParams: { ver: null }, queryParamsHandling: 'merge', replaceUrl: true });
+      } else if (!this.verBuscadoEnOtra) {
+        this.verBuscadoEnOtra = true;
+        void this.router.navigate([], { queryParams: { tab: this.pestana() === 'enviadas' ? 'recibidas' : 'enviadas' }, queryParamsHandling: 'merge', replaceUrl: true });
+      }
+    });
+  });
+
   protected cambiar(p: Pestana): void {
     void this.router.navigate([], { queryParams: { tab: p }, replaceUrl: true });
   }
@@ -243,6 +344,9 @@ export default class Intercambios {
       case 'cancelar':
         void this.correr(s, () => this.api.cancelar(s.id!), 'Solicitud retirada');
         break;
+      case 'contraofertar':
+        this.abrirContraoferta(s);
+        break;
       case 'rechazar':
       case 'noConcretada':
         this.accionMotivo.set(accion);
@@ -257,11 +361,57 @@ export default class Intercambios {
     }
   }
 
+  private abrirContraoferta(s: SolicitudDto): void {
+    this.contraoferta.set(s);
+    this.errorContraoferta.set(null);
+    this.precioContraoferta.set(null);
+    this.seleccionContraoferta.set((s.ofrecidas ?? []).map((o) => o.id!));
+    this.objetosContraoferta.set(null);
+    this.contraofertaAbierta.set(true);
+    if (s.modo === 'Trueke') void this.cargarObjetosContraoferta(s);
+  }
+
+  /** Siempre objetos de quien solicita: el dueño elige cuáles prefiere; quien solicita, cuáles ofrece ahora. */
+  private async cargarObjetosContraoferta(s: SolicitudDto): Promise<void> {
+    try {
+      const objetos = s.soyDuenio
+        ? ((await firstValueFrom(this.cuenta.publicacionesDe(s.solicitante!.id!, 1, 50))).items ?? [])
+        : await firstValueFrom(this.catalogo.mias());
+      if (this.contraoferta() !== s) return; // se cerró o se abrió otra mientras cargaba
+      this.objetosContraoferta.set(objetos.filter((o) => o.estado === 'Disponible' && !o.oculta && o.id !== s.publicacionId));
+    } catch {
+      this.objetosContraoferta.set([]);
+    }
+  }
+
+  protected async enviarContraoferta(): Promise<void> {
+    const s = this.contraoferta();
+    if (!s?.id || !this.contraofertaValida()) return;
+    const cuerpo = s.modo === 'Compra'
+      ? { precioPropuestoCop: Math.round(this.precioContraoferta()!) }
+      : { publicacionesOfrecidasIds: this.seleccionContraoferta() };
+    this.ocupado.set(s.id);
+    this.errorContraoferta.set(null);
+    try {
+      await firstValueFrom(this.api.contraofertar(s.id, cuerpo));
+      this.contraofertaAbierta.set(false);
+      const otra = (s.soyDuenio ? s.solicitante?.nombre : s.propietario?.nombre) ?? 'la otra persona';
+      this.avisos.exito('Contraoferta enviada', `Ahora le toca responder a ${otra}. Te avisaremos.`);
+      this.recargar();
+    } catch (e) {
+      this.errorContraoferta.set(mensajeDe(e));
+    } finally {
+      this.ocupado.set(null);
+    }
+  }
+
   protected async confirmarAccion(): Promise<void> {
     const s = this.seleccionada;
     this.confirmarAbierto.set(false);
     if (!s?.id) return;
-    if (this.accionConfirmar() === 'aceptar')
+    if (this.accionConfirmar() === 'aceptar' && !s.soyDuenio)
+      await this.correr(s, () => this.api.aceptar(s.id!), '¡Contraoferta aceptada!', 'La publicación quedó reservada para ti. Coordinen la entrega por el chat.');
+    else if (this.accionConfirmar() === 'aceptar')
       await this.correr(s, () => this.api.aceptar(s.id!), '¡Solicitud aceptada!', 'La publicación quedó reservada. Coordinen la entrega por el chat; si hay más interesados, quedan en lista de espera.');
     else await this.correr(s, () => this.api.confirmarEntrega(s.id!), 'Entrega confirmada', 'Cuando la otra persona también confirme, ambos recibirán Eco-Puntos.');
   }

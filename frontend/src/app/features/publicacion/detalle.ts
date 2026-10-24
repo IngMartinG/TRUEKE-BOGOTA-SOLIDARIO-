@@ -29,6 +29,7 @@ import { ImagenPublicacion } from '../../shared/ui/imagen-publicacion';
 import { InsigniaModo } from '../../shared/ui/insignia-modo';
 import { Mapa } from '../../shared/ui/mapa';
 import { PuntosEncuentro } from '../../shared/ui/puntos-encuentro';
+import { SelectorObjetos } from '../../shared/ui/selector-objetos';
 import { Modal } from '../../shared/ui/modal';
 import { Comentarios } from './comentarios';
 import { Volver } from '../../shared/ui/volver';
@@ -49,6 +50,7 @@ import { Volver } from '../../shared/ui/volver';
     Denunciar,
     EstadoVacio,
     Comentarios,
+    SelectorObjetos,
     CopPipe,
     HacePipe,
     FechaPipe,
@@ -362,34 +364,22 @@ import { Volver } from '../../shared/ui/volver';
           </div>
           @if (p.modo === 'Trueke') {
             <fieldset>
-              <legend class="etiqueta">¿Ofreces uno de tus objetos? <span class="font-normal text-tenue">(opcional)</span></legend>
-              <p class="ayuda mb-2">Si aceptan, tu objeto también queda reservado para este trueke.</p>
-              @if (misObjetos() === null) {
-                <div class="esqueleto h-16"></div>
-              } @else {
-                <div class="grid gap-2">
-                  <label class="flex cursor-pointer items-center gap-3 rounded-2xl border-2 p-3 text-sm transition"
-                    [class]="ofrecida() === null ? 'border-bosque-500 bg-bosque-50 dark:bg-bosque-900/50' : 'border-borde hover:border-bosque-200'">
-                    <input type="radio" name="ofrecida" class="sr-only" [checked]="ofrecida() === null" (change)="ofrecida.set(null)" aria-label="Solo mi mensaje" />
-                    <app-icono nombre="mensaje" [tamano]="20" class="shrink-0 text-tenue" />
-                    <span class="font-semibold">Solo mi mensaje</span>
-                  </label>
-                  @for (o of misObjetos(); track o.id) {
-                    <label class="flex cursor-pointer items-center gap-3 rounded-2xl border-2 p-2 text-sm transition"
-                      [class]="ofrecida() === o.id ? 'border-bosque-500 bg-bosque-50 dark:bg-bosque-900/50' : 'border-borde hover:border-bosque-200'">
-                      <input type="radio" name="ofrecida" class="sr-only" [checked]="ofrecida() === o.id" (change)="ofrecida.set(o.id!)" [attr.aria-label]="'Ofrecer ' + o.titulo" />
-                      <app-imagen-publicacion class="size-12 shrink-0 rounded-xl" [src]="o.imagenes?.[0]" [miniatura]="true" [modo]="o.modo" [categoriaId]="o.categoria?.id" />
-                      <span class="min-w-0">
-                        <span class="block truncate font-semibold">{{ o.titulo }}</span>
-                        <span class="block text-xs text-tenue">{{ condicionDe(o.condicion) }}</span>
-                      </span>
-                    </label>
-                  } @empty {
-                    <p class="text-sm text-tenue">No tienes objetos publicados disponibles. <a routerLink="/publicar" class="enlace">Publica el que quieres ofrecer</a>.</p>
-                  }
-                </div>
-              }
+              <legend class="etiqueta">¿Ofreces algunos de tus objetos? <span class="font-normal text-tenue">(opcional, hasta 3)</span></legend>
+              <p class="ayuda mb-2">Si aceptan, los que elijas también quedan reservados para este trueke. Sin elegir, solo va tu mensaje.</p>
+              <app-selector-objetos [objetos]="misObjetos()" [(seleccion)]="ofrecidas">
+                <p class="text-sm text-tenue">No tienes objetos publicados disponibles. <a routerLink="/publicar" class="enlace">Publica el que quieres ofrecer</a>.</p>
+              </app-selector-objetos>
             </fieldset>
+          } @else if (p.modo === 'Compra' && p.precioReferenciaCop) {
+            <div class="campo">
+              <label for="precio-propuesto" class="etiqueta">¿Propones otro precio? <span class="font-normal text-tenue">(opcional)</span></label>
+              <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 left-3 grid place-items-center text-tenue" aria-hidden="true">$</span>
+                <input id="precio-propuesto" name="precio" type="number" inputmode="numeric" min="1" step="1" class="entrada pl-7"
+                  [(ngModel)]="precioPropuesto" [placeholder]="p.precioReferenciaCop" aria-describedby="ayuda-precio" />
+              </div>
+              <p id="ayuda-precio" class="ayuda">Publicado en {{ p.precioReferenciaCop | cop }}. Si lo dejas vacío, pides al precio publicado; el dueño puede contraofertar.</p>
+            </div>
           }
           @if (errorSolicitud()) {
             <p class="error-campo" role="alert">{{ errorSolicitud() }}</p>
@@ -500,9 +490,11 @@ export default class Detalle {
   protected readonly denunciaAbierta = signal(false);
   protected readonly ocultarAbierto = signal(false);
   protected readonly mensaje = signal('');
-  /** Trueke: mis publicaciones que puedo ofrecer (null = cargando) y la elegida (null = solo el mensaje). */
+  /** Trueke: mis publicaciones que puedo ofrecer (null = cargando) y las elegidas (vacío = solo el mensaje). */
   protected readonly misObjetos = signal<PublicacionDto[] | null>(null);
-  protected readonly ofrecida = signal<string | null>(null);
+  protected readonly ofrecidas = signal<string[]>([]);
+  /** Compra: precio que propongo (vacío = el publicado). */
+  protected readonly precioPropuesto = signal<number | null>(null);
   protected readonly condicionDe = (c: string | null | undefined) => infoCondicion(c).etiqueta;
   protected readonly motivoCancelar = signal('');
   protected readonly motivoOcultar = signal('');
@@ -525,7 +517,7 @@ export default class Detalle {
       this.ofertaAbierta = true;
       untracked(() => {
         this.abrirSolicitud();
-        this.ofrecida.set(ofrecer);
+        this.ofrecidas.set([ofrecer]);
       });
     });
   }
@@ -562,7 +554,7 @@ export default class Detalle {
       const mias = await firstValueFrom(this.api.mias());
       const disponibles = mias.filter((o) => o.estado === 'Disponible' && !o.oculta && o.id !== this.p()?.id);
       this.misObjetos.set(disponibles);
-      if (!disponibles.some((o) => o.id === this.ofrecida())) this.ofrecida.set(null); // la elegida ya no se puede ofrecer
+      this.ofrecidas.update((ids) => ids.filter((id) => disponibles.some((o) => o.id === id))); // las que ya no se pueden ofrecer
     } catch {
       this.misObjetos.set([]);
     }
@@ -575,11 +567,19 @@ export default class Detalle {
     this.trabajando.set(true);
     this.errorSolicitud.set(null);
     try {
-      const publicacionOfrecidaId = p.modo === 'Trueke' ? this.ofrecida() : null;
-      await firstValueFrom(this.intercambios.solicitar({ publicacionId: p.id, mensaje, publicacionOfrecidaId }));
+      const precio = this.precioPropuesto();
+      await firstValueFrom(
+        this.intercambios.solicitar({
+          publicacionId: p.id,
+          mensaje,
+          publicacionesOfrecidasIds: p.modo === 'Trueke' ? this.ofrecidas() : null,
+          precioPropuestoCop: p.modo === 'Compra' && precio && precio > 0 ? Math.round(precio) : null,
+        }),
+      );
       this.solicitudAbierta.set(false);
       this.mensaje.set('');
-      this.ofrecida.set(null);
+      this.ofrecidas.set([]);
+      this.precioPropuesto.set(null);
       this.misObjetos.set(null);
       this.avisos.exito('¡Solicitud enviada!', 'Te avisaremos cuando te respondan.');
       await this.router.navigate(['/intercambios'], { queryParams: { tab: 'enviadas' } });
