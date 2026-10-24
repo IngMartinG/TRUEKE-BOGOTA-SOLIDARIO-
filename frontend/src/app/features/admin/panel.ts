@@ -44,6 +44,8 @@ export default class Panel {
     { ruta: 'pagos', texto: 'Pagos en revisión', icono: 'billetera' },
     { ruta: 'facturas', texto: 'Facturas', icono: 'factura' },
     { ruta: 'pqr', texto: 'PQR', icono: 'soporte' },
-    ...(this.sesion.esSuperUsuario() ? [{ ruta: 'ingresos', texto: 'Ingresos', icono: 'grafica' }] : []),
+    ...(this.sesion.esSuperUsuario()
+      ? [{ ruta: 'fundaciones', texto: 'Fundaciones', icono: 'heart' }, { ruta: 'ingresos', texto: 'Ingresos', icono: 'grafica' }]
+      : []),
   ]);
 }

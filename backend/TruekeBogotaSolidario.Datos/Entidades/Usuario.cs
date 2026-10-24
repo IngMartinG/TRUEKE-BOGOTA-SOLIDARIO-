@@ -50,6 +50,16 @@ public class Usuario
     /// <summary>La empresa decide si su NIT se ve en el perfil público (si es persona natural, el NIT es su cédula).</summary>
     public bool MostrarNit { get; private set; }
 
+    /// <summary>
+    /// Razón social mientras la cuenta sea una fundación verificada (null si no lo es). Copia de <see cref="Fundacion"/> para mostrar
+    /// la insignia en publicaciones y perfiles sin consultar otra tabla; solo la cambian aprobar, retirar o borrar la fundación.
+    /// </summary>
+    public string? NombreFundacion { get; private set; }
+    public bool EsFundacionVerificada => NombreFundacion is not null;
+
+    public void MarcarFundacionVerificada(string razonSocial) => NombreFundacion = razonSocial;
+    public void QuitarFundacionVerificada() => NombreFundacion = null;
+
     // Datos para la factura electrónica (opcionales: sin ellos se factura a "consumidor final")
     public TipoDocumentoFiscal? FacturacionTipoDocumento { get; private set; }
     public string? FacturacionDocumento { get; private set; }
@@ -544,6 +554,7 @@ public class Usuario
         NombreComercial = null;
         Nit = null;
         MostrarNit = false;
+        NombreFundacion = null;
         BorrarDatosFacturacion();
         BorrarRegistroOferente();
         DocumentoVerificacionUrl = null;

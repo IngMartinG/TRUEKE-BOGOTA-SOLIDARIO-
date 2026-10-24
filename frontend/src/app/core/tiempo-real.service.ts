@@ -24,6 +24,8 @@ const AFECTAN_PERFIL = new Set([
   'PlanPorVencer',
   'VerificacionAprobada',
   'VerificacionRechazada',
+  'FundacionAprobada', // la insignia cambia el nombre que se muestra
+  'FundacionRetirada',
   'CalificacionRecibida',
   'EcoPuntosGanados',
   'DenunciaRevisada',

@@ -691,6 +691,64 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("Favoritos");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Fundacion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CertificadoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("FechaDecisionUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("FechaSolicitudUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("MostrarNit")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("MotivoDecision")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Nit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("RazonSocial")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Estado");
+
+                    b.HasIndex("Nit");
+
+                    b.HasIndex("UsuarioId")
+                        .IsUnique();
+
+                    b.ToTable("Fundaciones", (string)null);
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Mensaje", b =>
                 {
                     b.Property<Guid>("Id")
@@ -779,6 +837,40 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.HasIndex("UsuarioId", "FechaUtc");
 
                     b.ToTable("MovimientosEcoPuntos", (string)null);
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.NecesidadFundacion", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int?>("Cantidad")
+                        .HasColumnType("integer");
+
+                    b.Property<int?>("CategoriaId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("FundacionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Texto")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<bool>("Urgente")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoriaId");
+
+                    b.HasIndex("FundacionId");
+
+                    b.ToTable("NecesidadesFundacion", (string)null);
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Notificacion", b =>
@@ -1579,6 +1671,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(120)
                         .HasColumnType("character varying(120)");
 
+                    b.Property<string>("NombreFundacion")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
                     b.Property<string>("OferenteDireccionCifrada")
                         .HasMaxLength(800)
                         .IsUnicode(false)
@@ -1878,6 +1974,15 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Fundacion", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
+                        .WithOne()
+                        .HasForeignKey("TruekeBogotaSolidario.Datos.Entidades.Fundacion", "UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Mensaje", b =>
                 {
                     b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
@@ -1908,6 +2013,20 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .WithMany("MovimientosEcoPuntos")
                         .HasForeignKey("UsuarioId")
                         .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.NecesidadFundacion", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Categoria", null)
+                        .WithMany()
+                        .HasForeignKey("CategoriaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Fundacion", null)
+                        .WithMany()
+                        .HasForeignKey("FundacionId")
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 

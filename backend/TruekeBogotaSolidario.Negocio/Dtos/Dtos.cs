@@ -668,17 +668,20 @@ public sealed record ResultadoAutenticacion(SesionDto Sesion, string TokenRefres
 /// Datos públicos de una persona. Id permite abrir su perfil (GET /usuarios/{id}/perfil); no da acceso a nada:
 /// toda acción usa el usuario del JWT. Nunca incluye correo, nombre completo ni ubicación exacta.
 /// </summary>
-/// <summary>Municipio = "Medellín, Antioquia". NombreComercial solo para cuentas con plan Empresa vigente.</summary>
+/// <summary>
+/// Municipio = "Medellín, Antioquia". NombreComercial solo para cuentas con plan Empresa vigente. NombreFundacion = razón social
+/// mientras sea una fundación verificada (insignia "Fundación verificada"; null si no lo es).
+/// </summary>
 public sealed record PerfilPublicoDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
     decimal? CalificacionPromedio, int TotalCalificaciones, string Municipio, string? NombreComercial, string? FotoUrl = null,
-    bool NitRegistrado = false, string Nivel = "Semilla");
+    bool NitRegistrado = false, string Nivel = "Semilla", string? NombreFundacion = null);
 
 public sealed record PerfilUsuarioDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
     DateTime MiembroDesde, int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas,
     decimal? CalificacionPromedio, int TotalCalificaciones, int PublicacionesActivas, string Municipio, string? NombreComercial,
     string? FotoUrl, SenalesConfianzaDto Confianza, bool NitRegistrado = false, string? Nit = null,
     IReadOnlyList<DeseoPublicoDto>? Deseos = null, string Nivel = "Semilla", IReadOnlyList<LogroDto>? Logros = null,
-    ImpactoPersonalDto? Impacto = null);
+    ImpactoPersonalDto? Impacto = null, string? NombreFundacion = null);
 
 /// <summary>
 /// Una medalla del perfil (solo reconocimiento). Grado = "Bronce", "Plata" u "Oro" en los logros por modo (null en los demás).
@@ -821,7 +824,7 @@ public sealed record DatosPersonalesDto(DateTime GeneradoUtc, UsuarioDto Perfil,
     DatosFacturacionDto DatosFacturacion, IReadOnlyList<FacturaDto> Facturas, IReadOnlyList<PqrDto> Pqrs,
     IReadOnlyList<ApelacionDto> Apelaciones, PreferenciasAvisosDto? PreferenciasAvisos = null, IReadOnlyList<BloqueadoDto>? Bloqueados = null,
     IReadOnlyList<BusquedaGuardadaDto>? BusquedasGuardadas = null, IReadOnlyList<MovimientoEcoPuntosDto>? MovimientosEcoPuntos = null,
-    IReadOnlyList<DeseoDto>? Deseos = null, DatosOferenteDto? RegistroOferente = null);
+    IReadOnlyList<DeseoDto>? Deseos = null, DatosOferenteDto? RegistroOferente = null, MiFundacionDto? Fundacion = null);
 
 public sealed record CalificacionExportDto(Guid Id, Guid SolicitudId, int Estrellas, string? Comentario, DateTime FechaUtc);
 
@@ -993,3 +996,55 @@ public sealed record EnlaceAsistenteDto(string Texto, string Ruta);
 
 /// <summary>Texto plano: el front nunca lo pinta como HTML.</summary>
 public sealed record RespuestaAsistenteDto(string Texto, IReadOnlyList<EnlaceAsistenteDto> Enlaces);
+
+// ---------------- Fundaciones verificadas ----------------
+public enum EstadoFundacionDto { Pendiente = 1, Aprobada = 2, Rechazada = 3, Retirada = 4 }
+
+/// <summary>
+/// Solicitud de verificación de una fundación (entidad sin ánimo de lucro). CertificadoUrl = certificado de existencia y
+/// representación legal de la Cámara de Comercio subido como Documento (bucket privado; se borra al decidir).
+/// </summary>
+public sealed class SolicitarFundacionRequest
+{
+    [Required, StringLength(150, MinimumLength = 3)] public string RazonSocial { get; init; } = "";
+    [Required, StringLength(20, MinimumLength = 6)] public string Nit { get; init; } = "";
+    [Required, StringLength(600, MinimumLength = 20)] public string Descripcion { get; init; } = "";
+    /// <summary>Si el NIT se muestra en la página pública de la fundación.</summary>
+    public bool MostrarNit { get; init; }
+    [Required, StringLength(500)] public string CertificadoUrl { get; init; } = "";
+    /// <summary>Declara que representa legalmente a la fundación o que su representante la autorizó.</summary>
+    public bool DeclaroRepresentacion { get; init; }
+}
+
+public sealed class EditarFundacionRequest
+{
+    [Required, StringLength(600, MinimumLength = 20)] public string Descripcion { get; init; } = "";
+    public bool MostrarNit { get; init; }
+}
+
+public sealed class GuardarNecesidadRequest
+{
+    [Required, StringLength(100, MinimumLength = 3)] public string Texto { get; init; } = "";
+    [Range(1, int.MaxValue)] public int? CategoriaId { get; init; }
+    /// <summary>Cantidad aproximada (opcional).</summary>
+    [Range(1, 100_000)] public int? Cantidad { get; init; }
+    public bool Urgente { get; init; }
+}
+
+public sealed record NecesidadDto(Guid Id, string Texto, int? CategoriaId, string? Categoria, int? Cantidad, bool Urgente, DateTime FechaUtc);
+
+/// <summary>Lo que ve la propia cuenta. Motivo = por qué se rechazó o se retiró la verificación.</summary>
+public sealed record MiFundacionDto(EstadoFundacionDto Estado, string RazonSocial, string Nit, string Descripcion, bool MostrarNit,
+    string? Motivo, DateTime FechaSolicitudUtc, DateTime? FechaDecisionUtc, IReadOnlyList<NecesidadDto> Necesidades);
+
+/// <summary>Tarjeta del listado público. Id = id de la cuenta (sirve también para su perfil y sus publicaciones).</summary>
+public sealed record FundacionResumenDto(Guid Id, string Nombre, string? FotoUrl, string Localidad, string Municipio, string Descripcion,
+    int Necesidades, int NecesidadesUrgentes);
+
+/// <summary>Página pública de una fundación verificada. Nit solo si la fundación eligió mostrarlo. Nunca correo ni datos de su representante.</summary>
+public sealed record FundacionPublicaDto(Guid Id, string Nombre, string? FotoUrl, string Localidad, string Municipio, string Descripcion,
+    string? Nit, DateTime VerificadaDesde, decimal? CalificacionPromedio, int TotalCalificaciones, IReadOnlyList<NecesidadDto> Necesidades);
+
+/// <summary>Para el SuperUsuario. CertificadoUrl = enlace de lectura que caduca en 5 minutos (solo en las pendientes).</summary>
+public sealed record FundacionAdminDto(Guid UsuarioId, string NombreCuenta, string Correo, string RazonSocial, string Nit, string Descripcion,
+    EstadoFundacionDto Estado, string? CertificadoUrl, string? Motivo, DateTime FechaSolicitudUtc, DateTime? FechaDecisionUtc);

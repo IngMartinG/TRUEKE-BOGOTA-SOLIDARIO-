@@ -14,6 +14,7 @@ import { Denunciar } from '../../shared/ui/denunciar';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Estrellas } from '../../shared/ui/estrellas';
 import { Icono } from '../../shared/ui/icono';
+import { InsigniaFundacion } from '../../shared/ui/insignia-fundacion';
 import { InsigniaNivel } from '../../shared/ui/insignia-nivel';
 import { MedallasLogros } from '../../shared/ui/medallas-logros';
 import { Paginador } from '../../shared/ui/paginador';
@@ -22,7 +23,7 @@ import { VisorImagenes } from '../../shared/ui/visor-imagenes';
 import { Volver } from '../../shared/ui/volver';
 
 @Component({
-  imports: [Volver, RouterLink, Avatar, Estrellas, Icono, InsigniaNivel, MedallasLogros, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, Denunciar, Bloquear, VisorImagenes, HacePipe, KilosPipe],
+  imports: [Volver, RouterLink, Avatar, Estrellas, Icono, InsigniaFundacion, InsigniaNivel, MedallasLogros, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, Denunciar, Bloquear, VisorImagenes, HacePipe, KilosPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (perfil.error()) {
@@ -45,8 +46,10 @@ import { Volver } from '../../shared/ui/volver';
             }
             <div class="flex-1">
               <div class="flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                <h1 class="text-3xl font-extrabold">{{ p.nombreComercial || p.nombre }}</h1>
-                @if (p.nombreComercial) {
+                <h1 class="text-3xl font-extrabold">{{ p.nombreFundacion || p.nombreComercial || p.nombre }}</h1>
+                @if (p.nombreFundacion) {
+                  <app-insignia-fundacion />
+                } @else if (p.nombreComercial) {
                   <span class="text-sm text-tenue">({{ p.nombre }})</span>
                 }
                 @if (p.verificado) {
@@ -64,6 +67,11 @@ import { Volver } from '../../shared/ui/volver';
                 <span class="flex items-center gap-1"><app-icono nombre="pin" [tamano]="14" /><span>{{ p.localidad }}{{ p.municipio ? ', ' + p.municipio : '' }}</span></span>
                 <span>Miembro desde {{ mesYAnio(p.miembroDesde) }}</span>
               </p>
+              @if (p.nombreFundacion) {
+                <a [routerLink]="['/fundaciones', p.id]" class="enlace mt-2 inline-flex items-center gap-1 text-sm font-semibold">
+                  <app-icono nombre="heart" [tamano]="14" />Ver lo que necesita la fundación
+                </a>
+              }
               @if (p.calificacionPromedio) {
                 <p class="mt-2 flex items-center justify-center gap-2 sm:justify-start">
                   <app-estrellas [valor]="p.calificacionPromedio" [tamano]="18" />

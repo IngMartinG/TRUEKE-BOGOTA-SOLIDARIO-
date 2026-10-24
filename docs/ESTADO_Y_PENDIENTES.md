@@ -604,15 +604,53 @@ Decisiones del dueño: negocian las dos partes por turnos, hasta 3 objetos por t
   `TruekeConObjetoTests`, la migración probada en PostgreSQL (subir con datos, bajar y volver a subir), `tarjeta-solicitud.spec.ts`,
   `selector-objetos.spec.ts` y la E2E de contraoferta en `trueke.spec.ts`.
 
+## Hecho el 2026-10-24 — fundaciones verificadas
+Decisiones del dueño: verificación con razón social, NIT y certificado de existencia de la Cámara de Comercio, revisada por
+un SuperUsuario; la cuenta sigue siendo normal (puede truekear, vender y donar); "Lo que necesitamos" es una lista propia;
+páginas públicas sin sesión; donarle a una fundación no da puntos extra (anti-farmeo igual).
+- **Modelo:** tablas `Fundaciones` (una por cuenta: razón social, NIT, descripción, mostrar NIT, estado Pendiente →
+  Aprobada | Rechazada, Retirada por moderación, motivo y fechas) y `NecesidadesFundacion` (hasta 10: texto, categoría y
+  cantidad opcionales, urgente), con RLS en la misma migración `FundacionesVerificadas`. `Usuarios.NombreFundacion` copia la
+  razón social mientras está verificada, para mostrar la insignia sin consultar otra tabla.
+- **Solicitud** (`/api/v1/fundaciones/mia`): exige cuenta completa, la declaración de representación y un NIT de persona
+  jurídica (empieza por 8 o 9; se calcula el dígito de verificación); el NIT no puede estar pendiente o aprobado en otra
+  cuenta. El certificado se sube como Documento (bucket privado) y se borra al aprobar o rechazar. Se puede editar la
+  descripción y si se muestra el NIT; razón social y NIT exigen otra solicitud. "Dejar de ser fundación" borra todo.
+- **Revisión** (`/api/v1/admin/fundaciones`, solo SuperUsuario con 2FA): listado por estado con enlace al certificado que vence
+  en 5 minutos; aprobar, rechazar o retirar la insignia con motivo. Todo queda en la auditoría (`FUNDACION_*`) y se avisa a la
+  cuenta (`FundacionAprobada`, `FundacionRechazada`, `FundacionRetirada`); a los SuperUsuarios, `FundacionPorRevisar`.
+- **Público:** `GET /fundaciones` (en caché 2 minutos) y `GET /fundaciones/{id}` anónimos, autorizados por el dueño: solo
+  datos de la organización (nunca correo, certificado ni datos del representante; el NIT solo si la fundación lo elige).
+  `PerfilPublicoDto.NombreFundacion` lleva la insignia a las publicaciones, el perfil, las solicitudes y los comentarios. Una
+  cuenta suspendida o eliminada no aparece ni muestra la insignia; suprimir la cuenta borra la fundación y la exportación de
+  datos la incluye.
+- **Front:** `/fundaciones` (buscador sin tildes), `/fundaciones/:id` con "Lo que necesitamos" (urgentes primero; "Tengo esto"
+  abre Publicar como donación con el título y la categoría), Cuenta → Fundación (solicitud con el certificado, estado, perfil y
+  necesidades), Administración → Fundaciones (solo SuperUsuario) y la insignia `app-insignia-fundacion` en tarjetas, detalle y
+  perfil. Enlaces en el encabezado, el menú y el pie; el asistente lo explica.
+- **Legal:** política (datos, finalidad, certificado y conservación) y términos (sección "Fundaciones verificadas"); la versión
+  sube a **`2026-10-24`** y pide reaceptarlos.
+- Pruebas: `FundacionesTests` (NIT y declaración, foto obligatoria, solo SuperUsuario y certificado temporal que se borra,
+  rechazo y nueva solicitud, insignia y retiro, páginas públicas sin datos privados, máximo 10 necesidades sin repetir,
+  supresión y exportación), `ArquitecturaTests` con los dos GET anónimos, `fundaciones.spec.ts` (listado, filtro y "Tengo
+  esto") y la E2E `fundaciones.spec.ts` (solicitud con el certificado subido a Storage). La aprobación no tiene E2E: el
+  ambiente E2E no tiene SuperUsuario con 2FA.
+
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
 - **Registro de oferentes:** que el abogado revise el texto de la política y los términos (versión `2026-10-19`), si el
   registro debe conservarse un tiempo tras eliminar la cuenta, y si las ventas publicadas antes del registro deben pedirlo
   (hoy se pide al crear o editar una venta).
 
-**Despliegue y operación:**
+**Fundaciones verificadas:**
+- **Abogado:** revisar los textos nuevos de la política y los términos (versión `2026-10-24`) y si el certificado o la
+  decisión deben conservarse más tiempo.
 - **Versión legal en Render:** si `Legal__VersionPoliticaDatos`, `Legal__VersionTerminos` o `Legal__FechaVigencia` están
-  definidas allí, cambiarlas a `2026-10-19` al desplegar el registro de oferentes (si no, se usa la de `appsettings.json`).
+  definidas allí, cambiarlas a `2026-10-24` al desplegar (si no, se usa la de `appsettings.json`).
+- **Ideas para después:** avisar a la fundación cuando alguien publique una donación desde "Tengo esto" (hoy la fundación la
+  encuentra en el catálogo); moderar por denuncia el texto de las necesidades (hoy solo se puede retirar la insignia).
+
+**Despliegue y operación:**
 - **Responsable en Render (del dueño):** `Legal__ResponsableNombre` todavía dice "Equipo de Trueke Bogota Solidario". Como
   opera una persona natural, debe ir su nombre, y en `Legal__ResponsableDocumento` su cédula. El dueño decidió dejarlo así por
   ahora (2026-10-24); cambiarlo al crecer, ante una queja ante la SIC o al crear la SAS.

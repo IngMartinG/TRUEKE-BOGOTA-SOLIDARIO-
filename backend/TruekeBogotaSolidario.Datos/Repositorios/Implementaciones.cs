@@ -63,6 +63,11 @@ public sealed class UsuarioRepository : IUsuarioRepository
             .Where(u => (u.Rol == RolUsuarioEnum.Administrador || u.Rol == RolUsuarioEnum.SuperUsuario) && !u.EstaEliminado && !u.EstaSuspendido)
             .Select(u => u.Id).Take(100).ToListAsync();
 
+    public async Task<IReadOnlyList<Guid>> ListarIdsSuperUsuariosAsync()
+        => await _db.Usuarios.AsNoTracking()
+            .Where(u => u.Rol == RolUsuarioEnum.SuperUsuario && !u.EstaEliminado && !u.EstaSuspendido)
+            .Select(u => u.Id).Take(100).ToListAsync();
+
     public async Task<IReadOnlyList<Usuario>> ListarPlanesPorVencerAsync(DateTime desdeUtc, DateTime hastaUtc, int maximo)
         => await _db.Usuarios
             .Where(u => (u.TipoCuenta == TipoCuenta.Premium || u.TipoCuenta == TipoCuenta.Empresa) && !u.EstaEliminado
@@ -931,6 +936,47 @@ public sealed class DeseoRepository : IDeseoRepository
 
     public void Agregar(Deseo d) => _db.Deseos.Add(d);
     public void Quitar(Deseo d) => _db.Deseos.Remove(d);
+}
+
+public sealed class FundacionRepository : IFundacionRepository
+{
+    private readonly TruekeDbContext _db;
+    public FundacionRepository(TruekeDbContext db) => _db = db;
+
+    public Task<Fundacion?> DeUsuarioAsync(Guid usuarioId) => _db.Fundaciones.FirstOrDefaultAsync(f => f.UsuarioId == usuarioId);
+
+    public async Task<IReadOnlyList<Fundacion>> PorEstadoAsync(EstadoFundacion estado, int maximo)
+        => await _db.Fundaciones.AsNoTracking().Where(f => f.Estado == estado)
+            .OrderBy(f => f.FechaSolicitudUtc).ThenBy(f => f.Id).Take(maximo).ToListAsync();
+
+    public Task<bool> NitEnUsoAsync(string nit, Guid excluirUsuarioId)
+        => _db.Fundaciones.AnyAsync(f => f.Nit == nit && f.UsuarioId != excluirUsuarioId
+            && (f.Estado == EstadoFundacion.Pendiente || f.Estado == EstadoFundacion.Aprobada));
+
+    public async Task<IReadOnlyList<(Fundacion Fundacion, Usuario Usuario)>> ListarVisiblesAsync(int maximo)
+        => (await _db.Fundaciones.AsNoTracking().Where(f => f.Estado == EstadoFundacion.Aprobada)
+                .Join(_db.Usuarios.AsNoTracking().Where(u => !u.EstaEliminado && !u.EstaSuspendido),
+                    f => f.UsuarioId, u => u.Id, (f, u) => new { f, u })
+                .OrderBy(x => x.f.RazonSocial).ThenBy(x => x.f.Id).Take(maximo).ToListAsync())
+            .Select(x => (x.f, x.u)).ToList();
+
+    public async Task<IReadOnlyList<NecesidadFundacion>> NecesidadesAsync(Guid fundacionId)
+        => await _db.NecesidadesFundacion.Where(n => n.FundacionId == fundacionId)
+            .OrderByDescending(n => n.Urgente).ThenByDescending(n => n.FechaUtc).ThenBy(n => n.Id).ToListAsync();
+
+    public async Task<IReadOnlyDictionary<Guid, (int Total, int Urgentes)>> ContarNecesidadesAsync(IReadOnlyCollection<Guid> fundacionIds)
+    {
+        if (fundacionIds.Count == 0) return new Dictionary<Guid, (int, int)>();
+        var conteos = await _db.NecesidadesFundacion.Where(n => fundacionIds.Contains(n.FundacionId))
+            .GroupBy(n => n.FundacionId)
+            .Select(g => new { g.Key, Total = g.Count(), Urgentes = g.Count(n => n.Urgente) }).ToListAsync();
+        return conteos.ToDictionary(c => c.Key, c => (c.Total, c.Urgentes));
+    }
+
+    public void Agregar(Fundacion f) => _db.Fundaciones.Add(f);
+    public void Quitar(Fundacion f) => _db.Fundaciones.Remove(f);
+    public void AgregarNecesidad(NecesidadFundacion n) => _db.NecesidadesFundacion.Add(n);
+    public void QuitarNecesidad(NecesidadFundacion n) => _db.NecesidadesFundacion.Remove(n);
 }
 
 public sealed class SuscripcionPushRepository : ISuscripcionPushRepository

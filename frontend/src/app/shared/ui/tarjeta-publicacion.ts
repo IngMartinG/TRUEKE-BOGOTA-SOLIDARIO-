@@ -5,11 +5,12 @@ import { FavoritosService } from '../../core/favoritos.service';
 import { CopPipe, HacePipe } from '../pipes';
 import { Icono } from './icono';
 import { ImagenPublicacion } from './imagen-publicacion';
+import { InsigniaFundacion } from './insignia-fundacion';
 import { InsigniaModo } from './insignia-modo';
 
 @Component({
   selector: 'app-tarjeta-publicacion',
-  imports: [RouterLink, Icono, ImagenPublicacion, InsigniaModo, CopPipe, HacePipe],
+  imports: [RouterLink, Icono, ImagenPublicacion, InsigniaFundacion, InsigniaModo, CopPipe, HacePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -62,7 +63,11 @@ import { InsigniaModo } from './insignia-modo';
         <h3 class="line-clamp-2 font-display text-base leading-snug font-bold group-hover:text-bosque-700 dark:group-hover:text-bosque-300">
           {{ p.titulo }}
         </h3>
-        @if (p.propietario?.nombreComercial; as tienda) {
+        @if (p.propietario?.nombreFundacion; as fundacion) {
+          <p class="-mt-1 flex min-w-0 items-center gap-1 text-xs font-semibold text-tierra-700 dark:text-tierra-400">
+            <app-insignia-fundacion [compacta]="true" /><span class="truncate">{{ fundacion }}</span>
+          </p>
+        } @else if (p.propietario?.nombreComercial; as tienda) {
           <p class="-mt-1 flex min-w-0 items-center gap-1 text-xs font-semibold text-tenue">
             <app-icono nombre="edificio" [tamano]="12" class="shrink-0" /><span class="truncate">{{ tienda }}</span>
             @if (p.propietario.nitRegistrado) {

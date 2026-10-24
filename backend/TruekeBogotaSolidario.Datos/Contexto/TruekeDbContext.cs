@@ -28,6 +28,8 @@ public class TruekeDbContext : DbContext
     public DbSet<SuscripcionPush> SuscripcionesPush => Set<SuscripcionPush>();
     public DbSet<BusquedaGuardada> BusquedasGuardadas => Set<BusquedaGuardada>();
     public DbSet<Deseo> Deseos => Set<Deseo>();
+    public DbSet<Fundacion> Fundaciones => Set<Fundacion>();
+    public DbSet<NecesidadFundacion> NecesidadesFundacion => Set<NecesidadFundacion>();
     public DbSet<Calificacion> Calificaciones => Set<Calificacion>();
     public DbSet<Factura> Facturas => Set<Factura>();
     public DbSet<Pqr> Pqrs => Set<Pqr>();
@@ -67,6 +69,7 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => x.CorreoCanonico).IsUnique();
             e.Property(x => x.MunicipioCodigo).HasMaxLength(5).IsUnicode(false).IsRequired();
             e.Property(x => x.NombreComercial).HasMaxLength(120);
+            e.Property(x => x.NombreFundacion).HasMaxLength(150);
             e.Property(x => x.Nit).HasMaxLength(20).IsUnicode(false);
             e.Property(x => x.FacturacionTipoDocumento).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.FacturacionDocumento).HasMaxLength(20).IsUnicode(false);
@@ -322,6 +325,34 @@ public class TruekeDbContext : DbContext
             e.HasOne<Categoria>().WithMany().HasForeignKey(x => x.CategoriaId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.UsuarioId);
             e.HasIndex(x => new { x.AvisosActivos, x.RevisadoHastaUtc });
+        });
+
+        mb.Entity<Fundacion>(e =>
+        {
+            e.ToTable("Fundaciones");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.RazonSocial).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Nit).HasMaxLength(20).IsUnicode(false).IsRequired();
+            e.Property(x => x.Descripcion).HasMaxLength(Fundacion.LongitudDescripcion).IsRequired();
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.CertificadoUrl).HasMaxLength(500);
+            e.Property(x => x.MotivoDecision).HasMaxLength(300);
+            e.HasOne<Usuario>().WithOne().HasForeignKey<Fundacion>(x => x.UsuarioId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.UsuarioId).IsUnique();
+            e.HasIndex(x => x.Estado);
+            e.HasIndex(x => x.Nit);
+        });
+
+        mb.Entity<NecesidadFundacion>(e =>
+        {
+            e.ToTable("NecesidadesFundacion");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Texto).HasMaxLength(NecesidadFundacion.LongitudMaxima).IsRequired();
+            e.HasOne<Fundacion>().WithMany().HasForeignKey(x => x.FundacionId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Categoria>().WithMany().HasForeignKey(x => x.CategoriaId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.FundacionId);
         });
 
         mb.Entity<SuscripcionPush>(e =>

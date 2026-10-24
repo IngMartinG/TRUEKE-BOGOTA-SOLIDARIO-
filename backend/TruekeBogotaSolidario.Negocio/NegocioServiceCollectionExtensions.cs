@@ -176,6 +176,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddHostedService<ResumenPqrPublicasHostedService>();
         services.AddScoped<IBusquedaGuardadaService, BusquedaGuardadaService>();
         services.AddScoped<IDeseoService, DeseoService>();
+        services.AddScoped<IFundacionService, FundacionService>();
         services.AddSingleton<IRegistroVistas, RegistroVistasEnMemoria>();
         services.AddHostedService<VolcadoVistasHostedService>();
         services.AddHostedService<ReconciliadorPagosHostedService>();

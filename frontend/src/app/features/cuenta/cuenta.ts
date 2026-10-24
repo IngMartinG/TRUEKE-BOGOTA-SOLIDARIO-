@@ -65,6 +65,7 @@ export default class Cuenta {
     { ruta: '/cuenta/busquedas', texto: 'Búsquedas guardadas', icono: 'buscar' },
     { ruta: '/cuenta/facturacion', texto: 'Pagos y facturas', icono: 'factura' },
     { ruta: '/cuenta/vendedor', texto: 'Registro de vendedor', icono: 'tienda' },
+    { ruta: '/cuenta/fundacion', texto: 'Fundación', icono: 'heart' },
     { ruta: '/cuenta/soporte', texto: 'Soporte y PQR', icono: 'soporte' },
     { ruta: '/cuenta/reportes', texto: 'Reportes sobre ti', icono: 'balanza' },
     { ruta: '/cuenta/privacidad', texto: 'Privacidad y datos', icono: 'candado' },

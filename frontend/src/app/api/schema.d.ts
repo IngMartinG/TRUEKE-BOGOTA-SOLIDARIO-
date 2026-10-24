@@ -938,6 +938,162 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/fundaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    estado?: components["schemas"]["EstadoFundacionDto"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FundacionAdminDto"][];
+                        "application/json": components["schemas"]["FundacionAdminDto"][];
+                        "text/json": components["schemas"]["FundacionAdminDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fundaciones/{usuarioId}/aprobar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    usuarioId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fundaciones/{usuarioId}/rechazar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    usuarioId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MotivoRequest"];
+                    "text/json": components["schemas"]["MotivoRequest"];
+                    "application/*+json": components["schemas"]["MotivoRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fundaciones/{usuarioId}/retirar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    usuarioId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MotivoRequest"];
+                    "text/json": components["schemas"]["MotivoRequest"];
+                    "application/*+json": components["schemas"]["MotivoRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/pagos/{referencia}/reembolsado": {
         parameters: {
             query?: never;
@@ -2964,6 +3120,297 @@ export interface paths {
         put?: never;
         post?: never;
         delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fundaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FundacionResumenDto"][];
+                        "application/json": components["schemas"]["FundacionResumenDto"][];
+                        "text/json": components["schemas"]["FundacionResumenDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fundaciones/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FundacionPublicaDto"];
+                        "application/json": components["schemas"]["FundacionPublicaDto"];
+                        "text/json": components["schemas"]["FundacionPublicaDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fundaciones/mia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MiFundacionDto"];
+                        "application/json": components["schemas"]["MiFundacionDto"];
+                        "text/json": components["schemas"]["MiFundacionDto"];
+                    };
+                };
+            };
+        };
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["EditarFundacionRequest"];
+                    "text/json": components["schemas"]["EditarFundacionRequest"];
+                    "application/*+json": components["schemas"]["EditarFundacionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MiFundacionDto"];
+                        "application/json": components["schemas"]["MiFundacionDto"];
+                        "text/json": components["schemas"]["MiFundacionDto"];
+                    };
+                };
+            };
+        };
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SolicitarFundacionRequest"];
+                    "text/json": components["schemas"]["SolicitarFundacionRequest"];
+                    "application/*+json": components["schemas"]["SolicitarFundacionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MiFundacionDto"];
+                        "application/json": components["schemas"]["MiFundacionDto"];
+                        "text/json": components["schemas"]["MiFundacionDto"];
+                    };
+                };
+            };
+        };
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fundaciones/mia/necesidades": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["GuardarNecesidadRequest"];
+                    "text/json": components["schemas"]["GuardarNecesidadRequest"];
+                    "application/*+json": components["schemas"]["GuardarNecesidadRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["NecesidadDto"];
+                        "application/json": components["schemas"]["NecesidadDto"];
+                        "text/json": components["schemas"]["NecesidadDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/fundaciones/mia/necesidades/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["GuardarNecesidadRequest"];
+                    "text/json": components["schemas"]["GuardarNecesidadRequest"];
+                    "application/*+json": components["schemas"]["GuardarNecesidadRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["NecesidadDto"];
+                        "application/json": components["schemas"]["NecesidadDto"];
+                        "text/json": components["schemas"]["NecesidadDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
         options?: never;
         head?: never;
         patch?: never;
@@ -5817,6 +6264,7 @@ export interface components {
             movimientosEcoPuntos?: components["schemas"]["MovimientoEcoPuntosDto"][] | null;
             deseos?: components["schemas"]["DeseoDto"][] | null;
             registroOferente?: components["schemas"]["DatosOferenteDto"];
+            fundacion?: components["schemas"]["MiFundacionDto"];
         };
         DenunciaAgrupadaDto: {
             /** Format: uuid */
@@ -5924,6 +6372,10 @@ export interface components {
             enPruebaPremium?: boolean;
             nivel?: components["schemas"]["NivelEcoPuntosDto"];
         };
+        EditarFundacionRequest: {
+            descripcion: string;
+            mostrarNit?: boolean;
+        };
         EliminarCuentaRequest: {
             confirmacion: string;
             clave?: string | null;
@@ -5966,6 +6418,8 @@ export interface components {
         EstadoDenunciaDto: "Pendiente" | "Resuelta" | "Descartada";
         /** @enum {string} */
         EstadoFacturaDto: "Pendiente" | "Emitida" | "Anulada" | "Reemplazada";
+        /** @enum {string} */
+        EstadoFundacionDto: "Pendiente" | "Aprobada" | "Rechazada" | "Retirada";
         /** @enum {string} */
         EstadoMensajeDto: "Enviado" | "Entregado" | "Leido";
         /** @enum {string} */
@@ -6063,6 +6517,52 @@ export interface components {
             /** Format: date */
             fechaNacimiento: string;
         };
+        FundacionAdminDto: {
+            /** Format: uuid */
+            usuarioId?: string;
+            nombreCuenta?: string;
+            correo?: string;
+            razonSocial?: string;
+            nit?: string;
+            descripcion?: string;
+            estado?: components["schemas"]["EstadoFundacionDto"];
+            certificadoUrl?: string | null;
+            motivo?: string | null;
+            /** Format: date-time */
+            fechaSolicitudUtc?: string;
+            /** Format: date-time */
+            fechaDecisionUtc?: string | null;
+        };
+        FundacionPublicaDto: {
+            /** Format: uuid */
+            id?: string;
+            nombre?: string;
+            fotoUrl?: string | null;
+            localidad?: string;
+            municipio?: string;
+            descripcion?: string;
+            nit?: string | null;
+            /** Format: date-time */
+            verificadaDesde?: string;
+            /** Format: double */
+            calificacionPromedio?: number | null;
+            /** Format: int32 */
+            totalCalificaciones?: number;
+            necesidades?: components["schemas"]["NecesidadDto"][];
+        };
+        FundacionResumenDto: {
+            /** Format: uuid */
+            id?: string;
+            nombre?: string;
+            fotoUrl?: string | null;
+            localidad?: string;
+            municipio?: string;
+            descripcion?: string;
+            /** Format: int32 */
+            necesidades?: number;
+            /** Format: int32 */
+            necesidadesUrgentes?: number;
+        };
         GananciaDto: {
             modo?: string;
             /** Format: int32 */
@@ -6101,6 +6601,14 @@ export interface components {
             categoriaId?: number | null;
             publico?: boolean;
             avisos?: boolean;
+        };
+        GuardarNecesidadRequest: {
+            texto: string;
+            /** Format: int32 */
+            categoriaId?: number | null;
+            /** Format: int32 */
+            cantidad?: number | null;
+            urgente?: boolean;
         };
         ImpactoDto: {
             /** Format: int32 */
@@ -6270,6 +6778,19 @@ export interface components {
             /** Format: date-time */
             fechaUtc?: string;
         };
+        MiFundacionDto: {
+            estado?: components["schemas"]["EstadoFundacionDto"];
+            razonSocial?: string;
+            nit?: string;
+            descripcion?: string;
+            mostrarNit?: boolean;
+            motivo?: string | null;
+            /** Format: date-time */
+            fechaSolicitudUtc?: string;
+            /** Format: date-time */
+            fechaDecisionUtc?: string | null;
+            necesidades?: components["schemas"]["NecesidadDto"][];
+        };
         /** @enum {string} */
         ModoDto: "Trueke" | "Compra" | "Donacion";
         /** @enum {string} */
@@ -6309,6 +6830,19 @@ export interface components {
             latitud?: number;
             /** Format: double */
             longitud?: number;
+        };
+        NecesidadDto: {
+            /** Format: uuid */
+            id?: string;
+            texto?: string;
+            /** Format: int32 */
+            categoriaId?: number | null;
+            categoria?: string | null;
+            /** Format: int32 */
+            cantidad?: number | null;
+            urgente?: boolean;
+            /** Format: date-time */
+            fechaUtc?: string;
         };
         NivelEcoPuntosDto: {
             nombre?: string;
@@ -6441,6 +6975,7 @@ export interface components {
             fotoUrl?: string | null;
             nitRegistrado?: boolean;
             nivel?: string;
+            nombreFundacion?: string | null;
         };
         PerfilUsuarioDto: {
             /** Format: uuid */
@@ -6475,6 +7010,7 @@ export interface components {
             nivel?: string;
             logros?: components["schemas"]["LogroDto"][] | null;
             impacto?: components["schemas"]["ImpactoPersonalDto"];
+            nombreFundacion?: string | null;
         };
         PoliticaEcoPuntosDto: {
             /** Format: int32 */
@@ -6766,6 +7302,14 @@ export interface components {
             expiraUtc?: string;
             usuario?: components["schemas"]["UsuarioDto"];
         };
+        SolicitarFundacionRequest: {
+            razonSocial: string;
+            nit: string;
+            descripcion: string;
+            mostrarNit?: boolean;
+            certificadoUrl: string;
+            declaroRepresentacion?: boolean;
+        };
         SolicitarSubidaRequest: {
             tipo?: components["schemas"]["TipoArchivoDto"];
             contentType: string;
@@ -7018,6 +7562,7 @@ export type DescartarMenorRequest = components['schemas']['DescartarMenorRequest
 export type DeseoDto = components['schemas']['DeseoDto'];
 export type DeseoPublicoDto = components['schemas']['DeseoPublicoDto'];
 export type EcoPuntosResumenDto = components['schemas']['EcoPuntosResumenDto'];
+export type EditarFundacionRequest = components['schemas']['EditarFundacionRequest'];
 export type EliminarCuentaRequest = components['schemas']['EliminarCuentaRequest'];
 export type EmitirFacturaRequest = components['schemas']['EmitirFacturaRequest'];
 export type EnlaceAsistenteDto = components['schemas']['EnlaceAsistenteDto'];
@@ -7026,6 +7571,7 @@ export type EstadisticasPublicacionDto = components['schemas']['EstadisticasPubl
 export type EstadoApelacionDto = components['schemas']['EstadoApelacionDto'];
 export type EstadoDenunciaDto = components['schemas']['EstadoDenunciaDto'];
 export type EstadoFacturaDto = components['schemas']['EstadoFacturaDto'];
+export type EstadoFundacionDto = components['schemas']['EstadoFundacionDto'];
 export type EstadoMensajeDto = components['schemas']['EstadoMensajeDto'];
 export type EstadoPagoDto = components['schemas']['EstadoPagoDto'];
 export type EstadoPqrDto = components['schemas']['EstadoPqrDto'];
@@ -7034,10 +7580,14 @@ export type FacturaAdminDto = components['schemas']['FacturaAdminDto'];
 export type FacturaAdminDtoPaginaDto = components['schemas']['FacturaAdminDtoPaginaDto'];
 export type FacturaDto = components['schemas']['FacturaDto'];
 export type FechaNacimientoRequest = components['schemas']['FechaNacimientoRequest'];
+export type FundacionAdminDto = components['schemas']['FundacionAdminDto'];
+export type FundacionPublicaDto = components['schemas']['FundacionPublicaDto'];
+export type FundacionResumenDto = components['schemas']['FundacionResumenDto'];
 export type GananciaDto = components['schemas']['GananciaDto'];
 export type GoogleLoginRequest = components['schemas']['GoogleLoginRequest'];
 export type GuardarBusquedaRequest = components['schemas']['GuardarBusquedaRequest'];
 export type GuardarDeseoRequest = components['schemas']['GuardarDeseoRequest'];
+export type GuardarNecesidadRequest = components['schemas']['GuardarNecesidadRequest'];
 export type ImpactoDto = components['schemas']['ImpactoDto'];
 export type ImpactoLocalidadDto = components['schemas']['ImpactoLocalidadDto'];
 export type ImpactoPersonalDto = components['schemas']['ImpactoPersonalDto'];
@@ -7052,12 +7602,14 @@ export type LogroDto = components['schemas']['LogroDto'];
 export type MensajeChatDto = components['schemas']['MensajeChatDto'];
 export type MensajeCitadoDto = components['schemas']['MensajeCitadoDto'];
 export type MensajeExportDto = components['schemas']['MensajeExportDto'];
+export type MiFundacionDto = components['schemas']['MiFundacionDto'];
 export type ModoDto = components['schemas']['ModoDto'];
 export type MotivoDenunciaDto = components['schemas']['MotivoDenunciaDto'];
 export type MotivoRequest = components['schemas']['MotivoRequest'];
 export type MovimientoEcoPuntosDto = components['schemas']['MovimientoEcoPuntosDto'];
 export type MovimientoEcoPuntosDtoPaginaDto = components['schemas']['MovimientoEcoPuntosDtoPaginaDto'];
 export type MunicipioDto = components['schemas']['MunicipioDto'];
+export type NecesidadDto = components['schemas']['NecesidadDto'];
 export type NivelEcoPuntosDto = components['schemas']['NivelEcoPuntosDto'];
 export type NivelPoliticaDto = components['schemas']['NivelPoliticaDto'];
 export type NoConcretadaRequest = components['schemas']['NoConcretadaRequest'];
@@ -7096,6 +7648,7 @@ export type RolDto = components['schemas']['RolDto'];
 export type RolTurnoAsistenteDto = components['schemas']['RolTurnoAsistenteDto'];
 export type SenalesConfianzaDto = components['schemas']['SenalesConfianzaDto'];
 export type SesionDto = components['schemas']['SesionDto'];
+export type SolicitarFundacionRequest = components['schemas']['SolicitarFundacionRequest'];
 export type SolicitarSubidaRequest = components['schemas']['SolicitarSubidaRequest'];
 export type SolicitudDto = components['schemas']['SolicitudDto'];
 export type SubidaArchivoDto = components['schemas']['SubidaArchivoDto'];

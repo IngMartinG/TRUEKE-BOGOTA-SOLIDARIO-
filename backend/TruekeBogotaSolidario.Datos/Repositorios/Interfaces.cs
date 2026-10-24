@@ -52,6 +52,8 @@ public interface IUsuarioRepository
     Task<int> ContarInvitacionesRecompensadasAsync(Guid invitadorId, DateTime? desdeUtc);
     /// <summary>Administradores y SuperUsuarios activos (para alertas internas).</summary>
     Task<IReadOnlyList<Guid>> ListarIdsModeradoresAsync();
+    /// <summary>SuperUsuarios activos (revisan las fundaciones).</summary>
+    Task<IReadOnlyList<Guid>> ListarIdsSuperUsuariosAsync();
     /// <summary>Con tracking: planes pagos que vencen entre las fechas y a los que aún no se les envió recordatorio.</summary>
     Task<IReadOnlyList<Usuario>> ListarPlanesPorVencerAsync(DateTime desdeUtc, DateTime hastaUtc, int maximo);
     /// <summary>
@@ -371,6 +373,26 @@ public interface IDeseoRepository
     Task<IReadOnlyList<Deseo>> ListarParaAvisosAsync(DateTime revisadosAntesDeUtc, int maximo);
     void Agregar(Deseo d);
     void Quitar(Deseo d);
+}
+
+public interface IFundacionRepository
+{
+    /// <summary>Con tracking.</summary>
+    Task<Fundacion?> DeUsuarioAsync(Guid usuarioId);
+    /// <summary>Por estado, las más antiguas primero (sin tracking).</summary>
+    Task<IReadOnlyList<Fundacion>> PorEstadoAsync(EstadoFundacion estado, int maximo);
+    /// <summary>¿Otra cuenta ya tiene ese NIT pendiente o aprobado?</summary>
+    Task<bool> NitEnUsoAsync(string nit, Guid excluirUsuarioId);
+    /// <summary>Aprobadas de cuentas activas (ni suspendidas ni eliminadas), con su cuenta, por nombre (sin tracking).</summary>
+    Task<IReadOnlyList<(Fundacion Fundacion, Usuario Usuario)>> ListarVisiblesAsync(int maximo);
+    /// <summary>Con tracking, urgentes primero y luego las más recientes.</summary>
+    Task<IReadOnlyList<NecesidadFundacion>> NecesidadesAsync(Guid fundacionId);
+    /// <summary>Cuántas necesidades (y cuántas urgentes) tiene cada fundación.</summary>
+    Task<IReadOnlyDictionary<Guid, (int Total, int Urgentes)>> ContarNecesidadesAsync(IReadOnlyCollection<Guid> fundacionIds);
+    void Agregar(Fundacion f);
+    void Quitar(Fundacion f);
+    void AgregarNecesidad(NecesidadFundacion n);
+    void QuitarNecesidad(NecesidadFundacion n);
 }
 
 public interface ISuscripcionPushRepository

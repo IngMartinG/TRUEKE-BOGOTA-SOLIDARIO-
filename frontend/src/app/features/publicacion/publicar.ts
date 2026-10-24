@@ -442,6 +442,10 @@ export default class Publicar {
 
   /** Presente al editar (`/publicacion/:id/editar`). */
   readonly id = input<string>();
+  /** Desde "Lo que necesitamos" de una fundación: ?modo=Donacion&titulo=…&categoria=… precargan una publicación nueva. */
+  readonly modo = input<string>();
+  readonly titulo = input<string>();
+  readonly categoria = input<string>();
 
   protected readonly pasos = PASOS;
   protected readonly modos = MODOS;
@@ -564,7 +568,10 @@ export default class Publicar {
       if (this.id()) return;
       const b = this.leerBorrador();
       if (b) this.borradorPendiente.set(b);
-      else this.guardarBorrador = true;
+      else {
+        this.precargar();
+        this.guardarBorrador = true;
+      }
     });
     this.form.valueChanges.pipe(debounceTime(600), takeUntilDestroyed()).subscribe(() => this.escribirBorrador());
     effect(() => {
@@ -625,7 +632,17 @@ export default class Publicar {
   protected descartarBorrador(): void {
     this.borrarBorrador();
     this.borradorPendiente.set(null);
+    this.precargar();
     this.guardarBorrador = true;
+  }
+
+  /** Aplica lo que llega por la URL (solo valores válidos; nada se publica sin que la persona lo revise). */
+  private precargar(): void {
+    if (this.modo() === 'Donacion') this.form.controls.modo.setValue('Donacion');
+    const titulo = this.titulo()?.trim().slice(0, 120);
+    if (titulo) this.form.controls.titulo.setValue(titulo);
+    const categoria = Number(this.categoria());
+    if (Number.isInteger(categoria) && categoria > 0) this.form.controls.categoriaId.setValue(categoria);
   }
 
   /** Lleva el foco al título del paso nuevo (sin desplazar): el lector de pantalla anuncia dónde está la persona. */
