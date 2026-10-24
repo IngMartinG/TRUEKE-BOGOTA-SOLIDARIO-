@@ -323,6 +323,21 @@
   .insignia-agua {
     @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap bg-agua-100 text-agua-700 dark:bg-agua-700/30 dark:text-agua-100;
   }
+  .insignias-tarjeta {
+    @apply top-3 left-3;
+  }
+  /* Tarjeta angosta (dos columnas en celular): insignias compactas que no tocan el botón de favoritos. */
+  @container (max-width: 12.5rem) {
+    .insignias-tarjeta {
+      @apply top-2 left-2;
+    }
+    .insignias-tarjeta :is(.insignia-trueke, .insignia-compra, .insignia-donacion, .insignia-sol) {
+      @apply px-2 text-[0.6875rem] leading-tight whitespace-normal;
+    }
+    .insignias-tarjeta app-icono {
+      @apply hidden;
+    }
+  }
 
   /* ---------- Otros ---------- */
   .contenedor {

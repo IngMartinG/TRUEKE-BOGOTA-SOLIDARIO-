@@ -6,7 +6,7 @@ using TruekeBogotaSolidario.Negocio.Comun;
 namespace TruekeBogotaSolidario.Negocio.Servicios;
 
 /// <summary>Lo que muestra WhatsApp (u otra red) al compartir una publicación. Solo datos ya públicos en el catálogo.</summary>
-/// <param name="Etiqueta">Modo, precio y lugar en una línea: "Compra · $50.000 · Kennedy, Bogotá D.C."</param>
+/// <param name="Etiqueta">Modo, precio y lugar en una línea: "Compra y venta · $50.000 · Kennedy, Bogotá D.C."</param>
 public sealed record VistaPreviaDto(Guid Id, string Titulo, string Descripcion, string Etiqueta, bool TieneFoto);
 
 public interface IVistaPreviaService
@@ -88,7 +88,7 @@ public sealed class VistaPreviaService : IVistaPreviaService
 
     public static string Etiqueta(Dtos.PublicacionDto p)
     {
-        var modo = p.Modo switch { "Donacion" => "Donación", "Compra" => "Compra", _ => "Trueke" };
+        var modo = p.Modo switch { "Donacion" => "Donación", "Compra" => "Compra y venta", _ => "Trueke" };
         var precio = p.Modo == "Compra" && p.PrecioReferenciaCop is { } v ? $" · ${v.ToString("N0", Colombia)}" : "";
         var lugar = string.IsNullOrWhiteSpace(p.Localidad) ? p.Municipio : $"{p.Localidad}, {p.Municipio}";
         return $"{modo}{precio} · {lugar}";

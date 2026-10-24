@@ -108,7 +108,7 @@ public class Publicacion
             throw new ReglaDeNegocioException("Los datos contienen caracteres no permitidos.");
         var municipio = Divipola.Exigir(d.MunicipioCodigo);
         if (d.Modo == ModoTransaccion.Compra && (d.PrecioReferenciaCop is null or <= 0))
-            throw new ReglaDeNegocioException("Una publicación en modo Compra requiere un precio de referencia mayor a cero.");
+            throw new ReglaDeNegocioException("Una publicación en modo Compra y venta requiere un precio de referencia mayor a cero.");
         if (d.Latitud.HasValue != d.Longitud.HasValue) throw new ReglaDeNegocioException("Latitud y longitud deben enviarse juntas.");
         if (d.Latitud is < -90 or > 90 || d.Longitud is < -180 or > 180) throw new ReglaDeNegocioException("Coordenadas fuera de rango.");
 

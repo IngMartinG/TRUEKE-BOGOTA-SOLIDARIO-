@@ -69,7 +69,7 @@ export const CONOCIMIENTO: readonly EntradaConocimiento[] = [
     pregunta: '¿Cuesta algo usar Trueke?',
     variantes: ['es gratis', 'cuánto cuesta', 'hay que pagar para publicar', 'intercambiar o donar cuesta algo'],
     palabrasClave: ['gratis', 'costo', 'cobran', 'precio', 'pagar'],
-    respuesta: 'No. Publicar, intercambiar, comprar y donar es gratis. Solo pagas si quieres un beneficio opcional: destacar una publicación, verificar tu cuenta o un plan Premium o Empresa (mensual o anual, con 2 meses gratis).',
+    respuesta: 'No. Publicar, intercambiar, vender, comprar y donar es gratis. Solo pagas si quieres un beneficio opcional: destacar una publicación, verificar tu cuenta o un plan Premium o Empresa (mensual o anual, con 2 meses gratis).',
     accion: { texto: 'Ver los planes', ruta: '/planes' },
     paginas: ['como-funciona'],
   },
@@ -186,7 +186,7 @@ export const CONOCIMIENTO: readonly EntradaConocimiento[] = [
     respuesta: (p) => {
       const ganancias = (p?.ganancias ?? []).filter((g) => g.modo && g.puntos);
       const gana = ganancias.length
-        ? ` Por cada intercambio completado ganas ${lista(ganancias.map((g) => `${g.puntos} (${g.modo === 'Compra' ? 'compra' : g.modo === 'Donacion' ? 'donación' : 'trueke'})`))}.`
+        ? ` Por cada intercambio completado ganas ${lista(ganancias.map((g) => `${g.puntos} (${g.modo === 'Compra' ? 'compra o venta' : g.modo === 'Donacion' ? 'donación' : 'trueke'})`))}.`
         : ' Los ganas al completar intercambios (más por donar).';
       const otras = [
         p?.puntosPerfilCompleto ? `${p.puntosPerfilCompleto} al completar tu perfil` : '',

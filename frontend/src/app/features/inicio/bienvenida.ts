@@ -96,7 +96,7 @@ import { Invitar } from '../eco-puntos/invitar';
             <a routerLink="/como-funciona" class="group flex flex-col gap-2 rounded-2xl border-2 border-borde p-4 transition hover:border-bosque-300">
               <app-icono nombre="info" [tamano]="22" class="text-bosque-600 dark:text-bosque-300" />
               <span class="font-semibold">Ver cómo funciona</span>
-              <span class="text-xs text-tenue">Trueke, compra y donación en 3 pasos, y cómo ganar Eco-Puntos.</span>
+              <span class="text-xs text-tenue">Los modos Trueke, Compra y venta y Donación en 3 pasos, y cómo ganar Eco-Puntos.</span>
             </a>
           </div>
         </li>
@@ -123,7 +123,7 @@ export default class Bienvenida {
   protected readonly hechos = computed(() => (this.sesion.tieneFoto() ? 1 : 0) + (this.sesion.usuario()?.localidad ? 1 : 0));
 
   protected readonly ganancias = computed(() => {
-    const textos: Record<string, string> = { Donacion: 'por donación', Trueke: 'por trueke', Compra: 'por compra' };
+    const textos: Record<string, string> = { Donacion: 'por donación', Trueke: 'por trueke', Compra: 'por compra o venta' };
     return (this.politica()?.ganancias ?? []).map((g) => ({ modo: g.modo ?? '', puntos: g.puntos ?? 0, texto: textos[g.modo ?? ''] ?? '' }));
   });
 

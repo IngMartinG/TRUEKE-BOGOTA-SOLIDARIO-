@@ -13,7 +13,7 @@ const ULTIMA_EVALUACION = '2026-10-18';
   template: `
     <app-documento-legal
       titulo="Declaración de accesibilidad"
-      subtitulo="Queremos que cualquier persona pueda intercambiar, comprar y donar en Trueke Bogotá Solidario"
+      subtitulo="Queremos que cualquier persona pueda intercambiar, comprar, vender y donar en Trueke Bogotá Solidario"
       [vigenteDesde]="ultimaEvaluacion"
       [secciones]="secciones()"
     />

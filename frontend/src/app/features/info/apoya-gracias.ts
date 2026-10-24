@@ -165,6 +165,6 @@ export default class ApoyaGracias {
   }
 
   protected compartir(): void {
-    void this.compartirProyecto.compartir('Acabo de apoyar a Trueke Bogotá Solidario: intercambia, compra de segunda mano o dona con tus vecinos. Es gratis.');
+    void this.compartirProyecto.compartir('Acabo de apoyar a Trueke Bogotá Solidario: intercambia, compra y vende de segunda mano o dona con tus vecinos. Es gratis.');
   }
 }

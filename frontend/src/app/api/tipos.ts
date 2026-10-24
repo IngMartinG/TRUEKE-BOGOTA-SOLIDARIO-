@@ -95,9 +95,9 @@ export const INFO_MODO: Record<
     puntos: 10,
   },
   Compra: {
-    etiqueta: 'Compra',
+    etiqueta: 'Compra y venta',
     verbo: 'Quiero comprarlo',
-    descripcion: 'Compra de segunda mano a un precio justo y dale una nueva vida al objeto.',
+    descripcion: 'Vende lo que ya no usas o compra de segunda mano a un precio justo.',
     clase: 'insignia-compra',
     icono: 'bag',
     puntos: 5,
