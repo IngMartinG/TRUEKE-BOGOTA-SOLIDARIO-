@@ -436,8 +436,19 @@ public sealed class TransaccionRepository : ITransaccionRepository
                                  orderby g.Count() descending
                                  select new ImpactoLocalidad(g.Key.MunicipioCodigo, g.Key.Localidad, g.Count()))
             .Take(maxLocalidades).ToListAsync();
-        return new ResumenImpacto(Modo(ModoTransaccion.Trueke), Modo(ModoTransaccion.Compra), Modo(ModoTransaccion.Donacion), personas, esteMes, localidades);
+        return new ResumenImpacto(Modo(ModoTransaccion.Trueke), Modo(ModoTransaccion.Compra), Modo(ModoTransaccion.Donacion), personas, esteMes, localidades,
+            await PorCategoriaAsync(t));
     }
+
+    public Task<IReadOnlyDictionary<int, int>> ContarPorCategoriaDeUsuarioAsync(Guid usuarioId)
+        => PorCategoriaAsync(_db.Transacciones.AsNoTracking().Where(t => t.OferenteId == usuarioId || t.ReceptorId == usuarioId));
+
+    private async Task<IReadOnlyDictionary<int, int>> PorCategoriaAsync(IQueryable<Transaccion> t)
+        => await (from x in t
+                  join p in _db.Publicaciones.AsNoTracking() on x.PublicacionId equals p.Id
+                  group x by p.CategoriaId into g
+                  select new { CategoriaId = g.Key, Total = g.Count() })
+            .ToDictionaryAsync(x => x.CategoriaId, x => x.Total);
 }
 
 public sealed class PagoRepository : IPagoRepository

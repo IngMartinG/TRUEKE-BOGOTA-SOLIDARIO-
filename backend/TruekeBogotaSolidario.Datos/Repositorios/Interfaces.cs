@@ -155,9 +155,12 @@ public interface IMovimientoEcoPuntosRepository
     Task<int> ContarGanadosDesdeAsync(Guid usuarioId, ConceptoEcoPuntos concepto, DateTime desdeUtc);
 }
 
-/// <summary>Totales de intercambios completados para la página de impacto. Nunca incluye datos de personas.</summary>
+/// <summary>
+/// Totales de intercambios completados para la página de impacto. Nunca incluye datos de personas.
+/// PorCategoria: intercambios por categoría de lo entregado (para estimar kilos y CO₂).
+/// </summary>
 public sealed record ResumenImpacto(int Truekes, int Compras, int Donaciones, int Personas, int EsteMes,
-    IReadOnlyList<ImpactoLocalidad> Localidades);
+    IReadOnlyList<ImpactoLocalidad> Localidades, IReadOnlyDictionary<int, int> PorCategoria);
 public sealed record ImpactoLocalidad(string MunicipioCodigo, string Localidad, int Intercambios);
 
 public interface ITransaccionRepository
@@ -168,6 +171,8 @@ public interface ITransaccionRepository
     Task<int> ContarDesdeAsync(Guid usuarioId, DateTime desdeUtc);
     /// <summary>Intercambios por modo en los que ESTE usuario recibió puntos (logros: lo que el anti-farmeo dejó contar).</summary>
     Task<(int Truekes, int Compras, int Donaciones)> ContarConPuntosPorModoAsync(Guid usuarioId);
+    /// <summary>Intercambios completados en los que participó (entregó o recibió), por categoría de lo entregado.</summary>
+    Task<IReadOnlyDictionary<int, int>> ContarPorCategoriaDeUsuarioAsync(Guid usuarioId);
     /// <summary>¿Estas dos personas ya completaron, desde la fecha, un intercambio que otorgó puntos (en cualquier sentido)?</summary>
     Task<bool> ExisteConPuntosEntreDesdeAsync(Guid usuarioA, Guid usuarioB, DateTime desdeUtc);
     Task<IReadOnlyList<Transaccion>> ListarPorUsuarioAsync(Guid usuarioId);

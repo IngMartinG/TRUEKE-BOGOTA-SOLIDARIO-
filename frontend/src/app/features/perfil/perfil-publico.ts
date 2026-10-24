@@ -4,7 +4,7 @@ import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { CuentaApi } from '../../core/api/cuenta.api';
 import { SesionService } from '../../core/sesion.service';
-import { HacePipe } from '../../shared/pipes';
+import { HacePipe, KilosPipe } from '../../shared/pipes';
 
 /** La API manda solo mes y año como el día 1 a medianoche UTC: en hora de Colombia caería en el mes anterior. */
 const formatoMesAnio = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' });
@@ -22,7 +22,7 @@ import { VisorImagenes } from '../../shared/ui/visor-imagenes';
 import { Volver } from '../../shared/ui/volver';
 
 @Component({
-  imports: [Volver, RouterLink, Avatar, Estrellas, Icono, InsigniaNivel, MedallasLogros, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, Denunciar, Bloquear, VisorImagenes, HacePipe],
+  imports: [Volver, RouterLink, Avatar, Estrellas, Icono, InsigniaNivel, MedallasLogros, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, Denunciar, Bloquear, VisorImagenes, HacePipe, KilosPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (perfil.error()) {
@@ -133,6 +133,38 @@ import { Volver } from '../../shared/ui/volver';
                 <a routerLink="/eco-puntos" fragment="logros" class="enlace mt-3 inline-block text-sm">Ver lo que te falta para los demás</a>
               }
             </section>
+          }
+          @if (perfil.value()?.impacto; as im) {
+            @if (im.objetos) {
+              <section aria-labelledby="titulo-impacto-perfil" class="mb-10">
+                <h2 id="titulo-impacto-perfil" class="text-xl font-bold">{{ esMio() ? 'Tu impacto' : 'Su impacto' }}</h2>
+                <p class="mt-1 text-sm text-tenue">
+                  {{ im.objetos }} {{ im.objetos === 1 ? 'objeto encontró' : 'objetos encontraron' }} un nuevo hogar en {{ esMio() ? 'tus' : 'sus' }} intercambios.
+                </p>
+                <ul class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <li class="flex items-center gap-4 rounded-2xl border border-bosque-200 bg-bosque-50 p-4 dark:border-bosque-800 dark:bg-bosque-950/50">
+                    <app-icono nombre="reciclar" [tamano]="28" class="shrink-0 text-bosque-600 dark:text-bosque-300" />
+                    <div>
+                      <p class="font-display text-2xl font-extrabold tabular-nums">≈ {{ im.kgReutilizados | kilos }}</p>
+                      <p class="text-sm text-tenue">que no fueron a la basura</p>
+                    </div>
+                  </li>
+                  <li class="flex items-center gap-4 rounded-2xl border border-bosque-200 bg-bosque-50 p-4 dark:border-bosque-800 dark:bg-bosque-950/50">
+                    <app-icono nombre="hoja" [tamano]="28" class="shrink-0 text-bosque-600 dark:text-bosque-300" />
+                    <div>
+                      <p class="font-display text-2xl font-extrabold tabular-nums">≈ {{ im.kgCo2Evitado | kilos }}</p>
+                      <p class="text-sm text-tenue">de CO₂ que no se emitió</p>
+                    </div>
+                  </li>
+                </ul>
+                <a routerLink="/impacto" fragment="calculo" class="enlace mt-3 inline-block text-sm">Es una estimación: así la calculamos</a>
+              </section>
+            } @else if (esMio()) {
+              <p class="mb-10 rounded-2xl border border-dashed border-borde p-4 text-sm text-tenue">
+                Cuando completes tu primer intercambio verás aquí los kilos que no fueron a la basura y el CO₂ que no se emitió.
+                <a routerLink="/explorar" class="enlace">Explorar el catálogo</a>
+              </p>
+            }
           }
         <section aria-labelledby="titulo-publicaciones">
           <h2 id="titulo-publicaciones" class="text-xl font-bold">Publicaciones activas</h2>
