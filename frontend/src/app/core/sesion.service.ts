@@ -70,6 +70,8 @@ export class SesionService {
   });
   /** Falta el nombre y apellido reales (nombre provisional de Google o anterior a la regla): solo puede explorar. */
   readonly nombreRealPendiente = computed(() => this._usuario()?.nombreRealPendiente === true);
+  /** Falta el barrio o la localidad (cuentas creadas con Google): solo puede explorar. */
+  readonly localidadPendiente = computed(() => this._usuario()?.localidadPendiente === true);
   readonly primerNombre = computed(() => this._usuario()?.nombreCompleto?.split(' ')[0] ?? '');
 
   constructor() {

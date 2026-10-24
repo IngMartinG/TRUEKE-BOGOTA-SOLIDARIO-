@@ -26,14 +26,14 @@ export const exigirCorreoVerificado: CanActivateFn = (_ruta, estado) => {
 };
 
 /**
- * Publicar y editar exigen además nombre y apellido reales y foto de perfil (reglas del backend): si falta algo se lleva
- * al perfil a completarlo y luego se vuelve.
+ * Publicar y editar exigen además nombre y apellido reales, localidad y foto de perfil (reglas del backend): si falta algo
+ * se lleva al perfil a completarlo y luego se vuelve.
  */
 export const exigirCuentaCompleta: CanActivateFn = (ruta, estado) => {
   const verificado = exigirCorreoVerificado(ruta, estado);
   if (verificado !== true) return verificado;
   const sesion = inject(SesionService);
-  if (sesion.nombreRealPendiente())
+  if (sesion.nombreRealPendiente() || sesion.localidadPendiente())
     return inject(Router).createUrlTree(['/cuenta/perfil'], { fragment: 'datos', queryParams: { volver: estado.url } });
   return sesion.tieneFoto() ? true : inject(Router).createUrlTree(['/cuenta/perfil'], { fragment: 'foto', queryParams: { volver: estado.url } });
 };

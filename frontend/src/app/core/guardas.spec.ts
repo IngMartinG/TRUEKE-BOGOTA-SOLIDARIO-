@@ -5,7 +5,7 @@ import { SesionService } from './sesion.service';
 
 function ejecutar(
   guarda: typeof exigirCorreoVerificado,
-  sesion: { autenticado: boolean; verificado: boolean; moderador?: boolean; foto?: boolean; mayor?: boolean; sinNombre?: boolean; legalViejo?: boolean },
+  sesion: { autenticado: boolean; verificado: boolean; moderador?: boolean; foto?: boolean; mayor?: boolean; sinNombre?: boolean; sinLocalidad?: boolean; legalViejo?: boolean },
   url = '/cuenta/perfil',
 ) {
   TestBed.resetTestingModule(); // varias llamadas en la misma prueba
@@ -20,6 +20,7 @@ function ejecutar(
           esModerador: () => sesion.moderador ?? false,
           tieneFoto: () => sesion.foto ?? true,
           nombreRealPendiente: () => sesion.sinNombre ?? false,
+          localidadPendiente: () => sesion.sinLocalidad ?? false,
           usuario: () => (sesion.autenticado ? {} : null),
           mayoriaEdadConfirmada: () => sesion.mayor ?? true,
           legalPendiente: () => sesion.legalViejo ?? false,
@@ -54,6 +55,12 @@ describe('exigirModerador', () => {
 });
 
 describe('exigirCuentaCompleta (publicar y editar)', () => {
+  it('sin localidad (cuenta de Google) lleva a escribirla y luego vuelve', () => {
+    expect(ejecutar(exigirCuentaCompleta, { autenticado: true, verificado: true, sinLocalidad: true }, '/publicar')).toBe(
+      '/cuenta/perfil?volver=%2Fpublicar#datos',
+    );
+  });
+
   it('sin nombre y apellido reales lleva a escribirlos y luego vuelve', () => {
     expect(ejecutar(exigirCuentaCompleta, { autenticado: true, verificado: true, sinNombre: true }, '/publicar')).toBe(
       '/cuenta/perfil?volver=%2Fpublicar#datos',

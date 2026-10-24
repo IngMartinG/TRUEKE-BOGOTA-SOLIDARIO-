@@ -202,8 +202,10 @@ public class Usuario
     public const string LocalidadSinEspecificar = "Sin especificar";
 
     /// <summary>Foto de perfil, correo verificado y localidad: lo que da los Eco-Puntos de perfil completo.</summary>
-    public bool PerfilCompleto => FotoUrl is not null && CorreoVerificado && !EstaEliminado
-        && !string.IsNullOrWhiteSpace(Localidad) && Localidad != LocalidadSinEspecificar;
+    public bool PerfilCompleto => FotoUrl is not null && CorreoVerificado && !EstaEliminado && !LocalidadPendiente;
+
+    /// <summary>Falta el barrio o la localidad (cuentas creadas con Google): solo explora hasta escribirla en su perfil.</summary>
+    public bool LocalidadPendiente => string.IsNullOrWhiteSpace(Localidad) || Localidad == LocalidadSinEspecificar;
 
     /// <summary>
     /// Se llama al cambiar cualquiera de los requisitos: al completar el último se acreditan los puntos, una sola vez

@@ -174,19 +174,32 @@ public class GoogleTests : IClassFixture<FabricaApi>
         Assert.False(u.GetProperty("tieneClave").GetBoolean());
         Assert.True(u.GetProperty("vinculadoGoogle").GetBoolean());
 
-        // trae su foto de Google (copiada a nuestro almacenamiento, pedida a 512 px) y puede operar de inmediato
+        // trae su foto de Google (copiada a nuestro almacenamiento, pedida a 512 px), pero Google no dice su localidad
         Assert.StartsWith(AlmacenFalso.Base.ToString(), u.GetProperty("fotoUrl").GetString());
         Assert.Contains(_fotos.Pedidas, p => p.AbsoluteUri.EndsWith("=s512-c", StringComparison.Ordinal));
-        var token = cuerpo.GetProperty("token").GetString()!;
-        await Api.CrearPublicacionAsync(Api.ConToken(_f, token));
+        Assert.True(u.GetProperty("localidadPendiente").GetBoolean());
+        var c = Api.ConToken(_f, cuerpo.GetProperty("token").GetString()!);
+        var publicar = await c.PostAsJsonAsync("/api/v1/publicaciones",
+            new { titulo = "Silla", descripcion = "Silla de madera", categoriaId = 1, modo = "Donacion", condicion = "Usado", localidad = "Suba" });
+        Assert.Equal(HttpStatusCode.Forbidden, publicar.StatusCode);
+        Assert.Equal("localidad_requerida", await CodigoErrorAsync(publicar));
+
+        // al escribirla en su perfil ya puede operar
+        var perfil = await c.PutAsJsonAsync("/api/v1/usuarios/yo", new { nombreCompleto = u.GetProperty("nombreCompleto").GetString(), localidad = "Suba" });
+        Assert.Equal(HttpStatusCode.OK, perfil.StatusCode);
+        Assert.False((await perfil.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("localidadPendiente").GetBoolean());
+        await Api.CrearPublicacionAsync(c);
     }
 
     [Fact]
     public async Task Sin_foto_en_Google_la_cuenta_debe_subir_una_antes_de_publicar()
     {
         var r = await GoogleAsync(Emitir(Correo(), foto: null));
-        var token = (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("token").GetString()!;
-        var publicar = await Api.ConToken(_f, token).PostAsJsonAsync("/api/v1/publicaciones",
+        var cuerpo = await r.Content.ReadFromJsonAsync<JsonElement>();
+        var c = Api.ConToken(_f, cuerpo.GetProperty("token").GetString()!);
+        var nombre = cuerpo.GetProperty("usuario").GetProperty("nombreCompleto").GetString();
+        Assert.Equal(HttpStatusCode.OK, (await c.PutAsJsonAsync("/api/v1/usuarios/yo", new { nombreCompleto = nombre, localidad = "Suba" })).StatusCode);
+        var publicar = await c.PostAsJsonAsync("/api/v1/publicaciones",
             new { titulo = "Silla", descripcion = "Silla de madera", categoriaId = 1, modo = "Donacion", condicion = "Usado", localidad = "Suba" });
         Assert.Equal(HttpStatusCode.Forbidden, publicar.StatusCode);
         Assert.Equal("foto_requerida", (await publicar.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("codigo").GetString());

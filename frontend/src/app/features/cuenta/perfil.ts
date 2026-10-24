@@ -77,6 +77,11 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
                 <app-icono nombre="alerta" [tamano]="18" class="mt-0.5 shrink-0" />
                 <span>Escribe tu <strong>nombre y apellido reales</strong>. Mientras tanto puedes explorar, pero no publicar, solicitar, chatear ni pagar.</span>
               </p>
+            } @else if (u.localidadPendiente) {
+              <p class="flex items-start gap-2 rounded-xl bg-sol-50 p-3 text-sm font-medium dark:bg-sol-500/10" role="status">
+                <app-icono nombre="alerta" [tamano]="18" class="mt-0.5 shrink-0" />
+                <span>Elige tu <strong>localidad o barrio</strong>. Mientras tanto puedes explorar, pero no publicar, solicitar, chatear ni pagar.</span>
+              </p>
             }
             <div class="campo">
               <label for="nombre" class="etiqueta">Nombre completo</label>
@@ -221,8 +226,10 @@ export default class Perfil {
           this.municipioCargado = u.municipioCodigo ?? CODIGO_BOGOTA;
           // El nombre provisional de Google no se muestra como si fuera suyo: el campo queda vacío para escribir el real.
           const nombre = u.nombreCompleto === NOMBRE_PROVISIONAL ? '' : (u.nombreCompleto ?? '');
-          this.form.reset({ nombreCompleto: nombre, municipioCodigo: this.municipioCargado, localidad: u.localidad ?? '' });
+          // Igual con la localidad "Sin especificar" de las cuentas de Google.
+          this.form.reset({ nombreCompleto: nombre, municipioCodigo: this.municipioCargado, localidad: u.localidadPendiente ? '' : (u.localidad ?? '') });
           if (u.nombreRealPendiente) this.form.controls.nombreCompleto.markAsTouched(); // muestra qué le falta
+          if (u.localidadPendiente) this.form.controls.localidad.markAsTouched();
         }
         if (u && this.empresa.pristine) this.empresa.reset({ nombreComercial: u.nombreComercial ?? '', nit: u.nit ?? '', mostrarNit: !!u.mostrarNit });
       });
@@ -248,7 +255,8 @@ export default class Perfil {
       const u = await firstValueFrom(
         this.api.actualizarPerfil({ nombreCompleto: v.nombreCompleto.trim(), localidad: v.localidad.trim(), municipioCodigo: v.municipioCodigo }),
       );
-      const estabaPendiente = this.sesion.usuario()?.nombreRealPendiente;
+      const antes = this.sesion.usuario();
+      const estabaPendiente = antes?.nombreRealPendiente || antes?.localidadPendiente;
       this.sesion.actualizarUsuario(u);
       this.form.markAsPristine();
       const volver = this.volver();

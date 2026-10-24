@@ -1,7 +1,9 @@
 using System.ComponentModel.DataAnnotations;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
+using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Dtos;
+using TruekeBogotaSolidario.Negocio.Servicios;
 
 namespace TruekeBogotaSolidario.Pruebas.Unitarias;
 
@@ -127,6 +129,21 @@ public class FormatosTextoTests
         u.ActualizarPerfil("Ana Pérez", "Chapinero");
         Assert.False(u.NombreRealPendiente);
     }
+
+    [Fact]
+    public void Google_no_trae_localidad_y_queda_pendiente_hasta_escribirla()
+    {
+        var u = Usuario.CrearDesdeGoogle("Ana Pérez", "g@t.co", "sub-1", DateTime.UtcNow);
+        u.RegistrarFechaNacimiento(new DateOnly(1990, 1, 1), Usuario.HoyEnColombia(DateTime.UtcNow));
+        Assert.True(u.LocalidadPendiente);
+        Assert.Throws<LocalidadRequeridaException>(() => Guardas.ExigirCuentaCompleta(u));
+        u.ActualizarPerfil("Ana Pérez", "Chapinero");
+        Assert.False(u.LocalidadPendiente);
+    }
+
+    [Fact]
+    public void Con_registro_normal_la_localidad_ya_esta_escrita()
+        => Assert.False(new Usuario("Ana Pérez", "Suba", "a@t.co", "Clave123").LocalidadPendiente);
 
     [Fact]
     public void Datos_de_factura_exigen_formato_al_crear_pero_se_leen_los_ya_guardados()

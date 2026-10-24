@@ -28,12 +28,14 @@ public static class Guardas
     }
 
     /// <summary>
-    /// Publicar, solicitar, chatear y pagar exigen correo verificado Y foto de perfil: la comunidad debe poder ver con quién
-    /// intercambia antes de encontrarse. Quien entra con Google recibe su foto de Google automáticamente.
+    /// Publicar, solicitar, chatear y pagar exigen correo verificado, localidad Y foto de perfil: la comunidad debe poder ver
+    /// con quién intercambia y de qué zona es antes de encontrarse. Quien entra con Google recibe su foto de Google
+    /// automáticamente, pero debe escribir su localidad.
     /// </summary>
     public static void ExigirCuentaCompleta(Usuario u)
     {
         ExigirCorreoVerificado(u);
+        if (u.LocalidadPendiente) throw new LocalidadRequeridaException();
         if (string.IsNullOrWhiteSpace(u.FotoUrl)) throw new FotoPerfilRequeridaException();
     }
 
