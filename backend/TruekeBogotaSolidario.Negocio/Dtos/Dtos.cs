@@ -622,7 +622,8 @@ public sealed record UsuarioDto(Guid Id, string NombreCompleto, string Localidad
     bool CorreoVerificado, bool TieneClave, bool VinculadoGoogle, bool DosFactoresActivo, int CodigosRecuperacionRestantes,
     string MunicipioCodigo, string Municipio, string? NombreComercial, string? Nit, bool TieneDatosFacturacion, string? FotoUrl = null,
     bool MostrarNit = false, DateOnly? FechaNacimiento = null, bool NombreRealPendiente = false,
-    string? PoliticaDatosVersion = null, string? TerminosVersion = null, bool MenorDetectado = false, bool RegistroOferente = false);
+    string? PoliticaDatosVersion = null, string? TerminosVersion = null, bool MenorDetectado = false, bool RegistroOferente = false,
+    bool LocalidadPendiente = false);
 
 public sealed record SesionDto(string Token, DateTime ExpiraUtc, UsuarioDto Usuario);
 

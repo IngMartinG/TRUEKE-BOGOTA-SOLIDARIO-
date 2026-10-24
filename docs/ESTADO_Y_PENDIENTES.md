@@ -90,6 +90,7 @@
 
 ## Hecho el 2026-10-10 — confianza: fotos y perfil
 - **Foto de perfil obligatoria** (con el correo verificado) para publicar, editar, impulsar, solicitar, aceptar, chatear y pagar; la API responde 403 con `codigo: "foto_requerida"` y el front lleva a subirla. Comentar y denunciar no la exigen.
+- **Localidad obligatoria** para lo mismo (2026-10-23): las cuentas creadas con Google quedan en "Sin especificar" hasta escribirla; la API responde 403 con `codigo: "localidad_requerida"` y el front lleva al perfil.
 - **Foto de Google automática:** al entrar con Google sin foto propia se copia la de Google a 512 px (solo `*.googleusercontent.com`, sin redirecciones, con límite de tamaño y tiempo; si falla, el login sigue).
 - **Visor de fotos** a pantalla completa (flechas, teclado, deslizar, zoom) en las publicaciones y en la foto de perfil.
 - **Perfil público con señales de confianza:** correo e identidad verificados, 2FA, Google, en línea, intercambios completados, % concretados y tiempo típico de respuesta (último año), y distribución de estrellas. Sin datos privados.

@@ -67,6 +67,14 @@ public sealed class DatosOferenteRequeridosException : Exception
                "art. 53). Nadie más los ve: solo se entregan a quien te compró y reclama, o a la autoridad.") { }
 }
 
+/// <summary>Falta el barrio o la localidad (HTTP 403, codigo "localidad_requerida"): el front lleva al perfil a escribirla.</summary>
+public sealed class LocalidadRequeridaException : Exception
+{
+    public const string Codigo = "localidad_requerida";
+    public LocalidadRequeridaException()
+        : base("Escribe tu barrio o localidad para seguir: así la comunidad sabe de qué zona eres. Hazlo en Mi cuenta → Perfil.") { }
+}
+
 /// <summary>Falta el nombre real, nombre y apellido (HTTP 403, codigo "nombre_requerido"): el front lleva al perfil a escribirlo.</summary>
 public sealed class NombreRealRequeridoException : Exception
 {
@@ -124,6 +132,7 @@ public static class TraductorErrores
         MayoriaEdadRequeridaException e => new(403, e.Message, false, MayoriaEdadRequeridaException.Codigo),
         MenorDeEdadDetectadoException e => new(403, e.Message, false, MenorDeEdadDetectadoException.Codigo),
         NombreRealRequeridoException e => new(403, e.Message, false, NombreRealRequeridoException.Codigo),
+        LocalidadRequeridaException e => new(403, e.Message, false, LocalidadRequeridaException.Codigo),
         DatosOferenteRequeridosException e => new(403, e.Message, false, DatosOferenteRequeridosException.Codigo),
         VentasPausadasException e => new(403, e.Message, false, VentasPausadasException.Codigo),
         LimiteAsistenteException e => new(429, e.Message, false, LimiteAsistenteException.Codigo),

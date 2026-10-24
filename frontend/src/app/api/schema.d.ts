@@ -6851,6 +6851,7 @@ export interface components {
             terminosVersion?: string | null;
             menorDetectado?: boolean;
             registroOferente?: boolean;
+            localidadPendiente?: boolean;
         };
         VendedorDePqrDto: {
             /** Format: uuid */

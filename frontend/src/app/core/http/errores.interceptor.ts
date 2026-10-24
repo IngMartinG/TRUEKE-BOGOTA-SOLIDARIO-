@@ -45,6 +45,13 @@ export const erroresInterceptor: HttpInterceptorFn = (req, next) => {
         return throwError(() => error);
       }
 
+      if (problema.codigo === 'localidad_requerida') {
+        avisos.info('Escribe tu barrio o localidad', 'Es necesario para publicar, solicitar, chatear y pagar: así la comunidad sabe de qué zona eres.');
+        if (!router.url.startsWith('/cuenta/perfil'))
+          void router.navigate(['/cuenta/perfil'], { fragment: 'datos', queryParams: { volver: router.url } });
+        return throwError(() => error);
+      }
+
       if (problema.codigo === 'datos_oferente_requeridos') {
         avisos.info('Completa tu registro de vendedor', 'Lo pide la ley para vender (una sola vez). Tu publicación queda guardada como borrador.');
         if (!router.url.startsWith('/cuenta/vendedor'))
