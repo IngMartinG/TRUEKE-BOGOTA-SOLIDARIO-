@@ -36,7 +36,7 @@ public sealed partial class AsistenteService : IAsistenteService
         "/", "/explorar", "/como-funciona", "/impacto", "/apoya", "/ayuda", "/pqrs", "/publicar", "/mis-publicaciones",
         "/favoritos", "/lo-que-busco", "/intercambios", "/mensajes", "/notificaciones", "/eco-puntos", "/planes",
         "/cuenta/perfil", "/cuenta/seguridad", "/cuenta/facturacion", "/cuenta/vendedor", "/cuenta/soporte", "/cuenta/reportes",
-        "/cuenta/avisos", "/cuenta/busquedas", "/cuenta/privacidad", "/privacidad", "/terminos",
+        "/cuenta/avisos", "/cuenta/busquedas", "/cuenta/privacidad", "/cuenta/fundacion", "/fundaciones", "/privacidad", "/terminos",
     };
 
     private static readonly JsonSerializerOptions Json = new(JsonSerializerDefaults.Web);

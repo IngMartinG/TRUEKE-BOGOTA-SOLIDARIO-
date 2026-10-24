@@ -14,9 +14,11 @@ public sealed class AdministracionController : ControllerBase
     private readonly IAdministracionService _admin;
     private readonly IOferenteService _oferentes;
     private readonly IDatosPersonalesService _datosPersonales;
-    public AdministracionController(IAdministracionService admin, IOferenteService oferentes, IDatosPersonalesService datosPersonales)
+    private readonly IFundacionService _fundaciones;
+    public AdministracionController(IAdministracionService admin, IOferenteService oferentes, IDatosPersonalesService datosPersonales,
+        IFundacionService fundaciones)
     {
-        _admin = admin; _oferentes = oferentes; _datosPersonales = datosPersonales;
+        _admin = admin; _oferentes = oferentes; _datosPersonales = datosPersonales; _fundaciones = fundaciones;
     }
 
     // ---- Moderación: Administrador y SuperUsuario
@@ -155,6 +157,34 @@ public sealed class AdministracionController : ControllerBase
     public async Task<IActionResult> EliminarCuenta(Guid usuarioId, [FromBody] MotivoRequest r)
     {
         await _datosPersonales.EliminarCuentaPorAdministracionAsync(User.IdActual(), usuarioId, r.Motivo);
+        return NoContent();
+    }
+
+    // ---- Solo SuperUsuario: fundaciones verificadas
+    /// <summary>Por estado (Pendiente por defecto). En las pendientes, el certificado llega como enlace que caduca en 5 minutos.</summary>
+    [HttpGet("fundaciones"), Authorize(Policy = Politicas.SuperUsuario)]
+    public async Task<ActionResult<IReadOnlyList<FundacionAdminDto>>> Fundaciones([FromQuery] EstadoFundacionDto estado = EstadoFundacionDto.Pendiente)
+        => Ok(await _fundaciones.ListarParaRevisionAsync(User.IdActual(), estado));
+
+    [HttpPost("fundaciones/{usuarioId:guid}/aprobar"), Authorize(Policy = Politicas.SuperUsuario)]
+    public async Task<IActionResult> AprobarFundacion(Guid usuarioId)
+    {
+        await _fundaciones.AprobarAsync(User.IdActual(), usuarioId);
+        return NoContent();
+    }
+
+    [HttpPost("fundaciones/{usuarioId:guid}/rechazar"), Authorize(Policy = Politicas.SuperUsuario)]
+    public async Task<IActionResult> RechazarFundacion(Guid usuarioId, [FromBody] MotivoRequest r)
+    {
+        await _fundaciones.RechazarAsync(User.IdActual(), usuarioId, r.Motivo);
+        return NoContent();
+    }
+
+    /// <summary>Quita la insignia a una fundación verificada (p. ej. se disolvió o la usó para engañar).</summary>
+    [HttpPost("fundaciones/{usuarioId:guid}/retirar"), Authorize(Policy = Politicas.SuperUsuario)]
+    public async Task<IActionResult> RetirarFundacion(Guid usuarioId, [FromBody] MotivoRequest r)
+    {
+        await _fundaciones.RetirarAsync(User.IdActual(), usuarioId, r.Motivo);
         return NoContent();
     }
 

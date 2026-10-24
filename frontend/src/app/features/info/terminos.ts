@@ -52,6 +52,14 @@ export default class Terminos {
         ],
       },
       {
+        titulo: 'Fundaciones verificadas',
+        parrafos: [
+          'Una cuenta que representa a una entidad sin ánimo de lucro puede pedir, sin costo, la insignia «Fundación verificada». Para eso declara que es su representante legal o que este la autorizó, y envía la razón social, el NIT y el certificado de existencia y representación legal de la Cámara de Comercio. El equipo lo revisa y puede aprobar o rechazar la solicitud explicando el motivo.',
+          'La insignia solo indica que revisamos esos documentos: no es un aval de la gestión de la entidad ni de cómo usa lo que recibe. La cuenta sigue las mismas reglas que las demás (también puede truekear y vender) y donarle a una fundación da los mismos Eco-Puntos que cualquier donación.',
+          'Retiramos la insignia, con aviso del motivo, si la entidad deja de existir, si los datos no eran ciertos o si se usa para engañar a la comunidad; en los casos graves, además, se aplica la moderación de la cuenta.',
+        ],
+      },
+      {
         titulo: 'Publicaciones prohibidas',
         parrafos: ['Solo puedes publicar objetos propios, legales y en el estado que describes. Está prohibido publicar:'],
         lista: [

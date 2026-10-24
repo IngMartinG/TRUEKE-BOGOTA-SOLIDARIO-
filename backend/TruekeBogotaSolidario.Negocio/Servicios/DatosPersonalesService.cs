@@ -52,6 +52,7 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
     private readonly IDeseoService _deseos;
     private readonly IDeseoRepository _deseosRepo;
     private readonly IOferenteService _oferentes;
+    private readonly IFundacionService _fundaciones;
     private readonly ILogger<DatosPersonalesService> _log;
 
     public DatosPersonalesService(IUsuarioRepository usuarios, IPublicacionRepository pubs, ISolicitudRepository solicitudes,
@@ -62,9 +63,9 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         ICalificacionRepository calificaciones, IFavoritoRepository favoritos, IFacturaRepository facturas, IPqrRepository pqrs,
         IBloqueoService bloqueos, ILogger<DatosPersonalesService> log, ISuscripcionPushRepository suscripcionesPush,
         IBusquedaGuardadaService busquedas, IBusquedaGuardadaRepository busquedasRepo, IMovimientoEcoPuntosRepository movimientos,
-        IDeseoService deseos, IDeseoRepository deseosRepo, IOferenteService oferentes)
+        IDeseoService deseos, IDeseoRepository deseosRepo, IOferenteService oferentes, IFundacionService fundaciones)
     {
-        _oferentes = oferentes;
+        _oferentes = oferentes; _fundaciones = fundaciones;
         _movimientos = movimientos; _deseos = deseos; _deseosRepo = deseosRepo;
         _bloqueos = bloqueos; _suscripcionesPush = suscripcionesPush; _busquedas = busquedas; _busquedasRepo = busquedasRepo;
         _calificaciones = calificaciones; _favoritos = favoritos; _facturas = facturas; _pqrs = pqrs;
@@ -116,7 +117,7 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
             await _bloqueos.PreferenciasAsync(actorId), await _bloqueos.ListarAsync(actorId), await _busquedas.ListarAsync(actorId),
             (await _movimientos.ListarPorUsuarioAsync(actorId, 1, Maximo)).Items
                 .Select(m => new MovimientoEcoPuntosDto(m.Id, m.Concepto.ToString(), m.Puntos, m.Detalle, m.ReferenciaId, m.SaldoResultante, m.FechaUtc)).ToList(),
-            await _deseos.ListarAsync(actorId), _oferentes.Descifrar(u));
+            await _deseos.ListarAsync(actorId), _oferentes.Descifrar(u), await _fundaciones.MiaAsync(actorId));
     }
 
 
@@ -189,6 +190,7 @@ public sealed class DatosPersonalesService : IDatosPersonalesService
         foreach (var s in await _suscripcionesPush.DeUsuarioAsync(actorId)) _suscripcionesPush.Quitar(s); // ningún aviso más
         foreach (var b in await _busquedasRepo.DeUsuarioAsync(actorId)) _busquedasRepo.Quitar(b);
         foreach (var d in await _deseosRepo.DeUsuarioAsync(actorId)) _deseosRepo.Quitar(d); // dejan de verse en el perfil
+        await _fundaciones.QuitarDeCuentaAsync(actorId); // perfil y necesidades; el certificado se borra con sus archivos
         u.Anonimizar(ahora);
         _auditoria.Agregar(new AuditoriaEvento(autorId, accionAuditoria, "Usuario", actorId, detalle, ahora));
         await _uow.GuardarCambiosAsync();

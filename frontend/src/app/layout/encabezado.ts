@@ -178,6 +178,7 @@ export class Encabezado {
     { ruta: '/explorar', texto: 'Explorar' },
     { ruta: '/como-funciona', texto: 'Cómo funciona' },
     { ruta: '/eco-puntos', texto: 'Eco-Puntos' },
+    { ruta: '/fundaciones', texto: 'Fundaciones' },
     { ruta: '/impacto', texto: 'Impacto' },
   ];
 
@@ -191,6 +192,7 @@ export class Encabezado {
     { ruta: '/eco-puntos', texto: 'Eco-Puntos', icono: 'moneda' },
     { ruta: '/planes', texto: 'Planes', icono: 'corona' },
     { ruta: '/impacto', texto: 'Impacto de la comunidad', icono: 'hoja' },
+    { ruta: '/fundaciones', texto: 'Fundaciones', icono: 'heart' },
     { ruta: '/ayuda', texto: 'Centro de ayuda', icono: 'soporte' },
   ];
 

@@ -30,7 +30,7 @@ internal static class Mapeos
     public static PerfilPublicoDto APerfilPublico(Usuario u, DateTime ahora)
         => new(u.Id, NombrePublico(u.NombreCompleto), u.Localidad, u.Reputacion, u.EsVerificado, TipoCuentaEfectivo(u, ahora),
             u.CalificacionPromedio, u.CalificacionesTotal, Divipola.NombreCompleto(u.MunicipioCodigo), NombreComercialVisible(u, ahora),
-            FotoVisible(u), NitRegistrado(u, ahora), NivelVisible(u));
+            FotoVisible(u), NitRegistrado(u, ahora), NivelVisible(u), FundacionVisible(u));
 
     /// <summary>A los demás solo se muestra el nombre del nivel (nunca el saldo ni los puntos); cuentas eliminadas o suspendidas quedan en Semilla.</summary>
     private static string NivelVisible(Usuario u)
@@ -48,8 +48,11 @@ internal static class Mapeos
             siguiente is { } sig ? PoliticaEcoPuntos.NivelPara(sig).ToString() : null, siguiente, Math.Clamp(progreso, 0, 100));
     }
 
+    /// <summary>Insignia "Fundación verificada" (razón social): nunca en cuentas eliminadas o suspendidas.</summary>
+    public static string? FundacionVisible(Usuario u) => u.EstaEliminado || u.EstaSuspendido ? null : u.NombreFundacion;
+
     /// <summary>Cuentas eliminadas o suspendidas no muestran foto.</summary>
-    private static string? FotoVisible(Usuario u) => u.EstaEliminado || u.EstaSuspendido ? null : u.FotoUrl;
+    public static string? FotoVisible(Usuario u) => u.EstaEliminado || u.EstaSuspendido ? null : u.FotoUrl;
 
     public static PerfilUsuarioDto APerfilUsuario(Usuario u, int publicacionesActivas, SenalesConfianzaDto confianza, DateTime ahora)
         => new(u.Id, NombrePublico(u.NombreCompleto), u.Localidad, u.Reputacion, u.EsVerificado, TipoCuentaEfectivo(u, ahora),
@@ -57,7 +60,7 @@ internal static class Mapeos
             u.TotalTruekesCompletados, u.TotalComprasRealizadas, u.TotalDonacionesRealizadas,
             u.CalificacionPromedio, u.CalificacionesTotal, publicacionesActivas, Divipola.NombreCompleto(u.MunicipioCodigo),
             NombreComercialVisible(u, ahora), FotoVisible(u), confianza, NitRegistrado(u, ahora),
-            NitRegistrado(u, ahora) && u.MostrarNit ? u.Nit : null, Nivel: NivelVisible(u));
+            NitRegistrado(u, ahora) && u.MostrarNit ? u.Nit : null, Nivel: NivelVisible(u), NombreFundacion: FundacionVisible(u));
 
     public static UsuarioDto AUsuarioDto(Usuario u, DateTime ahora)
     {

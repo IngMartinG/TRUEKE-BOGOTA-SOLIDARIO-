@@ -92,6 +92,7 @@ public sealed class AlmacenFalso : IAlmacenArchivos
             ? b.Datos : null);
 
     public bool Existe(string url) => _blobs.ContainsKey(url);
+    public IEnumerable<string> Urls() => _blobs.Keys;
 
     public static byte[] Png(int tamano = 100)
     {

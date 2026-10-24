@@ -54,12 +54,18 @@ public static class TiposNotificacion
     public const string BusquedaGuardada = "BusquedaGuardada";
     /// <summary>Alguien publicó algo de la lista de deseos (RecursoId = PublicacionId si es una sola; sin recurso si son varias).</summary>
     public const string DeseoCoincidencia = "DeseoCoincidencia";
+    public const string FundacionAprobada = "FundacionAprobada";
+    public const string FundacionRechazada = "FundacionRechazada";
+    /// <summary>La moderación retiró la insignia de fundación verificada (el motivo se ve en la cuenta).</summary>
+    public const string FundacionRetirada = "FundacionRetirada";
     // Solo para moderadores
     public const string AlertaPagoEnRevision = "AlertaPagoEnRevision";
     public const string PqrNueva = "PqrNueva";
     public const string ApelacionNueva = "ApelacionNueva";
     /// <summary>Una cuenta existente declaró una fecha de menor de edad (RecursoId = UsuarioId): revisarla.</summary>
     public const string MenorDetectado = "MenorDetectado";
+    /// <summary>Una cuenta pidió verificarse como fundación (RecursoId = UsuarioId): la revisa un SuperUsuario.</summary>
+    public const string FundacionPorRevisar = "FundacionPorRevisar";
 }
 
 /// <summary>Carga mínima: el front pide el detalle al API (con su JWT) si lo necesita. Nunca datos de terceros.</summary>

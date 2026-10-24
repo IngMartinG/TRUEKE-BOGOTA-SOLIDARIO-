@@ -57,6 +57,7 @@ export default class Privacidad {
           'Actividad en la plataforma: intercambios, Eco-Puntos, pagos, facturas y solicitudes de soporte.',
           'Datos de facturación, si los registras: tipo y número de documento, nombre o razón social, correo y dirección.',
           'Registro de vendedor, solo si vendes en modo Compra y venta: nombre o razón social, tipo y número de documento, dirección de notificaciones, municipio y teléfono. El documento, la dirección y el teléfono se guardan cifrados y nunca se muestran a otras personas de la comunidad.',
+          'Perfil de fundación, solo si tu cuenta representa a una entidad sin ánimo de lucro y pide la verificación: razón social, NIT, descripción, lo que necesita y el certificado de existencia y representación legal de la Cámara de Comercio. La razón social, la descripción, lo que necesita y, si la fundación lo elige, el NIT se muestran en su página pública; el certificado no.',
           'Datos técnicos: dirección IP, tipo de dispositivo y registros de seguridad (inicios de sesión, cambios de contraseña), para proteger tu cuenta y prevenir fraudes.',
         ],
       },
@@ -70,6 +71,7 @@ export default class Privacidad {
           'Procesar los pagos de los servicios opcionales y emitir las facturas electrónicas.',
           'Atender peticiones, quejas, reclamos y solicitudes de retracto, y aplicar la moderación con debido proceso.',
           'Llevar el registro de quienes venden que exige el Estatuto del Consumidor a un portal de contacto (Ley 1480, art. 53), y entregarlo solo a quien te compró y presenta un reclamo por PQRS, o a la autoridad que lo pida. Cada consulta del equipo queda registrada.',
+          'Verificar que una cuenta representa a una fundación o entidad sin ánimo de lucro existente antes de mostrar la insignia «Fundación verificada» y su página pública, para que la comunidad sepa a quién dona.',
           'Cumplir obligaciones legales, contables y tributarias, y responder a requerimientos de autoridades competentes.',
           'Opcionales, solo si lo autorizas en tu cuenta: avisos por correo cuando no estás conectado y notificaciones push en tu dispositivo. Puedes desactivarlos cuando quieras.',
         ],
@@ -79,6 +81,7 @@ export default class Privacidad {
         parrafos: [
           'La foto de perfil donde se ve tu cara y la imagen de tu documento de identidad para verificar la cuenta pueden considerarse datos sensibles. Su entrega es facultativa: no estás obligado a autorizar su tratamiento, y sin ellos puedes explorar el catálogo.',
           'La foto de perfil se pide para publicar, solicitar, chatear y pagar, para que la comunidad sepa con quién intercambia. Antes de publicarla le quitamos la ubicación y los datos ocultos (EXIF). La imagen del documento se guarda en un almacenamiento privado y se elimina en cuanto se resuelve la verificación.',
+          'El certificado de existencia de una fundación no es un dato sensible, pero puede incluir el nombre y el documento de su representante legal: también se guarda en un almacenamiento privado, solo lo ve el SuperUsuario que revisa la solicitud (con verificación en dos pasos) y se elimina en cuanto la aprueba o la rechaza.',
         ],
       },
       {
@@ -127,6 +130,7 @@ export default class Privacidad {
         titulo: 'Conservación',
         parrafos: [
           'Conservamos tus datos mientras tengas una cuenta activa. Al eliminarla, borramos o anonimizamos tus datos personales y retiramos tu contenido público.',
+          'El perfil de una fundación se borra cuando la cuenta deja de ser fundación o se elimina. Las decisiones sobre su verificación (quién la revisó, cuándo y el motivo) quedan en el registro de auditoría.',
           'Conservamos solo lo que la ley obliga a guardar: las facturas y los pagos se guardan por el tiempo que exigen las normas contables y tributarias (hasta 10 años), y los registros de seguridad por el tiempo necesario para investigar fraudes.',
         ],
       },

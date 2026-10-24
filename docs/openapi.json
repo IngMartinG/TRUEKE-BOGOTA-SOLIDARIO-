@@ -1093,6 +1093,160 @@
         }
       }
     },
+    "/api/v1/admin/fundaciones": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "estado",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EstadoFundacionDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FundacionAdminDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FundacionAdminDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FundacionAdminDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/fundaciones/{usuarioId}/aprobar": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/fundaciones/{usuarioId}/rechazar": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/fundaciones/{usuarioId}/retirar": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/admin/pagos/{referencia}/reembolsado": {
       "post": {
         "tags": [
@@ -3238,6 +3392,343 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/fundaciones": {
+      "get": {
+        "tags": [
+          "Fundaciones"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FundacionResumenDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FundacionResumenDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/FundacionResumenDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fundaciones/{id}": {
+      "get": {
+        "tags": [
+          "Fundaciones"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundacionPublicaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundacionPublicaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FundacionPublicaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fundaciones/mia": {
+      "get": {
+        "tags": [
+          "Fundaciones"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiFundacionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiFundacionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiFundacionDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Fundaciones"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitarFundacionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitarFundacionRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitarFundacionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiFundacionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiFundacionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiFundacionDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Fundaciones"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditarFundacionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditarFundacionRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/EditarFundacionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiFundacionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiFundacionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiFundacionDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Fundaciones"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/fundaciones/mia/necesidades": {
+      "post": {
+        "tags": [
+          "Fundaciones"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarNecesidadRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarNecesidadRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarNecesidadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/NecesidadDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NecesidadDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NecesidadDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/fundaciones/mia/necesidades/{id}": {
+      "put": {
+        "tags": [
+          "Fundaciones"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarNecesidadRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarNecesidadRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarNecesidadRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/NecesidadDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NecesidadDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NecesidadDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Fundaciones"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -7388,6 +7879,9 @@
           },
           "registroOferente": {
             "$ref": "#/components/schemas/DatosOferenteDto"
+          },
+          "fundacion": {
+            "$ref": "#/components/schemas/MiFundacionDto"
           }
         },
         "additionalProperties": false
@@ -7682,6 +8176,23 @@
         },
         "additionalProperties": false
       },
+      "EditarFundacionRequest": {
+        "required": [
+          "descripcion"
+        ],
+        "type": "object",
+        "properties": {
+          "descripcion": {
+            "maxLength": 600,
+            "minLength": 20,
+            "type": "string"
+          },
+          "mostrarNit": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "EliminarCuentaRequest": {
         "required": [
           "confirmacion"
@@ -7826,6 +8337,15 @@
           "Emitida",
           "Anulada",
           "Reemplazada"
+        ],
+        "type": "string"
+      },
+      "EstadoFundacionDto": {
+        "enum": [
+          "Pendiente",
+          "Aprobada",
+          "Rechazada",
+          "Retirada"
         ],
         "type": "string"
       },
@@ -8100,6 +8620,134 @@
         },
         "additionalProperties": false
       },
+      "FundacionAdminDto": {
+        "type": "object",
+        "properties": {
+          "usuarioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombreCuenta": {
+            "type": "string"
+          },
+          "correo": {
+            "type": "string"
+          },
+          "razonSocial": {
+            "type": "string"
+          },
+          "nit": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoFundacionDto"
+          },
+          "certificadoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "motivo": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaSolicitudUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaDecisionUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "FundacionPublicaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "fotoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "localidad": {
+            "type": "string"
+          },
+          "municipio": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "verificadaDesde": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "calificacionPromedio": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "totalCalificaciones": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "necesidades": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NecesidadDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "FundacionResumenDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "fotoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "localidad": {
+            "type": "string"
+          },
+          "municipio": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "necesidades": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "necesidadesUrgentes": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "GananciaDto": {
         "type": "object",
         "properties": {
@@ -8229,6 +8877,37 @@
             "type": "boolean"
           },
           "avisos": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
+      "GuardarNecesidadRequest": {
+        "required": [
+          "texto"
+        ],
+        "type": "object",
+        "properties": {
+          "texto": {
+            "maxLength": 100,
+            "minLength": 3,
+            "type": "string"
+          },
+          "categoriaId": {
+            "maximum": 2147483647,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "cantidad": {
+            "maximum": 100000,
+            "minimum": 1,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "urgente": {
             "type": "boolean"
           }
         },
@@ -8681,6 +9360,46 @@
         },
         "additionalProperties": false
       },
+      "MiFundacionDto": {
+        "type": "object",
+        "properties": {
+          "estado": {
+            "$ref": "#/components/schemas/EstadoFundacionDto"
+          },
+          "razonSocial": {
+            "type": "string"
+          },
+          "nit": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "mostrarNit": {
+            "type": "boolean"
+          },
+          "motivo": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaSolicitudUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaDecisionUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "necesidades": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NecesidadDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "ModoDto": {
         "enum": [
           "Trueke",
@@ -8794,6 +9513,40 @@
           "longitud": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NecesidadDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "categoriaId": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "categoria": {
+            "type": "string",
+            "nullable": true
+          },
+          "cantidad": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "urgente": {
+            "type": "boolean"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
           }
         },
         "additionalProperties": false
@@ -9166,6 +9919,10 @@
           },
           "nivel": {
             "type": "string"
+          },
+          "nombreFundacion": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9262,6 +10019,10 @@
           },
           "impacto": {
             "$ref": "#/components/schemas/ImpactoPersonalDto"
+          },
+          "nombreFundacion": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10079,6 +10840,44 @@
           },
           "usuario": {
             "$ref": "#/components/schemas/UsuarioDto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SolicitarFundacionRequest": {
+        "required": [
+          "certificadoUrl",
+          "descripcion",
+          "nit",
+          "razonSocial"
+        ],
+        "type": "object",
+        "properties": {
+          "razonSocial": {
+            "maxLength": 150,
+            "minLength": 3,
+            "type": "string"
+          },
+          "nit": {
+            "maxLength": 20,
+            "minLength": 6,
+            "type": "string"
+          },
+          "descripcion": {
+            "maxLength": 600,
+            "minLength": 20,
+            "type": "string"
+          },
+          "mostrarNit": {
+            "type": "boolean"
+          },
+          "certificadoUrl": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          },
+          "declaroRepresentacion": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

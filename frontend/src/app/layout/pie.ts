@@ -70,6 +70,7 @@ export class Pie {
         { ruta: '/publicar', texto: 'Publicar un objeto' },
         { ruta: '/como-funciona', texto: 'Cómo funciona' },
         { ruta: '/impacto', texto: 'Impacto de la comunidad' },
+        { ruta: '/fundaciones', texto: 'Fundaciones' },
         { ruta: '/ayuda', texto: 'Centro de ayuda' },
         { ruta: '/eco-puntos', texto: 'Eco-Puntos' },
         { ruta: '/planes', texto: 'Planes' },

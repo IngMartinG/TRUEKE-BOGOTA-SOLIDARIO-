@@ -79,6 +79,9 @@ public class ArquitecturaTests
             "GET api/v1/publicaciones/{id:guid}/comentarios",
             "GET api/v1/eco-puntos/politica",
             "GET api/v1/impacto",
+            // fundaciones verificadas: solo datos de la organización (autorizado por el dueño el 2026-10-24)
+            "GET api/v1/fundaciones",
+            "GET api/v1/fundaciones/{id:guid}",
             "POST api/v1/pqr/publica",   // PQRS pública con captcha y límite por IP y por correo (autorizado por el dueño el 2026-10-18)
             "POST api/v1/pqr/consultar",
             "GET api/v1/configuracion",

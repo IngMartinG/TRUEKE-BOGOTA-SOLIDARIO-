@@ -23,6 +23,7 @@ import { Denunciar } from '../../shared/ui/denunciar';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Estrellas } from '../../shared/ui/estrellas';
 import { Icono } from '../../shared/ui/icono';
+import { InsigniaFundacion } from '../../shared/ui/insignia-fundacion';
 import { InsigniaNivel } from '../../shared/ui/insignia-nivel';
 import { VisorImagenes } from '../../shared/ui/visor-imagenes';
 import { ImagenPublicacion } from '../../shared/ui/imagen-publicacion';
@@ -39,6 +40,7 @@ import { Volver } from '../../shared/ui/volver';
     RouterLink,
     FormsModule,
     Icono,
+    InsigniaFundacion,
     InsigniaNivel,
     VisorImagenes,
     ImagenPublicacion,
@@ -230,8 +232,10 @@ import { Volver } from '../../shared/ui/volver';
               <app-avatar [nombre]="p.propietario?.nombre" [foto]="p.propietario?.fotoUrl" [tamano]="56" [verificado]="!!p.propietario?.verificado" />
               <div class="min-w-0 flex-1">
                 <p class="text-xs text-tenue">Publicado por</p>
-                <p class="truncate font-display font-bold">{{ p.propietario?.nombreComercial || p.propietario?.nombre }}</p>
-                @if (p.propietario?.nitRegistrado) {
+                <p class="truncate font-display font-bold">{{ p.propietario?.nombreFundacion || p.propietario?.nombreComercial || p.propietario?.nombre }}</p>
+                @if (p.propietario?.nombreFundacion) {
+                  <p class="mt-0.5"><app-insignia-fundacion /></p>
+                } @else if (p.propietario?.nitRegistrado) {
                   <p class="mt-0.5 flex items-center gap-1 text-xs font-semibold text-agua-700 dark:text-agua-100">
                     <app-icono nombre="verificado" [tamano]="12" />Empresa con NIT registrado
                   </p>
