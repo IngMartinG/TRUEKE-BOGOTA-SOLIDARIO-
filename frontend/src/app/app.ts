@@ -12,13 +12,14 @@ import { AsistenteSoporte } from './features/ayuda/asistente-soporte';
 import { BarraMovil } from './layout/barra-movil';
 import { Encabezado } from './layout/encabezado';
 import { Pie } from './layout/pie';
+import { AvisoNovedad } from './shared/ui/aviso-novedad';
 import { Avisos } from './shared/ui/avisos';
 import { Icono } from './shared/ui/icono';
 import { LogroIntercambio } from './shared/ui/logro-intercambio';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, Encabezado, Pie, BarraMovil, Avisos, Icono, LogroIntercambio, AsistenteSoporte],
+  imports: [RouterOutlet, RouterLink, Encabezado, Pie, BarraMovil, Avisos, AvisoNovedad, Icono, LogroIntercambio, AsistenteSoporte],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <a href="#contenido" class="sr-only z-[200] rounded-full bg-bosque-700 px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3">
@@ -47,6 +48,7 @@ import { LogroIntercambio } from './shared/ui/logro-intercambio';
         </div>
       </div>
     }
+    <app-aviso-novedad />
     @if (config.pagosDePrueba() && config.ventasHabilitadas()) {
       <div class="border-b border-cielo-100 bg-cielo-50 dark:border-cielo-700/40 dark:bg-cielo-700/20" role="note">
         <div class="contenedor flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2 text-center text-sm">

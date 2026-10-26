@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage;
 using Microsoft.Extensions.DependencyInjection;
 using TruekeBogotaSolidario.Datos.Common;
@@ -286,6 +287,45 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
         Assert.Null(await sp.GetRequiredService<IPublicacionRepository>().PrimeraActivaDesdeAsync(id, ahora.AddHours(-1)));
         Assert.Equal(1, await sp.GetRequiredService<IMovimientoEcoPuntosRepository>()
             .ContarGanadosDesdeAsync(id, Datos.Entidades.ConceptoEcoPuntos.PerfilCompleto, ahora.AddHours(-1)));
+    }
+
+    [SkippableFact]
+    public async Task La_migracion_del_aviso_avisa_una_vez_a_quien_tiene_ventas_sin_trueke()
+    {
+        Skip.IfNot(_sql.Disponible, _sql.MotivoNoDisponible);
+        var cadena = _sql.NuevaBase();
+        await using (var db = Contexto(cadena)) await db.GetService<IMigrator>().MigrateAsync("20261026024017_VentaAceptaTrueke");
+
+        Datos.Entidades.Usuario Persona(string n) => new($"{n} Prueba", "Suba", $"{n}{Guid.NewGuid():N}@t.co", "Clave12345");
+        var conVentas = Persona("ventas");
+        var conTrueke = Persona("contrueke");
+        var soloTrueke = Persona("trueke");
+        var cancelada = Persona("cancelada");
+        await using (var db = Contexto(cadena))
+        {
+            var categoria = await db.Categorias.FirstAsync();
+            Datos.Entidades.Publicacion Pub(Datos.Entidades.Usuario u, Datos.Entidades.ModoTransaccion modo, bool aceptaTrueke = false) =>
+                new(u.Id, new Datos.Entidades.DatosPublicacion("Bicicleta de prueba", "En buen estado", categoria, modo,
+                    Datos.Entidades.CondicionProducto.Usado, null, Divipola.CodigoBogota, "Suba",
+                    modo == Datos.Entidades.ModoTransaccion.Compra ? 50_000 : null, null, null, null, aceptaTrueke));
+            db.Usuarios.AddRange(conVentas, conTrueke, soloTrueke, cancelada);
+            var vieja = Pub(cancelada, Datos.Entidades.ModoTransaccion.Compra);
+            vieja.Cancelar("Ya no la vendo");
+            db.Publicaciones.AddRange(
+                Pub(conVentas, Datos.Entidades.ModoTransaccion.Compra), Pub(conVentas, Datos.Entidades.ModoTransaccion.Compra),
+                Pub(conTrueke, Datos.Entidades.ModoTransaccion.Compra, aceptaTrueke: true),
+                Pub(soloTrueke, Datos.Entidades.ModoTransaccion.Trueke), vieja);
+            await db.SaveChangesAsync();
+        }
+
+        await using (var db = Contexto(cadena)) await db.Database.MigrateAsync();
+
+        await using var lectura = Contexto(cadena);
+        var avisos = await lectura.Notificaciones.AsNoTracking().Where(n => n.Tipo == "NovedadVentaTrueke").ToListAsync();
+        var aviso = Assert.Single(avisos); // una por persona, aunque tenga dos ventas
+        Assert.Equal(conVentas.Id, aviso.UsuarioId);
+        Assert.Null(aviso.LeidaUtc);
+        Assert.Equal(DateTimeKind.Utc, aviso.FechaUtc.Kind);
     }
 
     [SkippableFact]

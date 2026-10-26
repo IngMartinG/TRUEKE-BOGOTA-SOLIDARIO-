@@ -18,6 +18,7 @@ function destino(n: NotificacionDto): { icono: string; color: string; ruta: unkn
   const t = n.tipo ?? '';
   if (t === 'SolicitudContraoferta')
     return { icono: 'repeat', color: 'bg-sol-100 text-sol-600 dark:bg-sol-500/20 dark:text-sol-300', ruta: ['/intercambios'], ...(n.recursoId ? { query: { ver: n.recursoId } } : {}) };
+  if (t === 'NovedadVentaTrueke') return { icono: 'repeat', color: 'bg-bosque-100 text-bosque-700 dark:bg-bosque-900 dark:text-bosque-200', ruta: ['/mis-publicaciones'] };
   if (t === 'SolicitudNueva') return { icono: 'apreton', color: 'bg-bosque-100 text-bosque-700 dark:bg-bosque-900 dark:text-bosque-200', ruta: ['/intercambios'], query: { tab: 'recibidas' } };
   if (t.startsWith('Solicitud')) return { icono: 'apreton', color: 'bg-bosque-100 text-bosque-700 dark:bg-bosque-900 dark:text-bosque-200', ruta: ['/intercambios'], query: { tab: 'enviadas' } };
   if (t.startsWith('Entrega') || t.startsWith('Intercambio') || t === 'CalificacionRecibida')

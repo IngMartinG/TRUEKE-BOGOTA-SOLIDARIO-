@@ -662,6 +662,15 @@ intercambio cuenta en el modo en que se cerró.
   pagó; la `Transaccion` y el registro de compras del oferente usan ese modo.
 - Pruebas: `VentaAceptaTruekeTests` (solo en Compra, filtro, venta sin casilla, cambio de modo en las contraofertas, puntos de
   cada caso), `tarjeta-solicitud.spec.ts` y la E2E de la venta que acepta trueke en `trueke.spec.ts`.
+- **Aviso a quien ya vendía (2026-10-26):** la migración `AvisoVentaAceptaTrueke` deja una notificación
+  `NovedadVentaTrueke` (una por persona) a quien tenía ventas visibles sin la casilla. Al abrir la cuenta sale una franja
+  (`AvisoNovedad`) con "Ver mis ventas" y "Entendido"; las dos la marcan leída, así que no vuelve en ningún dispositivo.
+  Pruebas: `aviso-novedad.spec.ts` y la de la migración en `PostgreSqlTests`.
+
+**Revisión de dos propuestas externas (2026-10-26), no adoptadas:** el health con consulta a la BD (`/health/ready`), las
+páginas estáticas para buscadores (`generar-seo.mjs`) y la pantalla de carga ya existían. El filtro anti-XSS con
+HtmlSanitizer no aplica: la API solo devuelve JSON, Angular escapa todo y el texto ya se valida con `TextoSeguro`; además
+rechazaría textos normales como "3 < 5" y guardaría el contenido en los registros.
 
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
