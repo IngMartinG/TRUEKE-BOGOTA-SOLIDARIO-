@@ -1,4 +1,4 @@
-import { expect, test, type Browser, type Page } from '@playwright/test';
+import { expect, test, type Browser, type Locator, type Page } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
 import { cuentaLista, fotoPng, ingresar, publicar, type Cuenta } from './utilidades';
 
@@ -191,8 +191,11 @@ test('contraoferta en un trueke: el dueño pide otros objetos y quien propuso la
   });
 });
 
-/** Toca la tarjeta visible de una opción (los radios son sr-only). */
-async function elegir(page: Page, nombre: string | RegExp, dentro = page.locator('body')): Promise<void> {
+/**
+ * Toca la tarjeta visible de una opción (los radios son sr-only). `dentro` es la página o un diálogo: el radio de `has`
+ * se busca dentro del label, así que no puede partir de otro elemento (con `page.locator('body')` nunca coincidiría).
+ */
+async function elegir(dentro: Page | Locator, nombre: string | RegExp): Promise<void> {
   const radio = dentro.getByRole('radio', { name: nombre });
   await dentro.locator('label', { has: radio }).click();
   await expect(radio).toBeChecked();
@@ -240,7 +243,7 @@ test('venta que acepta trueke: se publica con la casilla, se negocia entre preci
     await beto.page.goto(`/publicacion/${idVenta}`);
     await beto.page.getByRole('button', { name: 'Quiero comprarlo' }).click();
     const dialogo = beto.page.getByRole('dialog');
-    await elegir(beto.page, 'Te propongo un trueke', dialogo);
+    await elegir(dialogo, 'Te propongo un trueke');
     await expect(dialogo.getByRole('button', { name: 'Enviar solicitud' })).toBeDisabled(); // sin objetos no hay trueke
     await dialogo.getByRole('checkbox', { name: `Ofrecer ${patineta}` }).check({ force: true });
     await dialogo.getByLabel('Tu mensaje').fill('¿Me la cambias por mi patineta?');
@@ -254,7 +257,7 @@ test('venta que acepta trueke: se publica con la casilla, se negocia entre preci
     const tarjeta = ana.page.locator('app-tarjeta-solicitud', { hasText: venta });
     await tarjeta.getByRole('button', { name: 'Contraofertar' }).click();
     const dialogo = ana.page.getByRole('dialog');
-    await elegir(ana.page, 'Un precio', dialogo);
+    await elegir(dialogo, 'Un precio');
     await dialogo.getByLabel('Precio que propones').fill('280000');
     await dialogo.getByRole('button', { name: 'Enviar contraoferta' }).click();
     await expect(tarjeta.getByText(/Esperando la respuesta de Beto/)).toBeVisible();
@@ -266,7 +269,7 @@ test('venta que acepta trueke: se publica con la casilla, se negocia entre preci
     await expect(tarjeta.getByText(/280\.000/)).toBeVisible();
     await tarjeta.getByRole('button', { name: 'Contraofertar' }).click();
     const dialogo = beto.page.getByRole('dialog');
-    await elegir(beto.page, 'Objetos a cambio', dialogo);
+    await elegir(dialogo, 'Objetos a cambio');
     await dialogo.getByRole('checkbox', { name: `Ofrecer ${patineta}` }).check({ force: true });
     await dialogo.getByRole('button', { name: 'Enviar contraoferta' }).click();
     await expect(tarjeta.getByText(/Esperando la respuesta de Ana/)).toBeVisible();
