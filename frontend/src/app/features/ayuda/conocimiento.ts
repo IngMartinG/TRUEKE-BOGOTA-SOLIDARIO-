@@ -144,8 +144,8 @@ export const CONOCIMIENTO: readonly EntradaConocimiento[] = [
     pregunta: '¿Puedo vender algo y también aceptar trueke?',
     variantes: ['vender o cambiar', 'acepto cambios', 'recibo trueke por lo que vendo', 'pagar con objetos'],
     palabrasClave: ['vender', 'venta', 'trueke', 'cambio', 'cambios', 'acepta', 'también'],
-    respuesta: 'Sí. Al publicar en Compra y venta marca "También acepto trueke". Quien se interese podrá pagar el precio o proponerte hasta 3 de sus objetos, y durante la negociación pueden pasar de precio a objetos o al revés. Si se cierra como trueke suma los Eco-Puntos de un trueke; si se paga, los de una compra. Tu publicación también aparece cuando alguien filtra por Trueke.',
-    accion: { texto: 'Publicar', ruta: '/publicar', conSesion: true },
+    respuesta: 'Sí. Al publicar en Compra y venta marca "También acepto trueke". Quien se interese podrá pagar el precio o proponerte hasta 3 de sus objetos, y durante la negociación pueden pasar de precio a objetos o al revés. Si se cierra como trueke suma los Eco-Puntos de un trueke; si se paga, los de una compra. Tu publicación también aparece cuando alguien filtra por Trueke. Si ya tenías ventas publicadas, edítalas desde Mis publicaciones y marca la casilla.',
+    accion: { texto: 'Ir a mis publicaciones', ruta: '/mis-publicaciones', conSesion: true },
   },
   {
     id: 'completar',

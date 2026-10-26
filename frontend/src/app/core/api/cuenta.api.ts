@@ -106,8 +106,8 @@ export class CuentaApi {
   simularPago = (ref: string, aprobado: boolean) =>
     this.api.post<PagoEstadoDto>(`/pagos/${seg(ref)}/simular`, {}, { params: { aprobado } });
 
-  notificaciones = (soloNoLeidas = false, pagina = 1, tamano = 20) =>
-    this.api.get<NotificacionDtoPaginaDto>('/notificaciones', { params: { soloNoLeidas, pagina, tamano } });
+  notificaciones = (soloNoLeidas = false, pagina = 1, tamano = 20, silencioso = false) =>
+    this.api.get<NotificacionDtoPaginaDto>('/notificaciones', { params: { soloNoLeidas, pagina, tamano }, silencioso });
   totalNoLeidas = () => this.api.get<number>('/notificaciones/no-leidas/total', { silencioso: true });
   leerNotificacion = (id: string) => this.api.post<void>(`/notificaciones/${seg(id)}/leer`, {}, { silencioso: true });
   leerTodas = () => this.api.post<void>('/notificaciones/leer-todas');
