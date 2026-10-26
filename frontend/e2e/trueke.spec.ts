@@ -278,8 +278,9 @@ test('venta que acepta trueke: se publica con la casilla, se negocia entre preci
     await ana.page.goto('/intercambios');
     const deAna = ana.page.locator('app-tarjeta-solicitud', { hasText: venta });
     await expect(deAna.getByRole('link', { name: `Te ofrece: ${patineta}` })).toBeVisible();
-    await deAna.getByRole('button', { name: 'Aceptar contraoferta' }).click();
-    await ana.page.getByRole('dialog').getByRole('button', { name: 'Aceptar contraoferta' }).click();
+    // Para la dueña, aceptar la contraoferta de quien pidió es "Aceptar y reservar"
+    await deAna.getByRole('button', { name: 'Aceptar y reservar' }).click();
+    await ana.page.getByRole('dialog').getByRole('button', { name: 'Aceptar y reservar' }).click();
     await expect(deAna.getByRole('button', { name: 'Confirmar entrega' })).toBeVisible();
     const r = await beto.page.request.get('/api/v1/solicitudes/enviadas', { headers: { Authorization: `Bearer ${beto.cuenta.token}` } });
     const s = ((await r.json()) as { publicacionId: string; modo: string }[]).find((x) => x.publicacionId === idVenta);
