@@ -52,6 +52,12 @@ describe('TarjetaSolicitud (negociación)', () => {
     expect(botones(crear({ modo: 'Donacion', soyDuenio: true, meTocaResponder: true }))).toEqual(['Rechazar', 'Aceptar y reservar']);
   });
 
+  it('en una venta que acepta trueke, la propuesta de objetos recuerda el precio publicado', () => {
+    const el = crear({ soyDuenio: true, meTocaResponder: true, publicacionAceptaTrueke: true, precioPublicadoCop: 300000 });
+    expect(el.textContent).toMatch(/venta en \$\s?300\.000 que también acepta trueke/);
+    expect(botones(el)).toContain('Contraofertar');
+  });
+
   it('muestra todos los objetos ofrecidos', () => {
     const el = crear({
       soyDuenio: true,

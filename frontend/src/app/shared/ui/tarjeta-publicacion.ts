@@ -29,6 +29,9 @@ import { InsigniaModo } from './insignia-modo';
         />
         <div class="insignias-tarjeta absolute right-12 flex flex-wrap items-start gap-1.5 pointer-coarse:right-14">
           <app-insignia-modo [modo]="p.modo" class="shadow-sm" />
+          @if (p.aceptaTrueke) {
+            <span class="insignia-trueke shadow-sm"><app-icono nombre="repeat" [tamano]="12" [grosor]="2.5" />Acepta trueke</span>
+          }
           @if (p.destacada) {
             <span class="insignia-sol shadow-sm"><app-icono nombre="destello" [tamano]="12" />Destacada</span>
           }

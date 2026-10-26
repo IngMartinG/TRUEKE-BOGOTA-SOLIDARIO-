@@ -649,6 +649,20 @@ páginas públicas sin sesión; donarle a una fundación no da puntos extra (ant
 - Pruebas: `DonacionesParaFundacionTests` (aviso con enlace y correo sin el correo del donante, límite de 24 h, fundación
   retirada, bloqueo en las dos direcciones, otro modo y necesidad inexistente), `publicar.spec.ts` y `fundaciones.spec.ts`.
 
+## Hecho el 2026-10-25 — venta que también acepta trueke
+Decisiones del dueño: la casilla solo existe en Compra y venta, sin mezclar objetos y dinero en una misma propuesta, y el
+intercambio cuenta en el modo en que se cerró.
+- **Al publicar:** casilla "También acepto trueke" (`Publicacion.AceptaTrueke`, se ignora en Trueke y Donación). La
+  publicación muestra la insignia "Acepta trueke" y también sale en el filtro Trueke del catálogo, en "Cerca de mí" y en
+  las coincidencias de "Lo que busco".
+- **Al pedir:** el interesado elige "Quiero comprarlo" (precio, como siempre) o "Te propongo un trueke" (de 1 a 3 objetos
+  suyos). Cada solicitud guarda su modo (`Solicitud.Modo`; la migración `VentaAceptaTrueke` copia el de la publicación en
+  las existentes). En las contraofertas de estas ventas se puede pasar de precio a objetos o al revés.
+- **Al completarse:** suma como trueke (10 Eco-Puntos y contador de truekes) si se cerró con objetos, o como compra (5) si se
+  pagó; la `Transaccion` y el registro de compras del oferente usan ese modo.
+- Pruebas: `VentaAceptaTruekeTests` (solo en Compra, filtro, venta sin casilla, cambio de modo en las contraofertas, puntos de
+  cada caso), `tarjeta-solicitud.spec.ts` y la E2E de la venta que acepta trueke en `trueke.spec.ts`.
+
 ## Pendiente
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
 - **Registro de oferentes:** que el abogado revise el texto de la política y los términos (versión `2026-10-19`), si el

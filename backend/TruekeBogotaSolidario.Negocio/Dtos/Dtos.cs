@@ -256,6 +256,8 @@ public sealed class CrearPublicacionRequest
     [Range(-180, 180)] public double? Longitud { get; init; }
     /// <summary>Hasta 5 URLs obtenidas con POST /archivos/subidas. La primera es la foto principal. Al editar, reemplaza la lista completa.</summary>
     [MaxLength(5)] public List<string>? Imagenes { get; init; }
+    /// <summary>Solo en Compra: la venta también acepta trueke (quien la pide puede ofrecer hasta 3 objetos suyos en lugar de pagar).</summary>
+    public bool AceptaTrueke { get; init; }
     /// <summary>
     /// Opcional, solo al crear una Donación desde "Tengo esto": la necesidad de una fundación verificada que cubre. Se le avisa a la
     /// fundación con un enlace a la publicación (como mucho un aviso por donante cada 24 h); la publicación es igual a cualquier otra.
@@ -277,7 +279,10 @@ public sealed class CrearSolicitudRequest
 {
     public Guid PublicacionId { get; init; }
     [Required, StringLength(500, MinimumLength = 1)] public string Mensaje { get; init; } = "";
-    /// <summary>Solo en un Trueke y opcional: hasta 3 publicaciones propias y disponibles que se ofrecen a cambio.</summary>
+    /// <summary>
+    /// Solo en un Trueke (opcional) o en una venta que acepta trueke (con ellas, la solicitud es un trueke): hasta 3
+    /// publicaciones propias y disponibles que se ofrecen a cambio.
+    /// </summary>
     [MaxLength(3)] public List<Guid>? PublicacionesOfrecidasIds { get; init; }
     /// <summary>Compatibilidad con la versión anterior del front (un solo objeto): se suma a PublicacionesOfrecidasIds.</summary>
     public Guid? PublicacionOfrecidaId { get; init; }
@@ -287,6 +292,7 @@ public sealed class CrearSolicitudRequest
 
 /// <summary>
 /// Contraoferta a la propuesta vigente: en una Compra, otro precio; en un Trueke, otros objetos de quien solicita (1 a 3).
+/// En una venta que acepta trueke vale cualquiera de las dos (objetos o precio, no ambos): el modo de la solicitud cambia con ella.
 /// </summary>
 public sealed class ContraofertaRequest
 {
@@ -738,7 +744,7 @@ public sealed record PublicacionDto(Guid Id, string Titulo, string Descripcion, 
     IReadOnlyList<string> Imagenes, string Estado, DateTime FechaPublicacion, DateTime? FechaEdicion, bool Destacada, DateTime? DestacadaHasta,
     PerfilPublicoDto Propietario, bool EsMia, bool EsFavorita, bool Oculta, string? MotivoOcultamiento,
     string Condicion, string? DetalleCondicion, string MunicipioCodigo, string Municipio, string DepartamentoCodigo,
-    int? Vistas, DateTime? ProximoImpulsoUtc, int Interesados, bool YaSolicite);
+    int? Vistas, DateTime? ProximoImpulsoUtc, int Interesados, bool YaSolicite, bool AceptaTrueke);
 
 public sealed record PuntoSerieDto(DateTime Fecha, int Vistas);
 
@@ -843,13 +849,15 @@ public sealed record PaginaDto<T>(IReadOnlyList<T> Items, int Total, int Pagina,
 /// <summary>
 /// Ofrecidas = objetos de la propuesta vigente (trueke). PrecioPropuestoCop = precio de la propuesta vigente (compra; null =
 /// el publicado, PrecioPublicadoCop). MeTocaResponder: soy quien puede aceptar o contraofertar ahora (solo si está pendiente).
+/// Modo = el de la propuesta vigente (y del intercambio al completarse); PublicacionAceptaTrueke = es una venta que también
+/// acepta trueke, así que la contraoferta puede ser de objetos o de precio.
 /// </summary>
 public sealed record SolicitudDto(Guid Id, Guid PublicacionId, string PublicacionTitulo, string Modo, PerfilPublicoDto Propietario,
     PerfilPublicoDto Solicitante, bool SoyDuenio, DateTime FechaSolicitud, string Mensaje, string Estado, string? MotivoRechazo,
     Guid? ConversacionId, DateTime? FechaAceptacionUtc, bool ConfirmadaPorDuenio, bool ConfirmadaPorSolicitante,
     DateTime? FechaCierreUtc, DateTime? CierreAutomaticoUtc, bool PuedoCalificar, bool EnEspera,
     IReadOnlyList<PublicacionResumenDto> Ofrecidas, decimal? PrecioPublicadoCop, decimal? PrecioPropuestoCop,
-    bool MeTocaResponder, int Contraofertas, int ContraofertasRestantes);
+    bool MeTocaResponder, int Contraofertas, int ContraofertasRestantes, bool PublicacionAceptaTrueke);
 
 /// <summary>Lo que se ofrece a cambio en un trueke: datos que ya son públicos en el catálogo.</summary>
 public sealed record PublicacionResumenDto(Guid Id, string Titulo, string? Foto, string Condicion, string Estado);

@@ -110,10 +110,10 @@ public sealed class OferenteService : IOferenteService
         return pqr.UsuarioId;
     }
 
-    /// <summary>Solicitudes completadas del comprador sobre publicaciones en modo Compra (ajenas).</summary>
+    /// <summary>Compras completadas (ajenas): una venta que se cerró como trueke no es una compra.</summary>
     private async Task<IEnumerable<Solicitud>> ComprasCompletadasAsync(Guid compradorId)
         => (await _solicitudes.ListarPorSolicitanteAsync(compradorId))
-            .Where(s => s.Estado == EstadoSolicitud.Completada && s.Publicacion is { Modo: ModoTransaccion.Compra }
+            .Where(s => s.Estado == EstadoSolicitud.Completada && s.Modo == ModoTransaccion.Compra && s.Publicacion is not null
                         && s.Publicacion.PropietarioId != compradorId);
 
     private string Cifrar(string texto) => _cifrador.Cifrar(Encoding.UTF8.GetBytes(texto));

@@ -14,7 +14,7 @@ public class ImagenPublicacion
 /// <summary>Datos que el dueño define al crear o editar una publicación.</summary>
 public sealed record DatosPublicacion(string Titulo, string Descripcion, Categoria Categoria, ModoTransaccion Modo,
     CondicionProducto Condicion, string? DetalleCondicion, string MunicipioCodigo, string Localidad,
-    decimal? PrecioReferenciaCop, double? Latitud, double? Longitud, IReadOnlyList<string>? Imagenes);
+    decimal? PrecioReferenciaCop, double? Latitud, double? Longitud, IReadOnlyList<string>? Imagenes, bool AceptaTrueke = false);
 
 public class Publicacion
 {
@@ -49,6 +49,10 @@ public class Publicacion
     public CondicionProducto Condicion { get; private set; }
     public string? DetalleCondicion { get; private set; }
     public decimal? PrecioReferenciaCop { get; private set; }
+    /// <summary>Venta que también acepta trueke: quien la pide puede pagar el precio u ofrecer objetos suyos (solo en Compra).</summary>
+    public bool AceptaTrueke { get; private set; }
+    /// <summary>Se le pueden ofrecer objetos a cambio: un trueke, o una venta que también acepta trueke.</summary>
+    public bool AdmiteTrueke => Modo == ModoTransaccion.Trueke || (Modo == ModoTransaccion.Compra && AceptaTrueke);
     /// <summary>Código DIVIPOLA del municipio (5 dígitos). Bogotá = 11001.</summary>
     public string MunicipioCodigo { get; private set; }
     /// <summary>Redundante con los 2 primeros dígitos del municipio: permite filtrar por departamento con índice.</summary>
@@ -128,6 +132,7 @@ public class Publicacion
         DepartamentoCodigo = municipio.DepartamentoCodigo;
         Localidad = localidad;
         PrecioReferenciaCop = d.Modo == ModoTransaccion.Compra ? d.PrecioReferenciaCop : null; // solo Compra lleva precio
+        AceptaTrueke = d.Modo == ModoTransaccion.Compra && d.AceptaTrueke;
         Latitud = d.Latitud;
         Longitud = d.Longitud;
         _imagenes.Clear();

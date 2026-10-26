@@ -107,10 +107,25 @@ const TIPOS_SOLICITUD = /^(Solicitud|Entrega|Intercambio|Calificacion)/;
       </div>
     </app-modal>
 
-    <!-- Contraofertar: otro precio (Compra) u otros objetos de quien solicita (Trueke) -->
+    <!-- Contraofertar: otro precio (Compra) u otros objetos de quien solicita (Trueke); en una venta que acepta trueke, cualquiera -->
     <app-modal [(abierto)]="contraofertaAbierta" titulo="Hacer una contraoferta" [subtitulo]="subtituloContraoferta()">
       <form id="form-contraoferta" (ngSubmit)="enviarContraoferta()" class="space-y-4">
-        @if (contraoferta()?.modo === 'Compra') {
+        @if (contraoferta()?.publicacionAceptaTrueke) {
+          <fieldset>
+            <legend class="etiqueta mb-2">¿Qué propones?</legend>
+            <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              @for (f of formasContraoferta; track f.modo) {
+                <label class="flex cursor-pointer items-center gap-3 rounded-2xl border-2 p-3 transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-bosque-500"
+                  [class]="modoContraoferta() === f.modo ? 'border-bosque-500 bg-bosque-50 dark:bg-bosque-900/50' : 'border-borde hover:border-bosque-200'">
+                  <input type="radio" class="sr-only" name="forma-contraoferta" [value]="f.modo" [ngModel]="modoContraoferta()" (ngModelChange)="elegirModoContraoferta($event)" />
+                  <app-icono [nombre]="f.icono" [tamano]="20" class="shrink-0 text-bosque-700 dark:text-bosque-300" />
+                  <span class="text-sm font-semibold">{{ f.etiqueta }}</span>
+                </label>
+              }
+            </div>
+          </fieldset>
+        }
+        @if (modoContraoferta() === 'Compra') {
           <div class="campo">
             <label for="precio-contraoferta" class="etiqueta">Precio que propones</label>
             <div class="relative">
@@ -265,20 +280,32 @@ export default class Intercambios {
     const otra = (s?.soyDuenio ? s.solicitante?.nombre : s?.propietario?.nombre) ?? 'la otra persona';
     return `${s?.publicacionTitulo ?? ''} · con ${otra}`;
   });
+  /** Venta que acepta trueke: la contraoferta puede ser un precio o un trueke (empieza en el modo de la propuesta vigente). */
+  protected readonly formasContraoferta = [
+    { modo: 'Compra', etiqueta: 'Un precio', icono: 'bag' },
+    { modo: 'Trueke', etiqueta: 'Objetos a cambio', icono: 'repeat' },
+  ] as const;
+  protected readonly formaContraoferta = signal<'Compra' | 'Trueke'>('Compra');
+  protected readonly modoContraoferta = computed(() => {
+    const s = this.contraoferta();
+    return s?.publicacionAceptaTrueke ? this.formaContraoferta() : s?.modo;
+  });
   protected readonly ayudaPrecio = computed(() => {
     const s = this.contraoferta();
+    if (s?.modo !== 'Compra') return `Publicado en ${cop(s?.precioPublicadoCop)}. Se paga en persona al entregar.`;
     const actual = cop(s?.precioPropuestoCop ?? s?.precioPublicadoCop);
     const publicado = s?.precioPropuestoCop ? `; publicado en ${cop(s.precioPublicadoCop)}` : '';
     return `Propuesta actual: ${actual}${publicado}. Se paga en persona al entregar.`;
   });
+  /** Repetir la propuesta vigente no vale; cambiar de precio a objetos (o al revés) sí. */
   protected readonly contraofertaValida = computed(() => {
     const s = this.contraoferta();
-    if (s?.modo === 'Compra') {
+    if (this.modoContraoferta() === 'Compra') {
       const p = this.precioContraoferta();
-      return !!p && p > 0 && Math.round(p) !== (s.precioPropuestoCop ?? s.precioPublicadoCop);
+      return !!p && p > 0 && (s?.modo !== 'Compra' || Math.round(p) !== (s.precioPropuestoCop ?? s.precioPublicadoCop));
     }
     const sel = this.seleccionContraoferta();
-    const actual = (s?.ofrecidas ?? []).map((o) => o.id);
+    const actual = s?.modo === 'Trueke' ? (s.ofrecidas ?? []).map((o) => o.id) : [];
     return sel.length > 0 && !(sel.length === actual.length && sel.every((id) => actual.includes(id)));
   });
 
@@ -367,8 +394,15 @@ export default class Intercambios {
     this.precioContraoferta.set(null);
     this.seleccionContraoferta.set((s.ofrecidas ?? []).map((o) => o.id!));
     this.objetosContraoferta.set(null);
+    this.formaContraoferta.set(s.modo === 'Trueke' ? 'Trueke' : 'Compra');
     this.contraofertaAbierta.set(true);
     if (s.modo === 'Trueke') void this.cargarObjetosContraoferta(s);
+  }
+
+  protected elegirModoContraoferta(modo: 'Compra' | 'Trueke'): void {
+    this.formaContraoferta.set(modo);
+    const s = this.contraoferta();
+    if (modo === 'Trueke' && s && this.objetosContraoferta() === null) void this.cargarObjetosContraoferta(s);
   }
 
   /** Siempre objetos de quien solicita: el dueño elige cuáles prefiere; quien solicita, cuáles ofrece ahora. */
@@ -387,7 +421,7 @@ export default class Intercambios {
   protected async enviarContraoferta(): Promise<void> {
     const s = this.contraoferta();
     if (!s?.id || !this.contraofertaValida()) return;
-    const cuerpo = s.modo === 'Compra'
+    const cuerpo = this.modoContraoferta() === 'Compra'
       ? { precioPropuestoCop: Math.round(this.precioContraoferta()!) }
       : { publicacionesOfrecidasIds: this.seleccionContraoferta() };
     this.ocupado.set(s.id);

@@ -6188,6 +6188,7 @@ export interface components {
             /** Format: double */
             longitud?: number | null;
             imagenes?: string[] | null;
+            aceptaTrueke?: boolean;
             /** Format: uuid */
             paraNecesidadId?: string | null;
         };
@@ -7217,6 +7218,7 @@ export interface components {
             /** Format: int32 */
             interesados?: number;
             yaSolicite?: boolean;
+            aceptaTrueke?: boolean;
         };
         PublicacionDtoPaginaDto: {
             items?: components["schemas"]["PublicacionDto"][];
@@ -7355,6 +7357,7 @@ export interface components {
             contraofertas?: number;
             /** Format: int32 */
             contraofertasRestantes?: number;
+            publicacionAceptaTrueke?: boolean;
         };
         SubidaArchivoDto: {
             urlSubida?: string;

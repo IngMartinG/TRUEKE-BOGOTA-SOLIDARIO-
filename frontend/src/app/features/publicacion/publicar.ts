@@ -137,6 +137,17 @@ const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
                     </label>
                   }
                 </div>
+                @if (modoActual() === 'Compra') {
+                  <label class="mt-4 flex cursor-pointer items-start gap-3 rounded-2xl border-2 border-borde p-4 transition hover:border-bosque-200 animate-aparecer">
+                    <input type="checkbox" class="casilla mt-0.5" formControlName="aceptaTrueke" aria-describedby="acepta-trueke-ayuda" />
+                    <span>
+                      <span class="block font-semibold">También acepto trueke</span>
+                      <span id="acepta-trueke-ayuda" class="block text-sm text-tenue">
+                        Quien esté interesado podrá pagar el precio o proponerte hasta 3 objetos suyos a cambio. Tú decides qué aceptar.
+                      </span>
+                    </span>
+                  </label>
+                }
                 @if (modoActual() === 'Compra' && !sesion.usuario()?.registroOferente) {
                   <p class="mt-4 flex items-start gap-2 rounded-xl bg-cielo-50 p-3 text-sm text-cielo-700 dark:bg-cielo-700/20 dark:text-cielo-100" role="status">
                     <app-icono nombre="info" [tamano]="18" class="mt-0.5 shrink-0" />
@@ -368,6 +379,9 @@ const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
                     @if (modoActual() !== 'Donacion' && form.controls.precioReferenciaCop.value) {
                       <div><dt class="text-tenue">{{ modoActual() === 'Compra' ? 'Precio' : 'Valor de referencia' }}</dt><dd class="font-semibold">{{ form.controls.precioReferenciaCop.value | cop }}</dd></div>
                     }
+                    @if (modoActual() === 'Compra') {
+                      <div><dt class="text-tenue">Trueke</dt><dd class="font-semibold">{{ form.controls.aceptaTrueke.value ? 'También lo aceptas' : 'Solo venta' }}</dd></div>
+                    }
                     <div>
                       <dt class="text-tenue">Fotos</dt>
                       @if (vistasListas().length) {
@@ -488,6 +502,7 @@ export default class Publicar {
     detalleCondicion: ['', [Validators.maxLength(300)]],
     descripcion: ['', [Validators.required, Validators.maxLength(2000)]],
     precioReferenciaCop: this.fb.control<number | null>(null, [Validators.min(0), Validators.max(1_000_000_000)]),
+    aceptaTrueke: [false],
     municipioCodigo: [this.sesion.usuario()?.municipioCodigo ?? CODIGO_BOGOTA, [Validators.required, Validators.pattern(/^\d{5}$/)]],
     localidad: [this.sesion.usuario()?.localidad ?? '', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
   });
@@ -693,6 +708,7 @@ export default class Publicar {
         detalleCondicion: p.detalleCondicion ?? '',
         descripcion: p.descripcion ?? '',
         precioReferenciaCop: p.precioReferenciaCop ?? null,
+        aceptaTrueke: p.aceptaTrueke ?? false,
         municipioCodigo: p.municipioCodigo ?? CODIGO_BOGOTA,
         localidad: p.localidad ?? '',
       });
@@ -822,6 +838,7 @@ export default class Publicar {
       municipioCodigo: v.municipioCodigo,
       localidad: v.localidad.trim(),
       precioReferenciaCop: v.modo === 'Donacion' ? null : v.precioReferenciaCop || null,
+      aceptaTrueke: v.modo === 'Compra' && v.aceptaTrueke,
       latitud: u?.[0] ?? null,
       longitud: u?.[1] ?? null,
       imagenes: this.fotosListas(),
