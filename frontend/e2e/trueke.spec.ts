@@ -192,13 +192,14 @@ test('contraoferta en un trueke: el dueño pide otros objetos y quien propuso la
 });
 
 /**
- * Toca la tarjeta visible de una opción (los radios son sr-only). `dentro` es la página o un diálogo: el radio de `has`
- * se busca dentro del label, así que no puede partir de otro elemento (con `page.locator('body')` nunca coincidiría).
+ * Toca la tarjeta visible de una opción (los radios son sr-only). `dentro` es la página o un diálogo. El radio de `has` se
+ * busca DENTRO del label, así que debe partir de la página: si partiera del diálogo, buscaría un diálogo dentro del label.
  */
 async function elegir(dentro: Page | Locator, nombre: string | RegExp): Promise<void> {
-  const radio = dentro.getByRole('radio', { name: nombre });
-  await dentro.locator('label', { has: radio }).click();
-  await expect(radio).toBeChecked();
+  const page = 'page' in dentro ? dentro.page() : dentro;
+  const opcion = page.getByRole('radio', { name: nombre });
+  await dentro.locator('label', { has: opcion }).click();
+  await expect(dentro.getByRole('radio', { name: nombre })).toBeChecked();
 }
 
 test('venta que acepta trueke: se publica con la casilla, se negocia entre precio y objetos y se cierra como trueke', async ({ browser, contextOptions, viewport, userAgent, isMobile, hasTouch }) => {
