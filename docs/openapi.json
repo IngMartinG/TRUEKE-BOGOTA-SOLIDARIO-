@@ -7549,6 +7549,9 @@
             },
             "nullable": true
           },
+          "aceptaTrueke": {
+            "type": "boolean"
+          },
           "paraNecesidadId": {
             "type": "string",
             "format": "uuid",
@@ -10544,6 +10547,9 @@
           },
           "yaSolicite": {
             "type": "boolean"
+          },
+          "aceptaTrueke": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -11008,6 +11014,9 @@
           "contraofertasRestantes": {
             "type": "integer",
             "format": "int32"
+          },
+          "publicacionAceptaTrueke": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

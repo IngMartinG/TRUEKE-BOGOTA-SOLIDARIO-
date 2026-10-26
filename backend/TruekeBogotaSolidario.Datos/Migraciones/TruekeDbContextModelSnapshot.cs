@@ -1097,6 +1097,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<bool>("AceptaTrueke")
+                        .HasColumnType("boolean");
+
                     b.Property<int>("CategoriaId")
                         .HasColumnType("integer");
 
@@ -1307,6 +1310,11 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .IsRequired()
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Modo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
 
                     b.Property<string>("MotivoRechazo")
                         .HasMaxLength(300)

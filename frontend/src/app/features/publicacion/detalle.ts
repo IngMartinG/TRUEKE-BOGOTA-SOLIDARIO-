@@ -100,6 +100,9 @@ import { Volver } from '../../shared/ui/volver';
             <div class="tarjeta p-6">
               <div class="flex flex-wrap items-center gap-2">
                 <app-insignia-modo [modo]="p.modo" />
+                @if (p.aceptaTrueke) {
+                  <span class="insignia-trueke"><app-icono nombre="repeat" [tamano]="12" [grosor]="2.5" />Acepta trueke</span>
+                }
                 @if (p.destacada) {
                   <span class="insignia-sol"><app-icono nombre="destello" [tamano]="12" />Destacada</span>
                 }
@@ -364,12 +367,32 @@ import { Volver } from '../../shared/ui/volver';
           <div class="campo">
             <label for="mensaje-solicitud" class="etiqueta">Tu mensaje</label>
             <textarea id="mensaje-solicitud" name="mensaje" class="entrada" maxlength="500" required [(ngModel)]="mensaje" [placeholder]="sugerencia()"></textarea>
-            <p class="ayuda">{{ p.modo === 'Trueke' ? 'Cuenta qué ofreces a cambio.' : 'Preséntate y di cuándo podrías recogerlo.' }} No compartas tu teléfono: el chat se abre al aceptar.</p>
+            <p class="ayuda">{{ ofreceObjetos() ? 'Cuenta qué ofreces a cambio.' : 'Preséntate y di cuándo podrías recogerlo.' }} No compartas tu teléfono: el chat se abre al aceptar.</p>
           </div>
-          @if (p.modo === 'Trueke') {
+          @if (p.modo === 'Compra' && p.aceptaTrueke) {
             <fieldset>
-              <legend class="etiqueta">¿Ofreces algunos de tus objetos? <span class="font-normal text-tenue">(opcional, hasta 3)</span></legend>
-              <p class="ayuda mb-2">Si aceptan, los que elijas también quedan reservados para este trueke. Sin elegir, solo va tu mensaje.</p>
+              <legend class="etiqueta mb-2">¿Cómo lo quieres?</legend>
+              <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                @for (f of formas; track f.valor) {
+                  <label class="flex cursor-pointer items-center gap-3 rounded-2xl border-2 p-3 transition has-[:focus-visible]:outline-2 has-[:focus-visible]:outline-offset-2 has-[:focus-visible]:outline-bosque-500"
+                    [class]="forma() === f.valor ? 'border-bosque-500 bg-bosque-50 dark:bg-bosque-900/50' : 'border-borde hover:border-bosque-200'">
+                    <input type="radio" class="sr-only" name="forma" [value]="f.valor" [ngModel]="forma()" (ngModelChange)="elegirForma($event)" />
+                    <app-icono [nombre]="f.icono" [tamano]="20" class="shrink-0 text-bosque-700 dark:text-bosque-300" />
+                    <span class="text-sm font-semibold">{{ f.etiqueta }}</span>
+                  </label>
+                }
+              </div>
+            </fieldset>
+          }
+          @if (ofreceObjetos()) {
+            <fieldset>
+              @if (p.modo === 'Trueke') {
+                <legend class="etiqueta">¿Ofreces algunos de tus objetos? <span class="font-normal text-tenue">(opcional, hasta 3)</span></legend>
+                <p class="ayuda mb-2">Si aceptan, los que elijas también quedan reservados para este trueke. Sin elegir, solo va tu mensaje.</p>
+              } @else {
+                <legend class="etiqueta">¿Qué objetos ofreces? <span class="font-normal text-tenue">(de 1 a 3)</span></legend>
+                <p class="ayuda mb-2">Si aceptan, los que elijas también quedan reservados para este trueke.</p>
+              }
               <app-selector-objetos [objetos]="misObjetos()" [(seleccion)]="ofrecidas">
                 <p class="text-sm text-tenue">No tienes objetos publicados disponibles. <a routerLink="/publicar" class="enlace">Publica el que quieres ofrecer</a>.</p>
               </app-selector-objetos>
@@ -391,7 +414,8 @@ import { Volver } from '../../shared/ui/volver';
         </form>
         <div pie class="flex justify-end gap-2 border-t border-borde p-4">
           <button type="button" class="btn btn-fantasma" (click)="solicitudAbierta.set(false)">Cancelar</button>
-          <button type="submit" form="form-solicitud" class="btn btn-primario" [disabled]="!mensaje().trim() || trabajando()">
+          <button type="submit" form="form-solicitud" class="btn btn-primario"
+            [disabled]="!mensaje().trim() || trabajando() || (forma() === 'trueke' && !ofrecidas().length)">
             <app-icono nombre="enviar" [tamano]="16" /> {{ trabajando() ? 'Enviando…' : 'Enviar solicitud' }}
           </button>
         </div>
@@ -479,6 +503,7 @@ export default class Detalle {
     return !proximo || Date.parse(proximo) <= Date.now();
   });
   protected readonly sugerencia = computed(() => {
+    if (this.ofreceObjetos()) return '¡Hola! Te ofrezco a cambio...';
     switch (this.p()?.modo) {
       case 'Compra':
         return '¡Hola! Me interesa comprarlo. ¿Podríamos encontrarnos esta semana?';
@@ -499,6 +524,17 @@ export default class Detalle {
   protected readonly ofrecidas = signal<string[]>([]);
   /** Compra: precio que propongo (vacío = el publicado). */
   protected readonly precioPropuesto = signal<number | null>(null);
+  /** Venta que también acepta trueke: pagar el precio u ofrecer objetos (una cosa o la otra). */
+  protected readonly forma = signal<'comprar' | 'trueke'>('comprar');
+  protected readonly formas = [
+    { valor: 'comprar', etiqueta: 'Quiero comprarlo', icono: 'bag' },
+    { valor: 'trueke', etiqueta: 'Te propongo un trueke', icono: 'repeat' },
+  ] as const;
+  /** Se eligen objetos: en un trueke, o en una venta que acepta trueke si se eligió proponerlo. */
+  protected readonly ofreceObjetos = computed(() => {
+    const p = this.p();
+    return p?.modo === 'Trueke' || (p?.modo === 'Compra' && !!p.aceptaTrueke && this.forma() === 'trueke');
+  });
   protected readonly condicionDe = (c: string | null | undefined) => infoCondicion(c).etiqueta;
   protected readonly motivoCancelar = signal('');
   protected readonly motivoOcultar = signal('');
@@ -517,9 +553,11 @@ export default class Detalle {
     effect(() => {
       const p = this.p();
       const ofrecer = this.ofrecer();
-      if (!p || !ofrecer || this.ofertaAbierta || p.modo !== 'Trueke' || p.esMia || p.yaSolicite || p.estado !== 'Disponible') return;
+      const admiteTrueke = p?.modo === 'Trueke' || (p?.modo === 'Compra' && p.aceptaTrueke);
+      if (!p || !ofrecer || this.ofertaAbierta || !admiteTrueke || p.esMia || p.yaSolicite || p.estado !== 'Disponible') return;
       this.ofertaAbierta = true;
       untracked(() => {
+        if (p.modo === 'Compra') this.forma.set('trueke');
         this.abrirSolicitud();
         this.ofrecidas.set([ofrecer]);
       });
@@ -548,7 +586,12 @@ export default class Detalle {
     }
     this.errorSolicitud.set(null);
     this.solicitudAbierta.set(true);
-    if (this.p()?.modo === 'Trueke') void this.cargarMisObjetos();
+    if (this.ofreceObjetos()) void this.cargarMisObjetos();
+  }
+
+  protected elegirForma(forma: 'comprar' | 'trueke'): void {
+    this.forma.set(forma);
+    if (forma === 'trueke') void this.cargarMisObjetos();
   }
 
   /** Solo lo que se puede ofrecer: publicado, sin reservar, visible y distinto de lo que se pide. */
@@ -576,14 +619,15 @@ export default class Detalle {
         this.intercambios.solicitar({
           publicacionId: p.id,
           mensaje,
-          publicacionesOfrecidasIds: p.modo === 'Trueke' ? this.ofrecidas() : null,
-          precioPropuestoCop: p.modo === 'Compra' && precio && precio > 0 ? Math.round(precio) : null,
+          publicacionesOfrecidasIds: this.ofreceObjetos() ? this.ofrecidas() : null,
+          precioPropuestoCop: p.modo === 'Compra' && !this.ofreceObjetos() && precio && precio > 0 ? Math.round(precio) : null,
         }),
       );
       this.solicitudAbierta.set(false);
       this.mensaje.set('');
       this.ofrecidas.set([]);
       this.precioPropuesto.set(null);
+      this.forma.set('comprar');
       this.misObjetos.set(null);
       this.avisos.exito('¡Solicitud enviada!', 'Te avisaremos cuando te respondan.');
       await this.router.navigate(['/intercambios'], { queryParams: { tab: 'enviadas' } });

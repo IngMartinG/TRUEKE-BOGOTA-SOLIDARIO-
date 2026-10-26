@@ -114,7 +114,7 @@ public sealed class DeseoService : IDeseoService
 
         // 2. Si es un trueke, ¿esa persona busca algo que yo tengo disponible? Solo cuentan sus deseos públicos.
         var (propias, _) = await _pubs.ListarVisiblesDePropietarioAsync(actorId, 1, MaxPropiasComparadas, ahora);
-        var duenos = candidatas.Values.Where(c => c.Pub.Modo == ModoTransaccion.Trueke).Select(c => c.Pub.PropietarioId).Distinct().ToList();
+        var duenos = candidatas.Values.Where(c => c.Pub.AdmiteTrueke).Select(c => c.Pub.PropietarioId).Distinct().ToList();
         var deseosAjenos = propias.Count == 0 || duenos.Count == 0
             ? new Dictionary<Guid, List<Deseo>>()
             : (await _deseos.VisiblesDeUsuariosAsync(duenos)).GroupBy(d => d.UsuarioId).ToDictionary(g => g.Key, g => g.ToList());
@@ -124,7 +124,7 @@ public sealed class DeseoService : IDeseoService
         foreach (var (pub, deseo) in candidatas.Values)
         {
             (Deseo Suyo, Publicacion Mia)? mutua = null;
-            if (pub.Modo == ModoTransaccion.Trueke && deseosAjenos.TryGetValue(pub.PropietarioId, out var suyos))
+            if (pub.AdmiteTrueke && deseosAjenos.TryGetValue(pub.PropietarioId, out var suyos))
                 mutua = suyos.SelectMany(s => propias.Where(s.CoincideCon).Select(m => ((Deseo, Publicacion)?)(s, m))).FirstOrDefault();
             var dto = new CoincidenciaDeseoDto(
                 Mapeos.APublicacionDto(pub, actorId, veExacto: false, veModeracion: false, ahora, favoritas.Contains(pub.Id)),

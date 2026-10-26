@@ -56,6 +56,9 @@ export type AccionSolicitud = 'aceptar' | 'contraofertar' | 'rechazar' | 'cancel
               }
             </ul>
           }
+          @if (s.modo === 'Trueke' && s.publicacionAceptaTrueke && s.precioPublicadoCop) {
+            <p class="mt-2 text-xs text-tenue">Es una venta en {{ s.precioPublicadoCop | cop }} que también acepta trueke.</p>
+          }
           @if (s.modo === 'Compra' && (s.precioPropuestoCop || s.precioPublicadoCop)) {
             <p class="mt-3 flex flex-wrap items-baseline gap-x-2 text-sm">
               <span class="text-tenue">{{ s.estado === 'Pendiente' ? 'Precio propuesto' : 'Precio acordado' }}</span>

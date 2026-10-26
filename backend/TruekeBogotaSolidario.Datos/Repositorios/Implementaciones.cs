@@ -140,6 +140,12 @@ public sealed class PublicacionRepository : IPublicacionRepository
             .Where(p => p.Estado == EstadoPublicacionEnum.Disponible && !p.EstaOculta && !p.Propietario!.EstaEliminado
                         && !(p.Propietario.EstaSuspendido && (p.Propietario.SuspendidoHasta == null || p.Propietario.SuspendidoHasta > ahoraUtc)));
 
+    /// <summary>"Trueke" incluye las ventas que también aceptan trueke: a ellas también se les pueden ofrecer objetos.</summary>
+    private static IQueryable<Publicacion> ConModo(IQueryable<Publicacion> q, ModoTransaccion modo)
+        => modo == ModoTransaccion.Trueke
+            ? q.Where(p => p.Modo == ModoTransaccion.Trueke || (p.Modo == ModoTransaccion.Compra && p.AceptaTrueke))
+            : q.Where(p => p.Modo == modo);
+
     public async Task<(IReadOnlyList<Publicacion> Items, int Total)> ListarVisiblesAsync(FiltroPublicaciones f, DateTime ahoraUtc)
     {
         var pagina = Math.Max(f.Pagina, 1);
@@ -147,7 +153,7 @@ public sealed class PublicacionRepository : IPublicacionRepository
 
         var q = Visibles(ahoraUtc);
         if (f.CategoriaId.HasValue) q = q.Where(p => p.CategoriaId == f.CategoriaId.Value);
-        if (f.Modo.HasValue) q = q.Where(p => p.Modo == f.Modo.Value);
+        if (f.Modo.HasValue) q = ConModo(q, f.Modo.Value);
         if (f.Condicion.HasValue) q = q.Where(p => p.Condicion == f.Condicion.Value);
         if (!string.IsNullOrWhiteSpace(f.DepartamentoCodigo)) { var dep = f.DepartamentoCodigo.Trim(); q = q.Where(p => p.DepartamentoCodigo == dep); }
         if (!string.IsNullOrWhiteSpace(f.MunicipioCodigo)) { var mpio = f.MunicipioCodigo.Trim(); q = q.Where(p => p.MunicipioCodigo == mpio); }
@@ -244,7 +250,7 @@ public sealed class PublicacionRepository : IPublicacionRepository
             .Where(p => p.Latitud != null && p.Longitud != null
                         && p.Latitud >= minLat && p.Latitud <= maxLat && p.Longitud >= minLon && p.Longitud <= maxLon);
         if (categoriaId.HasValue) q = q.Where(p => p.CategoriaId == categoriaId.Value);
-        if (modo.HasValue) q = q.Where(p => p.Modo == modo.Value);
+        if (modo.HasValue) q = ConModo(q, modo.Value);
         return await q.OrderByDescending(p => p.FechaPublicacion).Take(Math.Clamp(maximo, 1, 1000)).ToListAsync();
     }
 
@@ -254,7 +260,7 @@ public sealed class PublicacionRepository : IPublicacionRepository
         if (municipios.Count == 0) return [];
         var q = Visibles(ahoraUtc).Where(p => (p.Latitud == null || p.Longitud == null) && municipios.Contains(p.MunicipioCodigo));
         if (categoriaId.HasValue) q = q.Where(p => p.CategoriaId == categoriaId.Value);
-        if (modo.HasValue) q = q.Where(p => p.Modo == modo.Value);
+        if (modo.HasValue) q = ConModo(q, modo.Value);
         return await q.OrderByDescending(p => p.FechaPublicacion).Take(Math.Clamp(maximo, 1, 1000)).ToListAsync();
     }
 

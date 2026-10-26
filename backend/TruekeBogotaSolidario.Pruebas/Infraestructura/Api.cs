@@ -128,7 +128,8 @@ public static class Api
         return (await resp.Content.ReadFromJsonAsync<SesionMinDto>())!.Token;
     }
 
-    public static async Task<Guid> CrearPublicacionAsync(HttpClient c, double? lat = null, double? lon = null, string modo = "Trueke")
+    public static async Task<Guid> CrearPublicacionAsync(HttpClient c, double? lat = null, double? lon = null, string modo = "Trueke",
+        bool aceptaTrueke = false)
     {
         var resp = await c.PostAsJsonAsync("/api/v1/publicaciones", new
         {
@@ -140,7 +141,8 @@ public static class Api
             localidad = "Chapinero",
             precioReferenciaCop = modo == "Compra" ? 50000 : (decimal?)null,
             latitud = lat,
-            longitud = lon
+            longitud = lon,
+            aceptaTrueke
         });
         if (resp.StatusCode != HttpStatusCode.Created)
             throw new InvalidOperationException($"Crear publicación falló: {(int)resp.StatusCode} {await resp.Content.ReadAsStringAsync()}");

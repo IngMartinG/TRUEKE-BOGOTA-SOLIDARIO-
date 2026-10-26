@@ -112,11 +112,14 @@ public sealed class SolicitudService : ISolicitudService
         var ofrecidas = await ValidarOfrecidasAsync(ids, pub, actorId);
         if (r.PrecioPropuestoCop is not null && pub.Modo != ModoTransaccion.Compra)
             throw new ReglaDeNegocioException("Solo en una compra se propone un precio.");
+        if (r.PrecioPropuestoCop is not null && ofrecidas.Count > 0) throw new ReglaDeNegocioException(PrecioUObjetos);
         var precio = r.PrecioPropuestoCop == pub.PrecioReferenciaCop ? null : r.PrecioPropuestoCop;
+        // En una venta que también acepta trueke, ofrecer objetos convierte la solicitud en un trueke.
+        var modo = ofrecidas.Count > 0 ? ModoTransaccion.Trueke : pub.Modo;
 
         // Varias personas pueden estar interesadas a la vez: la publicación sigue en el catálogo hasta que el dueño elija a una.
         // Los objetos ofrecidos también siguen disponibles (se pueden ofrecer en varios truekes) hasta que alguno se acepte.
-        var solicitud = new Solicitud(pub.Id, actorId, r.Mensaje, ofrecidas.Select(o => o.Id).ToList(), precio);
+        var solicitud = new Solicitud(pub.Id, actorId, modo, r.Mensaje, ofrecidas.Select(o => o.Id).ToList(), precio);
         _solicitudes.Agregar(solicitud);
 
         // El chat nace con la solicitud; su mensaje es el primero de la conversación.
@@ -131,15 +134,19 @@ public sealed class SolicitudService : ISolicitudService
         return ADto(solicitud, pub, solicitante, actorId, conversacion.Id, puedoCalificar: false, ahora, ofrecidas);
     }
 
+    private const string PrecioUObjetos = "Propón un precio u objetos a cambio, no las dos cosas.";
+
     /// <summary>
-    /// Lo que se ofrece en un trueke: publicaciones de QUIEN SOLICITA, disponibles y visibles, hasta 3 (lista vacía = nada).
-    /// En una contraoferta del dueño también son de quien solicita: elige cuáles de sus objetos prefiere.
+    /// Lo que se ofrece en un trueke (o en una venta que también lo acepta): publicaciones de QUIEN SOLICITA, disponibles y
+    /// visibles, hasta 3 (lista vacía = nada). En una contraoferta del dueño también son de quien solicita: elige cuáles prefiere.
     /// </summary>
     private async Task<IReadOnlyList<Publicacion>> ValidarOfrecidasAsync(IReadOnlyList<Guid> ids, Publicacion pedida, Guid solicitanteId)
     {
         if (ids.Count == 0) return Array.Empty<Publicacion>();
-        if (pedida.Modo != ModoTransaccion.Trueke)
-            throw new ReglaDeNegocioException("Solo en un trueke se ofrecen objetos a cambio.");
+        if (!pedida.AdmiteTrueke)
+            throw new ReglaDeNegocioException(pedida.Modo == ModoTransaccion.Compra
+                ? "Esta venta no acepta trueke: propón un precio."
+                : "Solo en un trueke se ofrecen objetos a cambio.");
         if (ids.Count > Solicitud.MaxObjetosOfrecidos)
             throw new ReglaDeNegocioException($"Puedes ofrecer hasta {Solicitud.MaxObjetosOfrecidos} objetos.");
         var lista = new List<Publicacion>();
@@ -175,29 +182,34 @@ public sealed class SolicitudService : ISolicitudService
         IReadOnlyList<Publicacion> ofrecidas = Array.Empty<Publicacion>();
         decimal? precio = null;
         string resumen;
-        switch (pub.Modo)
+        if (pub.Modo == ModoTransaccion.Donacion)
+            throw new ReglaDeNegocioException("En una donación no hay contraofertas: acepta o conversa por el chat.");
+        if (pub.Modo == ModoTransaccion.Compra && ids.Count > 0 && !pub.AceptaTrueke)
+            throw new ReglaDeNegocioException("En una compra se propone un precio, no objetos.");
+        if (r.PrecioPropuestoCop is not null && ids.Count > 0) throw new ReglaDeNegocioException(PrecioUObjetos);
+
+        // Objetos: un trueke, o una venta que también acepta trueke (la propuesta pasa a ser un trueke).
+        var modo = pub.Modo == ModoTransaccion.Trueke || ids.Count > 0 ? ModoTransaccion.Trueke : ModoTransaccion.Compra;
+        if (modo == ModoTransaccion.Trueke)
         {
-            case ModoTransaccion.Trueke:
-                if (r.PrecioPropuestoCop is not null) throw new ReglaDeNegocioException("En un trueke se proponen objetos, no dinero.");
-                if (ids.Count == 0) throw new ReglaDeNegocioException("Elige al menos un objeto para la contraoferta.");
-                if (ids.ToHashSet().SetEquals(s.Ofrecidas.Select(o => o.PublicacionId)))
-                    throw new ReglaDeNegocioException("Esa es la misma propuesta: si te sirve, acéptala.");
-                ofrecidas = await ValidarOfrecidasAsync(ids, pub, s.SolicitanteId);
-                resumen = esDuenio ? $"prefiere {Titulos(ofrecidas)} a cambio" : $"ahora ofrece {Titulos(ofrecidas)}";
-                break;
-            case ModoTransaccion.Compra:
-                if (ids.Count > 0) throw new ReglaDeNegocioException("En una compra se propone un precio, no objetos.");
-                precio = r.PrecioPropuestoCop ?? throw new ReglaDeNegocioException("Escribe el precio que propones.");
-                if (precio == (s.PrecioPropuestoCop ?? pub.PrecioReferenciaCop))
-                    throw new ReglaDeNegocioException("Ese es el mismo precio: si te sirve, acepta la propuesta.");
-                resumen = $"propone {Cop(precio.Value)}";
-                if (precio == pub.PrecioReferenciaCop) precio = null; // volver al publicado
-                break;
-            default:
-                throw new ReglaDeNegocioException("En una donación no hay contraofertas: acepta o conversa por el chat.");
+            if (r.PrecioPropuestoCop is not null) throw new ReglaDeNegocioException("En un trueke se proponen objetos, no dinero.");
+            if (ids.Count == 0) throw new ReglaDeNegocioException("Elige al menos un objeto para la contraoferta.");
+            if (s.Modo == ModoTransaccion.Trueke && ids.ToHashSet().SetEquals(s.Ofrecidas.Select(o => o.PublicacionId)))
+                throw new ReglaDeNegocioException("Esa es la misma propuesta: si te sirve, acéptala.");
+            ofrecidas = await ValidarOfrecidasAsync(ids, pub, s.SolicitanteId);
+            resumen = esDuenio ? $"prefiere {Titulos(ofrecidas)} a cambio" : $"ahora ofrece {Titulos(ofrecidas)}";
+        }
+        else
+        {
+            precio = r.PrecioPropuestoCop ?? throw new ReglaDeNegocioException("Escribe el precio que propones.");
+            if (s.Modo == ModoTransaccion.Compra && precio == (s.PrecioPropuestoCop ?? pub.PrecioReferenciaCop))
+                throw new ReglaDeNegocioException("Ese es el mismo precio: si te sirve, acepta la propuesta.");
+            // Si venían negociando objetos, ahora la propuesta es pagar.
+            resumen = s.Modo == ModoTransaccion.Compra ? $"propone {Cop(precio.Value)}" : $"propone pagar {Cop(precio.Value)} en lugar del trueke";
+            if (precio == pub.PrecioReferenciaCop) precio = null; // volver al publicado
         }
 
-        s.Contraofertar(esDuenio, ofrecidas.Select(o => o.Id).ToList(), precio);
+        s.Contraofertar(esDuenio, modo, ofrecidas.Select(o => o.Id).ToList(), precio);
         await _uow.GuardarCambiosAsync();
         var otra = esDuenio ? s.SolicitanteId : pub.PropietarioId;
         var restantes = Solicitud.MaxContraofertas - s.Contraofertas;
@@ -458,8 +470,9 @@ public sealed class SolicitudService : ISolicitudService
         // Trueke con objetos: los ofrecidos también cambiaron de manos (es un solo intercambio: los puntos se suman una vez).
         var ofrecidas = Ofrecidas(s);
         foreach (var o in ofrecidas.Where(o => o.Estado == EstadoPublicacionEnum.EnNegociacion)) o.ConfirmarIntercambio();
-        oferente.RegistrarTransaccionCompletada(pub.Modo, puntosOferente, s.Id, pub.Titulo);
-        receptor.RegistrarTransaccionCompletada(pub.Modo, puntosReceptor, s.Id, pub.Titulo);
+        // Cuenta el modo en que se cerró: una venta que terminó en trueke suma como trueke.
+        oferente.RegistrarTransaccionCompletada(s.Modo, puntosOferente, s.Id, pub.Titulo);
+        receptor.RegistrarTransaccionCompletada(s.Modo, puntosReceptor, s.Id, pub.Titulo);
         // Primera publicación: si una publicación propia cambió de manos (con puntos) antes de cumplir 24 h activa.
         if (puntosOferente) oferente.RecibirBonoPrimeraPublicacion(pub.Id, pub.Titulo);
         if (puntosReceptor && ofrecidas.Count > 0) receptor.RecibirBonoPrimeraPublicacion(ofrecidas[0].Id, ofrecidas[0].Titulo);
@@ -467,7 +480,7 @@ public sealed class SolicitudService : ISolicitudService
         foreach (var (invitado, otro, conPuntos) in new[] { (oferente, receptor, puntosOferente), (receptor, oferente, puntosReceptor) })
             if (await RecompensarInvitacionAsync(invitado, otro, conPuntos, s.Id, ahora, avisosPuntos) is { } recompensa)
                 invitaciones.Add(recompensa);
-        _transacciones.Agregar(new Transaccion(pub.Id, s.Id, oferente.Id, receptor.Id, pub.Modo, puntosOferente, puntosReceptor, ahora));
+        _transacciones.Agregar(new Transaccion(pub.Id, s.Id, oferente.Id, receptor.Id, s.Modo, puntosOferente, puntosReceptor, ahora));
         // Los objetos ya se entregaron: sus listas de espera se cierran (en el mismo guardado, todo o nada).
         var avisos = new AvisosDiferidos();
         foreach (var entregada in ofrecidas.Prepend(pub))
@@ -483,7 +496,7 @@ public sealed class SolicitudService : ISolicitudService
         // Un solo SaveChanges = todo o nada. Con RowVersion, dos confirmaciones simultáneas no duplican puntos (la segunda recibe 409).
         await _uow.GuardarCambiosAsync();
         await avisos.EnviarAsync(_notificador);
-        _log.LogInformation("Transacción completada {SolicitudId} modo {Modo}", s.Id, pub.Modo);
+        _log.LogInformation("Transacción completada {SolicitudId} modo {Modo}", s.Id, s.Modo);
         foreach (var id in new[] { oferente.Id, receptor.Id })
             await NotificarAsync(id, TiposNotificacion.IntercambioCompletado, parejaRepetida
                 ? $"¡Intercambio de \"{pub.Titulo}\" completado! Como ya intercambiaron hace poco, este no suma Eco-Puntos (se suman una vez cada {PoliticaEcoPuntos.DiasEntreTransaccionesConPuntosMismaPareja} días por pareja)."
@@ -660,13 +673,13 @@ public sealed class SolicitudService : ISolicitudService
         if (s.Estado == EstadoSolicitud.Aceptada && s.FechaAceptacionUtc is { } aceptada)
             cierre = aceptada.AddDays(s.ConfirmadaPorDuenioUtc is not null || s.ConfirmadaPorSolicitanteUtc is not null
                 ? Limites.DiasCierreConUnaConfirmacion : Limites.DiasCierreSinConfirmacion);
-        return new(s.Id, pub.Id, pub.Titulo, pub.Modo.ToString(), Mapeos.APerfilPublico(pub.Propietario!, ahora),
+        return new(s.Id, pub.Id, pub.Titulo, s.Modo.ToString(), Mapeos.APerfilPublico(pub.Propietario!, ahora),
             Mapeos.APerfilPublico(solicitante, ahora), soyDuenio, s.FechaSolicitud, s.Mensaje, s.Estado.ToString(),
             s.MotivoRechazo, conversacionId, s.FechaAceptacionUtc, s.ConfirmadaPorDuenioUtc is not null, s.ConfirmadaPorSolicitanteUtc is not null,
             s.FechaCierreUtc, cierre, puedoCalificar,
             EnEspera: s.Estado == EstadoSolicitud.Pendiente && pub.Estado == EstadoPublicacionEnum.EnNegociacion, resumenes,
             pub.Modo == ModoTransaccion.Compra ? pub.PrecioReferenciaCop : null, s.PrecioPropuestoCop,
             MeTocaResponder: s.Estado == EstadoSolicitud.Pendiente && s.TurnoDuenio == soyDuenio, s.Contraofertas,
-            Math.Max(0, Solicitud.MaxContraofertas - s.Contraofertas));
+            Math.Max(0, Solicitud.MaxContraofertas - s.Contraofertas), pub.Modo == ModoTransaccion.Compra && pub.AceptaTrueke);
     }
 }

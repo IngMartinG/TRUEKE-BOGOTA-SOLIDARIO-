@@ -20,9 +20,11 @@ public class Solicitud
 
     private Solicitud() { Mensaje = ""; } // EF Core
 
+    /// <param name="modo">Cómo se negocia: el de la publicación, o Trueke en una venta que también acepta trueke.</param>
     /// <param name="ofrecidas">Trueke: publicaciones propias que se ofrecen a cambio (opcional, hasta <see cref="MaxObjetosOfrecidos"/>).</param>
     /// <param name="precioPropuestoCop">Compra: precio que propone quien solicita (opcional; sin él, vale el publicado).</param>
-    public Solicitud(Guid publicacionId, Guid solicitanteId, string mensaje, IReadOnlyList<Guid>? ofrecidas = null, decimal? precioPropuestoCop = null)
+    public Solicitud(Guid publicacionId, Guid solicitanteId, ModoTransaccion modo, string mensaje, IReadOnlyList<Guid>? ofrecidas = null,
+        decimal? precioPropuestoCop = null)
     {
         mensaje = (mensaje ?? "").Trim();
         if (mensaje.Length is < 1 or > 500) throw new ReglaDeNegocioException("El mensaje es obligatorio (máximo 500 caracteres).");
@@ -33,13 +35,17 @@ public class Solicitud
         FechaSolicitud = DateTime.UtcNow;
         Estado = EstadoSolicitud.Pendiente;
         TurnoDuenio = true;
-        PonerOfrecidas(ofrecidas ?? Array.Empty<Guid>());
-        PrecioPropuestoCop = precioPropuestoCop;
+        PonerPropuesta(modo, ofrecidas ?? Array.Empty<Guid>(), precioPropuestoCop);
     }
 
     public Guid Id { get; private set; }
     public Guid PublicacionId { get; private set; }
     public Publicacion? Publicacion { get; private set; }
+    /// <summary>
+    /// Modo de la propuesta vigente y, al completarse, del intercambio (Eco-Puntos y contadores). Suele ser el de la
+    /// publicación; en una venta que también acepta trueke es Trueke mientras se proponen objetos y Compra si se propone pagar.
+    /// </summary>
+    public ModoTransaccion Modo { get; private set; }
     /// <summary>
     /// Trueke: publicaciones de quien solicita en la propuesta vigente. Al aceptar, también quedan reservadas; al completarse,
     /// también se intercambian; si no se concreta, vuelven al catálogo.
@@ -79,16 +85,26 @@ public class Solicitud
     }
 
     /// <summary>Reemplaza la propuesta vigente y pasa el turno a la otra parte.</summary>
-    public void Contraofertar(bool esDuenio, IReadOnlyList<Guid> ofrecidas, decimal? precioPropuestoCop)
+    public void Contraofertar(bool esDuenio, ModoTransaccion modo, IReadOnlyList<Guid> ofrecidas, decimal? precioPropuestoCop)
     {
         ExigirPendiente();
         ExigirTurno(esDuenio);
         if (Contraofertas >= MaxContraofertas)
             throw new ReglaDeNegocioException($"Ya hicieron {MaxContraofertas} contraofertas: acepta la propuesta o retírate.");
-        PonerOfrecidas(ofrecidas);
-        PrecioPropuestoCop = precioPropuestoCop;
+        PonerPropuesta(modo, ofrecidas, precioPropuestoCop);
         TurnoDuenio = !esDuenio;
         Contraofertas++;
+    }
+
+    /// <summary>Una propuesta es de un solo tipo: objetos (Trueke), un precio (Compra) o nada (Donación).</summary>
+    private void PonerPropuesta(ModoTransaccion modo, IReadOnlyList<Guid> ofrecidas, decimal? precioPropuestoCop)
+    {
+        if (!Enum.IsDefined(modo)) throw new ReglaDeNegocioException("Modo de transacción no válido.");
+        if (precioPropuestoCop is not null && modo != ModoTransaccion.Compra) throw new ReglaDeNegocioException("Solo en una compra se propone un precio.");
+        if (ofrecidas.Count > 0 && modo != ModoTransaccion.Trueke) throw new ReglaDeNegocioException("Solo en un trueke se ofrecen objetos a cambio.");
+        PonerOfrecidas(ofrecidas);
+        PrecioPropuestoCop = precioPropuestoCop;
+        Modo = modo;
     }
 
     /// <summary>Deja la lista igual a <paramref name="ids"/>: conserva las que siguen (no se borran y se vuelven a crear).</summary>

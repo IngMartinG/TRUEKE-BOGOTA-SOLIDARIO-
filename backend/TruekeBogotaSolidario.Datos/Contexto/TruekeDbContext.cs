@@ -140,6 +140,7 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.MunicipioCodigo).HasMaxLength(5).IsUnicode(false).IsRequired();
             e.Property(x => x.DepartamentoCodigo).HasMaxLength(2).IsUnicode(false).IsRequired();
             e.Ignore(x => x.ProximoImpulsoPosible);
+            e.Ignore(x => x.AdmiteTrueke);
             e.HasOne(x => x.Categoria).WithMany().HasForeignKey(x => x.CategoriaId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Propietario).WithMany().HasForeignKey(x => x.PropietarioId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.Estado, x.EstaOculta });
@@ -159,6 +160,7 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.Mensaje).HasMaxLength(500).IsRequired();
             e.Property(x => x.MotivoRechazo).HasMaxLength(300);
             e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Modo).HasConversion<string>().HasMaxLength(20);
             e.HasOne(x => x.Publicacion).WithMany().HasForeignKey(x => x.PublicacionId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Solicitante).WithMany().HasForeignKey(x => x.SolicitanteId).OnDelete(DeleteBehavior.Restrict);
             e.Property(x => x.PrecioPropuestoCop).HasPrecision(18, 2);

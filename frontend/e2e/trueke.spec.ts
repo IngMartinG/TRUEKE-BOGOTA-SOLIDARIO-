@@ -1,6 +1,6 @@
 import { expect, test, type Browser, type Page } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
-import { cuentaLista, ingresar, publicar, type Cuenta } from './utilidades';
+import { cuentaLista, fotoPng, ingresar, publicar, type Cuenta } from './utilidades';
 
 /** Cada persona en su propio navegador (cookies y sesión separadas), con el mismo dispositivo del proyecto. */
 async function persona(browser: Browser, nombre: string, opciones: Parameters<Browser['newContext']>[0]): Promise<{ page: Page; cuenta: Cuenta }> {
@@ -188,5 +188,99 @@ test('contraoferta en un trueke: el dueño pide otros objetos y quien propuso la
     await expect.poll(() => estado(beto, idPatineta)).toBe('EnNegociacion');
     await expect.poll(() => estado(beto, idCasco)).toBe('EnNegociacion');
     await expect.poll(() => estado(ana, idPedida)).toBe('EnNegociacion');
+  });
+});
+
+/** Toca la tarjeta visible de una opción (los radios son sr-only). */
+async function elegir(page: Page, nombre: string | RegExp, dentro = page.locator('body')): Promise<void> {
+  const radio = dentro.getByRole('radio', { name: nombre });
+  await dentro.locator('label', { has: radio }).click();
+  await expect(radio).toBeChecked();
+}
+
+test('venta que acepta trueke: se publica con la casilla, se negocia entre precio y objetos y se cierra como trueke', async ({ browser, contextOptions, viewport, userAgent, isMobile, hasTouch }) => {
+  const dispositivo = { ...contextOptions, viewport, userAgent, isMobile, hasTouch };
+  const sufijo = randomBytes(3).toString('hex');
+  const venta = `Guitarra E2E ${sufijo}`;
+  const patineta = `Patineta E2E ${sufijo}`;
+  const ana = await persona(browser, 'Ana', dispositivo);
+  const beto = await persona(browser, 'Beto', dispositivo);
+  const registro = await ana.page.request.put('/api/v1/usuarios/yo/oferente', {
+    headers: { Authorization: `Bearer ${ana.cuenta.token}` },
+    data: { tipoDocumento: 'CC', documento: '1012345678', nombre: 'Ana Pruebas', direccion: 'Calle 45 # 12-30', municipioCodigo: '11001', telefono: '3001234567' },
+  });
+  expect(registro.ok(), await registro.text()).toBe(true);
+  const idPatineta = await publicar(beto.page.request, beto.cuenta, patineta);
+  let idVenta = '';
+
+  await test.step('Ana publica la venta marcando "También acepto trueke"', async () => {
+    await ana.page.goto('/publicar');
+    await elegir(ana.page, /^Compra y venta\b/);
+    await ana.page.getByRole('checkbox', { name: 'También acepto trueke' }).check();
+    await ana.page.getByRole('button', { name: 'Continuar' }).click();
+    await ana.page.getByLabel('Título').fill(venta);
+    await elegir(ana.page, 'Hogar y muebles');
+    await elegir(ana.page, 'Como nuevo');
+    await ana.page.getByLabel('Descripción').fill('Guitarra acústica con estuche.');
+    await ana.page.getByLabel('Precio de venta').fill('300000');
+    await ana.page.getByRole('button', { name: 'Continuar' }).click();
+    await ana.page.locator('input[type=file]').setInputFiles({ name: 'guitarra.png', mimeType: 'image/png', buffer: fotoPng(800, 600) });
+    await expect(ana.page.getByText('Portada', { exact: true })).toBeVisible();
+    await ana.page.getByRole('button', { name: 'Continuar' }).click();
+    await ana.page.getByLabel('Localidad').selectOption('Chapinero');
+    await ana.page.getByRole('button', { name: 'Continuar' }).click();
+    await expect(ana.page.getByText('También lo aceptas')).toBeVisible();
+    await ana.page.getByRole('button', { name: 'Publicar ahora' }).click();
+    await expect(ana.page).toHaveURL(/\/publicacion\/[0-9a-f-]{36}/);
+    idVenta = ana.page.url().split('/publicacion/')[1].split(/[?#]/)[0];
+    await expect(ana.page.getByText('Acepta trueke').first()).toBeVisible();
+  });
+
+  await test.step('Beto elige proponer un trueke con su patineta', async () => {
+    await beto.page.goto(`/publicacion/${idVenta}`);
+    await beto.page.getByRole('button', { name: 'Quiero comprarlo' }).click();
+    const dialogo = beto.page.getByRole('dialog');
+    await elegir(beto.page, 'Te propongo un trueke', dialogo);
+    await expect(dialogo.getByRole('button', { name: 'Enviar solicitud' })).toBeDisabled(); // sin objetos no hay trueke
+    await dialogo.getByRole('checkbox', { name: `Ofrecer ${patineta}` }).check({ force: true });
+    await dialogo.getByLabel('Tu mensaje').fill('¿Me la cambias por mi patineta?');
+    await dialogo.getByRole('button', { name: 'Enviar solicitud' }).click();
+    const tarjeta = beto.page.locator('app-tarjeta-solicitud', { hasText: venta });
+    await expect(tarjeta.getByText(/venta en .*300\.000 que también acepta trueke/)).toBeVisible();
+  });
+
+  await test.step('Ana prefiere que le paguen y contraoferta con un precio', async () => {
+    await ana.page.goto('/intercambios');
+    const tarjeta = ana.page.locator('app-tarjeta-solicitud', { hasText: venta });
+    await tarjeta.getByRole('button', { name: 'Contraofertar' }).click();
+    const dialogo = ana.page.getByRole('dialog');
+    await elegir(ana.page, 'Un precio', dialogo);
+    await dialogo.getByLabel('Precio que propones').fill('280000');
+    await dialogo.getByRole('button', { name: 'Enviar contraoferta' }).click();
+    await expect(tarjeta.getByText(/Esperando la respuesta de Beto/)).toBeVisible();
+  });
+
+  await test.step('Beto vuelve al trueke y Ana lo acepta: la patineta queda reservada', async () => {
+    await beto.page.goto('/intercambios?tab=enviadas');
+    const tarjeta = beto.page.locator('app-tarjeta-solicitud', { hasText: venta });
+    await expect(tarjeta.getByText(/280\.000/)).toBeVisible();
+    await tarjeta.getByRole('button', { name: 'Contraofertar' }).click();
+    const dialogo = beto.page.getByRole('dialog');
+    await elegir(beto.page, 'Objetos a cambio', dialogo);
+    await dialogo.getByRole('checkbox', { name: `Ofrecer ${patineta}` }).check({ force: true });
+    await dialogo.getByRole('button', { name: 'Enviar contraoferta' }).click();
+    await expect(tarjeta.getByText(/Esperando la respuesta de Ana/)).toBeVisible();
+
+    await ana.page.goto('/intercambios');
+    const deAna = ana.page.locator('app-tarjeta-solicitud', { hasText: venta });
+    await expect(deAna.getByRole('link', { name: `Te ofrece: ${patineta}` })).toBeVisible();
+    await deAna.getByRole('button', { name: 'Aceptar contraoferta' }).click();
+    await ana.page.getByRole('dialog').getByRole('button', { name: 'Aceptar contraoferta' }).click();
+    await expect(deAna.getByRole('button', { name: 'Confirmar entrega' })).toBeVisible();
+    const r = await beto.page.request.get('/api/v1/solicitudes/enviadas', { headers: { Authorization: `Bearer ${beto.cuenta.token}` } });
+    const s = ((await r.json()) as { publicacionId: string; modo: string }[]).find((x) => x.publicacionId === idVenta);
+    expect(s?.modo).toBe('Trueke');
+    const mias = await beto.page.request.get('/api/v1/publicaciones/mias', { headers: { Authorization: `Bearer ${beto.cuenta.token}` } });
+    expect(((await mias.json()) as { id: string; estado: string }[]).find((p) => p.id === idPatineta)?.estado).toBe('EnNegociacion');
   });
 });
