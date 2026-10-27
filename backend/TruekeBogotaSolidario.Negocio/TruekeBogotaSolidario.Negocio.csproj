@@ -17,7 +17,7 @@
   <ItemGroup>
     <PackageReference Include="Google.Apis.Auth" Version="1.77.0" />
     <PackageReference Include="Lib.Net.Http.WebPush" Version="3.3.1" />
-    <PackageReference Include="MailKit" Version="4.18.1" />
+    <PackageReference Include="MailKit" Version="4.18.2" />
     <!-- Llega transitivo por MimeKit (10.0.0) con CVE-2026-70162 y CVE-2026-84008: se fija la versión corregida;
          quitar cuando MimeKit la traiga solo. -->
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
