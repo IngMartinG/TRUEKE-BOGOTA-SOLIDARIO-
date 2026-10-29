@@ -34,6 +34,7 @@ import {
   type MunicipioDto,
 } from '../../api/tipos';
 import { CatalogoApi } from '../../core/api/catalogo.api';
+import { FundacionesApi } from '../../core/api/fundaciones.api';
 import { AvisosService } from '../../core/avisos.service';
 import { ConfigService } from '../../core/config.service';
 import { erroresDeCampos, mensajeDe } from '../../core/http/problema';
@@ -72,6 +73,8 @@ interface Foto {
 
 const PASOS = ['Modo', 'Detalles', 'Fotos', 'Ubicación', 'Revisar'] as const;
 const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+/** Minúsculas y sin tildes, para comparar el título con lo que piden las fundaciones. */
+const sinTildes = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 @Component({
   imports: [Volver, ReactiveFormsModule, RouterLink, Icono, ErrorCampo, CampoAccesible, Mapa, InsigniaModo, ImagenPublicacion, CopPipe, HacePipe, SelectorMunicipio],
@@ -449,6 +452,26 @@ const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
                   <app-icono nombre="moneda" class="shrink-0 text-sol-500" />
                   <p>Cuando completes este {{ info[modoActual()].etiqueta.toLowerCase() }}, tú y la otra persona ganarán <strong>+{{ info[modoActual()].puntos }} Eco-Puntos</strong>.</p>
                 </div>
+                @if (!necesidadDeRuta() && sugerencias().length) {
+                  <fieldset class="mt-3 rounded-2xl border border-tierra-500/30 p-4" data-sugerencias-fundacion>
+                    <legend class="px-1 text-sm font-semibold">¿La donas para una fundación que la necesita? <span class="font-normal text-tenue">(opcional)</span></legend>
+                    <ul class="mt-2 space-y-2">
+                      @for (s of sugerencias(); track s.necesidadId) {
+                        <li>
+                          <label class="flex cursor-pointer items-start gap-3 rounded-xl border p-3 text-sm transition"
+                            [class]="necesidadElegida() === s.necesidadId ? 'border-tierra-500 bg-tierra-50 dark:bg-tierra-700/20' : 'border-borde hover:bg-superficie-2'">
+                            <input type="checkbox" class="mt-0.5 accent-tierra-600" [checked]="necesidadElegida() === s.necesidadId"
+                              (change)="necesidadElegida.set($any($event.target).checked ? s.necesidadId : null)" />
+                            <span class="min-w-0">
+                              <span class="block font-semibold break-words">{{ s.texto }}</span>
+                              <span class="block text-xs text-tenue">{{ s.fundacion }} · {{ s.localidad }}@if (s.urgente) { · <strong class="text-sol-600 dark:text-sol-300">urgente</strong> }</span>
+                            </span>
+                          </label>
+                        </li>
+                      }
+                    </ul>
+                  </fieldset>
+                }
                 @if (paraNecesidad()) {
                   <div class="mt-3 flex items-start gap-3 rounded-2xl bg-tierra-50 p-4 text-sm dark:bg-tierra-700/20" data-aviso-fundacion>
                     <app-icono nombre="heart" class="shrink-0 text-tierra-600 dark:text-tierra-100" />
@@ -503,6 +526,7 @@ export default class Publicar {
   private readonly router = inject(Router);
   protected readonly sesion = inject(SesionService);
   protected readonly config = inject(ConfigService);
+  private readonly fundacionesApi = inject(FundacionesApi);
 
   /** Presente al editar (`/publicacion/:id/editar`). */
   readonly id = input<string>();
@@ -554,10 +578,38 @@ export default class Publicar {
 
   protected readonly categorias = toSignal(this.api.categorias$.pipe(catchError(() => of([]))), { initialValue: [] });
   protected readonly modoActual = toSignal(this.form.controls.modo.valueChanges, { initialValue: this.form.controls.modo.value });
-  /** La necesidad de la fundación que cubre esta donación (solo al crear y solo en modo Donación). */
-  protected readonly paraNecesidad = computed(() => {
+  /** Llegó desde "Tengo esto" de una necesidad. */
+  protected readonly necesidadDeRuta = computed(() => {
     const n = this.necesidad();
-    return !this.id() && this.modoActual() === 'Donacion' && n && GUID.test(n) ? n : null;
+    return n && GUID.test(n) ? n : null;
+  });
+  /** Elegida entre las sugerencias del último paso. */
+  protected readonly necesidadElegida = signal<string | null>(null);
+  /** La necesidad de la fundación que cubre esta donación (solo al crear y solo en modo Donación). */
+  protected readonly paraNecesidad = computed(() =>
+    !this.id() && this.modoActual() === 'Donacion' ? (this.necesidadDeRuta() ?? this.necesidadElegida()) : null);
+  private readonly fundaciones = toSignal(this.fundacionesApi.listado$.pipe(catchError(() => of([]))), { initialValue: [] });
+  private readonly tituloActual = toSignal(this.form.controls.titulo.valueChanges.pipe(debounceTime(300)), { initialValue: '' });
+  /**
+   * Necesidades abiertas que se parecen a lo que se dona: misma categoría o palabras del título en común (las urgentes pesan
+   * un poco más). Solo al crear una donación y sin una necesidad elegida de antes.
+   */
+  protected readonly sugerencias = computed(() => {
+    if (this.id() || this.modoActual() !== 'Donacion') return [];
+    const yo = this.sesion.usuario()?.id;
+    const palabras = sinTildes(this.tituloActual() ?? '').split(/[^a-z0-9ñ]+/).filter((p) => p.length >= 4);
+    const cat = this.categoriaActual();
+    return this.fundaciones()
+      .filter((f) => f.id !== yo)
+      .flatMap((f) => (f.abiertas ?? []).map((n) => {
+        const texto = sinTildes(n.texto ?? '');
+        const puntaje = palabras.filter((p) => texto.includes(p.replace(/s$/, ''))).length * 2 + (cat && n.categoriaId === cat ? 1 : 0)
+          + (n.urgente ? 0.5 : 0);
+        return { necesidadId: n.id!, texto: n.texto ?? '', urgente: !!n.urgente, fundacion: f.nombre ?? '', localidad: f.localidad ?? '', puntaje };
+      }))
+      .filter((s) => s.puntaje >= 1)
+      .sort((a, b) => b.puntaje - a.puntaje)
+      .slice(0, 3);
   });
   protected readonly materiales = MATERIALES;
   protected readonly nombreMaterial = nombreMaterial;

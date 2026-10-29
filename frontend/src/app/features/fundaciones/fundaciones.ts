@@ -7,13 +7,14 @@ import { Avatar } from '../../shared/ui/avatar';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Icono } from '../../shared/ui/icono';
 import { InsigniaFundacion } from '../../shared/ui/insignia-fundacion';
+import { InsigniaRegimen } from '../../shared/ui/insignia-regimen';
 
 /** Sin tildes ni mayúsculas, para buscar «bosa» y encontrar «Bosa». */
 const normalizar = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036F]/g, '').toLowerCase().trim();
 
 /** Público: fundaciones verificadas de la comunidad, con cuántas cosas necesitan. Se filtra en el navegador (son pocas). */
 @Component({
-  imports: [RouterLink, Avatar, EstadoVacio, Icono, InsigniaFundacion],
+  imports: [RouterLink, Avatar, EstadoVacio, Icono, InsigniaFundacion, InsigniaRegimen],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor py-8 sm:py-12">
@@ -24,6 +25,7 @@ const normalizar = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036F]/g,
             Organizaciones sin ánimo de lucro que verificamos con su NIT y su certificado de la Cámara de Comercio.
             Mira lo que necesitan y dona lo que ya no usas.
           </p>
+          <a routerLink="/fundaciones/necesidades" class="btn btn-primario btn-sm mt-4"><app-icono nombre="regalo" [tamano]="14" />Ver todo lo que piden</a>
         </div>
         <div class="campo">
           <label for="buscar-fundacion" class="etiqueta">Buscar por nombre o barrio</label>
@@ -61,6 +63,9 @@ const normalizar = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036F]/g,
                     <p class="flex items-center gap-1 truncate text-sm text-tenue"><app-icono nombre="pin" [tamano]="14" />{{ f.localidad }}</p>
                   </div>
                 </div>
+                @if (f.regimenTributarioEspecial) {
+                  <div><app-insignia-regimen /></div>
+                }
                 <p class="line-clamp-3 text-sm text-tinta/85">{{ f.descripcion }}</p>
                 <div class="mt-auto flex flex-wrap items-center gap-2 border-t border-borde pt-3 text-sm">
                   @if (f.necesidades) {

@@ -11,6 +11,7 @@ import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Estrellas } from '../../shared/ui/estrellas';
 import { Icono } from '../../shared/ui/icono';
 import { InsigniaFundacion } from '../../shared/ui/insignia-fundacion';
+import { InsigniaRegimen } from '../../shared/ui/insignia-regimen';
 import { Paginador } from '../../shared/ui/paginador';
 import { TarjetaEsqueleto, TarjetaPublicacion } from '../../shared/ui/tarjeta-publicacion';
 import { Volver } from '../../shared/ui/volver';
@@ -22,7 +23,7 @@ const formatoMesAnio = new Intl.DateTimeFormat('es-CO', { month: 'long', year: '
  * lleva a publicar una donación con ese título, para que la fundación la pida.
  */
 @Component({
-  imports: [RouterLink, Volver, Avatar, Estrellas, Icono, InsigniaFundacion, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, NumeroPipe],
+  imports: [RouterLink, Volver, Avatar, Estrellas, Icono, InsigniaFundacion, InsigniaRegimen, EstadoVacio, Paginador, TarjetaPublicacion, TarjetaEsqueleto, NumeroPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (fundacion.error()) {
@@ -36,7 +37,12 @@ const formatoMesAnio = new Intl.DateTimeFormat('es-CO', { month: 'long', year: '
           @if (fundacion.value(); as f) {
             <app-avatar [nombre]="f.nombre" [foto]="f.fotoUrl" [tamano]="104" />
             <div class="min-w-0 flex-1">
-              <app-insignia-fundacion />
+              <div class="flex flex-wrap items-center gap-2">
+                <app-insignia-fundacion />
+                @if (f.regimenTributarioEspecial) {
+                  <app-insignia-regimen />
+                }
+              </div>
               <h1 class="mt-2 text-3xl font-extrabold text-balance sm:text-4xl">{{ f.nombre }}</h1>
               <p class="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-tenue">
                 <span class="flex items-center gap-1"><app-icono nombre="pin" [tamano]="14" />{{ f.localidad }}{{ f.municipio ? ', ' + f.municipio : '' }}</span>
@@ -82,7 +88,7 @@ const formatoMesAnio = new Intl.DateTimeFormat('es-CO', { month: 'long', year: '
             <ul class="mt-6 divide-y divide-borde overflow-hidden rounded-tarjeta border border-borde bg-superficie">
               @for (n of necesidades(); track n.id) {
                 <li class="grid grid-cols-[4.5rem_1fr] items-center gap-x-4 gap-y-3 p-4 sm:grid-cols-[5.5rem_1fr_auto] sm:p-5"
-                  [class]="n.urgente ? 'bg-sol-50 dark:bg-sol-500/10' : ''">
+                  [class]="n.cubierta ? 'opacity-75' : n.urgente ? 'bg-sol-50 dark:bg-sol-500/10' : ''">
                   <div class="text-center" [attr.aria-hidden]="!n.cantidad">
                     @if (n.cantidad) {
                       <p class="font-display text-3xl leading-none font-extrabold tabular-nums">{{ n.cantidad | numero }}</p>
@@ -101,8 +107,23 @@ const formatoMesAnio = new Intl.DateTimeFormat('es-CO', { month: 'long', year: '
                         <span>{{ n.categoria }}</span>
                       }
                     </p>
+                    @if (n.cubierta) {
+                      <p class="mt-2 flex items-center gap-1 text-sm font-semibold text-bosque-700 dark:text-bosque-300">
+                        <app-icono nombre="check" [tamano]="14" />¡Cubierta, gracias a la comunidad!
+                      </p>
+                    } @else if (n.cantidad && n.recibidos) {
+                      <div class="mt-2 max-w-xs">
+                        <p class="text-xs text-tenue">{{ n.recibidos | numero }} de {{ n.cantidad | numero }} recibidas por Trueke</p>
+                        <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-superficie-2" role="progressbar" [attr.aria-valuenow]="n.recibidos"
+                          aria-valuemin="0" [attr.aria-valuemax]="n.cantidad" [attr.aria-label]="'Progreso de ' + n.texto">
+                          <div class="h-full rounded-full bg-bosque-500" [style.width.%]="(n.recibidos! / n.cantidad) * 100"></div>
+                        </div>
+                      </div>
+                    } @else if (n.recibidos) {
+                      <p class="mt-2 text-xs text-tenue">{{ n.recibidos | numero }} {{ n.recibidos === 1 ? 'donación recibida' : 'donaciones recibidas' }} por Trueke</p>
+                    }
                   </div>
-                  @if (!esMia()) {
+                  @if (!esMia() && !n.cubierta) {
                     <a routerLink="/publicar" [queryParams]="{ modo: 'Donacion', titulo: n.texto, categoria: n.categoriaId, fundacion: id(), necesidad: n.id }"
                       class="btn btn-primario btn-sm col-start-2 justify-self-start sm:col-start-auto"[attr.aria-label]="'Donar: ' + n.texto">
                       <app-icono nombre="regalo" [tamano]="14" />Tengo esto

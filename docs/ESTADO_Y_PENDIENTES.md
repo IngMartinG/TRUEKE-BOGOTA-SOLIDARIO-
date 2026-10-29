@@ -672,6 +672,24 @@ páginas estáticas para buscadores (`generar-seo.mjs`) y la pantalla de carga y
 HtmlSanitizer no aplica: la API solo devuelve JSON, Angular escapa todo y el texto ya se valida con `TextoSeguro`; además
 rechazaría textos normales como "3 < 5" y guardaría el contenido en los registros.
 
+## Hecho el 2026-10-29 — fundaciones 2.0 (régimen tributario, progreso y lo que piden)
+- **Régimen Tributario Especial:** `Fundacion.RegimenTributarioEspecial` con `NotaRegimen` (la evidencia que revisó el equipo,
+  nunca pública) y `RegimenRevisadoUtc`. El SuperUsuario lo marca o lo quita en Administración → Fundaciones
+  (`POST /admin/fundaciones/{id}/regimen`, con auditoría); retirar la verificación lo quita. En público solo dice
+  "Régimen Tributario Especial", sin prometer que la donación sea deducible.
+- **Progreso de las necesidades:** `NecesidadFundacion.Recibidos` y `CubiertaUtc`. Una donación publicada desde "Tengo esto" (o
+  eligiendo una sugerencia) queda ligada a la necesidad (`Publicacion.NecesidadFundacionId`, sin llave foránea: la fundación
+  puede borrar la necesidad). Al completarse con doble confirmación y recibirla la propia fundación, suma 1; al llegar a la
+  cantidad se cubre sola. La fundación corrige lo recibido, la marca cubierta o la vuelve a abrir; las cubiertas no cuentan
+  para el máximo de 10 y se ven con "¡Cubierta, gracias a la comunidad!".
+- **"Lo que piden las fundaciones"** (`/fundaciones/necesidades`): todas las necesidades abiertas, urgentes primero, con
+  filtros por texto, categoría, zona y urgencia. Sale del listado público de fundaciones (que ahora trae las abiertas de cada
+  una), así que no hay un endpoint anónimo nuevo.
+- **Sugerencias al donar:** en el último paso de publicar una donación se muestran hasta 3 necesidades abiertas parecidas
+  (misma categoría o palabras del título en común; las urgentes pesan un poco más).
+- Migración `FundacionesProgresoYRegimen`. Pruebas en `FundacionesTests` (régimen con evidencia, progreso hasta cubrirse,
+  máximo sin contar las cubiertas).
+
 ## Hecho el 2026-10-29 — impacto 2.0 (peso, material y registro inmutable)
 Metodología 2.0.0 (`docs/METODOLOGIA-IMPACTO.md`).
 - **Publicación:** `PesoEstimadoKg` (0,05 a 500) y `Material` opcionales. Al publicar, "Se parece a…" llena ambos con un
@@ -780,7 +798,8 @@ Se revisó un paquete de documentos con bloques de producto (impacto, fundacione
    Lo que estaba previsto: **Impacto 2.0 (Bloque 1):** peso y material en la publicación, factores en la base de datos, registro de impacto
    inmutable por intercambio, revisar que el cierre automático con una sola confirmación no sume, foto de evidencia opcional y
    `/impacto` con filtros por localidad, periodo y modo.
-4. **Fundaciones 2.0 (Bloque 2):** marca de Régimen Tributario Especial, página "Lo que piden las fundaciones", sugerir
+4. ~~**Fundaciones 2.0 (Bloque 2)**~~: hecho (ver arriba). Queda que el contador o el abogado validen el texto de la marca
+   del Régimen Tributario Especial. Lo previsto: marca de Régimen Tributario Especial, página "Lo que piden las fundaciones", sugerir
    fundaciones al publicar una donación y progreso de cada necesidad.
 5. **Plan Negocio (Bloque 4):** el plan Empresa pasa a llamarse Negocio, con vitrina pública, directorio, sello de negocio
    verificado, panel de estadísticas de la cuenta y medios de pago visibles. Precio de destacar por decidir.

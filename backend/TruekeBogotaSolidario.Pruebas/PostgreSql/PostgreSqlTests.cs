@@ -345,12 +345,14 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
         ALTER TABLE "Publicaciones" ADD "EnRevisionDesdeUtc" timestamp with time zone;
         ALTER TABLE "Publicaciones" ADD "PesoEstimadoKg" numeric(8,2);
         ALTER TABLE "Publicaciones" ADD "Material" character varying(20);
+        ALTER TABLE "Publicaciones" ADD "NecesidadFundacionId" uuid;
         """;
     private const string QuitarColumnasPosteriores = """
         ALTER TABLE "Usuarios" DROP COLUMN "EstadoFoto", DROP COLUMN "FotoRevisadaUtc", DROP COLUMN "MotivoRechazoFoto",
             DROP COLUMN "PlazoCambioFotoUtc";
         ALTER TABLE "Publicaciones" DROP COLUMN "EstadoModeracion", DROP COLUMN "PuntajeRiesgo", DROP COLUMN "MotivosRiesgo",
-            DROP COLUMN "MotivoRechazo", DROP COLUMN "EnRevisionDesdeUtc", DROP COLUMN "PesoEstimadoKg", DROP COLUMN "Material";
+            DROP COLUMN "MotivoRechazo", DROP COLUMN "EnRevisionDesdeUtc", DROP COLUMN "PesoEstimadoKg", DROP COLUMN "Material",
+            DROP COLUMN "NecesidadFundacionId";
         """;
 
     [SkippableFact]
@@ -369,6 +371,7 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
             await db.Database.ExecuteSqlRawAsync("""
                 ALTER TABLE "Publicaciones" ADD "PesoEstimadoKg" numeric(8,2);
                 ALTER TABLE "Publicaciones" ADD "Material" character varying(20);
+                ALTER TABLE "Publicaciones" ADD "NecesidadFundacionId" uuid;
                 """);
             var ropa = await db.Categorias.FirstAsync(c => c.Id == 1);
             var ahora = DateTime.UtcNow;
@@ -394,7 +397,7 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
             db.Transacciones.AddRange(t1, t2);
             await db.SaveChangesAsync();
             (confirmada, sola) = (t1.Id, t2.Id);
-            await db.Database.ExecuteSqlRawAsync("""ALTER TABLE "Publicaciones" DROP COLUMN "PesoEstimadoKg", DROP COLUMN "Material";""");
+            await db.Database.ExecuteSqlRawAsync("""ALTER TABLE "Publicaciones" DROP COLUMN "PesoEstimadoKg", DROP COLUMN "Material", DROP COLUMN "NecesidadFundacionId";""");
         }
 
         await using (var db = Contexto(cadena)) await db.Database.MigrateAsync();

@@ -413,10 +413,12 @@ public interface IFundacionRepository
     Task<bool> NitEnUsoAsync(string nit, Guid excluirUsuarioId);
     /// <summary>Aprobadas de cuentas activas (ni suspendidas ni eliminadas), con su cuenta, por nombre (sin tracking).</summary>
     Task<IReadOnlyList<(Fundacion Fundacion, Usuario Usuario)>> ListarVisiblesAsync(int maximo);
-    /// <summary>Con tracking, urgentes primero y luego las más recientes.</summary>
+    /// <summary>Con tracking: las abiertas (urgentes primero, luego las más recientes) y al final las cubiertas.</summary>
     Task<IReadOnlyList<NecesidadFundacion>> NecesidadesAsync(Guid fundacionId);
-    /// <summary>Cuántas necesidades (y cuántas urgentes) tiene cada fundación.</summary>
-    Task<IReadOnlyDictionary<Guid, (int Total, int Urgentes)>> ContarNecesidadesAsync(IReadOnlyCollection<Guid> fundacionIds);
+    /// <summary>Las que siguen abiertas (sin cubrir) de estas fundaciones, sin tracking.</summary>
+    Task<IReadOnlyList<NecesidadFundacion>> NecesidadesAbiertasAsync(IReadOnlyCollection<Guid> fundacionIds);
+    /// <summary>Con tracking, para sumarle lo recibido; null si la fundación la borró.</summary>
+    Task<(NecesidadFundacion Necesidad, Fundacion Fundacion)?> NecesidadParaActualizarAsync(Guid necesidadId);
     /// <summary>La necesidad con la fundación que la publicó (sin tracking); null si ya no existe.</summary>
     Task<(NecesidadFundacion Necesidad, Fundacion Fundacion)?> NecesidadConFundacionAsync(Guid necesidadId);
     void Agregar(Fundacion f);

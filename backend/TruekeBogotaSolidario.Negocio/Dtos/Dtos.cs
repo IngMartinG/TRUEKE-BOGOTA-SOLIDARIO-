@@ -1106,22 +1106,40 @@ public sealed class GuardarNecesidadRequest
     /// <summary>Cantidad aproximada (opcional).</summary>
     [Range(1, 100_000)] public int? Cantidad { get; init; }
     public bool Urgente { get; init; }
+    /// <summary>Al editar: corrige lo recibido (una donación puede traer varias unidades). Null = no cambia.</summary>
+    [Range(0, 100_000)] public int? Recibidos { get; init; }
+    /// <summary>Al editar: true = ya se cubrió; false = volver a abrirla; null = se cubre sola al llegar a la cantidad.</summary>
+    public bool? Cubierta { get; init; }
 }
 
-public sealed record NecesidadDto(Guid Id, string Texto, int? CategoriaId, string? Categoria, int? Cantidad, bool Urgente, DateTime FechaUtc);
+/// <param name="Recibidos">Donaciones para esta necesidad que ya se entregaron a la fundación (o lo que la fundación corrigió).</param>
+public sealed record NecesidadDto(Guid Id, string Texto, int? CategoriaId, string? Categoria, int? Cantidad, bool Urgente, DateTime FechaUtc,
+    int Recibidos = 0, bool Cubierta = false);
+
+/// <summary>SuperUsuario: marca (o quita) el Régimen Tributario Especial con la evidencia que revisó.</summary>
+public sealed class RegimenFundacionRequest
+{
+    public bool Calificada { get; init; }
+    [Required, StringLength(300, MinimumLength = 5)] public string Nota { get; init; } = "";
+}
 
 /// <summary>Lo que ve la propia cuenta. Motivo = por qué se rechazó o se retiró la verificación.</summary>
 public sealed record MiFundacionDto(EstadoFundacionDto Estado, string RazonSocial, string Nit, string Descripcion, bool MostrarNit,
     string? Motivo, DateTime FechaSolicitudUtc, DateTime? FechaDecisionUtc, IReadOnlyList<NecesidadDto> Necesidades);
 
 /// <summary>Tarjeta del listado público. Id = id de la cuenta (sirve también para su perfil y sus publicaciones).</summary>
+/// <param name="RegimenTributarioEspecial">Calificada en el Régimen Tributario Especial (no implica que una donación sea deducible).</param>
+/// <param name="Abiertas">Sus necesidades sin cubrir (para "Lo que piden las fundaciones").</param>
 public sealed record FundacionResumenDto(Guid Id, string Nombre, string? FotoUrl, string Localidad, string Municipio, string Descripcion,
-    int Necesidades, int NecesidadesUrgentes);
+    int Necesidades, int NecesidadesUrgentes, bool RegimenTributarioEspecial = false, IReadOnlyList<NecesidadDto>? Abiertas = null,
+    string MunicipioCodigo = "");
 
 /// <summary>Página pública de una fundación verificada. Nit solo si la fundación eligió mostrarlo. Nunca correo ni datos de su representante.</summary>
 public sealed record FundacionPublicaDto(Guid Id, string Nombre, string? FotoUrl, string Localidad, string Municipio, string Descripcion,
-    string? Nit, DateTime VerificadaDesde, decimal? CalificacionPromedio, int TotalCalificaciones, IReadOnlyList<NecesidadDto> Necesidades);
+    string? Nit, DateTime VerificadaDesde, decimal? CalificacionPromedio, int TotalCalificaciones, IReadOnlyList<NecesidadDto> Necesidades,
+    bool RegimenTributarioEspecial = false);
 
 /// <summary>Para el SuperUsuario. CertificadoUrl = enlace de lectura que caduca en 5 minutos (solo en las pendientes).</summary>
 public sealed record FundacionAdminDto(Guid UsuarioId, string NombreCuenta, string Correo, string RazonSocial, string Nit, string Descripcion,
-    EstadoFundacionDto Estado, string? CertificadoUrl, string? Motivo, DateTime FechaSolicitudUtc, DateTime? FechaDecisionUtc);
+    EstadoFundacionDto Estado, string? CertificadoUrl, string? Motivo, DateTime FechaSolicitudUtc, DateTime? FechaDecisionUtc,
+    bool RegimenTributarioEspecial = false, string? NotaRegimen = null);

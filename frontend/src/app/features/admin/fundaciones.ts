@@ -11,7 +11,7 @@ import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
 
-type Decision = 'rechazar' | 'retirar';
+type Decision = 'rechazar' | 'retirar' | 'regimen' | 'quitarRegimen';
 
 /**
  * Revisión de fundaciones (solo SuperUsuario con verificación en dos pasos). Se compara la razón social y el NIT con el
@@ -52,6 +52,13 @@ type Decision = 'rechazar' | 'retirar';
           @if (f.motivo) {
             <p class="text-sm"><span class="font-semibold">Motivo:</span> {{ f.motivo }}</p>
           }
+          @if (f.estado === 'Aprobada') {
+            <p class="text-sm">
+              <span class="font-semibold">Régimen Tributario Especial:</span>
+              {{ f.regimenTributarioEspecial ? 'sí' : 'no marcado' }}
+              @if (f.notaRegimen) { <span class="block text-xs text-tenue">Evidencia: {{ f.notaRegimen }}</span> }
+            </p>
+          }
           <div class="mt-auto flex flex-wrap gap-2">
             @if (f.certificadoUrl) {
               <a [href]="f.certificadoUrl" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" class="btn btn-secundario btn-sm">
@@ -71,9 +78,14 @@ type Decision = 'rechazar' | 'retirar';
               <button type="button" class="btn btn-primario btn-sm" (click)="aprobar(f)"><app-icono nombre="check" [tamano]="14" />Aprobar</button>
             </div>
           } @else if (f.estado === 'Aprobada') {
-            <button type="button" class="btn btn-fantasma btn-sm self-start text-tierra-600 dark:text-tierra-500" (click)="abrir(f, 'retirar')">
-              Retirar la insignia
-            </button>
+            <div class="flex flex-wrap gap-2 border-t border-borde pt-3">
+              <button type="button" class="btn btn-secundario btn-sm" (click)="abrir(f, f.regimenTributarioEspecial ? 'quitarRegimen' : 'regimen')">
+                {{ f.regimenTributarioEspecial ? 'Quitar el Régimen Tributario Especial' : 'Marcar Régimen Tributario Especial' }}
+              </button>
+              <button type="button" class="btn btn-fantasma btn-sm text-tierra-600 dark:text-tierra-500" (click)="abrir(f, 'retirar')">
+                Retirar la insignia
+              </button>
+            </div>
           }
         </li>
       }
@@ -82,18 +94,16 @@ type Decision = 'rechazar' | 'retirar';
       <app-estado-vacio icono="heart" [titulo]="estado() === 'Pendiente' ? 'No hay fundaciones por revisar' : 'No hay fundaciones en este estado'" />
     }
 
-    <app-modal [(abierto)]="modalAbierto" [titulo]="decision() === 'rechazar' ? 'Rechazar la solicitud' : 'Retirar la insignia'"
-      subtitulo="Explica el motivo: lo verá la cuenta.">
+    <app-modal [(abierto)]="modalAbierto" [titulo]="textos[decision()].titulo" [subtitulo]="textos[decision()].subtitulo">
       <form id="form-fundacion" (ngSubmit)="decidir()" class="campo">
-        <label for="motivo-fundacion" class="etiqueta">Motivo</label>
+        <label for="motivo-fundacion" class="etiqueta">{{ esRegimen() ? 'Evidencia revisada' : 'Motivo' }}</label>
         <textarea id="motivo-fundacion" name="motivo" class="entrada" maxlength="300" [(ngModel)]="motivo"
-          [placeholder]="decision() === 'rechazar' ? 'Ej: el certificado tiene más de 30 días' : 'Ej: la entidad fue liquidada'"></textarea>
+          [placeholder]="textos[decision()].ejemplo"></textarea>
       </form>
       <div pie class="flex justify-end gap-2 border-t border-borde p-4">
         <button type="button" class="btn btn-fantasma" (click)="modalAbierto.set(false)">Cancelar</button>
-        <button type="submit" form="form-fundacion" class="btn btn-peligro" [disabled]="motivo().trim().length < 3">
-          {{ decision() === 'rechazar' ? 'Rechazar' : 'Retirar la insignia' }}
-        </button>
+        <button type="submit" form="form-fundacion" [class]="esRegimen() ? 'btn btn-primario' : 'btn btn-peligro'"
+          [disabled]="motivo().trim().length < (esRegimen() ? 5 : 3)">{{ textos[decision()].boton }}</button>
       </div>
     </app-modal>
   `,
@@ -111,6 +121,17 @@ export default class FundacionesAdmin {
   protected readonly modalAbierto = signal(false);
   protected readonly decision = signal<Decision>('rechazar');
   protected readonly motivo = signal('');
+  protected readonly esRegimen = () => this.decision() === 'regimen' || this.decision() === 'quitarRegimen';
+  protected readonly textos: Record<Decision, { titulo: string; subtitulo: string; ejemplo: string; boton: string }> = {
+    rechazar: { titulo: 'Rechazar la solicitud', subtitulo: 'Explica el motivo: lo verá la cuenta.', ejemplo: 'Ej: el certificado tiene más de 30 días', boton: 'Rechazar' },
+    retirar: { titulo: 'Retirar la insignia', subtitulo: 'Explica el motivo: lo verá la cuenta.', ejemplo: 'Ej: la entidad fue liquidada', boton: 'Retirar la insignia' },
+    regimen: {
+      titulo: 'Régimen Tributario Especial',
+      subtitulo: 'Anota qué revisaste (solo lo ve el equipo). En público solo dirá que pertenece al régimen, nunca que la donación es deducible.',
+      ejemplo: 'Ej: RUT con responsabilidad 04 y consulta en la DIAN del 29/10/2026', boton: 'Marcar',
+    },
+    quitarRegimen: { titulo: 'Quitar el Régimen Tributario Especial', subtitulo: 'Anota por qué (solo lo ve el equipo).', ejemplo: 'Ej: no renovó la calificación', boton: 'Quitar' },
+  };
   private seleccionada: FundacionAdminDto | null = null;
 
   protected async aprobar(f: FundacionAdminDto): Promise<void> {
@@ -135,7 +156,11 @@ export default class FundacionesAdmin {
     if (!f?.usuarioId) return;
     const motivo = this.motivo().trim();
     try {
-      if (this.decision() === 'rechazar') {
+      if (this.esRegimen()) {
+        const calificada = this.decision() === 'regimen';
+        await firstValueFrom(this.api.regimen(f.usuarioId, calificada, motivo));
+        this.avisos.exito(calificada ? 'Régimen Tributario Especial marcado' : 'Régimen Tributario Especial quitado');
+      } else if (this.decision() === 'rechazar') {
         await firstValueFrom(this.api.rechazar(f.usuarioId, motivo));
         this.avisos.exito('Solicitud rechazada');
       } else {

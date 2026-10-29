@@ -246,6 +246,88 @@ public class FundacionesTests : IClassFixture<FabricaApi>
     }
 
     [Fact]
+    public async Task El_superusuario_marca_el_regimen_tributario_especial_con_evidencia_y_se_ve_en_publico()
+    {
+        var (ses, c, _) = await FundacionAprobadaAsync("fundaRte");
+        var super = await SuperAsync();
+        var url = $"/api/v1/admin/fundaciones/{ses.Usuario.Id}/regimen";
+        Assert.Equal(HttpStatusCode.Forbidden, (await c.PostAsJsonAsync(url, new { calificada = true, nota = "Me lo marco yo" })).StatusCode);
+        Assert.Equal(HttpStatusCode.BadRequest, (await super.PostAsJsonAsync(url, new { calificada = true, nota = "" })).StatusCode);
+        Assert.Equal(HttpStatusCode.NoContent, (await super.PostAsJsonAsync(url,
+            new { calificada = true, nota = "Consulta RUT y listado DIAN de ESAL calificadas 2026" })).StatusCode);
+
+        var anonimo = _f.CreateClient();
+        Assert.True((await anonimo.GetFromJsonAsync<JsonElement>($"/api/v1/fundaciones/{ses.Usuario.Id}")).GetProperty("regimenTributarioEspecial").GetBoolean());
+        var tarjeta = (await anonimo.GetFromJsonAsync<JsonElement>("/api/v1/fundaciones")).EnumerateArray().Single(x => x.GetProperty("id").GetGuid() == ses.Usuario.Id);
+        Assert.True(tarjeta.GetProperty("regimenTributarioEspecial").GetBoolean());
+        Assert.DoesNotContain("listado DIAN", tarjeta.GetRawText()); // la nota es solo para el equipo
+        var admin = (await super.GetFromJsonAsync<JsonElement>("/api/v1/admin/fundaciones?estado=Aprobada")).EnumerateArray()
+            .Single(x => x.GetProperty("usuarioId").GetGuid() == ses.Usuario.Id);
+        Assert.Contains("listado DIAN", admin.GetProperty("notaRegimen").GetString());
+
+        // Retirar la verificación también quita la marca.
+        (await super.PostAsJsonAsync($"/api/v1/admin/fundaciones/{ses.Usuario.Id}/retirar", new { motivo = "Se disolvió" })).EnsureSuccessStatusCode();
+        Assert.False((await super.GetFromJsonAsync<JsonElement>("/api/v1/admin/fundaciones?estado=Retirada")).EnumerateArray()
+            .Single(x => x.GetProperty("usuarioId").GetGuid() == ses.Usuario.Id).GetProperty("regimenTributarioEspecial").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Una_donacion_entregada_a_la_fundacion_suma_a_su_necesidad_y_al_llegar_a_la_cantidad_se_cubre()
+    {
+        var (ses, funda, _) = await FundacionAprobadaAsync("fundaProgreso");
+        var r = await funda.PostAsJsonAsync("/api/v1/fundaciones/mia/necesidades", new { texto = "Morrales escolares", categoriaId = 6, cantidad = 2 });
+        var necesidad = (await r.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+        var donante = await Api.RegistrarAsync(_f, "donaMorral");
+
+        async Task DonarYEntregarAsync()
+        {
+            var p = await donante.PostAsJsonAsync("/api/v1/publicaciones", new
+            {
+                titulo = "Morral azul", descripcion = "Para el colegio", categoriaId = 6, modo = "Donacion", condicion = "Usado",
+                localidad = "Bosa", paraNecesidadId = necesidad
+            });
+            var pub = (await p.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+            var s = await funda.PostAsJsonAsync("/api/v1/solicitudes", new { publicacionId = pub, mensaje = "¡Nos sirve!" });
+            var id = (await s.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid();
+            (await donante.PostAsync($"/api/v1/solicitudes/{id}/aceptar", null)).EnsureSuccessStatusCode();
+            (await donante.PostAsync($"/api/v1/solicitudes/{id}/confirmar-entrega", null)).EnsureSuccessStatusCode();
+            (await funda.PostAsync($"/api/v1/solicitudes/{id}/confirmar-entrega", null)).EnsureSuccessStatusCode();
+        }
+
+        async Task<JsonElement> NecesidadAsync() => (await funda.GetFromJsonAsync<JsonElement>("/api/v1/fundaciones/mia"))
+            .GetProperty("necesidades").EnumerateArray().Single(n => n.GetProperty("id").GetGuid() == necesidad);
+
+        await DonarYEntregarAsync();
+        var n = await NecesidadAsync();
+        Assert.Equal((1, false), (n.GetProperty("recibidos").GetInt32(), n.GetProperty("cubierta").GetBoolean()));
+
+        await DonarYEntregarAsync();
+        n = await NecesidadAsync();
+        Assert.Equal((2, true), (n.GetProperty("recibidos").GetInt32(), n.GetProperty("cubierta").GetBoolean()));
+        // Cubierta: sale de "Lo que piden" (las abiertas del listado público) pero sigue en su página con su progreso.
+        var tarjeta = (await _f.CreateClient().GetFromJsonAsync<JsonElement>("/api/v1/fundaciones")).EnumerateArray()
+            .Single(x => x.GetProperty("id").GetGuid() == ses.Usuario.Id);
+        Assert.DoesNotContain(tarjeta.GetProperty("abiertas").EnumerateArray(), x => x.GetProperty("id").GetGuid() == necesidad);
+
+        // La fundación puede corregir lo recibido y volver a abrirla.
+        var editada = await funda.PutAsJsonAsync($"/api/v1/fundaciones/mia/necesidades/{necesidad}",
+            new { texto = "Morrales escolares", categoriaId = 6, cantidad = 5, recibidos = 2, cubierta = false });
+        Assert.False((await editada.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("cubierta").GetBoolean());
+    }
+
+    [Fact]
+    public async Task Las_necesidades_cubiertas_no_cuentan_para_el_maximo()
+    {
+        var (_, c, _) = await FundacionAprobadaAsync("fundaCubre");
+        var ids = new List<Guid>();
+        for (var i = 0; i < 10; i++)
+            ids.Add((await (await c.PostAsJsonAsync("/api/v1/fundaciones/mia/necesidades", new { texto = $"Cosa número {i}" }))
+                .Content.ReadFromJsonAsync<JsonElement>()).GetProperty("id").GetGuid());
+        (await c.PutAsJsonAsync($"/api/v1/fundaciones/mia/necesidades/{ids[0]}", new { texto = "Cosa número 0", cubierta = true })).EnsureSuccessStatusCode();
+        Assert.Equal(HttpStatusCode.Created, (await c.PostAsJsonAsync("/api/v1/fundaciones/mia/necesidades", new { texto = "Una nueva" })).StatusCode);
+    }
+
+    [Fact]
     public async Task Dejar_de_ser_fundacion_o_eliminar_la_cuenta_borra_el_perfil_y_la_insignia()
     {
         var (ses, c, _) = await FundacionAprobadaAsync("fundaSeVa");

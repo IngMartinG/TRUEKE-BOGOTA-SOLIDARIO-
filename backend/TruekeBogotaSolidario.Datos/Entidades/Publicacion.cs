@@ -85,6 +85,14 @@ public class Publicacion
 
     /// <summary>Las de riesgo esperan a un moderador antes de entrar al catálogo; las demás se publican al instante.</summary>
     public EstadoModeracion EstadoModeracion { get; private set; } = EstadoModeracion.Aprobada;
+    /// <summary>Donación publicada para una necesidad de una fundación ("Tengo esto"): al entregársela suma a su progreso.</summary>
+    public Guid? NecesidadFundacionId { get; private set; }
+
+    public void DestinarANecesidad(Guid necesidadId)
+    {
+        if (Modo != ModoTransaccion.Donacion) throw new ReglaDeNegocioException("Solo una donación puede ir para la necesidad de una fundación.");
+        NecesidadFundacionId = necesidadId;
+    }
     /// <summary>Suma de las señales que la mandaron a revisión (más alto = se revisa primero).</summary>
     public int PuntajeRiesgo { get; private set; }
     /// <summary>Señales que vio el evaluador, separadas por "; " (solo las ven los moderadores).</summary>
