@@ -1,4 +1,4 @@
-# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-24)
+# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-29)
 
 ## Hecho — backend completo para conectar el front
 **Base:**
@@ -672,7 +672,34 @@ páginas estáticas para buscadores (`generar-seo.mjs`) y la pantalla de carga y
 HtmlSanitizer no aplica: la API solo devuelve JSON, Angular escapa todo y el texto ya se valida con `TextoSeguro`; además
 rechazaría textos normales como "3 < 5" y guardaría el contenido en los registros.
 
+## Revisión de un plan externo de producto (2026-10-29)
+Se revisó un paquete de documentos con bloques de producto (impacto, fundaciones, empresas, monetización, retención) y roles.
+- **Adoptado como documentación:** `docs/METODOLOGIA-IMPACTO.md` (versión 1.0.0, la vigente, y lo previsto para la 2.0.0),
+  `docs/GLOSARIO.md`, `docs/DECISIONES.md` y `docs/ACCESIBILIDAD.md`.
+- **No adoptado:** el esquema SQL a mano con tablas `entregas`, `impacto` y políticas RLS desde el cliente. El proyecto usa una
+  API .NET con migraciones EF Core, y la doble confirmación ya vive en `Solicitud`. Tampoco el cambio de stack ni las
+  variables de Supabase para el front.
+- **Lo que sí aporta se construye por bloques** (ver "Plan de producto" abajo).
+
 ## Pendiente
+**Plan de producto (2026-10-29), un PR por paso y en este orden:**
+1. **Foto de perfil real:** detector de rostros local (ONNX), estados de la foto, revisión de las fotos actuales con 7 días de
+   plazo, cola de moderación de fotos y denuncia "la foto no es de una persona".
+2. **Moderación por riesgo:** estado de moderación en la publicación, puntaje de riesgo, cola ordenada por prioridad,
+   aprobación en lote, vuelta a revisión con 3 denunciantes y verificación de cuenta con la cédula al lado de la foto.
+3. **Impacto 2.0 (Bloque 1):** peso y material en la publicación, factores en la base de datos, registro de impacto
+   inmutable por intercambio, revisar que el cierre automático con una sola confirmación no sume, foto de evidencia opcional y
+   `/impacto` con filtros por localidad, periodo y modo.
+4. **Fundaciones 2.0 (Bloque 2):** marca de Régimen Tributario Especial, página "Lo que piden las fundaciones", sugerir
+   fundaciones al publicar una donación y progreso de cada necesidad.
+5. **Plan Negocio (Bloque 4):** el plan Empresa pasa a llamarse Negocio, con vitrina pública, directorio, sello de negocio
+   verificado, panel de estadísticas de la cuenta y medios de pago visibles. Precio de destacar por decidir.
+6. **Empresas (Bloque 3):** organización con NIT y varios miembros, campañas, informe de impacto en PDF y exportación CSV.
+7. **Retención (Bloque 5):** "¿Sigue disponible?" para publicaciones inactivas, resumen semanal opcional por correo, logros
+   nuevos y meta comunitaria en `/impacto`.
+
+Los pasos 3 a 7 cambian textos legales: cada uno sube la versión y queda para revisión del abogado.
+
 **De la auditoría del 2026-10-18 (ver `docs/AUDITORIA_2026-10-18.md`):**
 - **Registro de oferentes:** que el abogado revise el texto de la política y los términos (versión `2026-10-19`), si el
   registro debe conservarse un tiempo tras eliminar la cuenta, y si las ventas publicadas antes del registro deben pedirlo
