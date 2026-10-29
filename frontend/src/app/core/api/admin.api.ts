@@ -21,6 +21,7 @@ import type {
   UsuarioAdminDtoPaginaDto,
   UsuarioDto,
   VerificacionPendienteDto,
+  FotosEnRevisionDto,
   DatosOferenteDto,
   VendedorDePqrDto,
 } from '../../api/tipos';
@@ -60,6 +61,9 @@ export class AdminApi {
   mostrarComentario = (id: string) => this.api.post<void>(`/admin/comentarios/${seg(id)}/mostrar`);
 
   verificaciones = () => this.api.get<VerificacionPendienteDto[]>('/admin/verificaciones');
+  fotosEnRevision = () => this.api.get<FotosEnRevisionDto>('/admin/fotos');
+  aprobarFoto = (id: string) => this.api.post<void>(`/admin/fotos/${seg(id)}/aprobar`);
+  rechazarFoto = (id: string, motivo: string) => this.api.post<void>(`/admin/fotos/${seg(id)}/rechazar`, { motivo });
   aprobarVerificacion = (id: string) => this.api.post<void>(`/admin/verificaciones/${seg(id)}/aprobar`);
   rechazarVerificacion = (id: string, motivo: string) =>
     this.api.post<void>(`/admin/verificaciones/${seg(id)}/rechazar`, { motivo });

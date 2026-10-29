@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, model, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
 import { MOTIVOS_DENUNCIA, type MotivoDenunciaDto, type TipoDenunciaDto } from '../../api/tipos';
@@ -16,7 +16,7 @@ import { Modal } from './modal';
       <form id="form-denuncia" (ngSubmit)="enviar()" class="space-y-4">
         <fieldset class="space-y-2">
           <legend class="etiqueta mb-2">¿Qué está pasando?</legend>
-          @for (m of motivos; track m.valor) {
+          @for (m of motivos(); track m.valor) {
             <label class="flex cursor-pointer items-center gap-3 rounded-xl border p-3 transition"
               [class]="motivo() === m.valor ? 'border-bosque-500 bg-bosque-50 dark:bg-bosque-900/40' : 'border-borde hover:bg-superficie-2'">
               <input type="radio" name="motivo" class="accent-bosque-600" [value]="m.valor" [ngModel]="motivo()" (ngModelChange)="motivo.set($event)" />
@@ -45,7 +45,10 @@ export class Denunciar {
   readonly tipo = input.required<TipoDenunciaDto>();
   readonly objetivoId = input.required<string>();
 
-  protected readonly motivos = MOTIVOS_DENUNCIA;
+  /** "Su foto no muestra a la persona" solo tiene sentido al reportar a una persona. */
+  protected readonly motivos = computed(() =>
+    MOTIVOS_DENUNCIA.filter((m) => !('soloUsuario' in m) || this.tipo() === 'Usuario'),
+  );
   protected readonly motivo = signal<MotivoDenunciaDto | null>(null);
   protected readonly detalle = signal('');
   protected readonly enviando = signal(false);

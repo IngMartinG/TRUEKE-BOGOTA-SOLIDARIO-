@@ -17,7 +17,7 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.13")
+                .HasAnnotation("ProductVersion", "10.0.14")
                 .HasAnnotation("Relational:MaxIdentifierLength", 63);
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
@@ -1573,6 +1573,11 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<bool>("EstaSuspendido")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("EstadoFoto")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<string>("EstadoVerificacion")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -1625,6 +1630,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<DateTime?>("FechaVerificacionCorreo")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("FotoRevisadaUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("FotoUrl")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -1650,6 +1658,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
                     b.Property<bool>("MostrarNit")
                         .HasColumnType("boolean");
+
+                    b.Property<string>("MotivoRechazoFoto")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
 
                     b.Property<string>("MotivoRechazoVerificacion")
                         .HasMaxLength(300)
@@ -1713,6 +1725,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<string>("OferenteTipoDocumento")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("PlazoCambioFotoUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("PoliticaDatosVersion")
                         .HasMaxLength(20)
@@ -1796,6 +1811,8 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .IsUnique();
 
                     b.HasIndex("EstaSuspendido");
+
+                    b.HasIndex("EstadoFoto");
 
                     b.HasIndex("EstadoVerificacion");
 

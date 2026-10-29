@@ -31,8 +31,11 @@ public sealed class DosFactoresRequeridoException : Exception
 public sealed class FotoPerfilRequeridaException : Exception
 {
     public const string Codigo = "foto_requerida";
-    public FotoPerfilRequeridaException()
-        : base("Agrega una foto de perfil donde se vea tu cara: así la comunidad sabe con quién intercambia. Hazlo en Mi cuenta → Perfil.") { }
+    public const string MensajeRechazada =
+        "Tu foto de perfil no muestra tu cara y venció el plazo para cambiarla. Sube una foto tuya en Mi cuenta → Perfil para seguir.";
+
+    public FotoPerfilRequeridaException(string? mensaje = null)
+        : base(mensaje ?? "Agrega una foto de perfil donde se vea tu cara: así la comunidad sabe con quién intercambia. Hazlo en Mi cuenta → Perfil.") { }
 }
 
 /// <summary>Cuenta anterior a la regla de mayoría de edad sin fecha de nacimiento (HTTP 403, codigo "fecha_nacimiento_requerida").</summary>

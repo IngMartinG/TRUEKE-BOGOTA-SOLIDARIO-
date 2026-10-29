@@ -38,7 +38,7 @@ public sealed class EcoPuntosService : IEcoPuntosService
     public async Task<EcoPuntosResumenDto> ActivarPruebaPremiumAsync(Guid actorId)
     {
         var u = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
-        Guardas.ExigirCuentaCompleta(u);
+        Guardas.ExigirCuentaCompleta(u, _reloj.GetUtcNow().UtcDateTime);
         u.ActivarPruebaPremium(_reloj.GetUtcNow().UtcDateTime);
         await _uow.GuardarCambiosAsync();
         return await ResumenAsync(actorId);

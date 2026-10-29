@@ -16,10 +16,11 @@ import { AvisoNovedad } from './shared/ui/aviso-novedad';
 import { Avisos } from './shared/ui/avisos';
 import { Icono } from './shared/ui/icono';
 import { LogroIntercambio } from './shared/ui/logro-intercambio';
+import { FechaPipe } from './shared/pipes';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, Encabezado, Pie, BarraMovil, Avisos, AvisoNovedad, Icono, LogroIntercambio, AsistenteSoporte],
+  imports: [RouterOutlet, RouterLink, Encabezado, Pie, BarraMovil, Avisos, AvisoNovedad, Icono, LogroIntercambio, AsistenteSoporte, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <a href="#contenido" class="sr-only z-[200] rounded-full bg-bosque-700 px-4 py-2 text-white focus:not-sr-only focus:fixed focus:top-3 focus:left-3">
@@ -37,6 +38,19 @@ import { LogroIntercambio } from './shared/ui/logro-intercambio';
           <app-icono nombre="correo" [tamano]="16" class="text-sol-600 dark:text-sol-300" />
           <span>Confirma tu correo para activar tu cuenta. Mientras tanto solo puedes explorar el catálogo.</span>
           <a routerLink="/verifica-tu-correo" class="enlace">Ver cómo</a>
+        </div>
+      </div>
+    } @else if (sesion.autenticado() && sesion.fotoRechazada()) {
+      <div class="border-b border-tierra-200 bg-tierra-50 dark:border-tierra-700/40 dark:bg-tierra-700/15" role="status">
+        <div class="contenedor flex flex-wrap items-center justify-center gap-x-3 gap-y-1 py-2.5 text-center text-sm">
+          <app-icono nombre="camara" [tamano]="16" class="text-tierra-600 dark:text-tierra-500" />
+          @if (sesion.tieneFoto()) {
+            <span>Tu foto de perfil no muestra tu cara. Cámbiala antes del <strong>{{ sesion.usuario()?.plazoCambioFotoUtc | fecha }}</strong>
+              para seguir publicando, solicitando y chateando.</span>
+          } @else {
+            <span>Venció el plazo para cambiar tu foto de perfil. Sube una foto donde se vea tu cara para volver a publicar, solicitar y chatear.</span>
+          }
+          <a routerLink="/cuenta/perfil" fragment="foto" class="enlace">Cambiar foto</a>
         </div>
       </div>
     } @else if (sesion.autenticado() && !sesion.tieneFoto()) {

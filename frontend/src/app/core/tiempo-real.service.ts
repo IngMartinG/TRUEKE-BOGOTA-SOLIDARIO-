@@ -24,6 +24,8 @@ const AFECTAN_PERFIL = new Set([
   'PlanPorVencer',
   'VerificacionAprobada',
   'VerificacionRechazada',
+  'FotoPerfilAprobada',
+  'FotoPerfilRechazada', // el aviso y la guarda de cuenta completa dependen del estado de la foto
   'FundacionAprobada', // la insignia cambia el nombre que se muestra
   'FundacionRetirada',
   'CalificacionRecibida',

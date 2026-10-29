@@ -202,6 +202,7 @@ export const MOTIVOS_DENUNCIA = [
   { valor: 'ContenidoInapropiado', etiqueta: 'Contenido inapropiado' },
   { valor: 'ArticuloProhibido', etiqueta: 'Artículo prohibido' },
   { valor: 'Acoso', etiqueta: 'Acoso o lenguaje ofensivo' },
+  { valor: 'FotoPerfilNoValida', etiqueta: 'Su foto de perfil no muestra a la persona', soloUsuario: true },
   { valor: 'Otro', etiqueta: 'Otro motivo' },
 ] as const;
 

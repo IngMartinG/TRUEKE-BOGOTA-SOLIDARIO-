@@ -37,10 +37,28 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
         </div>
         <div class="min-w-0 flex-1">
           <h2 id="titulo-foto" class="font-bold">Foto de perfil</h2>
-          @if (volver() && !u.fotoUrl) {
+          @if (volver() && !sesion.tieneFoto()) {
             <p class="my-2 rounded-xl bg-sol-50 p-3 text-sm font-medium dark:bg-sol-500/10">Sube tu foto para continuar. Al terminar te llevamos de vuelta a donde estabas.</p>
           }
-          <p class="text-sm text-tenue">Es obligatoria para publicar, solicitar, chatear y pagar: usa una foto donde se vea tu cara, así la comunidad sabe con quién intercambia. Le quitamos la ubicación y los datos ocultos antes de publicarla. Es un dato sensible: <a routerLink="/privacidad" fragment="seccion-4" class="enlace">cómo lo tratamos</a>.</p>
+          @if (u.fotoUrl && u.estadoFoto === 'Rechazada') {
+            <div class="my-2 flex items-start gap-2 rounded-xl bg-tierra-50 p-3 text-left text-sm dark:bg-tierra-700/15" role="alert">
+              <app-icono nombre="alerta" [tamano]="18" class="mt-0.5 shrink-0 text-tierra-600 dark:text-tierra-500" />
+              <span>
+                <strong>Cambia tu foto:</strong> {{ u.motivoRechazoFoto }}
+                @if (u.fotoValida) {
+                  Tienes hasta el {{ u.plazoCambioFotoUtc | fecha }}; después no podrás publicar, solicitar ni chatear hasta cambiarla.
+                } @else {
+                  Venció el plazo: sube una foto donde se vea tu cara para volver a publicar, solicitar y chatear.
+                }
+              </span>
+            </div>
+          } @else if (u.fotoUrl && u.estadoFoto === 'EnRevision') {
+            <p class="my-2 flex items-start gap-2 rounded-xl bg-cielo-50 p-3 text-left text-sm dark:bg-cielo-700/20" role="status">
+              <app-icono nombre="info" [tamano]="18" class="mt-0.5 shrink-0 text-cielo-600" />
+              <span>Un moderador está revisando que en tu foto se vea tu cara. Mientras tanto puedes usar tu cuenta normalmente.</span>
+            </p>
+          }
+          <p class="text-sm text-tenue">Es obligatoria para publicar, solicitar, chatear y pagar, y debe ser <strong>una foto tuya donde se vea tu cara</strong>, de frente y sin gafas oscuras: no sirven logos, dibujos, mascotas ni paisajes. Así la comunidad sabe con quién se encuentra. Un programa en nuestro propio servidor comprueba que haya una cara (no reconoce quién eres), y le quitamos la ubicación y los datos ocultos antes de publicarla. Es un dato sensible: <a routerLink="/privacidad" fragment="seccion-4" class="enlace">cómo lo tratamos</a>.</p>
           <div class="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
             <label class="btn btn-primario btn-sm cursor-pointer" [class.pointer-events-none]="subiendoFoto()" [class.opacity-60]="subiendoFoto()">
               <app-icono nombre="camara" [tamano]="16" />{{ u.fotoUrl ? 'Cambiar foto' : 'Subir foto' }}
@@ -286,11 +304,15 @@ export default class Perfil {
     try {
       // Una foto de perfil se ve pequeña: 800 px bastan y la subida es rápida incluso con datos móviles.
       const url = await this.subidas.subirTodo(await comprimirImagen(archivo, 800), 'Imagen');
-      this.sesion.actualizarUsuario(await firstValueFrom(this.api.cambiarFoto(url)));
+      const u = await firstValueFrom(this.api.cambiarFoto(url));
+      this.sesion.actualizarUsuario(u);
+      const enRevision = u.estadoFoto === 'EnRevision';
       const volver = this.volver();
       if (volver) {
         this.avisos.exito('¡Foto lista!', 'Ya puedes continuar donde estabas.');
         await this.router.navigateByUrl(destinoSeguro(volver, '/cuenta/perfil'));
+      } else if (enRevision) {
+        this.avisos.exito('Foto actualizada', 'Un moderador confirmará que se vea tu cara.');
       } else {
         this.avisos.exito('Foto actualizada');
       }

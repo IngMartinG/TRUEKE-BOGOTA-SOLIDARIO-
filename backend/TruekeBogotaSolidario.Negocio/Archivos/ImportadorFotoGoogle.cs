@@ -1,14 +1,20 @@
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
+using TruekeBogotaSolidario.Datos.Entidades;
 
 namespace TruekeBogotaSolidario.Negocio.Archivos;
 
 /// <summary>Trae la foto de perfil de un proveedor de identidad (Google) a nuestro almacenamiento, limpia y con nombre propio.</summary>
 public interface IImportadorFotoPerfil
 {
-    /// <returns>La URL de la copia guardada, o null si no se pudo (nunca lanza: el inicio de sesión no depende de esto).</returns>
-    Task<string?> ImportarAsync(Guid usuarioId, string? urlFoto, CancellationToken ct = default);
+    /// <returns>
+    /// La URL de la copia guardada y su revisión, o null si no se pudo o si la foto no muestra un rostro (p. ej. el avatar con
+    /// la inicial que Google pone por defecto). Nunca lanza: el inicio de sesión no depende de esto.
+    /// </returns>
+    Task<FotoImportada?> ImportarAsync(Guid usuarioId, string? urlFoto, CancellationToken ct = default);
 }
+
+public sealed record FotoImportada(string Url, EstadoFotoPerfil Estado);
 
 /// <summary>
 /// La foto que entrega Google en el ID token se copia (no se enlaza): así no depende de un servidor ajeno, pasa por el mismo
@@ -21,14 +27,15 @@ public sealed partial class ImportadorFotoGoogle : IImportadorFotoPerfil
 
     private readonly IHttpClientFactory _http;
     private readonly IAlmacenArchivos _almacen;
+    private readonly IRevisorFotoPerfil _revisor;
     private readonly ILogger<ImportadorFotoGoogle> _log;
 
-    public ImportadorFotoGoogle(IHttpClientFactory http, IAlmacenArchivos almacen, ILogger<ImportadorFotoGoogle> log)
+    public ImportadorFotoGoogle(IHttpClientFactory http, IAlmacenArchivos almacen, IRevisorFotoPerfil revisor, ILogger<ImportadorFotoGoogle> log)
     {
-        _http = http; _almacen = almacen; _log = log;
+        _http = http; _almacen = almacen; _revisor = revisor; _log = log;
     }
 
-    public async Task<string?> ImportarAsync(Guid usuarioId, string? urlFoto, CancellationToken ct = default)
+    public async Task<FotoImportada?> ImportarAsync(Guid usuarioId, string? urlFoto, CancellationToken ct = default)
     {
         if (!_almacen.Habilitado || !EsFotoDeGoogle(urlFoto, out var uri)) return null;
         try
@@ -36,7 +43,12 @@ public sealed partial class ImportadorFotoGoogle : IImportadorFotoPerfil
             using var respuesta = await _http.CreateClient(ClienteHttp).GetAsync(Ampliar(uri), HttpCompletionOption.ResponseHeadersRead, ct);
             if (!respuesta.IsSuccessStatusCode || respuesta.Content.Headers.ContentLength > ReglasArchivos.TamanoMaximoBytes) return null;
             var bytes = await LeerConLimiteAsync(respuesta.Content, ct);
-            return bytes is null ? null : await _almacen.GuardarImagenAsync(usuarioId, bytes, ct);
+            if (bytes is null) return null;
+            var url = await _almacen.GuardarImagenAsync(usuarioId, bytes, ct);
+            if (await _revisor.RevisarAsync(url, ct) is { } estado) return new FotoImportada(url, estado);
+            // Sin rostro (el avatar con la inicial, un logo…): no se usa; la persona sube una foto suya.
+            await _almacen.EliminarImagenPropiaAsync(url, usuarioId, ct);
+            return null;
         }
         catch (Exception ex) when (ex is not OperationCanceledException || !ct.IsCancellationRequested)
         {

@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
-import { CLAVE, correoUnico, enlaceDe, esperarCorreo, fotoPng } from './utilidades';
+import { CLAVE, correoUnico, enlaceDe, esperarCorreo, fotoPng, fotoRostro } from './utilidades';
 
 test('cuenta nueva: registro, correo de verificación, foto obligatoria y primera publicación con foto', async ({ page }) => {
   const correo = correoUnico('carla');
@@ -30,7 +30,11 @@ test('cuenta nueva: registro, correo de verificación, foto obligatoria y primer
     // Llega a subir la foto con ?volver=, y al subirla regresa sola a publicar
     await expect(page).toHaveURL(/\/cuenta\/perfil\?volver=%2Fpublicar#foto/);
     await expect(page.getByRole('button', { name: 'Subir foto' })).toBeVisible(); // la pantalla terminó de cargar
-    await page.locator('input[type=file]').first().setInputFiles({ name: 'yo.png', mimeType: 'image/png', buffer: fotoPng(500, 500, [200, 120, 60]) });
+    // Una imagen sin cara se rechaza al subirla
+    await page.locator('input[type=file]').first().setInputFiles({ name: 'paisaje.png', mimeType: 'image/png', buffer: fotoPng(500, 500, [200, 120, 60]) });
+    await expect(page.getByText(/No encontramos un rostro/)).toBeVisible();
+    await expect(page).toHaveURL(/\/cuenta\/perfil/);
+    await page.locator('input[type=file]').first().setInputFiles({ name: 'yo.jpg', mimeType: 'image/jpeg', buffer: fotoRostro() });
     await expect(page.getByText('¡Foto lista!')).toBeVisible();
     await expect(page).toHaveURL(/\/publicar$/);
   });

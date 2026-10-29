@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Correo;
 
 namespace TruekeBogotaSolidario.Pruebas.Infraestructura;
@@ -43,8 +44,17 @@ public class FabricaApi : WebApplicationFactory<Program>
         builder.UseSetting("Correo:Proveedor", "Simulado");
         builder.UseSetting("Seguridad:ClaveCifrado", ClaveCifradoPruebas);
         builder.UseSetting("Seguridad:ExigirDosFactoresModeradores", "false"); // una prueba dedicada lo activa
-        builder.ConfigureTestServices(s => s.Replace(ServiceDescriptor.Singleton<ICorreoSaliente>(Correos)));
+        builder.UseSetting("FotosPerfil:RevisarExistentes", "false"); // FotosPerfilTests lo ejecuta a mano
+        builder.ConfigureTestServices(s =>
+        {
+            s.Replace(ServiceDescriptor.Singleton<ICorreoSaliente>(Correos));
+            // Las fotos de las pruebas no son fotos reales: el detector real se prueba aparte (DetectorRostrosTests).
+            s.Replace(ServiceDescriptor.Singleton<IDetectorRostros>(Detector));
+        });
     }
+
+    /// <summary>Detector de rostros de esta instancia: por defecto ve una cara clara en cualquier imagen.</summary>
+    public DetectorRostrosFalso Detector { get; } = new();
 
     /// <summary>Correos "enviados" por esta instancia de la API.</summary>
     public CorreoCapturado Correos { get; } = new();

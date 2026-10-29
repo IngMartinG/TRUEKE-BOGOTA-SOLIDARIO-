@@ -113,7 +113,7 @@ public sealed class PagoService : IPagoService
     {
         var ahora = Ahora;
         var u = await CargarUsuarioAsync(actorId);
-        Guardas.ExigirCuentaCompleta(u);
+        Guardas.ExigirCuentaCompleta(u, Ahora);
         var concepto = (ConceptoPago)(int)r.Concepto;
         if (!Enum.IsDefined(concepto)) throw new ReglaDeNegocioException("Concepto de pago no válido.");
         // Lanzamiento sin cobro: solo Destacar y Verificar pueden cubrirse con Eco-Puntos; lo demás exige dinero.
@@ -251,7 +251,7 @@ public sealed class PagoService : IPagoService
     {
         var ahora = Ahora;
         var u = await CargarUsuarioAsync(actorId);
-        Guardas.ExigirCuentaCompleta(u);
+        Guardas.ExigirCuentaCompleta(u, Ahora);
         var pub = await _pubs.ObtenerPorIdAsync(publicacionId);
         if (pub is null || pub.PropietarioId != actorId) throw new NoEncontradoException("Publicación no encontrada.");
         pub.ValidarPuedeDestacarse(ahora);   // validar ANTES de consumir el beneficio

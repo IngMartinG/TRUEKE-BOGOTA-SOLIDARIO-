@@ -136,7 +136,7 @@ public sealed class PublicacionService : IPublicacionService
     public async Task<PublicacionDto> CrearAsync(Guid actorId, CrearPublicacionRequest r)
     {
         var actor = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
-        Guardas.ExigirCuentaCompleta(actor);
+        Guardas.ExigirCuentaCompleta(actor, Ahora);
         var ahora = Ahora;
         var plan = actor.PlanEfectivo(ahora);
         var maximo = PoliticaEcoPuntos.MaxPublicacionesActivas(plan);
@@ -166,7 +166,7 @@ public sealed class PublicacionService : IPublicacionService
         var p = await _pubs.ObtenerPorIdAsync(id);
         if (p is null || p.PropietarioId != actorId) throw new NoEncontradoException("Publicación no encontrada.");
         var actor = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
-        Guardas.ExigirCuentaCompleta(actor);
+        Guardas.ExigirCuentaCompleta(actor, Ahora);
         var ahora = Ahora;
         // Con personas interesadas no se cambia lo que pidieron (precio, modo, fotos...): nadie debe recibir algo distinto.
         if ((await InteresadosAsync(new[] { p })).GetValueOrDefault(p.Id) > 0)
@@ -365,7 +365,7 @@ public sealed class PublicacionService : IPublicacionService
         var p = await _pubs.ObtenerPorIdAsync(id);
         if (p is null || p.PropietarioId != actorId) throw new NoEncontradoException("Publicación no encontrada.");
         var actor = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
-        Guardas.ExigirCuentaCompleta(actor);
+        Guardas.ExigirCuentaCompleta(actor, Ahora);
         var ahora = Ahora;
         p.ValidarPuedeImpulsarse(ahora); // validar ANTES de cobrar los puntos
         if (actor.SaldoEcoPuntos < PoliticaEcoPuntos.PuntosImpulsar)

@@ -63,6 +63,9 @@ public interface IUsuarioRepository
     Task<IReadOnlyList<Guid>> ListarConBonosPendientesAsync(DateTime publicadaHastaUtc, DateTime ahoraUtc, int maximo);
     Task<(int Premium, int Empresa)> ContarPlanesVigentesAsync(DateTime ahoraUtc);
     Task<IReadOnlyList<Usuario>> ObtenerPorVerificacionAsync(EstadoVerificacion estado);
+    /// <summary>Cuentas activas con foto en ese estado, las más antiguas primero; con <paramref name="revisadasAntesDe"/>, solo las que nunca se intentaron revisar o se intentaron antes de esa fecha. Con seguimiento: el llamador las actualiza.</summary>
+    Task<IReadOnlyList<Usuario>> ListarPorEstadoFotoAsync(EstadoFotoPerfil estado, int maximo, DateTime? revisadasAntesDe = null);
+    Task<int> ContarPorEstadoFotoAsync(EstadoFotoPerfil estado);
     Task<int> ContarPorRolAsync(RolUsuarioEnum rol);
     /// <summary>Búsqueda para administración por nombre o correo (contiene). Más recientes primero.</summary>
     Task<(IReadOnlyList<Usuario> Items, int Total)> BuscarAsync(string? texto, bool soloSuspendidos, int pagina, int tamano, bool soloMenorDetectado = false);

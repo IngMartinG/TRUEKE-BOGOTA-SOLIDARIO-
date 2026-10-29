@@ -136,7 +136,7 @@ public class FormatosTextoTests
         var u = Usuario.CrearDesdeGoogle("Ana Pérez", "g@t.co", "sub-1", DateTime.UtcNow);
         u.RegistrarFechaNacimiento(new DateOnly(1990, 1, 1), Usuario.HoyEnColombia(DateTime.UtcNow));
         Assert.True(u.LocalidadPendiente);
-        Assert.Throws<LocalidadRequeridaException>(() => Guardas.ExigirCuentaCompleta(u));
+        Assert.Throws<LocalidadRequeridaException>(() => Guardas.ExigirCuentaCompleta(u, DateTime.UtcNow));
         u.ActualizarPerfil("Ana Pérez", "Chapinero");
         Assert.False(u.LocalidadPendiente);
     }

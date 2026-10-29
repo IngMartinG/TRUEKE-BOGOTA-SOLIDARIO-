@@ -672,6 +672,34 @@ páginas estáticas para buscadores (`generar-seo.mjs`) y la pantalla de carga y
 HtmlSanitizer no aplica: la API solo devuelve JSON, Angular escapa todo y el texto ya se valida con `TextoSeguro`; además
 rechazaría textos normales como "3 < 5" y guardaría el contenido en los registros.
 
+## Hecho el 2026-10-29 — foto de perfil real (debe verse la cara)
+Decisiones del dueño: es requisito indispensable; detector automático con revisión humana solo en los casos dudosos; quien ya
+tenía una foto sin rostro recibe un aviso y 7 días para cambiarla.
+- **Detector local** (`Negocio/Archivos/DetectorRostros.cs`): modelo YuNet de OpenCV Zoo (MIT, 230 KB, incrustado en el
+  ensamblado) con ONNX Runtime. Corre en el propio servidor: ninguna foto sale a terceros. Solo detecta que hay una cara; no
+  reconoce a nadie ni guarda rasgos. Además del recuadro usa los 5 puntos (ojos, nariz, boca) para descartar formas que solo
+  se parecen a una cara: el logo circular de la plataforma engañaba a un modelo sin esos puntos (UltraFace, descartado).
+- **Regla** (`ReglaFotoPerfil`): sin rostro → 400 al subirla y no se conserva; una cara clara (confianza ≥ 0,9, rasgos en
+  orden y al menos 1,5 % de la foto) → aprobada; lo demás (cara pequeña, varias caras parecidas, dudosa) → "en revisión",
+  sin bloquear mientras tanto. La foto de Google solo se importa si muestra un rostro (el avatar con la inicial no sirve).
+- **Estados** en `Usuario` (`EstadoFoto`, `MotivoRechazoFoto`, `PlazoCambioFotoUtc`, `FotoRevisadaUtc`; migración
+  `FotoPerfilReal`, las cuentas existentes quedan "SinRevisar"). `Guardas.ExigirCuentaCompleta` trata como "sin foto" una
+  rechazada con el plazo vencido (403 `foto_requerida` con su propio mensaje).
+- **Fotos anteriores a la regla:** `RevisionFotosPerfilHostedService` las revisa por lotes (`FotosPerfil:TamanoLote`, con
+  pausas) a los 3 minutos del arranque y cada 6 horas. Si no muestran un rostro: rechazada con 7 días de plazo, notificación
+  y correo obligatorio ("Cambia tu foto de perfil"). Las que no se pueden leer se reintentan al día siguiente.
+- **Moderación:** `GET /admin/fotos` y `POST /admin/fotos/{id}/aprobar|rechazar` (Moderador con 2FA, auditoría). Página
+  Administración → Fotos de perfil: una foto grande a la vez, **A** aprueba, **R** rechaza con motivos de un clic, flechas
+  para moverse. Nuevo motivo de denuncia "Su foto de perfil no muestra a la persona" (solo contra una persona): al resolverla
+  con "Ocultar" se rechaza la foto con el mismo plazo.
+- **Front:** en Mi cuenta → Perfil, el estado de la foto (en revisión o rechazada con motivo y fecha límite) y las reglas
+  (cara de frente, sin logos, dibujos, mascotas ni paisajes). Franja global con la fecha límite o con el plazo vencido. La
+  guarda de cuenta completa usa `fotoValida`.
+- **Configuración** (`FotosPerfil`): `DetectorHabilitado`, `RevisarExistentes`, `DiasPlazoCambio` (7), `TamanoLote` (25).
+- Pruebas: `FotoPerfilRealTests` (regla, rasgos, el modelo real con un retrato de dominio público de la NASA y con el logo, y
+  los estados de la entidad), `FotosPerfilTests` (subida sin rostro, dudosa y aprobada por un moderador, rechazo con plazo y
+  bloqueo al vencer, revisión de las fotos anteriores, denuncia por foto) y `fotos.spec.ts` (atajos de la cola).
+
 ## Revisión de un plan externo de producto (2026-10-29)
 Se revisó un paquete de documentos con bloques de producto (impacto, fundaciones, empresas, monetización, retención) y roles.
 - **Adoptado como documentación:** `docs/METODOLOGIA-IMPACTO.md` (versión 1.0.0, la vigente, y lo previsto para la 2.0.0),
@@ -683,8 +711,8 @@ Se revisó un paquete de documentos con bloques de producto (impacto, fundacione
 
 ## Pendiente
 **Plan de producto (2026-10-29), un PR por paso y en este orden:**
-1. **Foto de perfil real:** detector de rostros local (ONNX), estados de la foto, revisión de las fotos actuales con 7 días de
-   plazo, cola de moderación de fotos y denuncia "la foto no es de una persona".
+1. ~~**Foto de perfil real**~~: hecho (ver arriba). Queda que el abogado diga si la política debe mencionar la revisión
+   automática de la foto (detección local, sin reconocimiento ni biometría) y, si es así, subir su versión.
 2. **Moderación por riesgo:** estado de moderación en la publicación, puntaje de riesgo, cola ordenada por prioridad,
    aprobación en lote, vuelta a revisión con 3 denunciantes y verificación de cuenta con la cédula al lado de la foto.
 3. **Impacto 2.0 (Bloque 1):** peso y material en la publicación, factores en la base de datos, registro de impacto

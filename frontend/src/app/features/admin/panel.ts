@@ -40,6 +40,7 @@ export default class Panel {
     { ruta: 'denuncias', texto: 'Denuncias', icono: 'bandera' },
     { ruta: 'apelaciones', texto: 'Apelaciones', icono: 'balanza' },
     { ruta: 'usuarios', texto: 'Usuarios', icono: 'usuarios' },
+    { ruta: 'fotos', texto: 'Fotos de perfil', icono: 'camara' },
     { ruta: 'verificaciones', texto: 'Verificaciones', icono: 'verificado' },
     { ruta: 'pagos', texto: 'Pagos en revisión', icono: 'billetera' },
     { ruta: 'facturas', texto: 'Facturas', icono: 'factura' },

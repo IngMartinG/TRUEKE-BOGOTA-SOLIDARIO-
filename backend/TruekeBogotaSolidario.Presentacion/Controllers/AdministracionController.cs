@@ -54,6 +54,25 @@ public sealed class AdministracionController : ControllerBase
         return NoContent();
     }
 
+    // ---- Fotos de perfil (las que el detector dejó en duda)
+    [HttpGet("fotos"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<FotosEnRevisionDto>> Fotos([FromServices] IFotoPerfilService fotos)
+        => Ok(await fotos.ListarEnRevisionAsync(User.IdActual()));
+
+    [HttpPost("fotos/{usuarioId:guid}/aprobar"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<IActionResult> AprobarFoto(Guid usuarioId, [FromServices] IFotoPerfilService fotos)
+    {
+        await fotos.AprobarAsync(User.IdActual(), usuarioId);
+        return NoContent();
+    }
+
+    [HttpPost("fotos/{usuarioId:guid}/rechazar"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<IActionResult> RechazarFoto(Guid usuarioId, [FromBody] MotivoRequest r, [FromServices] IFotoPerfilService fotos)
+    {
+        await fotos.RechazarAsync(User.IdActual(), usuarioId, r.Motivo);
+        return NoContent();
+    }
+
     // ---- Cuentas
     [HttpGet("usuarios"), Authorize(Policy = Politicas.Moderador)]
     public async Task<ActionResult<PaginaDto<UsuarioAdminDto>>> BuscarUsuarios([FromQuery] BuscarUsuariosRequest r)

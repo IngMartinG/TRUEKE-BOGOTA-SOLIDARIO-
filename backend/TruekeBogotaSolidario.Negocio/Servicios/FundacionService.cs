@@ -90,7 +90,7 @@ public sealed class FundacionService : IFundacionService
     public async Task<MiFundacionDto> SolicitarAsync(Guid actorId, SolicitarFundacionRequest r, CancellationToken ct = default)
     {
         var u = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
-        Guardas.ExigirCuentaCompleta(u); // la foto de perfil hace de logo y la localidad dice dónde atiende
+        Guardas.ExigirCuentaCompleta(u, Ahora); // la foto de perfil hace de logo y la localidad dice dónde atiende
         if (!r.DeclaroRepresentacion)
             throw new ReglaDeNegocioException("Confirma que representas legalmente a la fundación o que su representante te autorizó.");
         var nit = Fundacion.NormalizarNitEsal(r.Nit);

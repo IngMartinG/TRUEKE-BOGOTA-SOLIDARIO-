@@ -152,6 +152,11 @@ public static class NegocioServiceCollectionExtensions
         services.AddHttpClient(ImportadorFotoGoogle.ClienteHttp, c => c.Timeout = TimeSpan.FromSeconds(8))
             .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler { AllowAutoRedirect = false });
         services.AddScoped<IImportadorFotoPerfil, ImportadorFotoGoogle>();
+        // Foto de perfil real: detector de rostros local y revisión de las fotos anteriores a la regla.
+        services.AddOptions<FotosPerfilOpciones>().Bind(config.GetSection(FotosPerfilOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
+        services.TryAddSingleton<IDetectorRostros, DetectorRostrosOnnx>();
+        services.AddScoped<IRevisorFotoPerfil, RevisorFotoPerfil>();
+        services.AddHostedService<RevisionFotosPerfilHostedService>();
         services.AddMemoryCache();
 
         services.AddSingleton<IGeneradorToken, GeneradorJwt>();

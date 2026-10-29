@@ -31,4 +31,9 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!-- Imágenes de prueba del detector de rostros: un retrato de dominio público (NASA, vía Wikimedia Commons) y el logo. -->
+  <ItemGroup>
+    <None Include="Recursos\**" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

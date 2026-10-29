@@ -29,9 +29,16 @@
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.14" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="10.0.14" />
+    <!-- Detector de rostros de la foto de perfil (modelo local en Archivos/Modelos; ninguna foto sale del servidor). -->
+    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.31.0" />
     <PackageReference Include="SkiaSharp" Version="4.153.1" />
     <!-- Binarios nativos de Skia para Linux (Docker / Render) sin depender de fontconfig ni otras librerías del sistema. -->
     <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.153.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- YuNet 2023mar (MIT, Shiqi Yu): https://github.com/opencv/opencv_zoo/tree/main/models/face_detection_yunet -->
+    <EmbeddedResource Include="Archivos\Modelos\face_detection_yunet_2023mar.onnx" LogicalName="TruekeBogotaSolidario.Negocio.Archivos.Modelos.face_detection_yunet_2023mar.onnx" />
   </ItemGroup>
 
   <ItemGroup>

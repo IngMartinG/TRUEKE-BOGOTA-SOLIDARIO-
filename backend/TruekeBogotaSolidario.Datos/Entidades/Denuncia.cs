@@ -3,7 +3,7 @@ using TruekeBogotaSolidario.Datos.Common;
 namespace TruekeBogotaSolidario.Datos.Entidades;
 
 public enum TipoObjetoDenuncia { Publicacion = 1, Comentario = 2, Mensaje = 3, Usuario = 4, Calificacion = 5, Deseo = 6 }
-public enum MotivoDenuncia { Spam = 1, Fraude = 2, ContenidoInapropiado = 3, ArticuloProhibido = 4, Acoso = 5, Otro = 6 }
+public enum MotivoDenuncia { Spam = 1, Fraude = 2, ContenidoInapropiado = 3, ArticuloProhibido = 4, Acoso = 5, Otro = 6, FotoPerfilNoValida = 7 }
 public enum EstadoDenuncia { Pendiente = 1, Resuelta = 2, Descartada = 3 }
 public enum AccionModeracion { Descartar = 1, OcultarContenido = 2, MarcarRevisada = 3 }
 
@@ -22,6 +22,8 @@ public class Denuncia
         if (detalle is not null && !TextoSeguro.EsSeguro(detalle, multilinea: true))
             throw new ReglaDeNegocioException("El detalle contiene caracteres no permitidos.");
         if (motivo == MotivoDenuncia.Otro && detalle is null) throw new ReglaDeNegocioException("Describe el motivo de la denuncia.");
+        if (motivo == MotivoDenuncia.FotoPerfilNoValida && tipo != TipoObjetoDenuncia.Usuario)
+            throw new ReglaDeNegocioException("Ese motivo solo aplica al denunciar a una persona por su foto de perfil.");
 
         Id = Guid.NewGuid();
         DenuncianteId = denuncianteId;

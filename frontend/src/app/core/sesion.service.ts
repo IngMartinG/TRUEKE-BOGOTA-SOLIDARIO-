@@ -52,8 +52,16 @@ export class SesionService {
   });
   readonly esSuperUsuario = computed(() => this._usuario()?.rol === 'SuperUsuario');
   readonly correoVerificado = computed(() => this._usuario()?.correoVerificado === true);
-  /** Foto de perfil: obligatoria (con el correo verificado) para publicar, solicitar, chatear y pagar. */
-  readonly tieneFoto = computed(() => !!this._usuario()?.fotoUrl);
+  /**
+   * Foto de perfil: obligatoria (con el correo verificado) para publicar, solicitar, chatear y pagar. Debe mostrar la cara
+   * de la persona: una foto rechazada sirve solo hasta su plazo (la API lo indica con fotoValida).
+   */
+  readonly tieneFoto = computed(() => {
+    const u = this._usuario();
+    return !!u?.fotoUrl && u.fotoValida !== false;
+  });
+  /** La foto no muestra la cara: hay que cambiarla (antes de plazoCambioFotoUtc, o ya, si venció). */
+  readonly fotoRechazada = computed(() => this._usuario()?.estadoFoto === 'Rechazada');
   /**
    * La plataforma es solo para mayores de 18 años. Las cuentas creadas antes de pedir la fecha de nacimiento deben
    * registrarla antes de hacer cualquier otra cosa (la API responde 403 "fecha_nacimiento_requerida").
