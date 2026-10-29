@@ -48,6 +48,8 @@ public static class TiposNotificacion
     /// <summary>La moderación revisó la cuenta en revisión por mayoría de edad y descartó la marca.</summary>
     public const string CuentaRevisada = "CuentaRevisada";
     public const string IntercambioCompletado = "IntercambioCompletado";
+    /// <summary>Se cerró porque solo una parte confirmó la entrega: no suma puntos, reputación ni impacto.</summary>
+    public const string IntercambioCerradoSinConfirmar = "IntercambioCerradoSinConfirmar";
     /// <summary>Invita y ganan los dos: a ambos, cuando la persona invitada completa su primer intercambio.</summary>
     public const string InvitacionRecompensada = "InvitacionRecompensada";
     /// <summary>La persona alcanzó un nivel nuevo de Eco-Puntos (Brote, Árbol, Bosque o Guardián).</summary>

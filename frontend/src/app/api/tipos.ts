@@ -1,7 +1,7 @@
 // Tipos del contrato con la API. `schema.d.ts` se genera desde docs/openapi.json (npm run api):
 // nunca se edita a mano. Aquí solo se re-exportan y se añaden etiquetas para la interfaz.
 export type * from './schema';
-import type { CondicionDto, ModoDto, OrdenPublicacionesDto, TipoDocumentoFiscalDto, TipoPqrDto } from './schema';
+import type { CondicionDto, MaterialDto, ModoDto, OrdenPublicacionesDto, PeriodoImpactoDto, TipoDocumentoFiscalDto, TipoPqrDto } from './schema';
 
 /** Estado físico del objeto. `requiereDetalle`: el backend exige describir qué tiene, qué se reparó o qué sirve. */
 export const CONDICIONES: readonly {
@@ -18,6 +18,30 @@ export const CONDICIONES: readonly {
   { valor: 'Reparado', etiqueta: 'Reparado', descripcion: 'Tuvo un daño y fue reparado o reacondicionado.', requiereDetalle: true, clase: 'insignia-sol' },
   { valor: 'ParaRepuestos', etiqueta: 'Para repuestos', descripcion: 'No funciona completo; sirve por sus piezas.', requiereDetalle: true, clase: 'insignia-donacion' },
 ];
+/** Material principal del objeto: define cuánto CO₂ se evita por kilo reutilizado. */
+export const MATERIALES: readonly { valor: MaterialDto; etiqueta: string }[] = [
+  { valor: 'Textil', etiqueta: 'Textil (ropa, cobijas, colchones)' },
+  { valor: 'Electronica', etiqueta: 'Electrónica' },
+  { valor: 'Electrodomestico', etiqueta: 'Electrodoméstico' },
+  { valor: 'Madera', etiqueta: 'Madera' },
+  { valor: 'Papel', etiqueta: 'Papel y cartón' },
+  { valor: 'Plastico', etiqueta: 'Plástico' },
+  { valor: 'Vidrio', etiqueta: 'Vidrio' },
+  { valor: 'Metal', etiqueta: 'Metal' },
+  { valor: 'Mixto', etiqueta: 'Varios materiales' },
+];
+/** Nombre corto del material para tablas y gráficas. */
+export const nombreMaterial = (m: string | null | undefined): string =>
+  ({ Textil: 'Textil', Electronica: 'Electrónica', Electrodomestico: 'Electrodomésticos', Madera: 'Madera', Papel: 'Papel y cartón',
+     Plastico: 'Plástico', Vidrio: 'Vidrio', Metal: 'Metal', Mixto: 'Varios materiales' } as Record<string, string>)[m ?? ''] ?? (m ?? '');
+
+export const PERIODOS_IMPACTO: readonly { valor: PeriodoImpactoDto; etiqueta: string }[] = [
+  { valor: 'Todo', etiqueta: 'Siempre' },
+  { valor: 'Anio', etiqueta: 'Este año' },
+  { valor: 'Trimestre', etiqueta: 'Trimestre' },
+  { valor: 'Mes', etiqueta: 'Este mes' },
+];
+
 export const infoCondicion = (c: string | null | undefined) => CONDICIONES.find((x) => x.valor === c) ?? CONDICIONES[2]!;
 
 export const TIPOS_DOCUMENTO: readonly { valor: TipoDocumentoFiscalDto; etiqueta: string }[] = [

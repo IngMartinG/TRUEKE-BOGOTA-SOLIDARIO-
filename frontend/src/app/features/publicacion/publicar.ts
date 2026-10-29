@@ -24,8 +24,11 @@ import {
   infoCondicion,
   INFO_MODO,
   LOCALIDADES,
+  MATERIALES,
   MODOS,
+  nombreMaterial,
   type CondicionDto,
+  type MaterialDto,
   type CrearPublicacionRequest,
   type ModoDto,
   type MunicipioDto,
@@ -249,6 +252,41 @@ const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
                     <app-error-campo [control]="form.controls.precioReferenciaCop" etiqueta="El precio" idError="precio-error" />
                   </div>
                 }
+
+                <fieldset class="rounded-2xl border border-borde p-4">
+                  <legend class="px-1 text-sm font-semibold">Peso y material <span class="font-normal text-tenue">(opcional)</span></legend>
+                  <p class="ayuda" id="peso-ayuda">
+                    Sirve para calcular cuántos kilos dejan de ir a la basura. Si no lo sabes, usamos el peso típico de la categoría.
+                  </p>
+                  @if (tipicos().length) {
+                    <div class="campo mt-3">
+                      <label class="etiqueta" for="objeto-tipico">Se parece a…</label>
+                      <select id="objeto-tipico" class="entrada" (change)="usarTipico($any($event.target).value)">
+                        <option value="">Elige un objeto común para llenar el peso</option>
+                        @for (o of tipicos(); track o.nombre) {
+                          <option [value]="o.nombre">{{ o.nombre }} · ≈ {{ o.kg }} kg</option>
+                        }
+                      </select>
+                    </div>
+                  }
+                  <div class="mt-3 grid gap-3 sm:grid-cols-2">
+                    <div class="campo">
+                      <label class="etiqueta" for="peso">Peso aproximado (kg)</label>
+                      <input id="peso" type="number" inputmode="decimal" min="0.05" max="500" step="0.1" class="entrada" formControlName="pesoEstimadoKg"
+                        placeholder="Ej: una silla pesa unos 8" aria-describedby="peso-ayuda peso-error" />
+                      <app-error-campo [control]="form.controls.pesoEstimadoKg" etiqueta="El peso" idError="peso-error" />
+                    </div>
+                    <div class="campo">
+                      <label class="etiqueta" for="material">Material principal</label>
+                      <select id="material" class="entrada" formControlName="material">
+                        <option [ngValue]="null">No lo sé</option>
+                        @for (m of materiales; track m.valor) {
+                          <option [ngValue]="m.valor">{{ m.etiqueta }}</option>
+                        }
+                      </select>
+                    </div>
+                  </div>
+                </fieldset>
               </div>
             }
 
@@ -379,6 +417,11 @@ const GUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
                     @if (modoActual() !== 'Donacion' && form.controls.precioReferenciaCop.value) {
                       <div><dt class="text-tenue">{{ modoActual() === 'Compra' ? 'Precio' : 'Valor de referencia' }}</dt><dd class="font-semibold">{{ form.controls.precioReferenciaCop.value | cop }}</dd></div>
                     }
+                    @if (form.controls.pesoEstimadoKg.value || form.controls.material.value) {
+                      <div><dt class="text-tenue">Peso y material</dt><dd class="font-semibold">
+                        {{ form.controls.pesoEstimadoKg.value ? '≈ ' + form.controls.pesoEstimadoKg.value + ' kg' : 'Peso típico' }}{{ form.controls.material.value ? ' · ' + nombreMaterial(form.controls.material.value) : '' }}
+                      </dd></div>
+                    }
                     @if (modoActual() === 'Compra') {
                       <div><dt class="text-tenue">Trueke</dt><dd class="font-semibold">{{ form.controls.aceptaTrueke.value ? 'También lo aceptas' : 'Solo venta' }}</dd></div>
                     }
@@ -503,6 +546,8 @@ export default class Publicar {
     descripcion: ['', [Validators.required, Validators.maxLength(2000)]],
     precioReferenciaCop: this.fb.control<number | null>(null, [Validators.min(0), Validators.max(1_000_000_000)]),
     aceptaTrueke: [false],
+    pesoEstimadoKg: this.fb.control<number | null>(null, [Validators.min(0.05), Validators.max(500)]),
+    material: this.fb.control<MaterialDto | null>(null),
     municipioCodigo: [this.sesion.usuario()?.municipioCodigo ?? CODIGO_BOGOTA, [Validators.required, Validators.pattern(/^\d{5}$/)]],
     localidad: [this.sesion.usuario()?.localidad ?? '', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
   });
@@ -514,7 +559,17 @@ export default class Publicar {
     const n = this.necesidad();
     return !this.id() && this.modoActual() === 'Donacion' && n && GUID.test(n) ? n : null;
   });
+  protected readonly materiales = MATERIALES;
+  protected readonly nombreMaterial = nombreMaterial;
+  private readonly objetosTipicos = toSignal(this.api.objetosTipicos$.pipe(catchError(() => of([]))), { initialValue: [] });
   protected readonly categoriaActual = toSignal(this.form.controls.categoriaId.valueChanges, { initialValue: null });
+  /** Los de la categoría elegida primero; sin categoría, todos. */
+  protected readonly tipicos = computed(() => {
+    const todos = this.objetosTipicos();
+    const cat = this.categoriaActual();
+    const deLaCategoria = todos.filter((o) => o.categoriaId === cat);
+    return deLaCategoria.length ? deLaCategoria : todos;
+  });
   protected readonly condicionActual = toSignal(this.form.controls.condicion.valueChanges, { initialValue: null });
   protected readonly requiereDetalle = computed(() => infoCondicion(this.condicionActual()).requiereDetalle && !!this.condicionActual());
   protected readonly etiquetaCondicion = computed(() => (this.condicionActual() ? infoCondicion(this.condicionActual()).etiqueta : ''));
@@ -691,6 +746,14 @@ export default class Publicar {
     );
   }
 
+  /** Llena el peso y el material con los de un objeto común (se pueden ajustar después). */
+  protected usarTipico(nombre: string): void {
+    const o = this.objetosTipicos().find((x) => x.nombre === nombre);
+    if (!o) return;
+    this.form.patchValue({ pesoEstimadoKg: o.kg ?? null, material: (o.material as MaterialDto) ?? null });
+    this.form.controls.pesoEstimadoKg.markAsDirty();
+  }
+
   private async cargarParaEditar(id: string): Promise<void> {
     this.cargandoEdicion.set(true);
     try {
@@ -709,6 +772,8 @@ export default class Publicar {
         descripcion: p.descripcion ?? '',
         precioReferenciaCop: p.precioReferenciaCop ?? null,
         aceptaTrueke: p.aceptaTrueke ?? false,
+        pesoEstimadoKg: p.pesoEstimadoKg ?? null,
+        material: (p.material as MaterialDto | null) ?? null,
         municipioCodigo: p.municipioCodigo ?? CODIGO_BOGOTA,
         localidad: p.localidad ?? '',
       });
@@ -839,6 +904,8 @@ export default class Publicar {
       localidad: v.localidad.trim(),
       precioReferenciaCop: v.modo === 'Donacion' ? null : v.precioReferenciaCop || null,
       aceptaTrueke: v.modo === 'Compra' && v.aceptaTrueke,
+      pesoEstimadoKg: v.pesoEstimadoKg || null,
+      material: v.material ?? undefined,
       latitud: u?.[0] ?? null,
       longitud: u?.[1] ?? null,
       imagenes: this.fotosListas(),

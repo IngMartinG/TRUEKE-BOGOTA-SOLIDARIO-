@@ -14,6 +14,8 @@ import type {
   EstadisticasPublicacionDto,
   GuardarBusquedaRequest,
   ModoDto,
+  ObjetoTipicoDto,
+  PeriodoImpactoDto,
   OrdenPublicacionesDto,
   PublicacionCercanaDto,
   PublicacionDto,
@@ -55,6 +57,15 @@ export class CatalogoApi {
     });
   /** Público: totales de intercambios completados (el backend los guarda 10 min); una petición por sesión. */
   impacto$ = this.api.get<ImpactoDto>('/impacto', { silencioso: true }).pipe(shareReplay(1));
+  /** Con filtros (la localidad debe ser una de `localidadesDisponibles`). */
+  impactoFiltrado = (f: { periodo?: PeriodoImpactoDto; modo?: ModoDto | null; municipioCodigo?: string | null; localidad?: string | null }) =>
+    this.api.get<ImpactoDto>('/impacto', {
+      params: { periodo: f.periodo && f.periodo !== 'Todo' ? f.periodo : undefined, modo: f.modo ?? undefined,
+        municipioCodigo: f.localidad ? (f.municipioCodigo ?? undefined) : undefined, localidad: f.localidad ?? undefined },
+      silencioso: true,
+    });
+  /** Ayuda al publicar: objetos comunes con su peso y material (no cambian: una petición por sesión). */
+  objetosTipicos$ = this.api.get<ObjetoTipicoDto[]>('/impacto/objetos-tipicos', { silencioso: true }).pipe(shareReplay(1));
   sugerencias = (texto: string, max = 8) =>
     this.api.get<string[]>('/publicaciones/sugerencias', { params: { texto, max }, silencioso: true });
   obtener = (id: string) => this.api.get<PublicacionDto>(`/publicaciones/${seg(id)}`, { silencioso: true });

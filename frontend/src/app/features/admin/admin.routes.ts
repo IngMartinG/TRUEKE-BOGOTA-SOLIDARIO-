@@ -22,6 +22,7 @@ export default [
       { path: 'facturas', title: 'Administración · Facturas', loadComponent: () => import('./facturas') },
       { path: 'pqr', title: 'Administración · PQR', loadComponent: () => import('./pqr') },
       { path: 'fundaciones', title: 'Administración · Fundaciones', canActivate: [exigirSuperUsuario], loadComponent: () => import('./fundaciones') },
+      { path: 'impacto', title: 'Administración · Factores de impacto', canActivate: [exigirSuperUsuario], loadComponent: () => import('./factores-impacto') },
       { path: 'ingresos', title: 'Administración · Ingresos', canActivate: [exigirSuperUsuario], loadComponent: () => import('./ingresos') },
     ],
   },

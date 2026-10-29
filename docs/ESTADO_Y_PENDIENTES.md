@@ -672,6 +672,31 @@ páginas estáticas para buscadores (`generar-seo.mjs`) y la pantalla de carga y
 HtmlSanitizer no aplica: la API solo devuelve JSON, Angular escapa todo y el texto ya se valida con `TextoSeguro`; además
 rechazaría textos normales como "3 < 5" y guardaría el contenido en los registros.
 
+## Hecho el 2026-10-29 — impacto 2.0 (peso, material y registro inmutable)
+Metodología 2.0.0 (`docs/METODOLOGIA-IMPACTO.md`).
+- **Publicación:** `PesoEstimadoKg` (0,05 a 500) y `Material` opcionales. Al publicar, "Se parece a…" llena ambos con un
+  objeto típico (`GET /impacto/objetos-tipicos`, con sesión); sin ellos se usan el peso y el material típicos de la categoría.
+- **Factores** en la tabla `FactoresImpacto` (9 materiales, versión 2.0.0, con fuente). El SuperUsuario los cambia en
+  Administración → Impacto (`PUT /admin/impacto/factores/{material}`), con una fuente y una versión nueva; queda en la auditoría.
+- **Registro inmutable** `RegistrosImpacto`: uno por objeto entregado al completarse un intercambio que ambas partes
+  confirmaron (también los objetos ofrecidos en un trueke, en el sentido contrario), con kg, origen del peso, material,
+  factor, versión, modo, localidad y fecha. Cambiar un factor no reescribe lo contado. La migración `ImpactoPorPesoYMaterial`
+  registró los intercambios anteriores confirmados por las dos partes (con los típicos de su categoría) y activó RLS.
+- **Corrección:** el cierre automático con una sola confirmación ya no da Eco-Puntos, reputación, bono ni impacto (antes los
+  daba, contra la regla de "solo lo que confirman los dos"). Avisa con `IntercambioCerradoSinConfirmar`, y los recordatorios
+  dicen que sin la confirmación de los dos no se suman puntos.
+- **`/impacto`:** filtros por periodo (mes, trimestre o año en curso, hora de Colombia), modo y localidad (solo las que tienen
+  al menos 3 intercambios; si un filtro deja menos de 3, se reservan las cifras), desglose por material, qué parte de los
+  kilos fue declarada, la versión de la metodología y las tablas de factores y pesos típicos. Cada combinación queda 10
+  minutos en caché; cambiar un factor la invalida.
+- **Perfil:** el impacto personal sale de los registros (lo que entregó y lo que recibió).
+- No se hizo la foto de evidencia al confirmar la entrega: pasa al paso de empresas e informes, donde sirve para la
+  trazabilidad.
+- Pruebas: `ImpactoAmbientalTests` (peso declarado o típico, sentido de cada objeto, factor inmutable, versión, periodos),
+  `ImpactoTests` (totales públicos, perfil, cambio de factor sin reescribir, filtros y reserva, objetos típicos),
+  `EntregaTests` (cierre con una confirmación sin puntos ni impacto), una prueba de PostgreSQL del relleno al migrar e
+  `impacto.spec.ts`.
+
 ## Hecho el 2026-10-29 — moderación de publicaciones por riesgo
 Decisión del dueño: solo las publicaciones de riesgo esperan a un moderador; las demás salen al instante.
 - **Estado** en `Publicacion`: `EstadoModeracion` (Aprobada, Pendiente, Rechazada), `PuntajeRiesgo`, `MotivosRiesgo`,
@@ -750,7 +775,9 @@ Se revisó un paquete de documentos con bloques de producto (impacto, fundacione
    automática de la foto (detección local, sin reconocimiento ni biometría) y, si es así, subir su versión.
 2. ~~**Moderación por riesgo**~~: hecho (ver arriba). Los términos ya dicen qué está prohibido; queda que el abogado diga
    si deben mencionar la revisión previa de algunas publicaciones y, si es así, subir su versión.
-3. **Impacto 2.0 (Bloque 1):** peso y material en la publicación, factores en la base de datos, registro de impacto
+3. ~~**Impacto 2.0 (Bloque 1)**~~: hecho (ver arriba), salvo la foto de evidencia, que pasa al paso 6. Queda que el
+   abogado y un tercero (universidad o verificadora) revisen la metodología antes de usarla en informes para empresas.
+   Lo que estaba previsto: **Impacto 2.0 (Bloque 1):** peso y material en la publicación, factores en la base de datos, registro de impacto
    inmutable por intercambio, revisar que el cierre automático con una sola confirmación no sume, foto de evidencia opcional y
    `/impacto` con filtros por localidad, periodo y modo.
 4. **Fundaciones 2.0 (Bloque 2):** marca de Régimen Tributario Especial, página "Lo que piden las fundaciones", sugerir

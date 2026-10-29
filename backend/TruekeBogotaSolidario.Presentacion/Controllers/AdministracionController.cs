@@ -205,6 +205,13 @@ public sealed class AdministracionController : ControllerBase
         return NoContent();
     }
 
+    // ---- Solo SuperUsuario: factores de impacto
+    /// <summary>Cambia el factor de CO₂ de un material con su fuente y una versión nueva de la metodología (queda en la auditoría).</summary>
+    [HttpPut("impacto/factores/{material}"), Authorize(Policy = Politicas.SuperUsuario)]
+    public async Task<ActionResult<FactorImpactoDto>> ActualizarFactorImpacto(MaterialDto material, [FromBody] ActualizarFactorImpactoRequest r,
+        [FromServices] IImpactoService impacto)
+        => Ok(await impacto.ActualizarFactorAsync(User.IdActual(), material, r));
+
     // ---- Solo SuperUsuario: fundaciones verificadas
     /// <summary>Por estado (Pendiente por defecto). En las pendientes, el certificado llega como enlace que caduca en 5 minutos.</summary>
     [HttpGet("fundaciones"), Authorize(Policy = Politicas.SuperUsuario)]

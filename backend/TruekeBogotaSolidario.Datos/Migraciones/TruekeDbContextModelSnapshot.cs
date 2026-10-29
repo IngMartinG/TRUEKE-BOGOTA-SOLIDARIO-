@@ -533,6 +533,111 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("EstadisticasPublicaciones", (string)null);
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.FactorImpacto", b =>
+                {
+                    b.Property<string>("Material")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("ActualizadoPorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("ActualizadoUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Fuente")
+                        .IsRequired()
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<decimal>("KgCo2PorKg")
+                        .HasPrecision(8, 3)
+                        .HasColumnType("numeric(8,3)");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Material");
+
+                    b.ToTable("FactoresImpacto", (string)null);
+
+                    b.HasData(
+                        new
+                        {
+                            Material = "Textil",
+                            ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
+                            KgCo2PorKg = 8.0m,
+                            Version = "2.0.0"
+                        },
+                        new
+                        {
+                            Material = "Electronica",
+                            ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
+                            KgCo2PorKg = 12.0m,
+                            Version = "2.0.0"
+                        },
+                        new
+                        {
+                            Material = "Electrodomestico",
+                            ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
+                            KgCo2PorKg = 5.0m,
+                            Version = "2.0.0"
+                        },
+                        new
+                        {
+                            Material = "Madera",
+                            ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
+                            KgCo2PorKg = 1.2m,
+                            Version = "2.0.0"
+                        },
+                        new
+                        {
+                            Material = "Papel",
+                            ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
+                            KgCo2PorKg = 0.9m,
+                            Version = "2.0.0"
+                        },
+                        new
+                        {
+                            Material = "Plastico",
+                            ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
+                            KgCo2PorKg = 3.0m,
+                            Version = "2.0.0"
+                        },
+                        new
+                        {
+                            Material = "Vidrio",
+                            ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
+                            KgCo2PorKg = 0.7m,
+                            Version = "2.0.0"
+                        },
+                        new
+                        {
+                            Material = "Metal",
+                            ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
+                            KgCo2PorKg = 4.0m,
+                            Version = "2.0.0"
+                        },
+                        new
+                        {
+                            Material = "Mixto",
+                            ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
+                            Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
+                            KgCo2PorKg = 1.5m,
+                            Version = "2.0.0"
+                        });
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Factura", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1165,6 +1270,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<double?>("Longitud")
                         .HasColumnType("double precision");
 
+                    b.Property<string>("Material")
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
                     b.Property<string>("Modo")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -1191,6 +1300,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(5)
                         .IsUnicode(false)
                         .HasColumnType("character varying(5)");
+
+                    b.Property<decimal?>("PesoEstimadoKg")
+                        .HasPrecision(8, 2)
+                        .HasColumnType("numeric(8,2)");
 
                     b.Property<decimal?>("PrecioReferenciaCop")
                         .HasPrecision(18, 2)
@@ -1242,6 +1355,90 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.HasIndex("Latitud", "Longitud");
 
                     b.ToTable("Publicaciones");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.RegistroImpacto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("CategoriaId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("FactorKgCo2PorKg")
+                        .HasPrecision(8, 3)
+                        .HasColumnType("numeric(8,3)");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<decimal>("Kg")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("numeric(10,2)");
+
+                    b.Property<decimal>("KgCo2")
+                        .HasPrecision(12, 2)
+                        .HasColumnType("numeric(12,2)");
+
+                    b.Property<string>("Localidad")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<string>("Material")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("Modo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("MunicipioCodigo")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(5)");
+
+                    b.Property<Guid>("OferenteId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("OrigenPeso")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<Guid>("PublicacionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ReceptorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("TransaccionId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Version")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FechaUtc");
+
+                    b.HasIndex("OferenteId");
+
+                    b.HasIndex("PublicacionId");
+
+                    b.HasIndex("ReceptorId");
+
+                    b.HasIndex("MunicipioCodigo", "Localidad");
+
+                    b.HasIndex("TransaccionId", "PublicacionId")
+                        .IsUnique();
+
+                    b.ToTable("RegistrosImpacto", (string)null);
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.SesionRefresh", b =>
@@ -2150,6 +2347,21 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Navigation("Imagenes");
 
                     b.Navigation("Propietario");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.RegistroImpacto", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Publicacion", null)
+                        .WithMany()
+                        .HasForeignKey("PublicacionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Transaccion", null)
+                        .WithMany()
+                        .HasForeignKey("TransaccionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.SesionRefresh", b =>

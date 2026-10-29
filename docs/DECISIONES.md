@@ -50,6 +50,11 @@ Son reglas con pesos y motivos visibles para quien revisa, no un clasificador op
 Los roles siguen siendo Cliente, Administrador y SuperUsuario. Ser negocio, fundación o empresa es una capacidad de la cuenta
 (plan, verificación u organización), no un permiso.
 
+## D-014 — Impacto por objeto y solo con doble confirmación (2026-10-29)
+El impacto se registra por objeto entregado (con su peso y material, o los típicos de su categoría) y de forma inmutable,
+con el factor y la versión con que se calculó. Un intercambio que se cierra solo porque una parte no confirmó a tiempo no
+suma impacto, Eco-Puntos ni reputación: quien confirmó tiene el incentivo de pedirle a la otra parte que confirme.
+
 ## Pendientes de decidir
 - Precio de "Destacar" (hoy 6.000 COP por 7 días).
 - Punto físico o 100 % digital.

@@ -72,12 +72,14 @@ public sealed class SolicitudService : ISolicitudService
     private readonly IBloqueoRepository _bloqueos;
     private readonly IMovimientoEcoPuntosRepository _movimientos;
     private readonly ILogger<SolicitudService> _log;
+    private readonly IImpactoRepository _impacto;
 
     public SolicitudService(ISolicitudRepository solicitudes, IPublicacionRepository pubs, IUsuarioRepository usuarios,
         ITransaccionRepository transacciones, ICalificacionRepository calificaciones, IUnidadDeTrabajo uow, TimeProvider reloj,
         INotificador notificador, IConversacionRepository conversaciones, IBloqueoRepository bloqueos, IMovimientoEcoPuntosRepository movimientos,
-        ILogger<SolicitudService> log)
+        ILogger<SolicitudService> log, IImpactoRepository impacto)
     {
+        _impacto = impacto;
         _solicitudes = solicitudes; _pubs = pubs; _usuarios = usuarios; _transacciones = transacciones; _calificaciones = calificaciones;
         _uow = uow; _reloj = reloj; _notificador = notificador; _conversaciones = conversaciones; _bloqueos = bloqueos; _movimientos = movimientos; _log = log;
     }
@@ -389,7 +391,7 @@ public sealed class SolicitudService : ISolicitudService
         {
             await _uow.GuardarCambiosAsync();
             await NotificarAsync(otra, TiposNotificacion.EntregaConfirmada,
-                $"La otra parte confirmó la entrega de \"{s.Publicacion.Titulo}\". Confírmala tú también o, si no se concretó, márcalo así (si no haces nada, se completará sola en {Limites.DiasCierreConUnaConfirmacion} días).", s.Id);
+                $"La otra parte confirmó la entrega de \"{s.Publicacion.Titulo}\". Confírmala tú también para que los dos sumen Eco-Puntos o, si no se concretó, márcalo así (si no haces nada, se cerrará en {Limites.DiasCierreConUnaConfirmacion} días sin puntos para nadie).", s.Id);
         }
         return await UnaAsync(actorId, s);
     }
@@ -439,8 +441,12 @@ public sealed class SolicitudService : ISolicitudService
                 $"\"{pub.Titulo}\" volvió al catálogo. Tienes {enEspera.Count} {(enEspera.Count == 1 ? "persona" : "personas")} en lista de espera: puedes elegir a otra.", pub.Id);
     }
 
-    /// <summary>Completa el intercambio: aquí (y solo aquí) se otorgan Eco-Puntos y reputación, con el tope anti-farmeo.</summary>
-    private async Task CompletarAsync(Solicitud s, DateTime ahora)
+    /// <summary>
+    /// Completa el intercambio: aquí (y solo aquí) se otorgan Eco-Puntos y reputación, con el tope anti-farmeo, y se registra el
+    /// impacto. Si se cerró solo porque una parte no confirmó (<paramref name="ambasConfirmaron"/> = false), los objetos
+    /// cambiaron de manos pero no suman puntos, reputación ni impacto: solo cuenta lo que confirman las dos partes.
+    /// </summary>
+    private async Task CompletarAsync(Solicitud s, DateTime ahora, bool ambasConfirmaron = true)
     {
         var pub = s.Publicacion!;
         var oferente = pub.Propietario ?? await _usuarios.ObtenerPorIdAsync(pub.PropietarioId) ?? throw new NoEncontradoException("Usuario no encontrado.");
@@ -455,7 +461,7 @@ public sealed class SolicitudService : ISolicitudService
         // (o con un amigo) no se puede "fabricar" saldo para descuentos ni una reputación falsa para estafar.
         var parejaRepetida = await _transacciones.ExisteConPuntosEntreDesdeAsync(oferente.Id, receptor.Id,
             ahora.AddDays(-PoliticaEcoPuntos.DiasEntreTransaccionesConPuntosMismaPareja));
-        if (parejaRepetida)
+        if (parejaRepetida || !ambasConfirmaron)
         {
             puntosOferente = false;
             puntosReceptor = false;
@@ -480,7 +486,13 @@ public sealed class SolicitudService : ISolicitudService
         foreach (var (invitado, otro, conPuntos) in new[] { (oferente, receptor, puntosOferente), (receptor, oferente, puntosReceptor) })
             if (await RecompensarInvitacionAsync(invitado, otro, conPuntos, s.Id, ahora, avisosPuntos) is { } recompensa)
                 invitaciones.Add(recompensa);
-        _transacciones.Agregar(new Transaccion(pub.Id, s.Id, oferente.Id, receptor.Id, s.Modo, puntosOferente, puntosReceptor, ahora));
+        var transaccion = new Transaccion(pub.Id, s.Id, oferente.Id, receptor.Id, s.Modo, puntosOferente, puntosReceptor, ahora);
+        _transacciones.Agregar(transaccion);
+        if (ambasConfirmaron)
+        {
+            var factores = (await _impacto.ListarFactoresAsync()).ToDictionary(f => f.Material);
+            foreach (var registro in ImpactoAmbiental.Registros(transaccion, pub, ofrecidas, factores)) _impacto.Agregar(registro);
+        }
         // Los objetos ya se entregaron: sus listas de espera se cierran (en el mismo guardado, todo o nada).
         var avisos = new AvisosDiferidos();
         foreach (var entregada in ofrecidas.Prepend(pub))
@@ -498,7 +510,10 @@ public sealed class SolicitudService : ISolicitudService
         await avisos.EnviarAsync(_notificador);
         _log.LogInformation("Transacción completada {SolicitudId} modo {Modo}", s.Id, s.Modo);
         foreach (var id in new[] { oferente.Id, receptor.Id })
-            await NotificarAsync(id, TiposNotificacion.IntercambioCompletado, parejaRepetida
+            await NotificarAsync(id, ambasConfirmaron ? TiposNotificacion.IntercambioCompletado : TiposNotificacion.IntercambioCerradoSinConfirmar,
+                !ambasConfirmaron
+                ? $"El intercambio de \"{pub.Titulo}\" se cerró porque solo una parte confirmó la entrega en {Limites.DiasCierreConUnaConfirmacion} días. Sin la confirmación de los dos no suma Eco-Puntos ni impacto."
+                : parejaRepetida
                 ? $"¡Intercambio de \"{pub.Titulo}\" completado! Como ya intercambiaron hace poco, este no suma Eco-Puntos (se suman una vez cada {PoliticaEcoPuntos.DiasEntreTransaccionesConPuntosMismaPareja} días por pareja)."
                 : $"¡Intercambio de \"{pub.Titulo}\" completado! Ya puedes calificar a la otra persona.", s.Id);
         foreach (var (invitado, invitador) in invitaciones)
@@ -549,7 +564,7 @@ public sealed class SolicitudService : ISolicitudService
         var algunaConfirmacion = s.ConfirmadaPorDuenioUtc is not null || s.ConfirmadaPorSolicitanteUtc is not null;
         if (algunaConfirmacion && s.FechaAceptacionUtc < ahora.AddDays(-Limites.DiasCierreConUnaConfirmacion))
         {
-            await CompletarAsync(s, ahora);
+            await CompletarAsync(s, ahora, ambasConfirmaron: false);
         }
         else if (!algunaConfirmacion && s.FechaAceptacionUtc < ahora.AddDays(-Limites.DiasCierreSinConfirmacion))
         {
@@ -587,7 +602,7 @@ public sealed class SolicitudService : ISolicitudService
         {
             s.MarcarRecordatorioCierre(ahora);
             mensaje = unaConfirmo
-                ? $"Mañana se completa solo el intercambio de \"{titulo}\": la otra parte ya confirmó la entrega. Si no se concretó, márcalo hoy en Mis intercambios."
+                ? $"Mañana se cierra el intercambio de \"{titulo}\": la otra parte ya confirmó la entrega. Confírmala hoy para que los dos sumen Eco-Puntos o, si no se concretó, márcalo en Mis intercambios."
                 : $"Mañana se cierra como no concretado el intercambio de \"{titulo}\" porque nadie confirmó la entrega. Si ya se hizo, confírmala hoy.";
         }
         else if (s.RecordatorioEntregaUtc is null && aceptada <= ahora.AddDays(-Limites.DiasRecordatorioEntrega))

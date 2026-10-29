@@ -64,8 +64,10 @@ public sealed class PublicacionService : IPublicacionService
         ISolicitudRepository solicitudes, IFavoritoRepository favoritos, IEstadisticaRepository estadisticas, IUnidadDeTrabajo uow,
         IOptions<UrlsOpciones> urls, TimeProvider reloj, INotificador notificador, IAlmacenArchivos almacen, IRegistroVistas vistas,
         ICalificacionRepository calificaciones, IPresencia presencia, ISolicitudService truekes, ISesionModeracion sesionModeracion,
-        ITransaccionRepository transacciones, IFundacionService fundaciones, IModeracionPublicacionesService moderacion)
+        ITransaccionRepository transacciones, IFundacionService fundaciones, IModeracionPublicacionesService moderacion,
+        IImpactoRepository impacto)
     {
+        _impacto = impacto;
         _sesionModeracion = sesionModeracion; _transacciones = transacciones; _fundaciones = fundaciones; _moderacion = moderacion;
         _pubs = pubs; _usuarios = usuarios; _categorias = categorias; _solicitudes = solicitudes; _favoritos = favoritos;
         _estadisticas = estadisticas; _uow = uow; _urls = urls.Value; _reloj = reloj; _notificador = notificador; _almacen = almacen;
@@ -78,6 +80,7 @@ public sealed class PublicacionService : IPublicacionService
     private readonly ITransaccionRepository _transacciones;
     private readonly IFundacionService _fundaciones;
     private readonly IModeracionPublicacionesService _moderacion;
+    private readonly IImpactoRepository _impacto;
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
@@ -116,7 +119,7 @@ public sealed class PublicacionService : IPublicacionService
         if (r.Condicion is null) throw new ReglaDeNegocioException("Indica el estado del producto (nuevo, usado, reparado…).");
         return new DatosPublicacion(r.Titulo, r.Descripcion, categoria, (ModoTransaccion)(int)r.Modo, (CondicionProducto)(int)r.Condicion.Value,
             r.DetalleCondicion, r.MunicipioCodigo ?? actor.MunicipioCodigo, r.Localidad, r.PrecioReferenciaCop, r.Latitud, r.Longitud, imagenes,
-            r.AceptaTrueke);
+            r.AceptaTrueke, r.PesoEstimadoKg, r.Material.HasValue ? (MaterialObjeto)(int)r.Material.Value : null);
     }
 
     /// <summary>
@@ -423,9 +426,9 @@ public sealed class PublicacionService : IPublicacionService
         var ahora = Ahora;
         var (_, total) = await _pubs.ListarVisiblesDePropietarioAsync(usuarioId, 1, 1, ahora);
         var confianza = await SenalesConfianzaAsync(u, ahora, verPresencia: actorId.HasValue);
-        var (objetos, kg, co2) = ImpactoAmbiental.Estimar(await _transacciones.ContarPorCategoriaDeUsuarioAsync(u.Id));
+        var (objetos, kg, co2) = await _impacto.DeUsuarioAsync(u.Id);
         return Mapeos.APerfilUsuario(u, total, confianza, ahora)
-            with { Logros = Logros.Obtenidos(await DatosLogrosAsync(u, confianza), ahora), Impacto = new ImpactoPersonalDto(objetos, kg, co2) };
+            with { Logros = Logros.Obtenidos(await DatosLogrosAsync(u, confianza), ahora), Impacto = new ImpactoPersonalDto(objetos, Math.Round(kg, 1), Math.Round(co2, 1)) };
     }
 
     public async Task<IReadOnlyList<LogroDto>> MisLogrosAsync(Guid actorId)

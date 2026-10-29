@@ -155,7 +155,7 @@ public static class Limites
     public static readonly TimeSpan VentanaVistaUnica = TimeSpan.FromHours(6);
     public const int MaxPagosPendientesPorHora = 5;
     public const int MaxComentariosPorHora = 20;
-    /// <summary>Si solo una parte confirmó la entrega, el intercambio se completa solo pasados estos días.</summary>
+    /// <summary>Si solo una parte confirmó la entrega, el intercambio se cierra pasados estos días (sin puntos, reputación ni impacto).</summary>
     public const int DiasCierreConUnaConfirmacion = 7;
     /// <summary>Si nadie confirmó la entrega, el acuerdo se da por no concretado pasados estos días.</summary>
     public const int DiasCierreSinConfirmacion = 30;

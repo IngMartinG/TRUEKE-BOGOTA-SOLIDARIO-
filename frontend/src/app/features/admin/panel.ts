@@ -57,7 +57,7 @@ export default class Panel {
     { ruta: 'facturas', texto: 'Facturas', icono: 'factura' },
     { ruta: 'pqr', texto: 'PQR', icono: 'soporte' },
     ...(this.sesion.esSuperUsuario()
-      ? [{ ruta: 'fundaciones', texto: 'Fundaciones', icono: 'heart' }, { ruta: 'ingresos', texto: 'Ingresos', icono: 'grafica' }]
+      ? [{ ruta: 'fundaciones', texto: 'Fundaciones', icono: 'heart' }, { ruta: 'impacto', texto: 'Impacto', icono: 'hoja' }, { ruta: 'ingresos', texto: 'Ingresos', icono: 'grafica' }]
       : []),
   ]);
 }

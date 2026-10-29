@@ -12,6 +12,8 @@ public class TruekeDbContext : DbContext
     public DbSet<Publicacion> Publicaciones => Set<Publicacion>();
     public DbSet<Solicitud> Solicitudes => Set<Solicitud>();
     public DbSet<Transaccion> Transacciones => Set<Transaccion>();
+    public DbSet<FactorImpacto> FactoresImpacto => Set<FactorImpacto>();
+    public DbSet<RegistroImpacto> RegistrosImpacto => Set<RegistroImpacto>();
     public DbSet<MovimientoEcoPuntos> MovimientosEcoPuntos => Set<MovimientoEcoPuntos>();
     public DbSet<Pago> Pagos => Set<Pago>();
     public DbSet<AuditoriaEvento> Auditoria => Set<AuditoriaEvento>();
@@ -141,6 +143,8 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => x.EstadoModeracion);
             e.Ignore(x => x.EsVisible);
             e.Property(x => x.PrecioReferenciaCop).HasPrecision(18, 2);
+            e.Property(x => x.PesoEstimadoKg).HasPrecision(8, 2);
+            e.Property(x => x.Material).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.Modo).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.Condicion).HasConversion<string>().HasMaxLength(20);
@@ -422,6 +426,52 @@ public class TruekeDbContext : DbContext
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.ReceptorId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.OferenteId, x.FechaUtc });
             e.HasIndex(x => new { x.ReceptorId, x.FechaUtc });
+        });
+
+        mb.Entity<FactorImpacto>(e =>
+        {
+            e.ToTable("FactoresImpacto");
+            e.HasKey(x => x.Material);
+            e.Property(x => x.Material).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.KgCo2PorKg).HasPrecision(8, 3);
+            e.Property(x => x.Fuente).HasMaxLength(FactorImpacto.LongitudMaximaFuente).IsRequired();
+            e.Property(x => x.Version).HasMaxLength(FactorImpacto.LongitudMaximaVersion).IsRequired();
+            // Metodología 2.0.0 (docs/METODOLOGIA-IMPACTO.md): factores conservadores por material.
+            var inicio = new DateTime(2026, 10, 29, 0, 0, 0, DateTimeKind.Utc);
+            const string fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja";
+            e.HasData(
+                new { Material = MaterialObjeto.Textil, KgCo2PorKg = 8.0m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Electronica, KgCo2PorKg = 12.0m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Electrodomestico, KgCo2PorKg = 5.0m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Madera, KgCo2PorKg = 1.2m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Papel, KgCo2PorKg = 0.9m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Plastico, KgCo2PorKg = 3.0m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Vidrio, KgCo2PorKg = 0.7m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Metal, KgCo2PorKg = 4.0m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Mixto, KgCo2PorKg = 1.5m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio });
+        });
+
+        mb.Entity<RegistroImpacto>(e =>
+        {
+            e.ToTable("RegistrosImpacto");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Modo).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.Material).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.OrigenPeso).HasConversion<string>().HasMaxLength(30);
+            e.Property(x => x.Kg).HasPrecision(10, 2);
+            e.Property(x => x.KgCo2).HasPrecision(12, 2);
+            e.Property(x => x.FactorKgCo2PorKg).HasPrecision(8, 3);
+            e.Property(x => x.Version).HasMaxLength(FactorImpacto.LongitudMaximaVersion).IsRequired();
+            e.Property(x => x.MunicipioCodigo).HasMaxLength(5).IsUnicode(false).IsRequired();
+            e.Property(x => x.Localidad).HasMaxLength(60).IsRequired();
+            e.HasOne<Transaccion>().WithMany().HasForeignKey(x => x.TransaccionId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Publicacion>().WithMany().HasForeignKey(x => x.PublicacionId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.TransaccionId, x.PublicacionId }).IsUnique(); // un objeto se cuenta una vez por intercambio
+            e.HasIndex(x => x.FechaUtc);
+            e.HasIndex(x => new { x.MunicipioCodigo, x.Localidad });
+            e.HasIndex(x => x.OferenteId);
+            e.HasIndex(x => x.ReceptorId);
         });
 
         mb.Entity<AuditoriaEvento>(e =>
