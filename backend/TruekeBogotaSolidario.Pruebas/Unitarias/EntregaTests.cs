@@ -74,11 +74,13 @@ public class EntregaTests
     }
 
     [Fact]
-    public async Task Con_una_confirmacion_se_completa_sola_a_los_7_dias()
+    public async Task Con_una_confirmacion_se_cierra_sola_a_los_7_dias_sin_puntos_ni_impacto()
     {
         var reloj = new RelojFalso();
         using var e = new EntornoNegocio(reloj: reloj);
         var (duenio, solicitante, sol, _) = await AcordarAsync(e);
+        var saldoDuenio = await SaldoAsync(e, duenio);
+        var saldoSolicitante = await SaldoAsync(e, solicitante);
         await e.EnScopeAsync<ISolicitudService, SolicitudDto>(s => s.ConfirmarEntregaAsync(duenio, sol));
 
         reloj.Avanzar(TimeSpan.FromDays(6));
@@ -89,6 +91,13 @@ public class EntregaTests
         Assert.Contains(sol, ids);
         await e.EnScopeAsync<ISolicitudService>(s => s.CerrarAutomaticamenteAsync(sol));
         Assert.Equal("Completada", (await SolicitudAsync(e, solicitante, sol)).Estado);
+        // Solo cuenta lo que confirman las dos partes: ni Eco-Puntos ni impacto para nadie.
+        Assert.Equal(saldoDuenio, await SaldoAsync(e, duenio));
+        Assert.Equal(saldoSolicitante, await SaldoAsync(e, solicitante));
+        var perfil = await e.EnScopeAsync<IPublicacionService, PerfilUsuarioDto>(s => s.ObtenerPerfilAsync(null, duenio));
+        Assert.Equal(0, perfil.Impacto!.Objetos);
+        var avisos = await e.EnScopeAsync<INotificacionService, PaginaDto<NotificacionDto>>(s => s.ListarAsync(duenio, false, 1, 50));
+        Assert.Contains(avisos.Items, n => n.Tipo == TiposNotificacion.IntercambioCerradoSinConfirmar);
     }
 
     private static async Task<IReadOnlyList<NotificacionDto>> RecordatoriosAsync(EntornoNegocio e, Guid id)
@@ -127,7 +136,7 @@ public class EntregaTests
         Assert.Single(await RecordatoriosAsync(e, duenio));
         var avisos = await RecordatoriosAsync(e, solicitante);
         Assert.Equal(2, avisos.Count);
-        Assert.Contains(avisos, n => n.Mensaje.StartsWith("Mañana se completa solo"));
+        Assert.Contains(avisos, n => n.Mensaje.StartsWith("Mañana se cierra el intercambio") && n.Mensaje.Contains("sumen Eco-Puntos"));
         Assert.Empty(await e.EnScopeAsync<ISolicitudService, IReadOnlyList<Guid>>(s => s.ListarParaRecordatorioAsync(100)));
     }
 

@@ -27,7 +27,7 @@ async function montar(entradas: Record<string, string>) {
     imports: [Publicar],
     providers: [
       provideRouter([]),
-      { provide: CatalogoApi, useValue: { categorias$: of([{ id: 1, nombre: 'Libros' }]), crear } },
+      { provide: CatalogoApi, useValue: { categorias$: of([{ id: 1, nombre: 'Libros' }]), objetosTipicos$: of([]), crear } },
       { provide: AvisosService, useValue: avisos },
       { provide: SubidasService, useValue: {} },
       { provide: ConfigService, useValue: { maxImagenes: signal(5), tamanoMaximo: signal(5 * 1024 * 1024) } },

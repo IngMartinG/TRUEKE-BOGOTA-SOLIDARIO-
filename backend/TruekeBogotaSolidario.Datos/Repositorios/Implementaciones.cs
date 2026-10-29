@@ -467,34 +467,60 @@ public sealed class TransaccionRepository : ITransaccionRepository
             .OrderByDescending(t => t.FechaUtc).Take(200).ToListAsync();
 
     public void Agregar(Transaccion transaccion) => _db.Transacciones.Add(transaccion);
+}
 
-    public async Task<ResumenImpacto> ResumenImpactoAsync(DateTime desdeMesUtc, int minimoPorLocalidad, int maxLocalidades)
+public sealed class ImpactoRepository : IImpactoRepository
+{
+    private readonly TruekeDbContext _db;
+    public ImpactoRepository(TruekeDbContext db) => _db = db;
+
+    public async Task<IReadOnlyList<FactorImpacto>> ListarFactoresAsync()
+        => await _db.FactoresImpacto.AsNoTracking().OrderBy(f => f.Material).ToListAsync();
+
+    public Task<FactorImpacto?> ObtenerFactorAsync(MaterialObjeto material) => _db.FactoresImpacto.FirstOrDefaultAsync(f => f.Material == material);
+
+    private IQueryable<RegistroImpacto> Filtrados(FiltroImpacto f)
     {
-        var t = _db.Transacciones.AsNoTracking();
-        var porModo = await t.GroupBy(x => x.Modo).Select(g => new { Modo = g.Key, Total = g.Count() }).ToListAsync();
-        int Modo(ModoTransaccion m) => porModo.FirstOrDefault(x => x.Modo == m)?.Total ?? 0;
-        var personas = await t.Select(x => x.OferenteId).Union(t.Select(x => x.ReceptorId)).CountAsync();
-        var esteMes = await t.CountAsync(x => x.FechaUtc >= desdeMesUtc);
-        var localidades = await (from x in t
-                                 join p in _db.Publicaciones.AsNoTracking() on x.PublicacionId equals p.Id
-                                 group x by new { p.MunicipioCodigo, p.Localidad } into g
-                                 where g.Count() >= minimoPorLocalidad
-                                 orderby g.Count() descending
-                                 select new ImpactoLocalidad(g.Key.MunicipioCodigo, g.Key.Localidad, g.Count()))
-            .Take(maxLocalidades).ToListAsync();
-        return new ResumenImpacto(Modo(ModoTransaccion.Trueke), Modo(ModoTransaccion.Compra), Modo(ModoTransaccion.Donacion), personas, esteMes, localidades,
-            await PorCategoriaAsync(t));
+        var q = _db.RegistrosImpacto.AsNoTracking();
+        if (f.DesdeUtc is { } desde) q = q.Where(r => r.FechaUtc >= desde);
+        if (f.Modo is { } modo) q = q.Where(r => r.Modo == modo);
+        if (f.MunicipioCodigo is { } mpio) q = q.Where(r => r.MunicipioCodigo == mpio);
+        if (f.Localidad is { } loc) q = q.Where(r => r.Localidad == loc);
+        return q;
     }
 
-    public Task<IReadOnlyDictionary<int, int>> ContarPorCategoriaDeUsuarioAsync(Guid usuarioId)
-        => PorCategoriaAsync(_db.Transacciones.AsNoTracking().Where(t => t.OferenteId == usuarioId || t.ReceptorId == usuarioId));
+    public async Task<TotalesImpacto> TotalesAsync(FiltroImpacto filtro)
+    {
+        var q = Filtrados(filtro);
+        var porMaterial = await q.GroupBy(r => r.Material)
+            .Select(g => new ImpactoMaterial(g.Key, g.Count(), g.Sum(r => r.Kg), g.Sum(r => r.KgCo2))).ToListAsync();
+        var porModo = await q.Select(r => new { r.TransaccionId, r.Modo }).Distinct()
+            .GroupBy(x => x.Modo).Select(g => new { Modo = g.Key, Total = g.Count() }).ToListAsync();
+        int Modo(ModoTransaccion m) => porModo.FirstOrDefault(x => x.Modo == m)?.Total ?? 0;
+        var personas = await q.Select(r => r.OferenteId).Union(q.Select(r => r.ReceptorId)).CountAsync();
+        var declarados = await q.Where(r => r.OrigenPeso == OrigenPeso.Declarado).SumAsync(r => (decimal?)r.Kg) ?? 0;
+        return new TotalesImpacto(porMaterial.Sum(m => m.Objetos), porModo.Sum(m => m.Total), Modo(ModoTransaccion.Trueke),
+            Modo(ModoTransaccion.Compra), Modo(ModoTransaccion.Donacion), personas, porMaterial.Sum(m => m.Kg), porMaterial.Sum(m => m.KgCo2),
+            declarados, porMaterial.OrderByDescending(m => m.Kg).ToList());
+    }
 
-    private async Task<IReadOnlyDictionary<int, int>> PorCategoriaAsync(IQueryable<Transaccion> t)
-        => await (from x in t
-                  join p in _db.Publicaciones.AsNoTracking() on x.PublicacionId equals p.Id
-                  group x by p.CategoriaId into g
-                  select new { CategoriaId = g.Key, Total = g.Count() })
-            .ToDictionaryAsync(x => x.CategoriaId, x => x.Total);
+    public async Task<IReadOnlyList<ImpactoLocalidad>> LocalidadesAsync(DateTime? desdeUtc, int minimo, int maximo)
+        => await Filtrados(new FiltroImpacto(desdeUtc))
+            .Select(r => new { r.MunicipioCodigo, r.Localidad, r.TransaccionId }).Distinct()
+            .GroupBy(x => new { x.MunicipioCodigo, x.Localidad })
+            .Where(g => g.Count() >= minimo)
+            .OrderByDescending(g => g.Count()).ThenBy(g => g.Key.Localidad)
+            .Select(g => new ImpactoLocalidad(g.Key.MunicipioCodigo, g.Key.Localidad, g.Count()))
+            .Take(Math.Clamp(maximo, 1, 200)).ToListAsync();
+
+    public async Task<(int Objetos, decimal Kg, decimal KgCo2)> DeUsuarioAsync(Guid usuarioId)
+    {
+        var t = await _db.RegistrosImpacto.AsNoTracking().Where(r => r.OferenteId == usuarioId || r.ReceptorId == usuarioId)
+            .GroupBy(_ => 1).Select(g => new { Objetos = g.Count(), Kg = g.Sum(r => r.Kg), Co2 = g.Sum(r => r.KgCo2) }).FirstOrDefaultAsync();
+        return t is null ? (0, 0, 0) : (t.Objetos, t.Kg, t.Co2);
+    }
+
+    public void Agregar(RegistroImpacto registro) => _db.RegistrosImpacto.Add(registro);
 }
 
 public sealed class PagoRepository : IPagoRepository

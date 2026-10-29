@@ -2,6 +2,9 @@ import { inject, Injectable } from '@angular/core';
 import type {
   AccionDenunciaDto,
   ColaModeracionDto,
+  ActualizarFactorImpactoRequest,
+  FactorImpactoDto,
+  MaterialDto,
   PublicacionesEnRevisionDto,
   ApelacionAdminDto,
   DenunciaAgrupadaDto,
@@ -67,6 +70,9 @@ export class AdminApi {
   aprobarFoto = (id: string) => this.api.post<void>(`/admin/fotos/${seg(id)}/aprobar`);
   rechazarFoto = (id: string, motivo: string) => this.api.post<void>(`/admin/fotos/${seg(id)}/rechazar`, { motivo });
   publicacionesEnRevision = () => this.api.get<PublicacionesEnRevisionDto>('/admin/moderacion/publicaciones');
+  /** Solo SuperUsuario: lo ya registrado conserva el factor y la versión con que se calculó. */
+  actualizarFactorImpacto = (material: MaterialDto, r: ActualizarFactorImpactoRequest) =>
+    this.api.put<FactorImpactoDto>(`/admin/impacto/factores/${seg(material)}`, r);
   colaModeracion = () => this.api.get<ColaModeracionDto>('/admin/moderacion/cola');
   /** Devuelve cuántas se aprobaron (las que otro moderador ya resolvió se ignoran). */
   aprobarPublicaciones = (ids: readonly string[]) => this.api.post<number>('/admin/moderacion/publicaciones/aprobar', { ids });

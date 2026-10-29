@@ -343,13 +343,72 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
         ALTER TABLE "Publicaciones" ADD "MotivosRiesgo" character varying(500);
         ALTER TABLE "Publicaciones" ADD "MotivoRechazo" character varying(300);
         ALTER TABLE "Publicaciones" ADD "EnRevisionDesdeUtc" timestamp with time zone;
+        ALTER TABLE "Publicaciones" ADD "PesoEstimadoKg" numeric(8,2);
+        ALTER TABLE "Publicaciones" ADD "Material" character varying(20);
         """;
     private const string QuitarColumnasPosteriores = """
         ALTER TABLE "Usuarios" DROP COLUMN "EstadoFoto", DROP COLUMN "FotoRevisadaUtc", DROP COLUMN "MotivoRechazoFoto",
             DROP COLUMN "PlazoCambioFotoUtc";
         ALTER TABLE "Publicaciones" DROP COLUMN "EstadoModeracion", DROP COLUMN "PuntajeRiesgo", DROP COLUMN "MotivosRiesgo",
-            DROP COLUMN "MotivoRechazo", DROP COLUMN "EnRevisionDesdeUtc";
+            DROP COLUMN "MotivoRechazo", DROP COLUMN "EnRevisionDesdeUtc", DROP COLUMN "PesoEstimadoKg", DROP COLUMN "Material";
         """;
+
+    [SkippableFact]
+    public async Task La_migracion_de_impacto_registra_solo_los_intercambios_que_ambas_partes_confirmaron()
+    {
+        Skip.IfNot(_sql.Disponible, _sql.MotivoNoDisponible);
+        var cadena = _sql.NuevaBase();
+        await using (var db = Contexto(cadena)) await db.GetService<IMigrator>().MigrateAsync("20261029200823_ModeracionPorRiesgo");
+
+        Datos.Entidades.Usuario Persona(string n) => new($"{n} Prueba", "Suba", $"{n}{Guid.NewGuid():N}@t.co", "Clave12345");
+        var duenio = Persona("duenio");
+        var otro = Persona("otro");
+        Guid confirmada, sola;
+        await using (var db = Contexto(cadena))
+        {
+            await db.Database.ExecuteSqlRawAsync("""
+                ALTER TABLE "Publicaciones" ADD "PesoEstimadoKg" numeric(8,2);
+                ALTER TABLE "Publicaciones" ADD "Material" character varying(20);
+                """);
+            var ropa = await db.Categorias.FirstAsync(c => c.Id == 1);
+            var ahora = DateTime.UtcNow;
+            Datos.Entidades.Publicacion Pub() => new(duenio.Id, new Datos.Entidades.DatosPublicacion("Chaqueta", "Abrigada", ropa,
+                Datos.Entidades.ModoTransaccion.Donacion, Datos.Entidades.CondicionProducto.Usado, null, Divipola.CodigoBogota, "Suba",
+                null, null, null, null));
+            Datos.Entidades.Transaccion Intercambio(Datos.Entidades.Publicacion p, bool ambas)
+            {
+                var s = new Datos.Entidades.Solicitud(p.Id, otro.Id, Datos.Entidades.ModoTransaccion.Donacion, "La necesito");
+                s.Aceptar(true, ahora);
+                s.ConfirmarEntrega(true, ahora);
+                if (ambas) s.ConfirmarEntrega(false, ahora);
+                s.Completar(ahora);
+                db.Solicitudes.Add(s);
+                return new Datos.Entidades.Transaccion(p.Id, s.Id, duenio.Id, otro.Id, Datos.Entidades.ModoTransaccion.Donacion, ambas, ambas, ahora);
+            }
+            db.Usuarios.AddRange(duenio, otro);
+            var p1 = Pub();
+            var p2 = Pub();
+            db.Publicaciones.AddRange(p1, p2);
+            var t1 = Intercambio(p1, ambas: true);
+            var t2 = Intercambio(p2, ambas: false);
+            db.Transacciones.AddRange(t1, t2);
+            await db.SaveChangesAsync();
+            (confirmada, sola) = (t1.Id, t2.Id);
+            await db.Database.ExecuteSqlRawAsync("""ALTER TABLE "Publicaciones" DROP COLUMN "PesoEstimadoKg", DROP COLUMN "Material";""");
+        }
+
+        await using (var db = Contexto(cadena)) await db.Database.MigrateAsync();
+
+        await using var lectura = Contexto(cadena);
+        var registros = await lectura.RegistrosImpacto.AsNoTracking().ToListAsync();
+        var r = Assert.Single(registros); // el que se cerró con una sola confirmación no cuenta
+        Assert.Equal(confirmada, r.TransaccionId);
+        Assert.Equal((0.5m, Datos.Entidades.MaterialObjeto.Textil, 4m, "2.0.0"), (r.Kg, r.Material, r.KgCo2, r.Version));
+        Assert.Equal(Datos.Entidades.OrigenPeso.EstimadoPorCategoria, r.OrigenPeso);
+        Assert.Equal((duenio.Id, otro.Id, "Suba"), (r.OferenteId, r.ReceptorId, r.Localidad));
+        Assert.DoesNotContain(registros, x => x.TransaccionId == sola);
+        Assert.Equal(9, await lectura.FactoresImpacto.CountAsync());
+    }
 
     [SkippableFact]
     public async Task El_indice_unico_de_correo_impide_duplicados()

@@ -175,20 +175,36 @@ public interface IMovimientoEcoPuntosRepository
 /// Totales de intercambios completados para la página de impacto. Nunca incluye datos de personas.
 /// PorCategoria: intercambios por categoría de lo entregado (para estimar kilos y CO₂).
 /// </summary>
-public sealed record ResumenImpacto(int Truekes, int Compras, int Donaciones, int Personas, int EsteMes,
-    IReadOnlyList<ImpactoLocalidad> Localidades, IReadOnlyDictionary<int, int> PorCategoria);
 public sealed record ImpactoLocalidad(string MunicipioCodigo, string Localidad, int Intercambios);
+
+/// <summary>Filtros del panel de impacto (null = sin filtro).</summary>
+public sealed record FiltroImpacto(DateTime? DesdeUtc = null, ModoTransaccion? Modo = null, string? MunicipioCodigo = null, string? Localidad = null);
+public sealed record ImpactoMaterial(MaterialObjeto Material, int Objetos, decimal Kg, decimal KgCo2);
+/// <param name="Intercambios">Intercambios completados (un trueke con objetos es uno solo); Objetos cuenta cada objeto entregado.</param>
+/// <param name="KgDeclarados">Parte de los kilos que declaró quien publicó (el resto es el peso típico de la categoría).</param>
+public sealed record TotalesImpacto(int Objetos, int Intercambios, int Truekes, int Compras, int Donaciones, int Personas,
+    decimal Kg, decimal KgCo2, decimal KgDeclarados, IReadOnlyList<ImpactoMaterial> PorMaterial);
+
+/// <summary>Registros de impacto (inmutables) y factores por material.</summary>
+public interface IImpactoRepository
+{
+    Task<IReadOnlyList<FactorImpacto>> ListarFactoresAsync();
+    /// <summary>Con seguimiento, para editarlo.</summary>
+    Task<FactorImpacto?> ObtenerFactorAsync(MaterialObjeto material);
+    Task<TotalesImpacto> TotalesAsync(FiltroImpacto filtro);
+    /// <summary>Localidades con al menos <paramref name="minimo"/> intercambios desde la fecha, de más a menos activas.</summary>
+    Task<IReadOnlyList<ImpactoLocalidad>> LocalidadesAsync(DateTime? desdeUtc, int minimo, int maximo);
+    /// <summary>Lo que una persona entregó o recibió.</summary>
+    Task<(int Objetos, decimal Kg, decimal KgCo2)> DeUsuarioAsync(Guid usuarioId);
+    void Agregar(RegistroImpacto registro);
+}
 
 public interface ITransaccionRepository
 {
-    /// <summary>Totales desde siempre y desde <paramref name="desdeMesUtc"/>; localidades con al menos <paramref name="minimoPorLocalidad"/> intercambios.</summary>
-    Task<ResumenImpacto> ResumenImpactoAsync(DateTime desdeMesUtc, int minimoPorLocalidad, int maxLocalidades);
     /// <summary>Transacciones desde <paramref name="desdeUtc"/> en las que ESTE usuario recibió puntos (tope anti-farmeo).</summary>
     Task<int> ContarDesdeAsync(Guid usuarioId, DateTime desdeUtc);
     /// <summary>Intercambios por modo en los que ESTE usuario recibió puntos (logros: lo que el anti-farmeo dejó contar).</summary>
     Task<(int Truekes, int Compras, int Donaciones)> ContarConPuntosPorModoAsync(Guid usuarioId);
-    /// <summary>Intercambios completados en los que participó (entregó o recibió), por categoría de lo entregado.</summary>
-    Task<IReadOnlyDictionary<int, int>> ContarPorCategoriaDeUsuarioAsync(Guid usuarioId);
     /// <summary>¿Estas dos personas ya completaron, desde la fecha, un intercambio que otorgó puntos (en cualquier sentido)?</summary>
     Task<bool> ExisteConPuntosEntreDesdeAsync(Guid usuarioA, Guid usuarioB, DateTime desdeUtc);
     Task<IReadOnlyList<Transaccion>> ListarPorUsuarioAsync(Guid usuarioId);

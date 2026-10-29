@@ -7,6 +7,9 @@ namespace TruekeBogotaSolidario.Negocio.Dtos;
 
 // Enums propios de la capa de negocio (mismos valores numéricos que Datos). El usuario actuante NUNCA viaja en un request: sale del JWT.
 public enum ModoDto { Trueke = 1, Compra = 2, Donacion = 3 }
+public enum MaterialDto { Textil = 1, Electronica = 2, Electrodomestico = 3, Madera = 4, Papel = 5, Plastico = 6, Vidrio = 7, Metal = 8, Mixto = 9 }
+/// <summary>Periodos del panel de impacto, en hora de Colombia: el mes, el trimestre o el año en curso.</summary>
+public enum PeriodoImpactoDto { Todo = 0, Mes = 1, Trimestre = 2, Anio = 3 }
 public enum RolDto { Cliente = 1, Administrador = 2, SuperUsuario = 3 }
 public enum ConceptoPagoDto { Destacar = 1, Verificar = 2, Premium = 3, Empresa = 4, Recarga = 5, PremiumAnual = 6, EmpresaAnual = 7 }
 /// <summary>Estado físico del objeto: Nuevo, ComoNuevo (usado pero impecable), Usado, UsadoConDetalles, Reparado, ParaRepuestos.</summary>
@@ -258,6 +261,10 @@ public sealed class CrearPublicacionRequest
     [MaxLength(5)] public List<string>? Imagenes { get; init; }
     /// <summary>Solo en Compra: la venta también acepta trueke (quien la pide puede ofrecer hasta 3 objetos suyos en lugar de pagar).</summary>
     public bool AceptaTrueke { get; init; }
+    /// <summary>Opcional: peso aproximado en kg (entre 0,05 y 500). Sin él, el impacto usa el peso típico de la categoría.</summary>
+    [Range(0.05, 500)] public decimal? PesoEstimadoKg { get; init; }
+    /// <summary>Opcional: material principal. Sin él, el impacto usa el material típico de la categoría.</summary>
+    [EnumDataType(typeof(MaterialDto))] public MaterialDto? Material { get; init; }
     /// <summary>
     /// Opcional, solo al crear una Donación desde "Tengo esto": la necesidad de una fundación verificada que cubre. Se le avisa a la
     /// fundación con un enlace a la publicación (como mucho un aviso por donante cada 24 h); la publicación es igual a cualquier otra.
@@ -747,7 +754,8 @@ public sealed record PublicacionDto(Guid Id, string Titulo, string Descripcion, 
     string Condicion, string? DetalleCondicion, string MunicipioCodigo, string Municipio, string DepartamentoCodigo,
     int? Vistas, DateTime? ProximoImpulsoUtc, int Interesados, bool YaSolicite, bool AceptaTrueke,
     // Revisión previa: solo la ven el dueño y los moderadores (Aprobada, Pendiente o Rechazada, con lo que hay que corregir).
-    string? Moderacion = null, string? MotivoRechazoModeracion = null);
+    string? Moderacion = null, string? MotivoRechazoModeracion = null,
+    decimal? PesoEstimadoKg = null, string? Material = null);
 
 public sealed record PuntoSerieDto(DateTime Fecha, int Vistas);
 
@@ -907,16 +915,46 @@ public sealed class AprobarPublicacionesRequest
 /// <summary>Un movimiento del historial de Eco-Puntos: Puntos es positivo si se ganaron y negativo si se gastaron.</summary>
 public sealed record MovimientoEcoPuntosDto(Guid Id, string Concepto, int Puntos, string? Detalle, Guid? ReferenciaId, int SaldoResultante, DateTime FechaUtc);
 
+/// <summary>Filtros del panel de impacto. La localidad debe ser una de <see cref="ImpactoDto.LocalidadesDisponibles"/>.</summary>
+public sealed class FiltroImpactoRequest
+{
+    [EnumDataType(typeof(PeriodoImpactoDto))] public PeriodoImpactoDto Periodo { get; init; }
+    [EnumDataType(typeof(ModoDto))] public ModoDto? Modo { get; init; }
+    [RegularExpression(FormatosUbicacion.Municipio, ErrorMessage = "El municipio no es válido.")] public string? MunicipioCodigo { get; init; }
+    [StringLength(60)] public string? Localidad { get; init; }
+}
+
 /// <summary>
-/// Página de impacto (pública): intercambios completados en la comunidad. Sin datos de personas.
-/// KgReutilizados y KgCo2Evitado son una estimación con los factores por categoría que van en Factores.
+/// Página de impacto (pública): objetos que cambiaron de manos en intercambios que ambas partes confirmaron. Sin datos de
+/// personas. Kilos y CO₂ son estimaciones con la metodología <see cref="VersionMetodologia"/> (factores en Factores).
 /// </summary>
+/// <param name="ObjetosConNuevoHogar">Objetos entregados (un trueke con objetos suma cada uno).</param>
+/// <param name="Truekes">Intercambios completados por modo (los de Compras y Donaciones igual).</param>
+/// <param name="EsteMes">Intercambios del mes en curso con los mismos filtros de modo y localidad.</param>
+/// <param name="KgDeclarados">Parte de los kilos que declaró quien publicó; el resto es el peso típico de la categoría.</param>
+/// <param name="Reservado">El filtro por localidad tiene menos de 3 intercambios: no se muestra para no revelar quién participó.</param>
 public sealed record ImpactoDto(int ObjetosConNuevoHogar, int Truekes, int Compras, int Donaciones, int PersonasQueIntercambiaron,
     int EsteMes, IReadOnlyList<ImpactoLocalidadDto> LocalidadesMasActivas, DateTime CalculadoUtc,
-    decimal KgReutilizados = 0, decimal KgCo2Evitado = 0, IReadOnlyList<FactorImpactoDto>? Factores = null);
-public sealed record ImpactoLocalidadDto(string Localidad, string Municipio, int Intercambios);
-/// <summary>Cómo se estima el impacto de un objeto de esta categoría (se publica para que el cálculo sea verificable).</summary>
-public sealed record FactorImpactoDto(string Categoria, decimal KgPorObjeto, decimal KgCo2PorObjeto);
+    decimal KgReutilizados, decimal KgCo2Evitado, decimal KgDeclarados, int Intercambios, bool Reservado, string VersionMetodologia,
+    string Periodo, string? Modo, string? MunicipioCodigo, string? Localidad,
+    IReadOnlyList<ImpactoMaterialDto> PorMaterial, IReadOnlyList<FactorImpactoDto> Factores, IReadOnlyList<PesoCategoriaDto> PesosPorCategoria,
+    IReadOnlyList<ImpactoLocalidadDto> LocalidadesDisponibles);
+public sealed record ImpactoLocalidadDto(string Localidad, string Municipio, int Intercambios, string MunicipioCodigo = "");
+public sealed record ImpactoMaterialDto(string Material, int Objetos, decimal Kg, decimal KgCo2);
+/// <summary>kg de CO₂e evitados por kg reutilizado de un material, con su fuente y versión (se publica para que sea verificable).</summary>
+public sealed record FactorImpactoDto(string Material, decimal KgCo2PorKg, string Fuente, string Version);
+/// <summary>Peso y material que se asumen para un objeto de la categoría cuando quien publica no los declara.</summary>
+public sealed record PesoCategoriaDto(string Categoria, decimal KgPorObjeto, string Material);
+/// <summary>Ayuda al publicar: un objeto común con su peso y material.</summary>
+public sealed record ObjetoTipicoDto(string Nombre, decimal Kg, string Material, int CategoriaId);
+
+public sealed class ActualizarFactorImpactoRequest
+{
+    [Range(0, 100)] public decimal KgCo2PorKg { get; init; }
+    [Required, StringLength(300, MinimumLength = 3)] public string Fuente { get; init; } = "";
+    /// <summary>Versión nueva de la metodología (por ejemplo 2.1.0): los registros ya hechos conservan la anterior.</summary>
+    [Required, RegularExpression(@"^\d{1,3}\.\d{1,3}\.\d{1,3}$", ErrorMessage = "La versión debe tener el formato 2.1.0.")] public string Version { get; init; } = "";
+}
 
 /// <summary>Impacto estimado de los intercambios completados de una persona (entregó o recibió). Solo totales.</summary>
 public sealed record ImpactoPersonalDto(int Objetos, decimal KgReutilizados, decimal KgCo2Evitado);

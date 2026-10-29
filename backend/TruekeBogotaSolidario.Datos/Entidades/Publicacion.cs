@@ -14,12 +14,15 @@ public class ImagenPublicacion
 /// <summary>Datos que el dueño define al crear o editar una publicación.</summary>
 public sealed record DatosPublicacion(string Titulo, string Descripcion, Categoria Categoria, ModoTransaccion Modo,
     CondicionProducto Condicion, string? DetalleCondicion, string MunicipioCodigo, string Localidad,
-    decimal? PrecioReferenciaCop, double? Latitud, double? Longitud, IReadOnlyList<string>? Imagenes, bool AceptaTrueke = false);
+    decimal? PrecioReferenciaCop, double? Latitud, double? Longitud, IReadOnlyList<string>? Imagenes, bool AceptaTrueke = false,
+    decimal? PesoEstimadoKg = null, MaterialObjeto? Material = null);
 
 public class Publicacion
 {
     public const int MaxImagenes = 5;
     public const int LongitudMaximaDetalleCondicion = 300;
+    public const decimal PesoMinimoKg = 0.05m;
+    public const decimal PesoMaximoKg = 500m;
 
     private readonly List<ImagenPublicacion> _imagenes = new();
 
@@ -61,6 +64,9 @@ public class Publicacion
     public string Localidad { get; private set; }
     public double? Latitud { get; private set; }
     public double? Longitud { get; private set; }
+    /// <summary>Opcionales: si faltan, el impacto usa el peso típico y el material de su categoría (y lo marca como estimado).</summary>
+    public decimal? PesoEstimadoKg { get; private set; }
+    public MaterialObjeto? Material { get; private set; }
     public IReadOnlyList<ImagenPublicacion> Imagenes => _imagenes;
     public EstadoPublicacionEnum Estado { get; private set; }
     public DateTime FechaPublicacion { get; private set; }
@@ -128,6 +134,9 @@ public class Publicacion
             throw new ReglaDeNegocioException("Una publicación en modo Compra y venta requiere un precio de referencia mayor a cero.");
         if (d.Latitud.HasValue != d.Longitud.HasValue) throw new ReglaDeNegocioException("Latitud y longitud deben enviarse juntas.");
         if (d.Latitud is < -90 or > 90 || d.Longitud is < -180 or > 180) throw new ReglaDeNegocioException("Coordenadas fuera de rango.");
+        if (d.PesoEstimadoKg is { } peso && (peso < PesoMinimoKg || peso > PesoMaximoKg))
+            throw new ReglaDeNegocioException($"El peso aproximado debe estar entre {PesoMinimoKg} y {PesoMaximoKg} kg.");
+        if (d.Material is { } material && !Enum.IsDefined(material)) throw new ReglaDeNegocioException("Material no válido.");
 
         var fotos = (d.Imagenes ?? Array.Empty<string>()).ToList();
         if (fotos.Count > MaxImagenes) throw new ReglaDeNegocioException($"Puedes subir como máximo {MaxImagenes} fotos.");
@@ -148,6 +157,8 @@ public class Publicacion
         AceptaTrueke = d.Modo == ModoTransaccion.Compra && d.AceptaTrueke;
         Latitud = d.Latitud;
         Longitud = d.Longitud;
+        PesoEstimadoKg = d.PesoEstimadoKg is { } p ? Math.Round(p, 2) : null;
+        Material = d.Material;
         _imagenes.Clear();
         _imagenes.AddRange(fotos.Select((url, i) => new ImagenPublicacion(url, i)));
         ActualizarTextoBusqueda();

@@ -1209,6 +1209,51 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/impacto/factores/{material}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    material: components["schemas"]["MaterialDto"];
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ActualizarFactorImpactoRequest"];
+                    "text/json": components["schemas"]["ActualizarFactorImpactoRequest"];
+                    "application/*+json": components["schemas"]["ActualizarFactorImpactoRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FactorImpactoDto"];
+                        "application/json": components["schemas"]["FactorImpactoDto"];
+                        "text/json": components["schemas"]["FactorImpactoDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/fundaciones": {
         parameters: {
             query?: never;
@@ -3696,7 +3741,12 @@ export interface paths {
         };
         get: {
             parameters: {
-                query?: never;
+                query?: {
+                    Periodo?: components["schemas"]["PeriodoImpactoDto"];
+                    Modo?: components["schemas"]["ModoDto"];
+                    MunicipioCodigo?: string;
+                    Localidad?: string;
+                };
                 header?: never;
                 path?: never;
                 cookie?: never;
@@ -3712,6 +3762,43 @@ export interface paths {
                         "text/plain": components["schemas"]["ImpactoDto"];
                         "application/json": components["schemas"]["ImpactoDto"];
                         "text/json": components["schemas"]["ImpactoDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/impacto/objetos-tipicos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ObjetoTipicoDto"][];
+                        "application/json": components["schemas"]["ObjetoTipicoDto"][];
+                        "text/json": components["schemas"]["ObjetoTipicoDto"][];
                     };
                 };
             };
@@ -6149,6 +6236,12 @@ export interface components {
             codigosRecuperacion?: string[];
             sesion?: components["schemas"]["SesionDto"];
         };
+        ActualizarFactorImpactoRequest: {
+            /** Format: double */
+            kgCo2PorKg?: number;
+            fuente: string;
+            version: string;
+        };
         ActualizarPerfilRequest: {
             nombreCompleto: string;
             localidad: string;
@@ -6476,6 +6569,9 @@ export interface components {
             longitud?: number | null;
             imagenes?: string[] | null;
             aceptaTrueke?: boolean;
+            /** Format: double */
+            pesoEstimadoKg?: number | null;
+            material?: components["schemas"]["MaterialDto"];
             /** Format: uuid */
             paraNecesidadId?: string | null;
         };
@@ -6717,11 +6813,11 @@ export interface components {
         /** @enum {string} */
         EstadoPqrDto: "Abierta" | "Respondida" | "EnTramite";
         FactorImpactoDto: {
-            categoria?: string;
+            material?: string;
             /** Format: double */
-            kgPorObjeto?: number;
-            /** Format: double */
-            kgCo2PorObjeto?: number;
+            kgCo2PorKg?: number;
+            fuente?: string;
+            version?: string;
         };
         FacturaAdminDto: {
             /** Format: uuid */
@@ -6935,13 +7031,36 @@ export interface components {
             kgReutilizados?: number;
             /** Format: double */
             kgCo2Evitado?: number;
-            factores?: components["schemas"]["FactorImpactoDto"][] | null;
+            /** Format: double */
+            kgDeclarados?: number;
+            /** Format: int32 */
+            intercambios?: number;
+            reservado?: boolean;
+            versionMetodologia?: string;
+            periodo?: string;
+            modo?: string | null;
+            municipioCodigo?: string | null;
+            localidad?: string | null;
+            porMaterial?: components["schemas"]["ImpactoMaterialDto"][];
+            factores?: components["schemas"]["FactorImpactoDto"][];
+            pesosPorCategoria?: components["schemas"]["PesoCategoriaDto"][];
+            localidadesDisponibles?: components["schemas"]["ImpactoLocalidadDto"][];
         };
         ImpactoLocalidadDto: {
             localidad?: string;
             municipio?: string;
             /** Format: int32 */
             intercambios?: number;
+            municipioCodigo?: string;
+        };
+        ImpactoMaterialDto: {
+            material?: string;
+            /** Format: int32 */
+            objetos?: number;
+            /** Format: double */
+            kg?: number;
+            /** Format: double */
+            kgCo2?: number;
         };
         ImpactoPersonalDto: {
             /** Format: int32 */
@@ -7051,6 +7170,8 @@ export interface components {
             /** Format: int32 */
             meta?: number;
         };
+        /** @enum {string} */
+        MaterialDto: "Textil" | "Electronica" | "Electrodomestico" | "Madera" | "Papel" | "Plastico" | "Vidrio" | "Metal" | "Mixto";
         MensajeChatDto: {
             /** Format: uuid */
             id?: string;
@@ -7189,6 +7310,14 @@ export interface components {
             /** Format: int32 */
             tamano?: number;
         };
+        ObjetoTipicoDto: {
+            nombre?: string;
+            /** Format: double */
+            kg?: number;
+            material?: string;
+            /** Format: int32 */
+            categoriaId?: number;
+        };
         OlvideClaveRequest: {
             /** Format: email */
             correo: string;
@@ -7316,6 +7445,14 @@ export interface components {
             logros?: components["schemas"]["LogroDto"][] | null;
             impacto?: components["schemas"]["ImpactoPersonalDto"];
             nombreFundacion?: string | null;
+        };
+        /** @enum {string} */
+        PeriodoImpactoDto: "Todo" | "Mes" | "Trimestre" | "Anio";
+        PesoCategoriaDto: {
+            categoria?: string;
+            /** Format: double */
+            kgPorObjeto?: number;
+            material?: string;
         };
         PoliticaEcoPuntosDto: {
             /** Format: int32 */
@@ -7523,6 +7660,9 @@ export interface components {
             aceptaTrueke?: boolean;
             moderacion?: string | null;
             motivoRechazoModeracion?: string | null;
+            /** Format: double */
+            pesoEstimadoKg?: number | null;
+            material?: string | null;
         };
         PublicacionDtoPaginaDto: {
             items?: components["schemas"]["PublicacionDto"][];
@@ -7850,6 +7990,7 @@ export interface components {
 export type AccionDenunciaDto = components['schemas']['AccionDenunciaDto'];
 export type AceptarLegalRequest = components['schemas']['AceptarLegalRequest'];
 export type ActivacionDosFactoresDto = components['schemas']['ActivacionDosFactoresDto'];
+export type ActualizarFactorImpactoRequest = components['schemas']['ActualizarFactorImpactoRequest'];
 export type ActualizarPerfilRequest = components['schemas']['ActualizarPerfilRequest'];
 export type ActualizarPreferenciasAvisosRequest = components['schemas']['ActualizarPreferenciasAvisosRequest'];
 export type AlertasBusquedaRequest = components['schemas']['AlertasBusquedaRequest'];
@@ -7937,6 +8078,7 @@ export type GuardarDeseoRequest = components['schemas']['GuardarDeseoRequest'];
 export type GuardarNecesidadRequest = components['schemas']['GuardarNecesidadRequest'];
 export type ImpactoDto = components['schemas']['ImpactoDto'];
 export type ImpactoLocalidadDto = components['schemas']['ImpactoLocalidadDto'];
+export type ImpactoMaterialDto = components['schemas']['ImpactoMaterialDto'];
 export type ImpactoPersonalDto = components['schemas']['ImpactoPersonalDto'];
 export type IngresoConceptoDto = components['schemas']['IngresoConceptoDto'];
 export type IngresoMesDto = components['schemas']['IngresoMesDto'];
@@ -7946,6 +8088,7 @@ export type InvitacionDto = components['schemas']['InvitacionDto'];
 export type LegalPublicoDto = components['schemas']['LegalPublicoDto'];
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type LogroDto = components['schemas']['LogroDto'];
+export type MaterialDto = components['schemas']['MaterialDto'];
 export type MensajeChatDto = components['schemas']['MensajeChatDto'];
 export type MensajeCitadoDto = components['schemas']['MensajeCitadoDto'];
 export type MensajeExportDto = components['schemas']['MensajeExportDto'];
@@ -7962,6 +8105,7 @@ export type NivelPoliticaDto = components['schemas']['NivelPoliticaDto'];
 export type NoConcretadaRequest = components['schemas']['NoConcretadaRequest'];
 export type NotificacionDto = components['schemas']['NotificacionDto'];
 export type NotificacionDtoPaginaDto = components['schemas']['NotificacionDtoPaginaDto'];
+export type ObjetoTipicoDto = components['schemas']['ObjetoTipicoDto'];
 export type OlvideClaveRequest = components['schemas']['OlvideClaveRequest'];
 export type OrdenPublicacionesDto = components['schemas']['OrdenPublicacionesDto'];
 export type PagoAdminDto = components['schemas']['PagoAdminDto'];
@@ -7972,6 +8116,8 @@ export type PaqueteRecargaDto = components['schemas']['PaqueteRecargaDto'];
 export type PerfilEmpresaRequest = components['schemas']['PerfilEmpresaRequest'];
 export type PerfilPublicoDto = components['schemas']['PerfilPublicoDto'];
 export type PerfilUsuarioDto = components['schemas']['PerfilUsuarioDto'];
+export type PeriodoImpactoDto = components['schemas']['PeriodoImpactoDto'];
+export type PesoCategoriaDto = components['schemas']['PesoCategoriaDto'];
 export type PoliticaEcoPuntosDto = components['schemas']['PoliticaEcoPuntosDto'];
 export type PqrAdminDto = components['schemas']['PqrAdminDto'];
 export type PqrAdminDtoPaginaDto = components['schemas']['PqrAdminDtoPaginaDto'];
