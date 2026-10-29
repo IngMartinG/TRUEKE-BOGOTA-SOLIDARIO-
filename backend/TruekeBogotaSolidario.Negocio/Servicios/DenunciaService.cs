@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Datos.Repositorios;
@@ -46,8 +47,9 @@ public sealed class DenunciaService : IDenunciaService
     public DenunciaService(IDenunciaRepository denuncias, IUsuarioRepository usuarios, IPublicacionRepository pubs, IComentarioRepository comentarios,
         IConversacionRepository conversaciones, IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, INotificador notificador,
         TimeProvider reloj, ICalificacionRepository calificacionesRepo, ILogger<DenunciaService> log, IDeseoRepository deseos,
-        IMovimientoEcoPuntosRepository movimientos, IAlmacenArchivos almacen)
+        IMovimientoEcoPuntosRepository movimientos, IAlmacenArchivos almacen, IOptions<FotosPerfilOpciones> fotos)
     {
+        _fotos = fotos.Value;
         _almacen = almacen;
         _deseos = deseos;
         _movimientos = movimientos;
@@ -68,6 +70,7 @@ public sealed class DenunciaService : IDenunciaService
         MotivoDenuncia.ContenidoInapropiado => "contenido inapropiado",
         MotivoDenuncia.ArticuloProhibido => "artículo prohibido",
         MotivoDenuncia.Acoso => "acoso",
+        MotivoDenuncia.FotoPerfilNoValida => "foto de perfil que no muestra a la persona",
         _ => "otro motivo"
     };
 
@@ -176,6 +179,7 @@ public sealed class DenunciaService : IDenunciaService
     }
 
     private readonly IAlmacenArchivos _almacen;
+    private readonly FotosPerfilOpciones _fotos;
 
     private static string? Recortar(string? texto) => texto is null ? null : texto.Length > 200 ? texto[..200] + "…" : texto;
 
@@ -251,6 +255,7 @@ public sealed class DenunciaService : IDenunciaService
             throw new ReglaDeNegocioException("Otro moderador debe resolver esta denuncia: es sobre tu propio contenido.");
 
         var ahora = Ahora;
+        string? fotoRechazada = null;
         if (accion == AccionDenunciaDto.OcultarContenido)
         {
             switch (d.Tipo)
@@ -285,8 +290,19 @@ public sealed class DenunciaService : IDenunciaService
                     if (!w.EstaOculto) w.Ocultar(nota!);
                     break;
                 }
+                case TipoObjetoDenuncia.Usuario when (await _denuncias.PendientesDelObjetivoAsync(d.Tipo, d.ObjetivoId))
+                    .Any(x => x.Motivo == MotivoDenuncia.FotoPerfilNoValida):
+                {
+                    // "Ocultar" a una persona denunciada por su foto = rechazar la foto, con el plazo de siempre para cambiarla.
+                    var u = await _usuarios.ObtenerPorIdAsync(d.ObjetivoId) ?? throw new NoEncontradoException("El usuario ya no existe.");
+                    if (u.FotoUrl is null) throw new ReglaDeNegocioException("Esa persona ya no tiene foto de perfil: descarta la denuncia.");
+                    u.RechazarFoto(nota!, ahora, ahora.AddDays(_fotos.DiasPlazoCambio));
+                    fotoRechazada = u.MotivoRechazoFoto;
+                    break;
+                }
                 default:
-                    throw new ReglaDeNegocioException("A un usuario no se le puede ocultar: usa MarcarRevisada y, si corresponde, suspende su cuenta.");
+                    throw new ReglaDeNegocioException("A un usuario no se le puede ocultar: usa MarcarRevisada y, si corresponde, suspende su cuenta. " +
+                        "Si lo denunciaron por su foto de perfil, \"Ocultar\" la rechaza.");
             }
         }
 
@@ -308,6 +324,9 @@ public sealed class DenunciaService : IDenunciaService
                     ? $"Revisamos tu denuncia y tomamos medidas. Ganaste {PoliticaEcoPuntos.PuntosDenunciaConfirmada} Eco-Puntos. ¡Gracias por cuidar la comunidad!"
                     : "Revisamos tu denuncia y tomamos medidas. ¡Gracias por cuidar la comunidad!");
         await avisosPuntos.EnviarAsync(_notificador);
+        if (fotoRechazada is not null)
+            await _notificador.NotificarAsync(d.ObjetivoId, TiposNotificacion.FotoPerfilRechazada,
+                FotoPerfilService.MensajeRechazo(_fotos.DiasPlazoCambio, fotoRechazada));
 
         // La otra parte: solo si la denuncia fue procedente (si se descarta no hay nada que defender y avisar solo invitaría a represalias).
         // Nunca se dice quién denunció.

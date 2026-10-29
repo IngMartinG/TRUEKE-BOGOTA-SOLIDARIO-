@@ -94,6 +94,12 @@ public sealed class UsuarioRepository : IUsuarioRepository
     }
     public async Task<IReadOnlyList<Usuario>> ObtenerPorVerificacionAsync(EstadoVerificacion estado)
         => await _db.Usuarios.AsNoTracking().Where(u => u.EstadoVerificacion == estado).OrderBy(u => u.FechaRegistro).Take(200).ToListAsync();
+    public async Task<IReadOnlyList<Usuario>> ListarPorEstadoFotoAsync(EstadoFotoPerfil estado, int maximo, DateTime? revisadasAntesDe = null)
+        => await _db.Usuarios.Where(u => u.EstadoFoto == estado && u.FotoUrl != null && !u.EstaEliminado
+            && (revisadasAntesDe == null || u.FotoRevisadaUtc == null || u.FotoRevisadaUtc < revisadasAntesDe))
+            .OrderBy(u => u.FechaRegistro).Take(maximo).ToListAsync();
+    public Task<int> ContarPorEstadoFotoAsync(EstadoFotoPerfil estado)
+        => _db.Usuarios.CountAsync(u => u.EstadoFoto == estado && u.FotoUrl != null && !u.EstaEliminado);
     public Task<int> ContarPorRolAsync(RolUsuarioEnum rol) => _db.Usuarios.CountAsync(u => u.Rol == rol);
 
     public async Task<(IReadOnlyList<Usuario> Items, int Total)> BuscarAsync(string? texto, bool soloSuspendidos, int pagina, int tamano, bool soloMenorDetectado = false)

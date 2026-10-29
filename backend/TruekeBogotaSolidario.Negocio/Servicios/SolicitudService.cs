@@ -91,7 +91,7 @@ public sealed class SolicitudService : ISolicitudService
     public async Task<SolicitudDto> CrearAsync(Guid actorId, CrearSolicitudRequest r)
     {
         var solicitante = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
-        Guardas.ExigirCuentaCompleta(solicitante);
+        Guardas.ExigirCuentaCompleta(solicitante, Ahora);
         var ahora = Ahora;
         var pub = await _pubs.ObtenerPorIdAsync(r.PublicacionId);
         if (pub is null || pub.EstaOculta || pub.Propietario!.EstaEliminado || pub.Propietario.SuspensionVigente(ahora))
@@ -173,7 +173,7 @@ public sealed class SolicitudService : ISolicitudService
         var pub = s.Publicacion!;
         var esDuenio = pub.PropietarioId == actorId;
         var actor = esDuenio ? pub.Propietario! : s.Solicitante!;
-        Guardas.ExigirCuentaCompleta(actor);
+        Guardas.ExigirCuentaCompleta(actor, Ahora);
         if (s.Estado != EstadoSolicitud.Pendiente) throw new ReglaDeNegocioException("Solo se negocia una solicitud pendiente.");
         if (pub.Estado != EstadoPublicacionEnum.Disponible)
             throw new ReglaDeNegocioException("La publicación está reservada para otra persona: por ahora no se puede negociar.");
@@ -267,8 +267,8 @@ public sealed class SolicitudService : ISolicitudService
         var s = await CargarComoParticipanteAsync(actorId, solicitudId);
         var pub = s.Publicacion!;
         var esDuenio = pub.PropietarioId == actorId;
-        Guardas.ExigirCuentaCompleta(pub.Propietario!); // quien entrega también debe mostrar su cara (publicaciones anteriores a la regla)
-        if (!esDuenio) Guardas.ExigirCuentaCompleta(s.Solicitante!);
+        Guardas.ExigirCuentaCompleta(pub.Propietario!, Ahora); // quien entrega también debe mostrar su cara (publicaciones anteriores a la regla)
+        if (!esDuenio) Guardas.ExigirCuentaCompleta(s.Solicitante!, Ahora);
         if (pub.Estado == EstadoPublicacionEnum.EnNegociacion)
             throw new ReglaDeNegocioException(esDuenio
                 ? "Ya elegiste a otra persona para esta publicación. Si no se concreta, podrás elegir a alguien de la lista de espera."

@@ -1,9 +1,19 @@
 import { expect, type APIRequestContext, type Page } from '@playwright/test';
 import { randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import { URL_MAILPIT } from './ambiente';
 
 export const CLAVE = 'Clave12345';
+
+/**
+ * Foto de perfil válida: debe verse una cara (la API la revisa con un detector de rostros). Retrato oficial de la NASA, de
+ * dominio público; es el mismo que usan las pruebas del backend.
+ */
+export function fotoRostro(): Buffer {
+  return readFileSync(join(__dirname, '..', '..', 'backend', 'TruekeBogotaSolidario.Pruebas', 'Recursos', 'rostro-dominio-publico.jpg'));
+}
 
 /** Correo único por prueba (las pruebas corren en paralelo y la base es compartida). */
 export function correoUnico(nombre: string): string {
@@ -100,7 +110,7 @@ export async function cuentaLista(page: Page, nombre: string, conFoto = true): P
 
   const cuenta: Cuenta = { nombre, correo, token: sesion.token, id: sesion.usuario.id };
   if (conFoto) {
-    const url = await subirFoto(api, cuenta.token, fotoPng(400, 400, [90, 60, 140]));
+    const url = await subirFoto(api, cuenta.token, fotoRostro(), 'image/jpeg');
     const r = await api.put('/api/v1/usuarios/yo/foto', { data: { url }, headers: { Authorization: `Bearer ${cuenta.token}` } });
     expect(r.ok(), await r.text()).toBe(true);
   }
@@ -117,9 +127,9 @@ export async function ingresar(page: Page, cuenta: Cuenta): Promise<void> {
 }
 
 /** Sube una imagen como lo hace el navegador: pide la SAS a la API y hace PUT directo al almacenamiento. */
-export async function subirFoto(api: APIRequestContext, token: string, png: Buffer): Promise<string> {
+export async function subirFoto(api: APIRequestContext, token: string, png: Buffer, contentType = 'image/png'): Promise<string> {
   const r = await api.post('/api/v1/archivos/subidas', {
-    data: { tipo: 'Imagen', contentType: 'image/png', tamanoBytes: png.length },
+    data: { tipo: 'Imagen', contentType, tamanoBytes: png.length },
     headers: { Authorization: `Bearer ${token}` },
   });
   expect(r.status(), await r.text()).toBe(201);

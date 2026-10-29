@@ -15,6 +15,7 @@ export default [
       { path: 'denuncias', title: 'Moderación · Denuncias', loadComponent: () => import('./denuncias') },
       { path: 'apelaciones', title: 'Moderación · Apelaciones', loadComponent: () => import('./apelaciones') },
       { path: 'usuarios', title: 'Moderación · Usuarios', loadComponent: () => import('./usuarios') },
+      { path: 'fotos', title: 'Moderación · Fotos de perfil', loadComponent: () => import('./fotos') },
       { path: 'verificaciones', title: 'Moderación · Verificaciones', loadComponent: () => import('./verificaciones') },
       { path: 'pagos', title: 'Moderación · Pagos', loadComponent: () => import('./pagos') },
       { path: 'facturas', title: 'Administración · Facturas', loadComponent: () => import('./facturas') },

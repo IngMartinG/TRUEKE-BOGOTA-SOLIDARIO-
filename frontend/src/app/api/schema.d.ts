@@ -193,6 +193,119 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/fotos": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["FotosEnRevisionDto"];
+                        "application/json": components["schemas"]["FotosEnRevisionDto"];
+                        "text/json": components["schemas"]["FotosEnRevisionDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fotos/{usuarioId}/aprobar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    usuarioId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/fotos/{usuarioId}/rechazar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    usuarioId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MotivoRequest"];
+                    "text/json": components["schemas"]["MotivoRequest"];
+                    "application/*+json": components["schemas"]["MotivoRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/usuarios": {
         parameters: {
             query?: never;
@@ -6520,6 +6633,21 @@ export interface components {
             /** Format: date */
             fechaNacimiento: string;
         };
+        FotoEnRevisionDto: {
+            /** Format: uuid */
+            usuarioId?: string;
+            nombreCompleto?: string;
+            fotoUrl?: string;
+            /** Format: date-time */
+            desdeUtc?: string;
+        };
+        FotosEnRevisionDto: {
+            items?: components["schemas"]["FotoEnRevisionDto"][];
+            /** Format: int32 */
+            total?: number;
+            /** Format: int32 */
+            sinRevisar?: number;
+        };
         FundacionAdminDto: {
             /** Format: uuid */
             usuarioId?: string;
@@ -6797,7 +6925,7 @@ export interface components {
         /** @enum {string} */
         ModoDto: "Trueke" | "Compra" | "Donacion";
         /** @enum {string} */
-        MotivoDenunciaDto: "Spam" | "Fraude" | "ContenidoInapropiado" | "ArticuloProhibido" | "Acoso" | "Otro";
+        MotivoDenunciaDto: "Spam" | "Fraude" | "ContenidoInapropiado" | "ArticuloProhibido" | "Acoso" | "Otro" | "FotoPerfilNoValida";
         MotivoRequest: {
             motivo: string;
         };
@@ -7484,6 +7612,11 @@ export interface components {
             menorDetectado?: boolean;
             registroOferente?: boolean;
             localidadPendiente?: boolean;
+            estadoFoto?: string;
+            motivoRechazoFoto?: string | null;
+            /** Format: date-time */
+            plazoCambioFotoUtc?: string | null;
+            fotoValida?: boolean;
         };
         VendedorDePqrDto: {
             /** Format: uuid */
@@ -7585,6 +7718,8 @@ export type FacturaAdminDto = components['schemas']['FacturaAdminDto'];
 export type FacturaAdminDtoPaginaDto = components['schemas']['FacturaAdminDtoPaginaDto'];
 export type FacturaDto = components['schemas']['FacturaDto'];
 export type FechaNacimientoRequest = components['schemas']['FechaNacimientoRequest'];
+export type FotoEnRevisionDto = components['schemas']['FotoEnRevisionDto'];
+export type FotosEnRevisionDto = components['schemas']['FotosEnRevisionDto'];
 export type FundacionAdminDto = components['schemas']['FundacionAdminDto'];
 export type FundacionPublicaDto = components['schemas']['FundacionPublicaDto'];
 export type FundacionResumenDto = components['schemas']['FundacionResumenDto'];

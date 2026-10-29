@@ -540,7 +540,7 @@ public sealed class SolicitarSubidaRequest
 }
 
 public enum TipoDenunciaDto { Publicacion = 1, Comentario = 2, Mensaje = 3, Usuario = 4, Calificacion = 5, Deseo = 6 }
-public enum MotivoDenunciaDto { Spam = 1, Fraude = 2, ContenidoInapropiado = 3, ArticuloProhibido = 4, Acoso = 5, Otro = 6 }
+public enum MotivoDenunciaDto { Spam = 1, Fraude = 2, ContenidoInapropiado = 3, ArticuloProhibido = 4, Acoso = 5, Otro = 6, FotoPerfilNoValida = 7 }
 public enum EstadoDenunciaDto { Pendiente = 1, Resuelta = 2, Descartada = 3 }
 public enum AccionDenunciaDto { Descartar = 1, OcultarContenido = 2, MarcarRevisada = 3 }
 
@@ -647,7 +647,8 @@ public sealed record UsuarioDto(Guid Id, string NombreCompleto, string Localidad
     string MunicipioCodigo, string Municipio, string? NombreComercial, string? Nit, bool TieneDatosFacturacion, string? FotoUrl = null,
     bool MostrarNit = false, DateOnly? FechaNacimiento = null, bool NombreRealPendiente = false,
     string? PoliticaDatosVersion = null, string? TerminosVersion = null, bool MenorDetectado = false, bool RegistroOferente = false,
-    bool LocalidadPendiente = false);
+    bool LocalidadPendiente = false, string EstadoFoto = "SinRevisar", string? MotivoRechazoFoto = null, DateTime? PlazoCambioFotoUtc = null,
+    bool FotoValida = false);
 
 public sealed record SesionDto(string Token, DateTime ExpiraUtc, UsuarioDto Usuario);
 
@@ -875,6 +876,11 @@ public sealed class CalificarRequest
 
 /// <summary>Reseña pública. Comentario es null si la moderación lo ocultó (las estrellas siguen contando).</summary>
 public sealed record CalificacionDto(Guid Id, PerfilPublicoDto Autor, int Estrellas, string? Comentario, DateTime FechaUtc);
+
+/// <summary>Foto de perfil que el detector dejó en duda: la aprueba o la rechaza un moderador.</summary>
+public sealed record FotoEnRevisionDto(Guid UsuarioId, string NombreCompleto, string FotoUrl, DateTime DesdeUtc);
+/// <summary>La cola (hasta 100, las más antiguas primero), su total y cuántas fotos anteriores a la regla faltan por revisar.</summary>
+public sealed record FotosEnRevisionDto(IReadOnlyList<FotoEnRevisionDto> Items, int Total, int SinRevisar);
 
 public sealed record VerificacionPendienteDto(Guid UsuarioId, string NombreCompleto, string Correo, string DocumentoUrl, DateTime FechaRegistro);
 

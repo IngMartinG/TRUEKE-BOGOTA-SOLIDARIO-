@@ -303,6 +303,9 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
         var cancelada = Persona("cancelada");
         await using (var db = Contexto(cadena))
         {
+            // Los datos se insertan con el modelo ACTUAL: las columnas de migraciones posteriores se crean un momento y se
+            // quitan antes de migrar (si una migración nueva agrega columnas a estas tablas, se suman aquí).
+            await db.Database.ExecuteSqlRawAsync(ColumnasPosteriores);
             var categoria = await db.Categorias.FirstAsync();
             Datos.Entidades.Publicacion Pub(Datos.Entidades.Usuario u, Datos.Entidades.ModoTransaccion modo, bool aceptaTrueke = false) =>
                 new(u.Id, new Datos.Entidades.DatosPublicacion("Bicicleta de prueba", "En buen estado", categoria, modo,
@@ -316,6 +319,7 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
                 Pub(conTrueke, Datos.Entidades.ModoTransaccion.Compra, aceptaTrueke: true),
                 Pub(soloTrueke, Datos.Entidades.ModoTransaccion.Trueke), vieja);
             await db.SaveChangesAsync();
+            await db.Database.ExecuteSqlRawAsync(QuitarColumnasPosteriores);
         }
 
         await using (var db = Contexto(cadena)) await db.Database.MigrateAsync();
@@ -327,6 +331,18 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
         Assert.Null(aviso.LeidaUtc);
         Assert.Equal(DateTimeKind.Utc, aviso.FechaUtc.Kind);
     }
+
+    /// <summary>Columnas de Usuarios agregadas después de la migración VentaAceptaTrueke (FotoPerfilReal).</summary>
+    private const string ColumnasPosteriores = """
+        ALTER TABLE "Usuarios" ADD "EstadoFoto" character varying(20) NOT NULL DEFAULT 'SinRevisar';
+        ALTER TABLE "Usuarios" ADD "FotoRevisadaUtc" timestamp with time zone;
+        ALTER TABLE "Usuarios" ADD "MotivoRechazoFoto" character varying(300);
+        ALTER TABLE "Usuarios" ADD "PlazoCambioFotoUtc" timestamp with time zone;
+        """;
+    private const string QuitarColumnasPosteriores = """
+        ALTER TABLE "Usuarios" DROP COLUMN "EstadoFoto", DROP COLUMN "FotoRevisadaUtc", DROP COLUMN "MotivoRechazoFoto",
+            DROP COLUMN "PlazoCambioFotoUtc";
+        """;
 
     [SkippableFact]
     public async Task El_indice_unico_de_correo_impide_duplicados()

@@ -113,6 +113,12 @@ public class Usuario
     public string? DocumentoVerificacionUrl { get; private set; }
     /// <summary>Foto de perfil pública (copia limpia, sin GPS ni metadatos). null = se muestran las iniciales.</summary>
     public string? FotoUrl { get; private set; }
+    public EstadoFotoPerfil EstadoFoto { get; private set; }
+    /// <summary>Por qué se rechazó la foto (lo ve la persona).</summary>
+    public string? MotivoRechazoFoto { get; private set; }
+    /// <summary>Hasta cuándo puede seguir usando la cuenta con la foto rechazada; después cuenta como si no tuviera foto.</summary>
+    public DateTime? PlazoCambioFotoUtc { get; private set; }
+    public DateTime? FotoRevisadaUtc { get; private set; }
 
     // Preferencias de avisos por correo. Los avisos obligatorios (seguridad, pagos, PQR, moderación) no dependen de esto.
     public bool AvisosCorreoIntercambios { get; private set; } = true;
@@ -240,12 +246,20 @@ public class Usuario
         return true;
     }
 
-    /// <summary>La URL ya debe venir validada (archivo propio y limpio). Devuelve la foto anterior para borrarla.</summary>
-    public string? CambiarFoto(string url)
+    /// <summary>
+    /// La URL ya debe venir validada (archivo propio y limpio) y, si se pudo, revisada por el detector de rostros: una foto sin
+    /// rostro nunca llega aquí. Devuelve la foto anterior para borrarla.
+    /// </summary>
+    public string? CambiarFoto(string url, EstadoFotoPerfil estado = EstadoFotoPerfil.SinRevisar, DateTime? ahoraUtc = null)
     {
         if (string.IsNullOrWhiteSpace(url) || url.Length > 500) throw new ReglaDeNegocioException("La foto no es válida.");
+        if (estado == EstadoFotoPerfil.Rechazada) throw new ReglaDeNegocioException("La foto no es válida.");
         var anterior = FotoUrl;
         FotoUrl = url;
+        EstadoFoto = estado;
+        FotoRevisadaUtc = estado == EstadoFotoPerfil.SinRevisar ? null : ahoraUtc;
+        MotivoRechazoFoto = null;
+        PlazoCambioFotoUtc = null;
         EvaluarPerfilCompleto();
         return anterior;
     }
@@ -254,7 +268,53 @@ public class Usuario
     {
         var anterior = FotoUrl;
         FotoUrl = null;
+        EstadoFoto = EstadoFotoPerfil.SinRevisar;
+        FotoRevisadaUtc = null;
+        MotivoRechazoFoto = null;
+        PlazoCambioFotoUtc = null;
         return anterior;
+    }
+
+    /// <summary>
+    /// Tiene una foto que sirve para actuar: una rechazada vale solo hasta su plazo (para no cortar de golpe intercambios en
+    /// curso); después cuenta como si no tuviera foto.
+    /// </summary>
+    public bool TieneFotoValida(DateTime ahoraUtc)
+        => FotoUrl is not null && !(EstadoFoto == EstadoFotoPerfil.Rechazada && PlazoCambioFotoUtc is { } plazo && plazo <= ahoraUtc);
+
+    /// <summary>
+    /// Resultado de la revisión automática de una foto ya guardada (las anteriores a la regla). SinRevisar = no se pudo leer:
+    /// queda la fecha del intento para reintentar más tarde sin repetirla en cada lote.
+    /// </summary>
+    public void RegistrarRevisionFoto(EstadoFotoPerfil estado, DateTime ahoraUtc)
+    {
+        if (FotoUrl is null || EstadoFoto != EstadoFotoPerfil.SinRevisar) return;
+        if (estado == EstadoFotoPerfil.Rechazada) throw new ReglaDeNegocioException("Para rechazar una foto usa RechazarFoto.");
+        EstadoFoto = estado;
+        FotoRevisadaUtc = ahoraUtc;
+    }
+
+    public void AprobarFoto(DateTime ahoraUtc)
+    {
+        if (FotoUrl is null) throw new ReglaDeNegocioException("Esta cuenta no tiene foto de perfil.");
+        EstadoFoto = EstadoFotoPerfil.Aprobada;
+        FotoRevisadaUtc = ahoraUtc;
+        MotivoRechazoFoto = null;
+        PlazoCambioFotoUtc = null;
+    }
+
+    /// <summary>La foto no muestra a la persona: debe cambiarla antes de <paramref name="plazoUtc"/>. Rechazar de nuevo no amplía el plazo.</summary>
+    public void RechazarFoto(string motivo, DateTime ahoraUtc, DateTime plazoUtc)
+    {
+        if (FotoUrl is null) throw new ReglaDeNegocioException("Esta cuenta no tiene foto de perfil.");
+        if (string.IsNullOrWhiteSpace(motivo)) throw new ReglaDeNegocioException("Indica el motivo del rechazo (lo verá la persona).");
+        var motivoLimpio = motivo.Trim();
+        if (motivoLimpio.Length > 300) throw new ReglaDeNegocioException("El motivo admite máximo 300 caracteres.");
+        if (EstadoFoto == EstadoFotoPerfil.Rechazada && PlazoCambioFotoUtc is { } vigente) plazoUtc = vigente < plazoUtc ? vigente : plazoUtc;
+        EstadoFoto = EstadoFotoPerfil.Rechazada;
+        MotivoRechazoFoto = motivoLimpio;
+        FotoRevisadaUtc = ahoraUtc;
+        PlazoCambioFotoUtc = plazoUtc;
     }
 
     /// <summary>
@@ -560,6 +620,10 @@ public class Usuario
         DocumentoVerificacionUrl = null;
         MotivoRechazoVerificacion = null;
         FotoUrl = null;
+        EstadoFoto = EstadoFotoPerfil.SinRevisar;
+        MotivoRechazoFoto = null;
+        PlazoCambioFotoUtc = null;
+        FotoRevisadaUtc = null;
         SaldoEcoPuntos = 0;
         PuntosParticipacion = 0;
         DestacadosGratisRestantes = 0;

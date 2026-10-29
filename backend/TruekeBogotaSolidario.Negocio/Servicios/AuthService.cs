@@ -229,8 +229,9 @@ public sealed class AuthService : IAuthService
             usuario.MarcarCorreoVerificado(ahora);
         }
         // Sin foto propia, se trae la de Google (copiada y limpia). Si falla, la persona la sube a mano: el login sigue.
+        // Solo si muestra un rostro (la revisa el mismo detector que las fotos subidas a mano).
         if (string.IsNullOrWhiteSpace(usuario.FotoUrl) && await _importadorFoto.ImportarAsync(usuario.Id, id.Foto) is { } foto)
-            usuario.CambiarFoto(foto);
+            usuario.CambiarFoto(foto.Url, foto.Estado, ahora);
 
         usuario.RegistrarLoginExitoso();
         var sesion = _emisor.Emitir(usuario, conDosFactores: conDosFactores);

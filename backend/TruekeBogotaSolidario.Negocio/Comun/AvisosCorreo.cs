@@ -63,6 +63,11 @@ public sealed class AvisosCorreo : IAvisosCorreo
 
     public async Task NotificacionAsync(Guid usuarioId, string tipo, string mensaje, Guid? recursoId = null)
     {
+        if (tipo == TiposNotificacion.FotoPerfilRechazada)
+        {
+            await FotoRechazadaAsync(usuarioId, mensaje);
+            return;
+        }
         var donacion = tipo == TiposNotificacion.DonacionParaFundacion && recursoId is not null;
         if (!donacion && !TiposIntercambio.Contains(tipo)) return;
         try
@@ -82,6 +87,27 @@ public sealed class AvisosCorreo : IAvisosCorreo
         catch (Exception ex)
         {
             _log.LogWarning(ex, "No se pudo preparar el aviso por correo {Tipo} para {UsuarioId}", tipo, usuarioId);
+        }
+    }
+
+    /// <summary>Aviso de moderación: llega aunque la persona haya apagado los correos de intercambios, y aunque esté en línea.</summary>
+    private async Task FotoRechazadaAsync(Guid usuarioId, string mensaje)
+    {
+        try
+        {
+            var u = await _usuarios.ObtenerPorIdAsync(usuarioId);
+            if (u is null || u.EstaEliminado || !u.CorreoVerificado) return;
+            _correo.Encolar(PlantillaCorreo.Crear(u.Correo, "Cambia tu foto de perfil", $"Hola {Mapeos.NombrePublico(u.NombreCompleto)}:",
+                new[]
+                {
+                    mensaje,
+                    "En Trueke la foto de perfil debe mostrar tu cara: así la comunidad sabe con quién se encuentra para intercambiar.",
+                },
+                ("Cambiar mi foto", $"{Front}/cuenta/perfil#foto"), null));
+        }
+        catch (Exception ex)
+        {
+            _log.LogWarning(ex, "No se pudo preparar el aviso de foto rechazada para {UsuarioId}", usuarioId);
         }
     }
 

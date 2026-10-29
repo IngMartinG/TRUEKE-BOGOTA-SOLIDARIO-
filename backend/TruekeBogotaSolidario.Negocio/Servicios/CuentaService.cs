@@ -30,13 +30,14 @@ public static class Guardas
     /// <summary>
     /// Publicar, solicitar, chatear y pagar exigen correo verificado, localidad Y foto de perfil: la comunidad debe poder ver
     /// con quién intercambia y de qué zona es antes de encontrarse. Quien entra con Google recibe su foto de Google
-    /// automáticamente, pero debe escribir su localidad.
+    /// automáticamente, pero debe escribir su localidad. La foto debe mostrar su rostro: una rechazada vale hasta su plazo.
     /// </summary>
-    public static void ExigirCuentaCompleta(Usuario u)
+    public static void ExigirCuentaCompleta(Usuario u, DateTime ahoraUtc)
     {
         ExigirCorreoVerificado(u);
         if (u.LocalidadPendiente) throw new LocalidadRequeridaException();
         if (string.IsNullOrWhiteSpace(u.FotoUrl)) throw new FotoPerfilRequeridaException();
+        if (!u.TieneFotoValida(ahoraUtc)) throw new FotoPerfilRequeridaException(FotoPerfilRequeridaException.MensajeRechazada);
     }
 
     /// <summary>Vender (modo Compra) exige el registro de oferentes de la Ley 1480, art. 53. Trueke y donación no lo piden.</summary>

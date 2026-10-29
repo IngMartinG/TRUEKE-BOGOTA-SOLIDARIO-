@@ -29,6 +29,10 @@ public static class TiposNotificacion
     public const string MensajeOcultado = "MensajeOcultado";
     public const string VerificacionAprobada = "VerificacionAprobada";
     public const string VerificacionRechazada = "VerificacionRechazada";
+    /// <summary>La foto de perfil no muestra el rostro: hay que cambiarla antes del plazo (también llega por correo).</summary>
+    public const string FotoPerfilRechazada = "FotoPerfilRechazada";
+    /// <summary>Un moderador aprobó la foto que el detector dejó en revisión.</summary>
+    public const string FotoPerfilAprobada = "FotoPerfilAprobada";
     public const string DenunciaRevisada = "DenunciaRevisada";
     /// <summary>Al denunciado, cuando un moderador consideró procedente una denuncia en su contra (RecursoId = ResolucionId).</summary>
     public const string DenunciaRecibida = "DenunciaRecibida";

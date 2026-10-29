@@ -14,6 +14,13 @@ public enum TipoCuenta { Individual = 1, Premium = 2, Empresa = 3 }
 
 public enum EstadoVerificacion { NoVerificado = 0, Pendiente = 1, Aprobada = 2, Rechazada = 3 }
 
+/// <summary>
+/// Revisión de la foto de perfil (debe verse el rostro de la persona). SinRevisar = anterior a la regla o no se pudo leer
+/// (la revisa el proceso en segundo plano); EnRevision = el detector dudó y decide un moderador; Rechazada = hay que
+/// cambiarla antes del plazo.
+/// </summary>
+public enum EstadoFotoPerfil { SinRevisar = 0, Aprobada = 1, EnRevision = 2, Rechazada = 3 }
+
 /// <summary>Aceptada = acordado, en coordinación de la entrega. Completada = ambas partes confirmaron (o venció la gracia con una confirmación).</summary>
 public enum EstadoSolicitud { Pendiente = 1, Aceptada = 2, Rechazada = 3, Cancelada = 4, Completada = 5, NoConcretada = 6 }
 
