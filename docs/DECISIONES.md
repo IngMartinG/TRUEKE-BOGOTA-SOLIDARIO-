@@ -50,6 +50,11 @@ Son reglas con pesos y motivos visibles para quien revisa, no un clasificador op
 Los roles siguen siendo Cliente, Administrador y SuperUsuario. Ser negocio, fundación o empresa es una capacidad de la cuenta
 (plan, verificación u organización), no un permiso.
 
+## D-015 — Régimen Tributario Especial sin promesas fiscales (2026-10-29)
+El equipo marca a mano a las fundaciones calificadas en el Régimen Tributario Especial, con la evidencia que revisó. En público
+solo se dice que pertenecen al régimen: que una donación sea deducible depende de cada caso y del certificado que emita la
+fundación.
+
 ## D-014 — Impacto por objeto y solo con doble confirmación (2026-10-29)
 El impacto se registra por objeto entregado (con su peso y material, o los típicos de su categoría) y de forma inmutable,
 con el factor y la versión con que se calculó. Un intercambio que se cierra solo porque una parte no confirmó a tiempo no
