@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using TruekeBogotaSolidario.Negocio.Dtos;
+using TruekeBogotaSolidario.Negocio.Moderacion;
 using TruekeBogotaSolidario.Negocio.Servicios;
 using TruekeBogotaSolidario.Presentacion.Seguridad;
 
@@ -70,6 +71,31 @@ public sealed class AdministracionController : ControllerBase
     public async Task<IActionResult> RechazarFoto(Guid usuarioId, [FromBody] MotivoRequest r, [FromServices] IFotoPerfilService fotos)
     {
         await fotos.RechazarAsync(User.IdActual(), usuarioId, r.Motivo);
+        return NoContent();
+    }
+
+    // ---- Publicaciones de riesgo (revisión previa)
+    /// <summary>Las que esperan revisión: primero las de más riesgo y luego las que llevan más tiempo (hasta 100).</summary>
+    [HttpGet("moderacion/publicaciones"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<PublicacionesEnRevisionDto>> PublicacionesEnRevision([FromServices] IModeracionPublicacionesService moderacion)
+        => Ok(await moderacion.ListarAsync(User.IdActual()));
+
+    [HttpGet("moderacion/cola"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<ColaModeracionDto>> ColaModeracion([FromServices] IModeracionPublicacionesService moderacion)
+        => Ok(await moderacion.ContarAsync(User.IdActual()));
+
+    /// <summary>Aprueba varias a la vez (hasta 50). Las que otro moderador ya resolvió se ignoran.</summary>
+    [HttpPost("moderacion/publicaciones/aprobar"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<int>> AprobarPublicaciones([FromBody] AprobarPublicacionesRequest r,
+        [FromServices] IModeracionPublicacionesService moderacion)
+        => Ok(await moderacion.AprobarAsync(User.IdActual(), r.Ids));
+
+    /// <summary>El dueño recibe el motivo y puede corregirla: al editarla vuelve a la fila.</summary>
+    [HttpPost("moderacion/publicaciones/{publicacionId:guid}/rechazar"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<IActionResult> RechazarPublicacion(Guid publicacionId, [FromBody] MotivoRequest r,
+        [FromServices] IModeracionPublicacionesService moderacion)
+    {
+        await moderacion.RechazarAsync(User.IdActual(), publicacionId, r.Motivo);
         return NoContent();
     }
 

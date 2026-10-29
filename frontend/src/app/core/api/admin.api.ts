@@ -1,6 +1,8 @@
 import { inject, Injectable } from '@angular/core';
 import type {
   AccionDenunciaDto,
+  ColaModeracionDto,
+  PublicacionesEnRevisionDto,
   ApelacionAdminDto,
   DenunciaAgrupadaDto,
   EstadoApelacionDto,
@@ -64,6 +66,12 @@ export class AdminApi {
   fotosEnRevision = () => this.api.get<FotosEnRevisionDto>('/admin/fotos');
   aprobarFoto = (id: string) => this.api.post<void>(`/admin/fotos/${seg(id)}/aprobar`);
   rechazarFoto = (id: string, motivo: string) => this.api.post<void>(`/admin/fotos/${seg(id)}/rechazar`, { motivo });
+  publicacionesEnRevision = () => this.api.get<PublicacionesEnRevisionDto>('/admin/moderacion/publicaciones');
+  colaModeracion = () => this.api.get<ColaModeracionDto>('/admin/moderacion/cola');
+  /** Devuelve cuántas se aprobaron (las que otro moderador ya resolvió se ignoran). */
+  aprobarPublicaciones = (ids: readonly string[]) => this.api.post<number>('/admin/moderacion/publicaciones/aprobar', { ids });
+  rechazarPublicacion = (id: string, motivo: string) =>
+    this.api.post<void>(`/admin/moderacion/publicaciones/${seg(id)}/rechazar`, { motivo });
   aprobarVerificacion = (id: string) => this.api.post<void>(`/admin/verificaciones/${seg(id)}/aprobar`);
   rechazarVerificacion = (id: string, motivo: string) =>
     this.api.post<void>(`/admin/verificaciones/${seg(id)}/rechazar`, { motivo });

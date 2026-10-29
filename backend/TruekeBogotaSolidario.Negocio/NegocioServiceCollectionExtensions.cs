@@ -7,6 +7,7 @@ using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Asistente;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Correo;
+using TruekeBogotaSolidario.Negocio.Moderacion;
 using TruekeBogotaSolidario.Negocio.Pagos;
 using TruekeBogotaSolidario.Negocio.Push;
 using TruekeBogotaSolidario.Negocio.Servicios;
@@ -128,6 +129,8 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<IAvisosCorreo, AvisosCorreo>();
         services.AddScoped<IArchivoService, ArchivoService>();
         services.AddScoped<IDenunciaService, DenunciaService>();
+        services.AddOptions<ModeracionOpciones>().Bind(config.GetSection(ModeracionOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
+        services.AddScoped<IModeracionPublicacionesService, ModeracionPublicacionesService>();
         services.AddScoped<IDatosPersonalesService, DatosPersonalesService>();
         services.AddScoped<IConfiguracionService, ConfiguracionService>();
         services.AddScoped<IVistaPreviaService, VistaPreviaService>();

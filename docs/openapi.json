@@ -268,6 +268,157 @@
         }
       }
     },
+    "/api/v1/admin/moderacion/publicaciones": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionesEnRevisionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionesEnRevisionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionesEnRevisionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/moderacion/cola": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ColaModeracionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ColaModeracionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ColaModeracionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/moderacion/publicaciones/aprobar": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AprobarPublicacionesRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AprobarPublicacionesRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/AprobarPublicacionesRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "integer",
+                  "format": "int32"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/moderacion/publicaciones/{publicacionId}/rechazar": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "publicacionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/admin/usuarios": {
       "get": {
         "tags": [
@@ -6781,6 +6932,48 @@
         },
         "additionalProperties": false
       },
+      "AprobarPublicacionesRequest": {
+        "required": [
+          "ids"
+        ],
+        "type": "object",
+        "properties": {
+          "ids": {
+            "maxItems": 50,
+            "minItems": 1,
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "AutorEnRevisionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombreCompleto": {
+            "type": "string"
+          },
+          "fotoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaRegistro": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "identidadVerificada": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "BajaPushRequest": {
         "required": [
           "endpoint"
@@ -7087,6 +7280,16 @@
           "tuPublicacionTitulo": {
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ColaModeracionDto": {
+        "type": "object",
+        "properties": {
+          "publicaciones": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -10685,6 +10888,14 @@
           },
           "aceptaTrueke": {
             "type": "boolean"
+          },
+          "moderacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "motivoRechazoModeracion": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10713,6 +10924,72 @@
         },
         "additionalProperties": false
       },
+      "PublicacionEnRevisionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string"
+          },
+          "condicion": {
+            "type": "string"
+          },
+          "detalleCondicion": {
+            "type": "string",
+            "nullable": true
+          },
+          "categoria": {
+            "type": "string"
+          },
+          "modo": {
+            "type": "string"
+          },
+          "precioReferenciaCop": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "aceptaTrueke": {
+            "type": "boolean"
+          },
+          "localidad": {
+            "type": "string"
+          },
+          "municipio": {
+            "type": "string"
+          },
+          "imagenes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "autor": {
+            "$ref": "#/components/schemas/AutorEnRevisionDto"
+          },
+          "puntajeRiesgo": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "motivos": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "desdeUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "PublicacionResumenDto": {
         "type": "object",
         "properties": {
@@ -10732,6 +11009,22 @@
           },
           "estado": {
             "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PublicacionesEnRevisionDto": {
+        "type": "object",
+        "properties": {
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicacionEnRevisionDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -11597,6 +11890,10 @@
           "fechaRegistro": {
             "type": "string",
             "format": "date-time"
+          },
+          "fotoUrl": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

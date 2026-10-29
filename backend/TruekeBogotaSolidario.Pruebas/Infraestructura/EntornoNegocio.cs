@@ -38,6 +38,7 @@ public sealed class EntornoNegocio : IDisposable
             ["Pagos:Wompi:SecretoEventos"] = SecretoEventos,
             ["Correo:Proveedor"] = "Simulado",
             ["Seguridad:ClaveCifrado"] = FabricaApi.ClaveCifradoPruebas,
+            ["Moderacion:PreAprobacion"] = "false", // cuentas nuevas: cada publicación esperaría a un moderador
         };
         foreach (var (clave, valor) in extra ?? new Dictionary<string, string?>()) valores[clave] = valor;
         var config = new ConfigurationBuilder().AddInMemoryCollection(valores).Build();

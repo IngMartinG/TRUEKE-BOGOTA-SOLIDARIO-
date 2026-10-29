@@ -21,6 +21,12 @@ public enum EstadoVerificacion { NoVerificado = 0, Pendiente = 1, Aprobada = 2, 
 /// </summary>
 public enum EstadoFotoPerfil { SinRevisar = 0, Aprobada = 1, EnRevision = 2, Rechazada = 3 }
 
+/// <summary>
+/// Revisión previa de una publicación. Aprobada = está en el catálogo (lo normal); Pendiente = el evaluador de riesgo
+/// (o 3 denuncias) la mandó a revisión y espera a un moderador; Rechazada = el dueño debe corregirla (al editarla vuelve a revisión).
+/// </summary>
+public enum EstadoModeracion { Aprobada = 0, Pendiente = 1, Rechazada = 2 }
+
 /// <summary>Aceptada = acordado, en coordinación de la entrega. Completada = ambas partes confirmaron (o venció la gracia con una confirmación).</summary>
 public enum EstadoSolicitud { Pendiente = 1, Aceptada = 2, Rechazada = 3, Cancelada = 4, Completada = 5, NoConcretada = 6 }
 

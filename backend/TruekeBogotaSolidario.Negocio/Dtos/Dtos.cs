@@ -745,7 +745,9 @@ public sealed record PublicacionDto(Guid Id, string Titulo, string Descripcion, 
     IReadOnlyList<string> Imagenes, string Estado, DateTime FechaPublicacion, DateTime? FechaEdicion, bool Destacada, DateTime? DestacadaHasta,
     PerfilPublicoDto Propietario, bool EsMia, bool EsFavorita, bool Oculta, string? MotivoOcultamiento,
     string Condicion, string? DetalleCondicion, string MunicipioCodigo, string Municipio, string DepartamentoCodigo,
-    int? Vistas, DateTime? ProximoImpulsoUtc, int Interesados, bool YaSolicite, bool AceptaTrueke);
+    int? Vistas, DateTime? ProximoImpulsoUtc, int Interesados, bool YaSolicite, bool AceptaTrueke,
+    // Revisión previa: solo la ven el dueño y los moderadores (Aprobada, Pendiente o Rechazada, con lo que hay que corregir).
+    string? Moderacion = null, string? MotivoRechazoModeracion = null);
 
 public sealed record PuntoSerieDto(DateTime Fecha, int Vistas);
 
@@ -882,7 +884,25 @@ public sealed record FotoEnRevisionDto(Guid UsuarioId, string NombreCompleto, st
 /// <summary>La cola (hasta 100, las más antiguas primero), su total y cuántas fotos anteriores a la regla faltan por revisar.</summary>
 public sealed record FotosEnRevisionDto(IReadOnlyList<FotoEnRevisionDto> Items, int Total, int SinRevisar);
 
-public sealed record VerificacionPendienteDto(Guid UsuarioId, string NombreCompleto, string Correo, string DocumentoUrl, DateTime FechaRegistro);
+/// <param name="FotoUrl">Foto de perfil, para compararla con la del documento.</param>
+public sealed record VerificacionPendienteDto(Guid UsuarioId, string NombreCompleto, string Correo, string DocumentoUrl, DateTime FechaRegistro,
+    string? FotoUrl = null);
+
+/// <summary>Quien publica, con lo que ayuda a decidir (antigüedad e identidad).</summary>
+public sealed record AutorEnRevisionDto(Guid Id, string NombreCompleto, string? FotoUrl, DateTime FechaRegistro, bool IdentidadVerificada);
+/// <summary>Publicación que espera revisión previa, con las señales que la mandaron ahí.</summary>
+public sealed record PublicacionEnRevisionDto(Guid Id, string Titulo, string Descripcion, string Condicion, string? DetalleCondicion,
+    string Categoria, string Modo, decimal? PrecioReferenciaCop, bool AceptaTrueke, string Localidad, string Municipio,
+    IReadOnlyList<string> Imagenes, AutorEnRevisionDto Autor, int PuntajeRiesgo, IReadOnlyList<string> Motivos, DateTime DesdeUtc);
+/// <summary>La fila (hasta 100: primero las de más riesgo y luego las más antiguas) y su total.</summary>
+public sealed record PublicacionesEnRevisionDto(IReadOnlyList<PublicacionEnRevisionDto> Items, int Total);
+/// <summary>Cuántas cosas esperan a un moderador (para el contador del panel).</summary>
+public sealed record ColaModeracionDto(int Publicaciones);
+
+public sealed class AprobarPublicacionesRequest
+{
+    [Required, MinLength(1), MaxLength(50)] public List<Guid> Ids { get; init; } = [];
+}
 
 /// <summary>Un movimiento del historial de Eco-Puntos: Puntos es positivo si se ganaron y negativo si se gastaron.</summary>
 public sealed record MovimientoEcoPuntosDto(Guid Id, string Concepto, int Puntos, string? Detalle, Guid? ReferenciaId, int SaldoResultante, DateTime FechaUtc);

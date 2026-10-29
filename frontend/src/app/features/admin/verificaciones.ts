@@ -22,7 +22,12 @@ import { Modal } from '../../shared/ui/modal';
       @for (v of recurso.value() ?? []; track v.usuarioId) {
         <li class="tarjeta p-5">
           <div class="flex items-center gap-3">
-            <app-avatar [nombre]="v.nombreCompleto" [tamano]="44" />
+            @if (v.fotoUrl) {
+              <img [src]="v.fotoUrl" [alt]="'Foto de perfil de ' + v.nombreCompleto" width="88" height="88"
+                class="size-22 shrink-0 rounded-2xl object-cover" referrerpolicy="no-referrer" />
+            } @else {
+              <app-avatar [nombre]="v.nombreCompleto" [tamano]="44" />
+            }
             <div class="min-w-0 flex-1">
               <p class="truncate font-semibold">{{ v.nombreCompleto }}</p>
               <p class="truncate text-xs text-tenue">{{ v.correo }} · registrada {{ v.fechaRegistro | hace }}</p>
@@ -31,9 +36,18 @@ import { Modal } from '../../shared/ui/modal';
           <a [href]="v.documentoUrl" target="_blank" rel="noopener noreferrer" referrerpolicy="no-referrer" class="btn btn-secundario btn-sm mt-4 w-full">
             <app-icono nombre="externo" [tamano]="14" />Ver documento
           </a>
+          <fieldset class="mt-4 space-y-1.5">
+            <legend class="etiqueta mb-1">Antes de aprobar, comprueba</legend>
+            @for (c of chequeos; track $index; let i = $index) {
+              <label class="flex cursor-pointer items-start gap-2 text-sm">
+                <input type="checkbox" class="mt-0.5 accent-bosque-600" [checked]="marcado(v, i)" (change)="marcar(v, i)" />{{ c }}
+              </label>
+            }
+          </fieldset>
           <div class="mt-3 grid grid-cols-2 gap-2">
             <button type="button" class="btn btn-fantasma btn-sm text-tierra-600 dark:text-tierra-500" (click)="abrirRechazo(v)">Rechazar</button>
-            <button type="button" class="btn btn-primario btn-sm" (click)="aprobar(v)"><app-icono nombre="check" [tamano]="14" />Aprobar</button>
+            <button type="button" class="btn btn-primario btn-sm" (click)="aprobar(v)" [disabled]="!completo(v)"
+              [attr.title]="completo(v) ? null : 'Marca las tres comprobaciones'"><app-icono nombre="check" [tamano]="14" />Aprobar</button>
           </div>
         </li>
       }
@@ -60,6 +74,25 @@ export default class Verificaciones {
   protected readonly recurso = rxResource({ stream: () => this.api.verificaciones() });
   protected readonly rechazoAbierto = signal(false);
   protected readonly motivo = signal('');
+  /** Lo mismo para cada persona: la cara, el nombre y que el documento sirva. */
+  protected readonly chequeos = [
+    'La cara del documento es la misma de la foto de perfil.',
+    'El nombre del documento coincide con el de la cuenta.',
+    'El documento se lee completo, sin recortes ni ediciones.',
+  ] as const;
+  private readonly marcas = signal<ReadonlyMap<string, ReadonlySet<number>>>(new Map());
+
+  protected marcado = (v: VerificacionPendienteDto, i: number) => this.marcas().get(v.usuarioId ?? '')?.has(i) ?? false;
+  protected completo = (v: VerificacionPendienteDto) => (this.marcas().get(v.usuarioId ?? '')?.size ?? 0) === this.chequeos.length;
+
+  protected marcar(v: VerificacionPendienteDto, i: number): void {
+    const id = v.usuarioId ?? '';
+    this.marcas.update((m) => {
+      const s = new Set(m.get(id));
+      if (!s.delete(i)) s.add(i);
+      return new Map(m).set(id, s);
+    });
+  }
   private seleccionada: VerificacionPendienteDto | null = null;
 
   protected async aprobar(v: VerificacionPendienteDto): Promise<void> {

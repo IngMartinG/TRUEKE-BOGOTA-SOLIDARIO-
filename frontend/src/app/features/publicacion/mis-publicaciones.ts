@@ -61,8 +61,16 @@ type Filtro = 'activas' | 'negociacion' | 'cerradas';
                     @if (p.oculta) {
                       <span class="insignia bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100"><app-icono nombre="ojoNo" [tamano]="12" />Oculta</span>
                     }
+                    @if (p.moderacion === 'Pendiente') {
+                      <span class="insignia-sol"><app-icono nombre="reloj" [tamano]="12" />En revisión</span>
+                    } @else if (p.moderacion === 'Rechazada') {
+                      <span class="insignia bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100"><app-icono nombre="alerta" [tamano]="12" />Por corregir</span>
+                    }
                   </div>
                   <p class="mt-1.5 truncate font-display font-bold">{{ p.titulo }}</p>
+                  @if (p.moderacion === 'Rechazada' && p.motivoRechazoModeracion) {
+                    <p class="mt-0.5 text-xs text-tierra-700 dark:text-tierra-500">{{ p.motivoRechazoModeracion }} Edítala para enviarla de nuevo.</p>
+                  }
                   <p class="text-xs text-tenue">
                     {{ p.localidad }}, {{ p.municipio }} · publicada {{ p.fechaPublicacion | hace }}
                     @if (p.precioReferenciaCop) {

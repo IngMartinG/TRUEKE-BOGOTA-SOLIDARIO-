@@ -80,7 +80,7 @@ public sealed class UsuarioRepository : IUsuarioRepository
             .Where(u => !u.EstaEliminado && !(u.EstaSuspendido && (u.SuspendidoHasta == null || u.SuspendidoHasta > ahoraUtc))
                         && ((!u.BonoPerfilCompletoOtorgado && u.CorreoVerificado && u.FotoUrl != null
                              && u.Localidad != Usuario.LocalidadSinEspecificar && u.Localidad != "")
-                            || (!u.BonoPrimeraPublicacionOtorgado && _db.Publicaciones.Any(p => p.PropietarioId == u.Id && !p.EstaOculta
+                            || (!u.BonoPrimeraPublicacionOtorgado && _db.Publicaciones.Any(p => p.PropietarioId == u.Id && !p.EstaOculta && p.EstadoModeracion == EstadoModeracion.Aprobada
                                 && p.FechaPublicacion <= publicadaHastaUtc
                                 && (p.Estado == EstadoPublicacionEnum.Disponible || p.Estado == EstadoPublicacionEnum.EnNegociacion)))))
             .OrderBy(u => u.FechaRegistro).Select(u => u.Id).Take(Math.Clamp(maximo, 1, 500)).ToListAsync();
@@ -140,10 +140,11 @@ public sealed class PublicacionRepository : IPublicacionRepository
     public Task<Publicacion?> ObtenerPorIdAsync(Guid id)
         => _db.Publicaciones.Include(p => p.Categoria).Include(p => p.Propietario).FirstOrDefaultAsync(p => p.Id == id);
 
-    /// <summary>Disponibles, no ocultas y cuyo dueño no está suspendido ni eliminado.</summary>
+    /// <summary>Disponibles, no ocultas, aprobadas (no esperan revisión) y cuyo dueño no está suspendido ni eliminado.</summary>
     private IQueryable<Publicacion> Visibles(DateTime ahoraUtc)
         => _db.Publicaciones.AsNoTracking().Include(p => p.Categoria).Include(p => p.Propietario)
-            .Where(p => p.Estado == EstadoPublicacionEnum.Disponible && !p.EstaOculta && !p.Propietario!.EstaEliminado
+            .Where(p => p.Estado == EstadoPublicacionEnum.Disponible && !p.EstaOculta && p.EstadoModeracion == EstadoModeracion.Aprobada
+                        && !p.Propietario!.EstaEliminado
                         && !(p.Propietario.EstaSuspendido && (p.Propietario.SuspendidoHasta == null || p.Propietario.SuspendidoHasta > ahoraUtc)));
 
     /// <summary>"Trueke" incluye las ventas que también aceptan trueke: a ellas también se les pueden ofrecer objetos.</summary>
@@ -299,9 +300,26 @@ public sealed class PublicacionRepository : IPublicacionRepository
 
     public Task<Publicacion?> PrimeraActivaDesdeAsync(Guid propietarioId, DateTime publicadaHastaUtc)
         => _db.Publicaciones.AsNoTracking()
-            .Where(p => p.PropietarioId == propietarioId && !p.EstaOculta && p.FechaPublicacion <= publicadaHastaUtc
+            .Where(p => p.PropietarioId == propietarioId && !p.EstaOculta && p.EstadoModeracion == EstadoModeracion.Aprobada
+                        && p.FechaPublicacion <= publicadaHastaUtc
                         && (p.Estado == EstadoPublicacionEnum.Disponible || p.Estado == EstadoPublicacionEnum.EnNegociacion))
             .OrderBy(p => p.FechaPublicacion).FirstOrDefaultAsync();
+
+    public Task<int> ContarAprobadasDePropietarioAsync(Guid propietarioId)
+        => _db.Publicaciones.CountAsync(p => p.PropietarioId == propietarioId && p.EstadoModeracion == EstadoModeracion.Aprobada);
+
+    /// <summary>Las que esperan revisión con su dueño activo: primero las de más riesgo y, a igual riesgo, las que llevan más tiempo.</summary>
+    private IQueryable<Publicacion> PendientesDeModeracion()
+        => _db.Publicaciones.Where(p => p.EstadoModeracion == EstadoModeracion.Pendiente && !p.EstaOculta
+            && (p.Estado == EstadoPublicacionEnum.Disponible || p.Estado == EstadoPublicacionEnum.EnNegociacion)
+            && !p.Propietario!.EstaEliminado);
+
+    public async Task<IReadOnlyList<Publicacion>> ListarPendientesModeracionAsync(int maximo)
+        => await PendientesDeModeracion().AsNoTracking().Include(p => p.Categoria).Include(p => p.Propietario)
+            .OrderByDescending(p => p.PuntajeRiesgo).ThenBy(p => p.EnRevisionDesdeUtc).ThenBy(p => p.Id)
+            .Take(Math.Clamp(maximo, 1, 200)).ToListAsync();
+
+    public Task<int> ContarPendientesModeracionAsync() => PendientesDeModeracion().CountAsync();
 
     public void Agregar(Publicacion publicacion) => _db.Publicaciones.Add(publicacion);
 }
@@ -887,6 +905,11 @@ public sealed class DenunciaRepository : IDenunciaRepository
         => await _db.Denuncias.AsNoTracking()
             .Where(d => d.DenunciadoId == denunciadoId && d.Estado == EstadoDenuncia.Resuelta && d.ResolucionId != null)
             .OrderByDescending(d => d.FechaResolucionUtc).Take(Math.Clamp(maximo, 1, 1000)).ToListAsync();
+
+    public Task<int> ContarConfirmadasContraAsync(Guid denunciadoId, DateTime desdeUtc)
+        => _db.Denuncias.Where(d => d.DenunciadoId == denunciadoId && d.Estado == EstadoDenuncia.Resuelta
+                && d.Accion == AccionModeracion.OcultarContenido && d.FechaResolucionUtc >= desdeUtc)
+            .Select(d => d.ResolucionId).Distinct().CountAsync();
 
     public async Task<IReadOnlyList<Denuncia>> DeResolucionAsync(Guid resolucionId)
         => await _db.Denuncias.AsNoTracking().Where(d => d.ResolucionId == resolucionId).OrderBy(d => d.FechaUtc).ToListAsync();

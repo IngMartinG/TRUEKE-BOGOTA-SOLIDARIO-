@@ -45,6 +45,8 @@ public class FabricaApi : WebApplicationFactory<Program>
         builder.UseSetting("Seguridad:ClaveCifrado", ClaveCifradoPruebas);
         builder.UseSetting("Seguridad:ExigirDosFactoresModeradores", "false"); // una prueba dedicada lo activa
         builder.UseSetting("FotosPerfil:RevisarExistentes", "false"); // FotosPerfilTests lo ejecuta a mano
+        // Las cuentas de las pruebas son nuevas: sin esto, cada publicación esperaría a un moderador.
+        builder.UseSetting("Moderacion:PreAprobacion", "false"); // ModeracionPublicacionesTests lo activa
         builder.ConfigureTestServices(s =>
         {
             s.Replace(ServiceDescriptor.Singleton<ICorreoSaliente>(Correos));

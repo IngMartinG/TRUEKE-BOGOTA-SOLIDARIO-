@@ -44,6 +44,7 @@ una foto sin rostro recibe un aviso y 7 días para cambiarla.
 ## D-012 — Moderación por riesgo (2026-10-29)
 Las publicaciones de bajo riesgo salen al instante; las de riesgo (cuenta nueva, contacto en el texto, artículos prohibidos,
 denuncias previas…) esperan en una cola ordenada por prioridad. Así un equipo pequeño puede moderar mucho volumen.
+Son reglas con pesos y motivos visibles para quien revisa, no un clasificador opaco; sin datos que salgan a terceros.
 
 ## D-013 — Negocio, Fundación y Empresa no son roles de seguridad
 Los roles siguen siendo Cliente, Administrador y SuperUsuario. Ser negocio, fundación o empresa es una capacidad de la cuenta

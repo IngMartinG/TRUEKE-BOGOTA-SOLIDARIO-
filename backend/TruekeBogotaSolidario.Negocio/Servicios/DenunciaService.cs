@@ -6,6 +6,7 @@ using TruekeBogotaSolidario.Datos.Repositorios;
 using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Dtos;
+using TruekeBogotaSolidario.Negocio.Moderacion;
 
 namespace TruekeBogotaSolidario.Negocio.Servicios;
 
@@ -43,13 +44,16 @@ public sealed class DenunciaService : IDenunciaService
     private readonly IDeseoRepository _deseos;
     private readonly IMovimientoEcoPuntosRepository _movimientos;
     private readonly ILogger<DenunciaService> _log;
+    private readonly IModeracionPublicacionesService _moderacion;
 
     public DenunciaService(IDenunciaRepository denuncias, IUsuarioRepository usuarios, IPublicacionRepository pubs, IComentarioRepository comentarios,
         IConversacionRepository conversaciones, IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, INotificador notificador,
         TimeProvider reloj, ICalificacionRepository calificacionesRepo, ILogger<DenunciaService> log, IDeseoRepository deseos,
-        IMovimientoEcoPuntosRepository movimientos, IAlmacenArchivos almacen, IOptions<FotosPerfilOpciones> fotos)
+        IMovimientoEcoPuntosRepository movimientos, IAlmacenArchivos almacen, IOptions<FotosPerfilOpciones> fotos,
+        IModeracionPublicacionesService moderacion)
     {
         _fotos = fotos.Value;
+        _moderacion = moderacion;
         _almacen = almacen;
         _deseos = deseos;
         _movimientos = movimientos;
@@ -96,7 +100,7 @@ public sealed class DenunciaService : IDenunciaService
             case TipoObjetoDenuncia.Publicacion:
             {
                 var p = await _pubs.ObtenerPorIdAsync(objetivoId);
-                if (p is null || p.EstaOculta) throw new NoEncontradoException("Publicación no encontrada.");
+                if (p is null || !p.EsVisible) throw new NoEncontradoException("Publicación no encontrada.");
                 if (p.PropietarioId == actorId) throw new ReglaDeNegocioException(propio);
                 return p.PropietarioId;
             }
@@ -166,8 +170,17 @@ public sealed class DenunciaService : IDenunciaService
 
         var d = new Denuncia(actorId, tipo, r.ObjetivoId, (MotivoDenuncia)(int)r.Motivo, r.Detalle, Ahora, denunciado);
         _denuncias.Agregar(d);
+        // Varias personas distintas denunciando lo mismo: sale del catálogo hasta que un moderador la revise.
+        var aRevision = false;
+        if (tipo == TipoObjetoDenuncia.Publicacion && await _pubs.ObtenerPorIdAsync(r.ObjetivoId) is { } pub)
+        {
+            var denunciantes = (await _denuncias.PendientesDelObjetivoAsync(tipo, r.ObjetivoId)).Select(x => x.DenuncianteId)
+                .Append(actorId).Distinct().Count();
+            aRevision = _moderacion.RevisarPorDenuncias(pub, denunciantes);
+        }
         await _uow.GuardarCambiosAsync(); // índice único: dos envíos simultáneos → 409
         _log.LogInformation("Denuncia {DenunciaId} sobre {Tipo} {ObjetivoId}", d.Id, tipo, r.ObjetivoId);
+        if (aRevision) await _moderacion.AvisarColaAsync();
         return new DenunciaCreadaDto(d.Id, d.Estado.ToString(), d.FechaUtc);
     }
 

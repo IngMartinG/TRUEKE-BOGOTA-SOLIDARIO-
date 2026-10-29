@@ -22,6 +22,7 @@ public sealed class NotificacionesHub : Hub
     public const string EventoEstadoMensajes = "estadoMensajes";
     public const string EventoEscribiendo = "escribiendo";
     public const string EventoPresencia = "presencia";
+    public const string EventoColaModeracion = "colaModeracion";
 
     private readonly IChatService _chat;
     private readonly IPresencia _presencia;
@@ -135,6 +136,10 @@ public sealed class EmisorSignalR : IEmisorTiempoReal
 
     public Task PresenciaAsync(IReadOnlyCollection<Guid> usuarioIds, PresenciaDto presencia)
         => _hub.Clients.Users(usuarioIds.Select(u => u.ToString()).ToList()).SendAsync(NotificacionesHub.EventoPresencia, presencia);
+
+    public Task ColaModeracionAsync(IReadOnlyCollection<Guid> moderadorIds, ColaModeracionDto cola)
+        => moderadorIds.Count == 0 ? Task.CompletedTask
+            : _hub.Clients.Users(moderadorIds.Select(u => u.ToString()).ToList()).SendAsync(NotificacionesHub.EventoColaModeracion, cola);
 }
 
 /// <summary>

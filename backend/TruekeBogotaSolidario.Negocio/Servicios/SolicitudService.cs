@@ -94,7 +94,7 @@ public sealed class SolicitudService : ISolicitudService
         Guardas.ExigirCuentaCompleta(solicitante, Ahora);
         var ahora = Ahora;
         var pub = await _pubs.ObtenerPorIdAsync(r.PublicacionId);
-        if (pub is null || pub.EstaOculta || pub.Propietario!.EstaEliminado || pub.Propietario.SuspensionVigente(ahora))
+        if (pub is null || !pub.EsVisible || pub.Propietario!.EstaEliminado || pub.Propietario.SuspensionVigente(ahora))
             throw new NoEncontradoException("Publicación no encontrada.");
         if (pub.PropietarioId == actorId) throw new ReglaDeNegocioException("No puedes solicitar tu propia publicación.");
         if (await _bloqueos.ExisteEntreAsync(actorId, pub.PropietarioId))
@@ -154,7 +154,7 @@ public sealed class SolicitudService : ISolicitudService
         {
             var o = await _pubs.ObtenerPorIdAsync(id);
             if (o is null || o.PropietarioId != solicitanteId) throw new NoEncontradoException("No encontramos uno de los objetos ofrecidos.");
-            if (o.Id == pedida.Id || o.Estado != EstadoPublicacionEnum.Disponible || o.EstaOculta)
+            if (o.Id == pedida.Id || o.Estado != EstadoPublicacionEnum.Disponible || !o.EsVisible)
                 throw new ReglaDeNegocioException($"\"{o.Titulo}\" no está disponible para ofrecerlo: debe estar publicado y sin reservar.");
             lista.Add(o);
         }
@@ -274,7 +274,7 @@ public sealed class SolicitudService : ISolicitudService
                 ? "Ya elegiste a otra persona para esta publicación. Si no se concreta, podrás elegir a alguien de la lista de espera."
                 : "El dueño está concretando con otra persona. Si no se concreta, podrás aceptar.");
         var ofrecidas = Ofrecidas(s);
-        if (ofrecidas.FirstOrDefault(o => o.Estado != EstadoPublicacionEnum.Disponible || o.EstaOculta) is { } noDisponible)
+        if (ofrecidas.FirstOrDefault(o => o.Estado != EstadoPublicacionEnum.Disponible || !o.EsVisible) is { } noDisponible)
             throw new ReglaDeNegocioException($"\"{noDisponible.Titulo}\" ya no está disponible. Contraoferta con otros objetos, retírate o conversen por el chat.");
 
         // Aceptar reserva la publicación y la saca del catálogo. RowVersion: dos aceptaciones simultáneas → una recibe 409.

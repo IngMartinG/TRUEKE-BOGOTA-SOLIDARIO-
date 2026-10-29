@@ -1126,10 +1126,18 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
 
+                    b.Property<DateTime?>("EnRevisionDesdeUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<bool>("EstaOculta")
                         .HasColumnType("boolean");
 
                     b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("EstadoModeracion")
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
@@ -1170,6 +1178,14 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
 
+                    b.Property<string>("MotivoRechazo")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("MotivosRiesgo")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
                     b.Property<string>("MunicipioCodigo")
                         .IsRequired()
                         .HasMaxLength(5)
@@ -1182,6 +1198,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
                     b.Property<Guid>("PropietarioId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("PuntajeRiesgo")
+                        .HasColumnType("integer");
 
                     b.Property<uint>("RowVersion")
                         .IsConcurrencyToken()
@@ -1209,6 +1228,8 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.HasIndex("CategoriaId");
 
                     b.HasIndex("DestacadaHasta");
+
+                    b.HasIndex("EstadoModeracion");
 
                     b.HasIndex("FechaRelevancia");
 

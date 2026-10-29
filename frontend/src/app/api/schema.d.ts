@@ -306,6 +306,164 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/moderacion/publicaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PublicacionesEnRevisionDto"];
+                        "application/json": components["schemas"]["PublicacionesEnRevisionDto"];
+                        "text/json": components["schemas"]["PublicacionesEnRevisionDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/moderacion/cola": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ColaModeracionDto"];
+                        "application/json": components["schemas"]["ColaModeracionDto"];
+                        "text/json": components["schemas"]["ColaModeracionDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/moderacion/publicaciones/aprobar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["AprobarPublicacionesRequest"];
+                    "text/json": components["schemas"]["AprobarPublicacionesRequest"];
+                    "application/*+json": components["schemas"]["AprobarPublicacionesRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": number;
+                        "application/json": number;
+                        "text/json": number;
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/moderacion/publicaciones/{publicacionId}/rechazar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    publicacionId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MotivoRequest"];
+                    "text/json": components["schemas"]["MotivoRequest"];
+                    "application/*+json": components["schemas"]["MotivoRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/usuarios": {
         parameters: {
             query?: never;
@@ -6036,6 +6194,18 @@ export interface components {
             /** Format: date-time */
             fechaRespuestaUtc?: string | null;
         };
+        AprobarPublicacionesRequest: {
+            ids: string[];
+        };
+        AutorEnRevisionDto: {
+            /** Format: uuid */
+            id?: string;
+            nombreCompleto?: string;
+            fotoUrl?: string | null;
+            /** Format: date-time */
+            fechaRegistro?: string;
+            identidadVerificada?: boolean;
+        };
         BajaPushRequest: {
             endpoint: string;
         };
@@ -6134,6 +6304,10 @@ export interface components {
             /** Format: uuid */
             tuPublicacionId?: string | null;
             tuPublicacionTitulo?: string | null;
+        };
+        ColaModeracionDto: {
+            /** Format: int32 */
+            publicaciones?: number;
         };
         ComentarioDto: {
             /** Format: uuid */
@@ -7347,6 +7521,8 @@ export interface components {
             interesados?: number;
             yaSolicite?: boolean;
             aceptaTrueke?: boolean;
+            moderacion?: string | null;
+            motivoRechazoModeracion?: string | null;
         };
         PublicacionDtoPaginaDto: {
             items?: components["schemas"]["PublicacionDto"][];
@@ -7357,6 +7533,28 @@ export interface components {
             /** Format: int32 */
             tamano?: number;
         };
+        PublicacionEnRevisionDto: {
+            /** Format: uuid */
+            id?: string;
+            titulo?: string;
+            descripcion?: string;
+            condicion?: string;
+            detalleCondicion?: string | null;
+            categoria?: string;
+            modo?: string;
+            /** Format: double */
+            precioReferenciaCop?: number | null;
+            aceptaTrueke?: boolean;
+            localidad?: string;
+            municipio?: string;
+            imagenes?: string[];
+            autor?: components["schemas"]["AutorEnRevisionDto"];
+            /** Format: int32 */
+            puntajeRiesgo?: number;
+            motivos?: string[];
+            /** Format: date-time */
+            desdeUtc?: string;
+        };
         PublicacionResumenDto: {
             /** Format: uuid */
             id?: string;
@@ -7364,6 +7562,11 @@ export interface components {
             foto?: string | null;
             condicion?: string;
             estado?: string;
+        };
+        PublicacionesEnRevisionDto: {
+            items?: components["schemas"]["PublicacionEnRevisionDto"][];
+            /** Format: int32 */
+            total?: number;
         };
         PuntoSerieDto: {
             /** Format: date-time */
@@ -7635,6 +7838,7 @@ export interface components {
             documentoUrl?: string;
             /** Format: date-time */
             fechaRegistro?: string;
+            fotoUrl?: string | null;
         };
     };
     responses: never;
@@ -7651,6 +7855,8 @@ export type ActualizarPreferenciasAvisosRequest = components['schemas']['Actuali
 export type AlertasBusquedaRequest = components['schemas']['AlertasBusquedaRequest'];
 export type ApelacionAdminDto = components['schemas']['ApelacionAdminDto'];
 export type ApelacionDto = components['schemas']['ApelacionDto'];
+export type AprobarPublicacionesRequest = components['schemas']['AprobarPublicacionesRequest'];
+export type AutorEnRevisionDto = components['schemas']['AutorEnRevisionDto'];
 export type BajaPushRequest = components['schemas']['BajaPushRequest'];
 export type BloqueadoDto = components['schemas']['BloqueadoDto'];
 export type BusquedaGuardadaDto = components['schemas']['BusquedaGuardadaDto'];
@@ -7666,6 +7872,7 @@ export type CategoriaDto = components['schemas']['CategoriaDto'];
 export type CodigoDosFactoresRequest = components['schemas']['CodigoDosFactoresRequest'];
 export type CodigosRecuperacionDto = components['schemas']['CodigosRecuperacionDto'];
 export type CoincidenciaDeseoDto = components['schemas']['CoincidenciaDeseoDto'];
+export type ColaModeracionDto = components['schemas']['ColaModeracionDto'];
 export type ComentarioDto = components['schemas']['ComentarioDto'];
 export type ComentarioDtoPaginaDto = components['schemas']['ComentarioDtoPaginaDto'];
 export type ComentarioExportDto = components['schemas']['ComentarioExportDto'];
@@ -7774,7 +7981,9 @@ export type PreguntaAsistenteRequest = components['schemas']['PreguntaAsistenteR
 export type PublicacionCercanaDto = components['schemas']['PublicacionCercanaDto'];
 export type PublicacionDto = components['schemas']['PublicacionDto'];
 export type PublicacionDtoPaginaDto = components['schemas']['PublicacionDtoPaginaDto'];
+export type PublicacionEnRevisionDto = components['schemas']['PublicacionEnRevisionDto'];
 export type PublicacionResumenDto = components['schemas']['PublicacionResumenDto'];
+export type PublicacionesEnRevisionDto = components['schemas']['PublicacionesEnRevisionDto'];
 export type PuntoSerieDto = components['schemas']['PuntoSerieDto'];
 export type RechazarSolicitudRequest = components['schemas']['RechazarSolicitudRequest'];
 export type ReembolsoRequest = components['schemas']['ReembolsoRequest'];

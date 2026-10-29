@@ -93,6 +93,17 @@ import { Volver } from '../../shared/ui/volver';
             <div><strong>Publicación oculta por moderación.</strong> {{ p.motivoOcultamiento }}</div>
           </div>
         }
+        @if (p.moderacion === 'Pendiente') {
+          <div class="mb-5 flex items-start gap-3 rounded-2xl border border-sol-500/40 bg-sol-50 p-4 text-sm dark:bg-sol-500/15" role="status">
+            <app-icono nombre="reloj" class="text-sol-600 dark:text-sol-300" />
+            <div><strong>En revisión.</strong> Un moderador la revisa antes de mostrarla en el catálogo; suele tardar pocas horas. Te avisaremos.</div>
+          </div>
+        } @else if (p.moderacion === 'Rechazada') {
+          <div class="mb-5 flex items-start gap-3 rounded-2xl border border-tierra-500/30 bg-tierra-50 p-4 text-sm dark:bg-tierra-700/20" role="alert">
+            <app-icono nombre="alerta" class="text-tierra-600 dark:text-tierra-500" />
+            <div><strong>No se publicó.</strong> {{ p.motivoRechazoModeracion }} Corrígela con «Editar» y la revisaremos de nuevo.</div>
+          </div>
+        }
 
         <div class="grid grid-cols-1 gap-8 lg:grid-cols-[1.3fr_1fr]">
           <!-- Panel de acción -->
@@ -599,7 +610,7 @@ export default class Detalle {
     if (this.misObjetos() !== null) return;
     try {
       const mias = await firstValueFrom(this.api.mias());
-      const disponibles = mias.filter((o) => o.estado === 'Disponible' && !o.oculta && o.id !== this.p()?.id);
+      const disponibles = mias.filter((o) => o.estado === 'Disponible' && !o.oculta && (o.moderacion ?? 'Aprobada') === 'Aprobada' && o.id !== this.p()?.id);
       this.misObjetos.set(disponibles);
       this.ofrecidas.update((ids) => ids.filter((id) => disponibles.some((o) => o.id === id))); // las que ya no se pueden ofrecer
     } catch {

@@ -108,6 +108,11 @@ public interface IPublicacionRepository
     Task<IReadOnlyList<Publicacion>> ListarActivasParaActualizarAsync(Guid propietarioId);
     /// <summary>La publicación más antigua del usuario que sigue activa (visible, disponible o en negociación) desde la fecha o antes.</summary>
     Task<Publicacion?> PrimeraActivaDesdeAsync(Guid propietarioId, DateTime publicadaHastaUtc);
+    /// <summary>Cuántas de sus publicaciones (en cualquier estado) entraron al catálogo: las primeras siempre se revisan.</summary>
+    Task<int> ContarAprobadasDePropietarioAsync(Guid propietarioId);
+    /// <summary>Fila de revisión previa, sin seguimiento: primero las de más riesgo y luego las que llevan más tiempo esperando.</summary>
+    Task<IReadOnlyList<Publicacion>> ListarPendientesModeracionAsync(int maximo);
+    Task<int> ContarPendientesModeracionAsync();
     void Agregar(Publicacion publicacion);
 }
 
@@ -344,6 +349,8 @@ public interface IDenunciaRepository
     /// <summary>Denuncias procedentes (Resuelta) contra el usuario, más recientes primero.</summary>
     Task<IReadOnlyList<Denuncia>> ListarRecibidasAsync(Guid denunciadoId, int maximo);
     Task<IReadOnlyList<Denuncia>> DeResolucionAsync(Guid resolucionId);
+    /// <summary>Decisiones de moderación (no denuncias sueltas) que ocultaron contenido de esta persona desde la fecha.</summary>
+    Task<int> ContarConfirmadasContraAsync(Guid denunciadoId, DateTime desdeUtc);
     void Agregar(Denuncia denuncia);
 
     // ---- Apelaciones (descargos de la persona denunciada)

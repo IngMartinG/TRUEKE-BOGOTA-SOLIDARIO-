@@ -672,6 +672,41 @@ páginas estáticas para buscadores (`generar-seo.mjs`) y la pantalla de carga y
 HtmlSanitizer no aplica: la API solo devuelve JSON, Angular escapa todo y el texto ya se valida con `TextoSeguro`; además
 rechazaría textos normales como "3 < 5" y guardaría el contenido en los registros.
 
+## Hecho el 2026-10-29 — moderación de publicaciones por riesgo
+Decisión del dueño: solo las publicaciones de riesgo esperan a un moderador; las demás salen al instante.
+- **Estado** en `Publicacion`: `EstadoModeracion` (Aprobada, Pendiente, Rechazada), `PuntajeRiesgo`, `MotivosRiesgo`,
+  `MotivoRechazo` y `EnRevisionDesdeUtc` (migración `ModeracionPorRiesgo`; lo ya publicado queda "Aprobada"). `EsVisible`
+  exige no estar oculta y estar aprobada: lo usan el catálogo, el perfil, las cercanas, las destacadas, las sugerencias, los
+  favoritos, los comentarios, las solicitudes, los objetos ofrecidos en un trueke y las denuncias. No se puede impulsar ni
+  destacar mientras espera.
+- **Evaluador** (`Negocio/Moderacion/EvaluadorRiesgo.cs`, puro y explicable: cada señal deja su motivo). Pesos: primeras 3
+  publicaciones de la cuenta 100, posible artículo prohibido 100 (lista tomada de los términos, ampliable por configuración,
+  sin palabras de uso común como "pistola de silicona" o "pilas AAA"), teléfono, correo o enlace en el texto 60, contenido
+  ocultado por denuncias en los últimos 6 meses 60, invitar a WhatsApp/Telegram/Instagram 30, cuenta de menos de 7 días 30,
+  foto de perfil en revisión 30, identidad sin verificar 10. Desde 50 espera revisión. Nequi y similares no cuentan (las
+  ventas se pagan por fuera). Lo que publica un moderador no espera.
+- **Cuándo:** al crear y al editar (una edición no "limpia" lo que la mandó a revisión y conserva su lugar en la fila; una
+  rechazada vuelve a la fila al corregirla, marcada "Corregida tras un rechazo"). Con 3 personas distintas denunciándola
+  (`Moderacion:DenunciantesParaRevisar`) sale del catálogo hasta revisarla; las denuncias siguen su curso aparte.
+- **Cola:** `GET /admin/moderacion/publicaciones` (primero las de más riesgo, luego las más antiguas; hasta 100),
+  `GET /admin/moderacion/cola` (contador), `POST /admin/moderacion/publicaciones/aprobar` (en lote, hasta 50; las ya
+  resueltas se ignoran) y `POST /admin/moderacion/publicaciones/{id}/rechazar` (con motivo). Moderador con 2FA, auditoría y
+  nadie revisa lo propio. Al aprobarla entra como recién publicada.
+- **Avisos:** al dueño, `PublicacionEnRevision`, `PublicacionAprobada` y `PublicacionRechazada` (con el motivo y cómo
+  corregirla). A los moderadores, el evento SignalR `colaModeracion` con el total, que mueve el contador de la pestaña.
+- **Front:** Administración → Publicaciones (pestaña por defecto, con contador en vivo): la publicación en grande con sus
+  fotos, los motivos y quién publica (antigüedad e identidad); **A** aprueba, **R** rechaza con motivos de un clic, flechas
+  para moverse, **X** marca para "Aprobar marcadas". El dueño ve "En revisión" o "Por corregir" con el motivo en Mis
+  publicaciones y en el detalle. Verificaciones de identidad: la foto de perfil junto al documento y tres comprobaciones
+  (cara, nombre, documento legible) que se marcan antes de aprobar.
+- **Configuración** (`Moderacion`): `PreAprobacion` (true), `UmbralRiesgo` (50), `PrimerasRevisadas` (3), `DiasCuentaNueva`
+  (7), `DenunciantesParaRevisar` (3), `ArticulosRestringidos` (lista adicional). En las E2E está apagada porque todas sus
+  cuentas son nuevas; se prueba en `ModeracionPublicacionesTests`.
+- No se hizo el clasificador de texto con IA (opcional en el plan): las reglas cubren lo pedido y no envían texto a terceros.
+- Pruebas: `EvaluadorRiesgoTests` (señales, falsos positivos comunes, lista configurable), `ModeracionPublicacionTests`
+  (entidad), `ModeracionPublicacionesTests` (primera publicación en revisión y aprobada, rechazo y corrección, 3 denunciantes,
+  permisos) y `publicaciones-pendientes.spec.ts` (atajos y aprobación en lote).
+
 ## Hecho el 2026-10-29 — foto de perfil real (debe verse la cara)
 Decisiones del dueño: es requisito indispensable; detector automático con revisión humana solo en los casos dudosos; quien ya
 tenía una foto sin rostro recibe un aviso y 7 días para cambiarla.
@@ -713,8 +748,8 @@ Se revisó un paquete de documentos con bloques de producto (impacto, fundacione
 **Plan de producto (2026-10-29), un PR por paso y en este orden:**
 1. ~~**Foto de perfil real**~~: hecho (ver arriba). Queda que el abogado diga si la política debe mencionar la revisión
    automática de la foto (detección local, sin reconocimiento ni biometría) y, si es así, subir su versión.
-2. **Moderación por riesgo:** estado de moderación en la publicación, puntaje de riesgo, cola ordenada por prioridad,
-   aprobación en lote, vuelta a revisión con 3 denunciantes y verificación de cuenta con la cédula al lado de la foto.
+2. ~~**Moderación por riesgo**~~: hecho (ver arriba). Los términos ya dicen qué está prohibido; queda que el abogado diga
+   si deben mencionar la revisión previa de algunas publicaciones y, si es así, subir su versión.
 3. **Impacto 2.0 (Bloque 1):** peso y material en la publicación, factores en la base de datos, registro de impacto
    inmutable por intercambio, revisar que el cierre automático con una sola confirmación no sume, foto de evidencia opcional y
    `/impacto` con filtros por localidad, periodo y modo.

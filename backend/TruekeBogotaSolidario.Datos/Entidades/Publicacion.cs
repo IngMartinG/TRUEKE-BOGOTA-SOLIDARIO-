@@ -77,6 +77,19 @@ public class Publicacion
     public bool EstaOculta { get; private set; }
     public string? MotivoOcultamiento { get; private set; }
 
+    /// <summary>Las de riesgo esperan a un moderador antes de entrar al catálogo; las demás se publican al instante.</summary>
+    public EstadoModeracion EstadoModeracion { get; private set; } = EstadoModeracion.Aprobada;
+    /// <summary>Suma de las señales que la mandaron a revisión (más alto = se revisa primero).</summary>
+    public int PuntajeRiesgo { get; private set; }
+    /// <summary>Señales que vio el evaluador, separadas por "; " (solo las ven los moderadores).</summary>
+    public string? MotivosRiesgo { get; private set; }
+    /// <summary>Lo que el dueño debe corregir: al editarla vuelve a revisión.</summary>
+    public string? MotivoRechazo { get; private set; }
+    public DateTime? EnRevisionDesdeUtc { get; private set; }
+
+    /// <summary>La pueden ver los demás: no está oculta ni esperando (o rechazada por) un moderador.</summary>
+    public bool EsVisible => !EstaOculta && EstadoModeracion == EstadoModeracion.Aprobada;
+
     /// <summary>Título normalizado (ver <see cref="Common.TextoBusqueda"/>): pesa más en el orden de los resultados.</summary>
     public string TituloBusqueda { get; private set; } = "";
     /// <summary>Título, descripción, estado y categoría normalizados: es donde se buscan los términos.</summary>
@@ -166,6 +179,7 @@ public class Publicacion
     {
         if (Estado != EstadoPublicacionEnum.Disponible) throw new ReglaDeNegocioException("Solo se pueden impulsar publicaciones disponibles.");
         if (EstaOculta) throw new ReglaDeNegocioException("No se puede impulsar una publicación oculta por moderación.");
+        ExigirAprobada("impulsar");
         if (ProximoImpulsoPosible is { } proximo && proximo > ahoraUtc)
             throw new ReglaDeNegocioException($"Ya la impulsaste. Podrás volver a hacerlo cada {PoliticaEcoPuntos.HorasEntreImpulsos} horas.");
     }
@@ -221,6 +235,54 @@ public class Publicacion
         MotivoOcultamiento = null;
     }
 
+    // ---------------- Revisión previa (solo las de riesgo) ----------------
+    public const int LongitudMaximaMotivosRiesgo = 500;
+    public const int LongitudMaximaMotivoRechazo = 300;
+
+    /// <summary>
+    /// Sale del catálogo hasta que un moderador la apruebe. Si ya esperaba, conserva su lugar en la fila y suma las
+    /// señales nuevas (una edición no puede "limpiar" lo que la mandó a revisión).
+    /// </summary>
+    public void EnviarARevision(int puntaje, IEnumerable<string> motivos, DateTime ahoraUtc)
+    {
+        var yaEsperaba = EstadoModeracion == EstadoModeracion.Pendiente;
+        var todos = (yaEsperaba && MotivosRiesgo is not null ? MotivosRiesgo.Split("; ") : [])
+            .Concat(motivos).Where(m => !string.IsNullOrWhiteSpace(m)).Distinct(StringComparer.Ordinal);
+        var texto = string.Join("; ", todos);
+        EstadoModeracion = EstadoModeracion.Pendiente;
+        PuntajeRiesgo = yaEsperaba ? Math.Max(PuntajeRiesgo, puntaje) : puntaje;
+        MotivosRiesgo = texto.Length == 0 ? null : texto.Length <= LongitudMaximaMotivosRiesgo ? texto : texto[..LongitudMaximaMotivosRiesgo];
+        MotivoRechazo = null;
+        if (!yaEsperaba) EnRevisionDesdeUtc = ahoraUtc;
+    }
+
+    /// <summary>Entra al catálogo como recién publicada: la espera no la deja enterrada bajo las de ese rato.</summary>
+    public void AprobarModeracion(DateTime ahoraUtc)
+    {
+        if (EstadoModeracion != EstadoModeracion.Pendiente) throw new ReglaDeNegocioException("La publicación no está esperando revisión.");
+        EstadoModeracion = EstadoModeracion.Aprobada;
+        MotivoRechazo = null;
+        EnRevisionDesdeUtc = null;
+        if (ahoraUtc > FechaRelevancia) FechaRelevancia = ahoraUtc;
+    }
+
+    public void RechazarModeracion(string motivo)
+    {
+        if (EstadoModeracion != EstadoModeracion.Pendiente) throw new ReglaDeNegocioException("La publicación no está esperando revisión.");
+        var texto = (motivo ?? "").Trim();
+        if (texto.Length is < 3 or > LongitudMaximaMotivoRechazo)
+            throw new ReglaDeNegocioException($"Escribe el motivo del rechazo (entre 3 y {LongitudMaximaMotivoRechazo} caracteres).");
+        EstadoModeracion = EstadoModeracion.Rechazada;
+        MotivoRechazo = texto;
+        EnRevisionDesdeUtc = null;
+    }
+
+    private void ExigirAprobada(string accion)
+    {
+        if (EstadoModeracion != EstadoModeracion.Aprobada)
+            throw new ReglaDeNegocioException($"No se puede {accion} una publicación que aún no está en el catálogo (espera la revisión).");
+    }
+
     // ---------------- Destacado (vence a los 7 días) ----------------
     public bool EstaDestacadaVigente(DateTime ahoraUtc) => DestacadaHasta.HasValue && DestacadaHasta.Value > ahoraUtc;
 
@@ -229,6 +291,7 @@ public class Publicacion
     {
         if (Estado != EstadoPublicacionEnum.Disponible) throw new ReglaDeNegocioException("Solo se pueden destacar publicaciones disponibles.");
         if (EstaOculta) throw new ReglaDeNegocioException("No se puede destacar una publicación oculta por moderación.");
+        ExigirAprobada("destacar");
         if (EstaDestacadaVigente(ahoraUtc)) throw new ReglaDeNegocioException("La publicación ya está destacada.");
     }
 

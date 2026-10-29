@@ -127,6 +127,9 @@ services:
       RateLimiting__PqrPublicaPorMinuto: "300"
       RateLimiting__PqrPublicaPorHora: "3000"
       RateLimiting__GlobalPorMinuto: "5000"
+      # Todas las cuentas de estas pruebas son nuevas: sus publicaciones esperarían a un moderador. La revisión previa
+      # se prueba en el backend (ModeracionPublicacionesTests).
+      Moderacion__PreAprobacion: "false"
     volumes:
       - certs:/certs:ro
     depends_on:
