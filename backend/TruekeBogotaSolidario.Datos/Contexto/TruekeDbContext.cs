@@ -141,6 +141,8 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.MotivosRiesgo).HasMaxLength(Publicacion.LongitudMaximaMotivosRiesgo);
             e.Property(x => x.MotivoRechazo).HasMaxLength(Publicacion.LongitudMaximaMotivoRechazo);
             e.HasIndex(x => x.EstadoModeracion);
+            // Sin llave foránea: la fundación puede borrar la necesidad y la donación sigue igual.
+            e.HasIndex(x => x.NecesidadFundacionId);
             e.Ignore(x => x.EsVisible);
             e.Property(x => x.PrecioReferenciaCop).HasPrecision(18, 2);
             e.Property(x => x.PesoEstimadoKg).HasPrecision(8, 2);
@@ -352,6 +354,7 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.CertificadoUrl).HasMaxLength(500);
             e.Property(x => x.MotivoDecision).HasMaxLength(300);
+            e.Property(x => x.NotaRegimen).HasMaxLength(300);
             e.HasOne<Usuario>().WithOne().HasForeignKey<Fundacion>(x => x.UsuarioId).OnDelete(DeleteBehavior.Cascade);
             e.HasIndex(x => x.UsuarioId).IsUnique();
             e.HasIndex(x => x.Estado);
@@ -364,6 +367,7 @@ public class TruekeDbContext : DbContext
             e.HasKey(x => x.Id);
             e.Property(x => x.Id).ValueGeneratedNever();
             e.Property(x => x.Texto).HasMaxLength(NecesidadFundacion.LongitudMaxima).IsRequired();
+            e.Ignore(x => x.EstaCubierta);
             e.HasOne<Fundacion>().WithMany().HasForeignKey(x => x.FundacionId).OnDelete(DeleteBehavior.Cascade);
             e.HasOne<Categoria>().WithMany().HasForeignKey(x => x.CategoriaId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.FundacionId);

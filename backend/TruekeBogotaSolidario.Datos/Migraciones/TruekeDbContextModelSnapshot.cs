@@ -834,10 +834,20 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .IsUnicode(false)
                         .HasColumnType("character varying(20)");
 
+                    b.Property<string>("NotaRegimen")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
                     b.Property<string>("RazonSocial")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
+
+                    b.Property<DateTime?>("RegimenRevisadoUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("RegimenTributarioEspecial")
+                        .HasColumnType("boolean");
 
                     b.Property<Guid>("UsuarioId")
                         .HasColumnType("uuid");
@@ -955,11 +965,17 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<int?>("CategoriaId")
                         .HasColumnType("integer");
 
+                    b.Property<DateTime?>("CubiertaUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime>("FechaUtc")
                         .HasColumnType("timestamp with time zone");
 
                     b.Property<Guid>("FundacionId")
                         .HasColumnType("uuid");
+
+                    b.Property<int>("Recibidos")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Texto")
                         .IsRequired()
@@ -1301,6 +1317,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .IsUnicode(false)
                         .HasColumnType("character varying(5)");
 
+                    b.Property<Guid?>("NecesidadFundacionId")
+                        .HasColumnType("uuid");
+
                     b.Property<decimal?>("PesoEstimadoKg")
                         .HasPrecision(8, 2)
                         .HasColumnType("numeric(8,2)");
@@ -1345,6 +1364,8 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.HasIndex("EstadoModeracion");
 
                     b.HasIndex("FechaRelevancia");
+
+                    b.HasIndex("NecesidadFundacionId");
 
                     b.HasIndex("PropietarioId");
 

@@ -38,12 +38,15 @@ public interface IFundacionService
     /// 24 h. Nunca falla: la publicación ya quedó creada.
     /// </summary>
     Task AvisarDonacionAsync(Guid donanteId, Guid publicacionId, string titulo, Guid necesidadId);
+    /// <summary>¿La necesidad sigue abierta y su fundación verificada? (para ligarle una donación).</summary>
+    Task<bool> NecesidadAbiertaAsync(Guid necesidadId);
 
     // Solo SuperUsuario
     Task<IReadOnlyList<FundacionAdminDto>> ListarParaRevisionAsync(Guid actorId, EstadoFundacionDto estado);
     Task AprobarAsync(Guid actorId, Guid usuarioId);
     Task RechazarAsync(Guid actorId, Guid usuarioId, string motivo);
     Task RetirarAsync(Guid actorId, Guid usuarioId, string motivo);
+    Task MarcarRegimenAsync(Guid actorId, Guid usuarioId, RegimenFundacionRequest r);
 }
 
 public sealed class FundacionService : IFundacionService
@@ -153,7 +156,7 @@ public sealed class FundacionService : IFundacionService
         var f = await AprobadaPropiaAsync(actorId);
         await ValidarCategoriaAsync(r.CategoriaId);
         var actuales = await _fundaciones.NecesidadesAsync(f.Id);
-        if (actuales.Count >= NecesidadFundacion.MaxPorFundacion)
+        if (actuales.Count(n => !n.EstaCubierta) >= NecesidadFundacion.MaxPorFundacion)
             throw new ReglaDeNegocioException($"Puedes tener hasta {NecesidadFundacion.MaxPorFundacion} necesidades. Borra las que ya se cubrieron.");
         var n = new NecesidadFundacion(f.Id, r.Texto, r.CategoriaId, r.Cantidad, r.Urgente, Ahora);
         _fundaciones.AgregarNecesidad(n);
@@ -168,6 +171,8 @@ public sealed class FundacionService : IFundacionService
         var n = (await _fundaciones.NecesidadesAsync(f.Id)).FirstOrDefault(x => x.Id == id) ?? throw new NoEncontradoException("Necesidad no encontrada.");
         await ValidarCategoriaAsync(r.CategoriaId);
         n.Editar(r.Texto, r.CategoriaId, r.Cantidad, r.Urgente);
+        if (r.Recibidos is not null || r.Cubierta is not null) n.AjustarProgreso(r.Recibidos ?? n.Recibidos, r.Cubierta, Ahora);
+        else n.AjustarProgreso(n.Recibidos, n.EstaCubierta ? true : null, Ahora); // subir la cantidad no reabre lo que la fundación cerró
         await _uow.GuardarCambiosAsync();
         _cache.Remove(ClaveCache);
         return ANecesidadDto(n, await NombresCategoriasAsync());
@@ -204,17 +209,22 @@ public sealed class FundacionService : IFundacionService
         }
     }
 
+    public async Task<bool> NecesidadAbiertaAsync(Guid necesidadId)
+        => await _fundaciones.NecesidadConFundacionAsync(necesidadId) is var (n, f) && f.EstaAprobada && !n.EstaCubierta;
+
     // ---------------- Páginas públicas ----------------
     public async Task<IReadOnlyList<FundacionResumenDto>> ListarAsync()
     {
         if (_cache.TryGetValue(ClaveCache, out IReadOnlyList<FundacionResumenDto>? enCache) && enCache is not null) return enCache;
         var visibles = await _fundaciones.ListarVisiblesAsync(MaxListado);
-        var conteos = await _fundaciones.ContarNecesidadesAsync(visibles.Select(v => v.Fundacion.Id).ToList());
+        var abiertas = (await _fundaciones.NecesidadesAbiertasAsync(visibles.Select(v => v.Fundacion.Id).ToList())).ToLookup(n => n.FundacionId);
+        var categorias = await NombresCategoriasAsync();
         var lista = visibles.Select(v =>
         {
-            var (total, urgentes) = conteos.TryGetValue(v.Fundacion.Id, out var c) ? c : (0, 0);
+            var suyas = abiertas[v.Fundacion.Id].Select(n => ANecesidadDto(n, categorias)).ToList();
             return new FundacionResumenDto(v.Usuario.Id, v.Fundacion.RazonSocial, Mapeos.FotoVisible(v.Usuario), v.Usuario.Localidad,
-                Divipola.NombreCompleto(v.Usuario.MunicipioCodigo), v.Fundacion.Descripcion, total, urgentes);
+                Divipola.NombreCompleto(v.Usuario.MunicipioCodigo), v.Fundacion.Descripcion, suyas.Count, suyas.Count(n => n.Urgente),
+                v.Fundacion.RegimenTributarioEspecial, suyas, v.Usuario.MunicipioCodigo);
         }).ToList();
         _cache.Set(ClaveCache, (IReadOnlyList<FundacionResumenDto>)lista, DuracionCache);
         return lista;
@@ -229,7 +239,7 @@ public sealed class FundacionService : IFundacionService
         var necesidades = (await _fundaciones.NecesidadesAsync(f.Id)).Select(n => ANecesidadDto(n, categorias)).ToList();
         return new FundacionPublicaDto(u.Id, f.RazonSocial, Mapeos.FotoVisible(u), u.Localidad, Divipola.NombreCompleto(u.MunicipioCodigo),
             f.Descripcion, f.MostrarNit ? f.Nit : null, f.FechaDecisionUtc ?? f.FechaSolicitudUtc, u.CalificacionPromedio,
-            u.CalificacionesTotal, necesidades);
+            u.CalificacionesTotal, necesidades, f.RegimenTributarioEspecial);
     }
 
     // ---------------- Revisión (SuperUsuario con verificación en dos pasos) ----------------
@@ -245,7 +255,8 @@ public sealed class FundacionService : IFundacionService
             // El certificado vive en un bucket privado: el enlace caduca en 5 minutos
             var enlace = f.CertificadoUrl is null ? null : await _almacen.UrlLecturaTemporalAsync(f.CertificadoUrl);
             resultado.Add(new FundacionAdminDto(u.Id, u.NombreCompleto, u.Correo, f.RazonSocial, f.Nit, f.Descripcion,
-                (EstadoFundacionDto)(int)f.Estado, enlace, f.MotivoDecision, f.FechaSolicitudUtc, f.FechaDecisionUtc));
+                (EstadoFundacionDto)(int)f.Estado, enlace, f.MotivoDecision, f.FechaSolicitudUtc, f.FechaDecisionUtc,
+                f.RegimenTributarioEspecial, f.NotaRegimen));
         }
         return resultado;
     }
@@ -296,6 +307,17 @@ public sealed class FundacionService : IFundacionService
             "Se retiró la verificación de tu fundación. Revisa el motivo en tu cuenta.", usuarioId);
     }
 
+    public async Task MarcarRegimenAsync(Guid actorId, Guid usuarioId, RegimenFundacionRequest r)
+    {
+        await ExigirSuperUsuarioAsync(actorId);
+        if (actorId == usuarioId) throw new ReglaDeNegocioException("No puedes resolver la verificación de tu propia fundación.");
+        var f = await _fundaciones.DeUsuarioAsync(usuarioId) ?? throw new NoEncontradoException("Esta cuenta no tiene un perfil de fundación.");
+        f.MarcarRegimenTributarioEspecial(r.Calificada, r.Nota, Ahora);
+        Auditar(actorId, r.Calificada ? "FUNDACION_RTE_MARCADA" : "FUNDACION_RTE_QUITADA", usuarioId, f.NotaRegimen);
+        await _uow.GuardarCambiosAsync();
+        _cache.Remove(ClaveCache);
+    }
+
     // ---------------- Apoyo ----------------
     private async Task<(Fundacion, Usuario)> ParaDecidirAsync(Guid actorId, Guid usuarioId)
     {
@@ -334,7 +356,7 @@ public sealed class FundacionService : IFundacionService
 
     private static NecesidadDto ANecesidadDto(NecesidadFundacion n, IReadOnlyDictionary<int, string> categorias)
         => new(n.Id, n.Texto, n.CategoriaId, n.CategoriaId is { } c && categorias.TryGetValue(c, out var nombre) ? nombre : null,
-            n.Cantidad, n.Urgente, n.FechaUtc);
+            n.Cantidad, n.Urgente, n.FechaUtc, n.Recibidos, n.EstaCubierta);
 
     private async Task<MiFundacionDto> AMiaAsync(Fundacion f)
     {

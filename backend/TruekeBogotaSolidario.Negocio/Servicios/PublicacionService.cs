@@ -155,6 +155,9 @@ public sealed class PublicacionService : IPublicacionService
         var imagenes = await ValidarImagenesAsync(actorId, r.Imagenes ?? new List<string>(), Array.Empty<string>());
 
         var pub = new Publicacion(actorId, Datos(r, categoria, actor, imagenes));
+        // "Tengo esto": la donación queda ligada a la necesidad y, al entregársela a la fundación, suma a su progreso.
+        if (r.Modo == ModoDto.Donacion && r.ParaNecesidadId is { } paraNecesidad && await _fundaciones.NecesidadAbiertaAsync(paraNecesidad))
+            pub.DestinarANecesidad(paraNecesidad);
         var enRevision = await _moderacion.EvaluarAsync(pub, actor, esNueva: true); // las de riesgo esperan a un moderador
         _pubs.Agregar(pub);
         await _uow.GuardarCambiosAsync();

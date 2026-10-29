@@ -240,6 +240,14 @@ public sealed class AdministracionController : ControllerBase
         return NoContent();
     }
 
+    /// <summary>Marca o quita el Régimen Tributario Especial de una fundación verificada, con la evidencia revisada (queda en la auditoría).</summary>
+    [HttpPost("fundaciones/{usuarioId:guid}/regimen"), Authorize(Policy = Politicas.SuperUsuario)]
+    public async Task<IActionResult> RegimenFundacion(Guid usuarioId, [FromBody] RegimenFundacionRequest r)
+    {
+        await _fundaciones.MarcarRegimenAsync(User.IdActual(), usuarioId, r);
+        return NoContent();
+    }
+
     /// <summary>Registra un reembolso ya hecho en el panel de Wompi (la API nunca envía dinero).</summary>
     [HttpPost("pagos/{referencia}/reembolsado"), Authorize(Policy = Politicas.SuperUsuario)]
     public async Task<ActionResult<PagoAdminDto>> Reembolsado(string referencia, [FromBody] ReembolsoRequest r)

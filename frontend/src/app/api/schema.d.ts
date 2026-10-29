@@ -1410,6 +1410,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/fundaciones/{usuarioId}/regimen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    usuarioId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["RegimenFundacionRequest"];
+                    "text/json": components["schemas"]["RegimenFundacionRequest"];
+                    "application/*+json": components["schemas"]["RegimenFundacionRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/pagos/{referencia}/reembolsado": {
         parameters: {
             query?: never;
@@ -6933,6 +6974,8 @@ export interface components {
             fechaSolicitudUtc?: string;
             /** Format: date-time */
             fechaDecisionUtc?: string | null;
+            regimenTributarioEspecial?: boolean;
+            notaRegimen?: string | null;
         };
         FundacionPublicaDto: {
             /** Format: uuid */
@@ -6950,6 +6993,7 @@ export interface components {
             /** Format: int32 */
             totalCalificaciones?: number;
             necesidades?: components["schemas"]["NecesidadDto"][];
+            regimenTributarioEspecial?: boolean;
         };
         FundacionResumenDto: {
             /** Format: uuid */
@@ -6963,6 +7007,9 @@ export interface components {
             necesidades?: number;
             /** Format: int32 */
             necesidadesUrgentes?: number;
+            regimenTributarioEspecial?: boolean;
+            abiertas?: components["schemas"]["NecesidadDto"][] | null;
+            municipioCodigo?: string;
         };
         GananciaDto: {
             modo?: string;
@@ -7010,6 +7057,9 @@ export interface components {
             /** Format: int32 */
             cantidad?: number | null;
             urgente?: boolean;
+            /** Format: int32 */
+            recibidos?: number | null;
+            cubierta?: boolean | null;
         };
         ImpactoDto: {
             /** Format: int32 */
@@ -7269,6 +7319,9 @@ export interface components {
             urgente?: boolean;
             /** Format: date-time */
             fechaUtc?: string;
+            /** Format: int32 */
+            recibidos?: number;
+            cubierta?: boolean;
         };
         NivelEcoPuntosDto: {
             nombre?: string;
@@ -7720,6 +7773,10 @@ export interface components {
         ReembolsoRequest: {
             nota: string;
         };
+        RegimenFundacionRequest: {
+            calificada?: boolean;
+            nota: string;
+        };
         RegistroRequest: {
             nombreCompleto: string;
             localidad: string;
@@ -8133,6 +8190,7 @@ export type PublicacionesEnRevisionDto = components['schemas']['PublicacionesEnR
 export type PuntoSerieDto = components['schemas']['PuntoSerieDto'];
 export type RechazarSolicitudRequest = components['schemas']['RechazarSolicitudRequest'];
 export type ReembolsoRequest = components['schemas']['ReembolsoRequest'];
+export type RegimenFundacionRequest = components['schemas']['RegimenFundacionRequest'];
 export type RegistroRequest = components['schemas']['RegistroRequest'];
 export type ResolverApelacionRequest = components['schemas']['ResolverApelacionRequest'];
 export type ResolverDenunciaRequest = components['schemas']['ResolverDenunciaRequest'];

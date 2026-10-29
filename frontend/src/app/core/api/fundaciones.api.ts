@@ -1,4 +1,5 @@
 import { inject, Injectable } from '@angular/core';
+import { shareReplay } from 'rxjs';
 import type {
   EditarFundacionRequest,
   EstadoFundacionDto,
@@ -18,6 +19,8 @@ export class FundacionesApi {
   private readonly api = inject(HttpApi);
 
   listar = () => this.api.get<FundacionResumenDto[]>('/fundaciones');
+  /** El mismo listado, una vez por sesión (para sugerir fundaciones al donar). */
+  readonly listado$ = this.api.get<FundacionResumenDto[]>('/fundaciones', { silencioso: true }).pipe(shareReplay(1));
   obtener = (id: string) => this.api.get<FundacionPublicaDto>(`/fundaciones/${seg(id)}`, { silencioso: true });
 
   /** null (204) si la cuenta nunca pidió ser fundación. */
@@ -35,4 +38,5 @@ export class FundacionesApi {
   aprobar = (id: string) => this.api.post<void>(`/admin/fundaciones/${seg(id)}/aprobar`);
   rechazar = (id: string, motivo: string) => this.api.post<void>(`/admin/fundaciones/${seg(id)}/rechazar`, { motivo });
   retirar = (id: string, motivo: string) => this.api.post<void>(`/admin/fundaciones/${seg(id)}/retirar`, { motivo });
+  regimen = (id: string, calificada: boolean, nota: string) => this.api.post<void>(`/admin/fundaciones/${seg(id)}/regimen`, { calificada, nota });
 }

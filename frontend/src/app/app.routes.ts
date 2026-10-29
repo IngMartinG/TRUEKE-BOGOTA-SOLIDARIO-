@@ -7,6 +7,7 @@ const paginas: Routes = [
   { path: 'como-funciona', title: 'Cómo funciona', loadComponent: () => import('./features/info/como-funciona') },
   { path: 'impacto', title: 'Impacto de la comunidad', loadComponent: () => import('./features/info/impacto') },
   { path: 'fundaciones', title: 'Fundaciones', loadComponent: () => import('./features/fundaciones/fundaciones') },
+  { path: 'fundaciones/necesidades', title: 'Lo que piden las fundaciones', loadComponent: () => import('./features/fundaciones/necesidades') },
   { path: 'fundaciones/:id', title: 'Fundación', loadComponent: () => import('./features/fundaciones/fundacion') },
   { path: 'apoya', title: 'Apoya el proyecto', loadComponent: () => import('./features/info/apoya') },
   { path: 'apoya/gracias', title: 'Gracias por tu aporte', loadComponent: () => import('./features/info/apoya-gracias') },

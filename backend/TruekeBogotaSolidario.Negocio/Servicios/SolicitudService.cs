@@ -73,13 +73,14 @@ public sealed class SolicitudService : ISolicitudService
     private readonly IMovimientoEcoPuntosRepository _movimientos;
     private readonly ILogger<SolicitudService> _log;
     private readonly IImpactoRepository _impacto;
+    private readonly IFundacionRepository _fundaciones;
 
     public SolicitudService(ISolicitudRepository solicitudes, IPublicacionRepository pubs, IUsuarioRepository usuarios,
         ITransaccionRepository transacciones, ICalificacionRepository calificaciones, IUnidadDeTrabajo uow, TimeProvider reloj,
         INotificador notificador, IConversacionRepository conversaciones, IBloqueoRepository bloqueos, IMovimientoEcoPuntosRepository movimientos,
-        ILogger<SolicitudService> log, IImpactoRepository impacto)
+        ILogger<SolicitudService> log, IImpactoRepository impacto, IFundacionRepository fundaciones)
     {
-        _impacto = impacto;
+        _impacto = impacto; _fundaciones = fundaciones;
         _solicitudes = solicitudes; _pubs = pubs; _usuarios = usuarios; _transacciones = transacciones; _calificaciones = calificaciones;
         _uow = uow; _reloj = reloj; _notificador = notificador; _conversaciones = conversaciones; _bloqueos = bloqueos; _movimientos = movimientos; _log = log;
     }
@@ -492,6 +493,11 @@ public sealed class SolicitudService : ISolicitudService
         {
             var factores = (await _impacto.ListarFactoresAsync()).ToDictionary(f => f.Material);
             foreach (var registro in ImpactoAmbiental.Registros(transaccion, pub, ofrecidas, factores)) _impacto.Agregar(registro);
+            // Donación para una necesidad: si la recibió la propia fundación, suma a lo recibido (y se cubre al llegar a la cantidad).
+            if (s.Modo == ModoTransaccion.Donacion && pub.NecesidadFundacionId is { } necesidadId
+                && await _fundaciones.NecesidadParaActualizarAsync(necesidadId) is var (necesidad, fundacion)
+                && fundacion.UsuarioId == receptor.Id && !necesidad.EstaCubierta)
+                necesidad.RegistrarRecibido(ahora);
         }
         // Los objetos ya se entregaron: sus listas de espera se cierran (en el mismo guardado, todo o nada).
         var avisos = new AvisosDiferidos();

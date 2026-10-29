@@ -1027,15 +1027,18 @@ public sealed class FundacionRepository : IFundacionRepository
 
     public async Task<IReadOnlyList<NecesidadFundacion>> NecesidadesAsync(Guid fundacionId)
         => await _db.NecesidadesFundacion.Where(n => n.FundacionId == fundacionId)
+            .OrderBy(n => n.CubiertaUtc != null).ThenByDescending(n => n.Urgente).ThenByDescending(n => n.FechaUtc).ThenBy(n => n.Id).ToListAsync();
+
+    public async Task<IReadOnlyList<NecesidadFundacion>> NecesidadesAbiertasAsync(IReadOnlyCollection<Guid> fundacionIds)
+        => fundacionIds.Count == 0 ? [] : await _db.NecesidadesFundacion.AsNoTracking()
+            .Where(n => fundacionIds.Contains(n.FundacionId) && n.CubiertaUtc == null)
             .OrderByDescending(n => n.Urgente).ThenByDescending(n => n.FechaUtc).ThenBy(n => n.Id).ToListAsync();
 
-    public async Task<IReadOnlyDictionary<Guid, (int Total, int Urgentes)>> ContarNecesidadesAsync(IReadOnlyCollection<Guid> fundacionIds)
+    public async Task<(NecesidadFundacion Necesidad, Fundacion Fundacion)?> NecesidadParaActualizarAsync(Guid necesidadId)
     {
-        if (fundacionIds.Count == 0) return new Dictionary<Guid, (int, int)>();
-        var conteos = await _db.NecesidadesFundacion.Where(n => fundacionIds.Contains(n.FundacionId))
-            .GroupBy(n => n.FundacionId)
-            .Select(g => new { g.Key, Total = g.Count(), Urgentes = g.Count(n => n.Urgente) }).ToListAsync();
-        return conteos.ToDictionary(c => c.Key, c => (c.Total, c.Urgentes));
+        var x = await _db.NecesidadesFundacion.Where(n => n.Id == necesidadId)
+            .Join(_db.Fundaciones, n => n.FundacionId, f => f.Id, (n, f) => new { n, f }).FirstOrDefaultAsync();
+        return x is null ? null : (x.n, x.f);
     }
 
     public async Task<(NecesidadFundacion Necesidad, Fundacion Fundacion)?> NecesidadConFundacionAsync(Guid necesidadId)

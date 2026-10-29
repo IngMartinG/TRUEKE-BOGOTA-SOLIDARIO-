@@ -1550,6 +1550,48 @@
         }
       }
     },
+    "/api/v1/admin/fundaciones/{usuarioId}/regimen": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegimenFundacionRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegimenFundacionRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/RegimenFundacionRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/admin/pagos/{referencia}/reembolsado": {
       "post": {
         "tags": [
@@ -9173,6 +9215,13 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "regimenTributarioEspecial": {
+            "type": "boolean"
+          },
+          "notaRegimen": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -9222,6 +9271,9 @@
             "items": {
               "$ref": "#/components/schemas/NecesidadDto"
             }
+          },
+          "regimenTributarioEspecial": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -9256,6 +9308,19 @@
           "necesidadesUrgentes": {
             "type": "integer",
             "format": "int32"
+          },
+          "regimenTributarioEspecial": {
+            "type": "boolean"
+          },
+          "abiertas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NecesidadDto"
+            },
+            "nullable": true
+          },
+          "municipioCodigo": {
+            "type": "string"
           }
         },
         "additionalProperties": false
@@ -9421,6 +9486,17 @@
           },
           "urgente": {
             "type": "boolean"
+          },
+          "recibidos": {
+            "maximum": 100000,
+            "minimum": 0,
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "cubierta": {
+            "type": "boolean",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10144,6 +10220,13 @@
           "fechaUtc": {
             "type": "string",
             "format": "date-time"
+          },
+          "recibidos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "cubierta": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -11368,6 +11451,23 @@
           "nota": {
             "maxLength": 300,
             "minLength": 3,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "RegimenFundacionRequest": {
+        "required": [
+          "nota"
+        ],
+        "type": "object",
+        "properties": {
+          "calificada": {
+            "type": "boolean"
+          },
+          "nota": {
+            "maxLength": 300,
+            "minLength": 5,
             "type": "string"
           }
         },

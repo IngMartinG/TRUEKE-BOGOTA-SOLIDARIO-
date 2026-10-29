@@ -138,11 +138,14 @@ const MAX_NECESIDADES = 10;
         <section class="mt-10" aria-labelledby="titulo-necesito">
           <div class="flex items-baseline justify-between gap-3">
             <h2 id="titulo-necesito" class="text-xl font-bold">Lo que necesitamos</h2>
-            <span class="text-sm text-tenue tabular-nums">{{ necesidades().length }} de {{ maximo }}</span>
+            <span class="text-sm text-tenue tabular-nums">{{ abiertas() }} de {{ maximo }} abiertas</span>
           </div>
-          <p class="mt-1 text-sm text-tenue">Bórrala cuando ya se cubra. Las urgentes salen primero.</p>
+          <p class="mt-1 text-sm text-tenue">
+            Las urgentes salen primero. Cada donación para una necesidad que te entregan por Trueke suma a lo recibido y, al llegar a
+            la cantidad, se marca como cubierta sola.
+          </p>
 
-          @if (necesidades().length < maximo || editando()) {
+          @if (abiertas() < maximo || editando()) {
             <form class="tarjeta mt-4 grid grid-cols-1 gap-4 p-4 sm:grid-cols-[1fr_12rem]" (ngSubmit)="guardarNecesidad()">
               <div class="campo sm:col-span-2">
                 <label for="nec-texto" class="etiqueta">{{ editando() ? 'Editar necesidad' : '¿Qué necesitan?' }}</label>
@@ -162,6 +165,14 @@ const MAX_NECESIDADES = 10;
                 <label for="nec-cantidad" class="etiqueta">Cantidad (opcional)</label>
                 <input id="nec-cantidad" name="cantidad" type="number" inputmode="numeric" min="1" max="100000" class="entrada" [(ngModel)]="cantidad" />
               </div>
+              @if (editando()) {
+                <div class="campo">
+                  <label for="nec-recibidos" class="etiqueta">Recibidas hasta ahora</label>
+                  <input id="nec-recibidos" name="recibidos" type="number" inputmode="numeric" min="0" max="100000" class="entrada"
+                    aria-describedby="nec-recibidos-ayuda" [(ngModel)]="recibidos" />
+                  <p id="nec-recibidos-ayuda" class="ayuda">Corrígelo si una donación trajo varias unidades.</p>
+                </div>
+              }
               <label class="flex items-center gap-3 text-sm sm:col-span-2">
                 <input type="checkbox" name="urgente" class="size-4 accent-bosque-600" [(ngModel)]="urgente" />
                 <span>Es urgente</span>
@@ -182,7 +193,7 @@ const MAX_NECESIDADES = 10;
 
           <ul class="mt-4 space-y-2">
             @for (n of necesidades(); track n.id) {
-              <li class="tarjeta flex flex-wrap items-center gap-3 p-4">
+              <li class="tarjeta flex flex-wrap items-center gap-3 p-4" [class.opacity-75]="n.cubierta">
                 <div class="min-w-0 flex-1">
                   <p class="font-semibold break-words">
                     @if (n.cantidad) {
@@ -191,18 +202,29 @@ const MAX_NECESIDADES = 10;
                     {{ n.texto }}
                   </p>
                   <p class="mt-0.5 flex flex-wrap items-center gap-2 text-xs text-tenue">
-                    @if (n.urgente) {
+                    @if (n.cubierta) {
+                      <span class="insignia-trueke"><app-icono nombre="check" [tamano]="12" />Cubierta</span>
+                    } @else if (n.urgente) {
                       <span class="insignia-sol">Urgente</span>
                     }
                     {{ n.categoria ?? 'Cualquier categoría' }}
+                    @if (n.recibidos) {
+                      · <span class="tabular-nums">{{ n.recibidos }}{{ n.cantidad ? ' de ' + n.cantidad : '' }} recibidas</span>
+                    }
                   </p>
                 </div>
                 <button type="button" class="btn btn-fantasma btn-sm" (click)="editar(n)" [attr.aria-label]="'Editar ' + n.texto">
                   <app-icono nombre="editar" [tamano]="14" />Editar
                 </button>
-                <button type="button" class="btn btn-secundario btn-sm" (click)="cubierta(n)" [attr.aria-label]="'Ya se cubrió: ' + n.texto">
-                  <app-icono nombre="check" [tamano]="14" />Ya se cubrió
-                </button>
+                @if (n.cubierta) {
+                  <button type="button" class="btn btn-fantasma btn-sm" (click)="quitar(n)" [attr.aria-label]="'Quitar de la lista: ' + n.texto">
+                    <app-icono nombre="basura" [tamano]="14" />Quitar
+                  </button>
+                } @else {
+                  <button type="button" class="btn btn-secundario btn-sm" (click)="cubierta(n)" [attr.aria-label]="'Ya se cubrió: ' + n.texto">
+                    <app-icono nombre="check" [tamano]="14" />Ya se cubrió
+                  </button>
+                }
               </li>
             } @empty {
               <li class="rounded-tarjeta border-2 border-dashed border-borde p-6 text-center text-sm text-tenue">
@@ -243,6 +265,8 @@ export default class FundacionCuenta {
   protected readonly recurso = rxResource({ stream: () => this.api.mia() });
   protected readonly mia = computed<MiFundacionDto | null>(() => this.recurso.value() ?? null);
   protected readonly necesidades = computed(() => this.mia()?.necesidades ?? []);
+  /** Las cubiertas no cuentan para el máximo. */
+  protected readonly abiertas = computed(() => this.necesidades().filter((n) => !n.cubierta).length);
   protected readonly categorias = toSignal(inject(CatalogoApi).categorias$.pipe(catchError(() => of([]))), { initialValue: [] });
   protected readonly puedeSolicitar = computed(() => {
     const e = this.mia()?.estado;
@@ -267,6 +291,7 @@ export default class FundacionCuenta {
   protected readonly categoriaId = signal<number | null>(null);
   protected readonly cantidad = signal<number | null>(null);
   protected readonly urgente = signal(false);
+  protected readonly recibidos = signal<number | null>(null);
   protected readonly guardandoNecesidad = signal(false);
   protected readonly errorNecesidad = signal<string | null>(null);
 
@@ -366,6 +391,7 @@ export default class FundacionCuenta {
     this.categoriaId.set(n.categoriaId ?? null);
     this.cantidad.set(n.cantidad ?? null);
     this.urgente.set(!!n.urgente);
+    this.recibidos.set(n.recibidos ?? 0);
     this.errorNecesidad.set(null);
     document.getElementById('nec-texto')?.focus();
   }
@@ -376,11 +402,15 @@ export default class FundacionCuenta {
     this.categoriaId.set(null);
     this.cantidad.set(null);
     this.urgente.set(false);
+    this.recibidos.set(null);
     this.errorNecesidad.set(null);
   }
 
   protected async guardarNecesidad(): Promise<void> {
-    const r = { texto: this.texto().trim(), categoriaId: this.categoriaId(), cantidad: this.cantidad() || null, urgente: this.urgente() };
+    const r = {
+      texto: this.texto().trim(), categoriaId: this.categoriaId(), cantidad: this.cantidad() || null, urgente: this.urgente(),
+      ...(this.editando() && this.recibidos() !== null ? { recibidos: this.recibidos() } : {}),
+    };
     this.guardandoNecesidad.set(true);
     this.errorNecesidad.set(null);
     try {
@@ -395,7 +425,22 @@ export default class FundacionCuenta {
     }
   }
 
+  /** Se queda en la página con "¡Cubierta!" (agradece a quien donó) y deja de contar para el máximo. */
   protected async cubierta(n: NecesidadDto): Promise<void> {
+    if (!n.id) return;
+    try {
+      await firstValueFrom(this.api.actualizarNecesidad(n.id, {
+        texto: n.texto ?? '', categoriaId: n.categoriaId ?? null, cantidad: n.cantidad ?? null, urgente: false, cubierta: true,
+      }));
+      if (this.editando() === n.id) this.limpiarNecesidad();
+      this.avisos.exito('¡Necesidad cubierta!', `«${n.texto}» sale de lo que piden las fundaciones.`);
+      this.recurso.reload();
+    } catch {
+      // El interceptor ya mostró el error.
+    }
+  }
+
+  protected async quitar(n: NecesidadDto): Promise<void> {
     if (!n.id) return;
     try {
       await firstValueFrom(this.api.eliminarNecesidad(n.id));
