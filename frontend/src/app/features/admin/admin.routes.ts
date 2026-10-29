@@ -11,10 +11,11 @@ export default [
     path: '',
     loadComponent: () => import('./panel'),
     children: [
-      { path: '', pathMatch: 'full', redirectTo: 'denuncias' },
+      { path: '', pathMatch: 'full', redirectTo: 'publicaciones' },
       { path: 'denuncias', title: 'Moderación · Denuncias', loadComponent: () => import('./denuncias') },
       { path: 'apelaciones', title: 'Moderación · Apelaciones', loadComponent: () => import('./apelaciones') },
       { path: 'usuarios', title: 'Moderación · Usuarios', loadComponent: () => import('./usuarios') },
+      { path: 'publicaciones', title: 'Moderación · Publicaciones en revisión', loadComponent: () => import('./publicaciones-pendientes') },
       { path: 'fotos', title: 'Moderación · Fotos de perfil', loadComponent: () => import('./fotos') },
       { path: 'verificaciones', title: 'Moderación · Verificaciones', loadComponent: () => import('./verificaciones') },
       { path: 'pagos', title: 'Moderación · Pagos', loadComponent: () => import('./pagos') },

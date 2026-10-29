@@ -48,7 +48,7 @@ public sealed class ComentarioService : IComentarioService
         // Ver lo oculto exige el rol Y una sesión con 2FA (la misma regla que las rutas de administración)
         var esModerador = actor is not null && actor.Rol >= RolUsuarioEnum.Administrador && _sesionModeracion.ConDosFactores;
         var esDuenio = actor is not null && pub.PropietarioId == actor.Id;
-        var visible = !pub.EstaOculta && pub.Estado is EstadoPublicacionEnum.Disponible or EstadoPublicacionEnum.EnNegociacion;
+        var visible = pub.EsVisible && pub.Estado is EstadoPublicacionEnum.Disponible or EstadoPublicacionEnum.EnNegociacion;
         if (!visible && !esDuenio && !esModerador) throw new NoEncontradoException("Publicación no encontrada.");
         return (pub, actor, esModerador);
     }
@@ -67,7 +67,7 @@ public sealed class ComentarioService : IComentarioService
         var (pub, actor, _) = await CargarPublicacionVisibleAsync(actorId, publicacionId);
         if (actor is null) throw new AutenticacionException("Sesión no válida.");
         Guardas.ExigirCorreoVerificado(actor);
-        if (pub.EstaOculta) throw new ReglaDeNegocioException("No se puede comentar una publicación oculta por moderación.");
+        if (!pub.EsVisible) throw new ReglaDeNegocioException("Solo se pueden comentar publicaciones que están en el catálogo.");
         if (pub.Estado is EstadoPublicacionEnum.Cancelada or EstadoPublicacionEnum.Intercambiada)
             throw new ReglaDeNegocioException("La publicación ya no admite comentarios.");
 

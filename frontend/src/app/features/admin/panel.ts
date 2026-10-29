@@ -1,6 +1,9 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { AdminApi } from '../../core/api/admin.api';
 import { SesionService } from '../../core/sesion.service';
+import { TiempoRealService } from '../../core/tiempo-real.service';
 import { Icono } from '../../shared/ui/icono';
 
 @Component({
@@ -27,6 +30,9 @@ import { Icono } from '../../shared/ui/icono';
         @for (e of enlaces(); track e.ruta) {
           <a [routerLink]="e.ruta" routerLinkActive="!bg-fondo !text-tinta" class="flex shrink-0 items-center gap-2 rounded-t-2xl px-4 py-3 text-sm font-semibold text-white/80 transition hover:text-white">
             <app-icono [nombre]="e.icono" [tamano]="16" />{{ e.texto }}
+            @if (e.ruta === 'publicaciones' && pendientes()) {
+              <span class="rounded-full bg-sol-400 px-1.5 text-xs font-bold text-bosque-900 tabular-nums" [attr.aria-label]="pendientes() + ' por revisar'">{{ pendientes() }}</span>
+            }
           </a>
         }
       </nav>
@@ -36,7 +42,12 @@ import { Icono } from '../../shared/ui/icono';
 })
 export default class Panel {
   protected readonly sesion = inject(SesionService);
+  private readonly cola = rxResource({ stream: () => inject(AdminApi).colaModeracion() });
+  private readonly tiempoReal = inject(TiempoRealService);
+  /** Lo que espera revisión: llega en vivo; mientras no cambie, el valor con que se abrió el panel. */
+  protected readonly pendientes = computed(() => this.tiempoReal.colaModeracion() ?? this.cola.value()?.publicaciones ?? 0);
   protected readonly enlaces = computed(() => [
+    { ruta: 'publicaciones', texto: 'Publicaciones', icono: 'reloj' },
     { ruta: 'denuncias', texto: 'Denuncias', icono: 'bandera' },
     { ruta: 'apelaciones', texto: 'Apelaciones', icono: 'balanza' },
     { ruta: 'usuarios', texto: 'Usuarios', icono: 'usuarios' },

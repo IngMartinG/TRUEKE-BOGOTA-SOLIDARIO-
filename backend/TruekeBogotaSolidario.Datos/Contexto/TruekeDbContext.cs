@@ -135,6 +135,11 @@ public class TruekeDbContext : DbContext
             e.Navigation(x => x.Imagenes).UsePropertyAccessMode(PropertyAccessMode.Field);
             e.Property(x => x.MotivoCancelacion).HasMaxLength(300);
             e.Property(x => x.MotivoOcultamiento).HasMaxLength(300);
+            e.Property(x => x.EstadoModeracion).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.MotivosRiesgo).HasMaxLength(Publicacion.LongitudMaximaMotivosRiesgo);
+            e.Property(x => x.MotivoRechazo).HasMaxLength(Publicacion.LongitudMaximaMotivoRechazo);
+            e.HasIndex(x => x.EstadoModeracion);
+            e.Ignore(x => x.EsVisible);
             e.Property(x => x.PrecioReferenciaCop).HasPrecision(18, 2);
             e.Property(x => x.Modo).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);

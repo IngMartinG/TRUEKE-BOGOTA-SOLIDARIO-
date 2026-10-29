@@ -5,6 +5,7 @@ using TruekeBogotaSolidario.Datos.Repositorios;
 using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Dtos;
+using TruekeBogotaSolidario.Negocio.Moderacion;
 
 namespace TruekeBogotaSolidario.Negocio.Servicios;
 
@@ -63,9 +64,9 @@ public sealed class PublicacionService : IPublicacionService
         ISolicitudRepository solicitudes, IFavoritoRepository favoritos, IEstadisticaRepository estadisticas, IUnidadDeTrabajo uow,
         IOptions<UrlsOpciones> urls, TimeProvider reloj, INotificador notificador, IAlmacenArchivos almacen, IRegistroVistas vistas,
         ICalificacionRepository calificaciones, IPresencia presencia, ISolicitudService truekes, ISesionModeracion sesionModeracion,
-        ITransaccionRepository transacciones, IFundacionService fundaciones)
+        ITransaccionRepository transacciones, IFundacionService fundaciones, IModeracionPublicacionesService moderacion)
     {
-        _sesionModeracion = sesionModeracion; _transacciones = transacciones; _fundaciones = fundaciones;
+        _sesionModeracion = sesionModeracion; _transacciones = transacciones; _fundaciones = fundaciones; _moderacion = moderacion;
         _pubs = pubs; _usuarios = usuarios; _categorias = categorias; _solicitudes = solicitudes; _favoritos = favoritos;
         _estadisticas = estadisticas; _uow = uow; _urls = urls.Value; _reloj = reloj; _notificador = notificador; _almacen = almacen;
         _vistas = vistas; _calificaciones = calificaciones; _presencia = presencia; _truekes = truekes;
@@ -76,6 +77,7 @@ public sealed class PublicacionService : IPublicacionService
     private readonly ISesionModeracion _sesionModeracion;
     private readonly ITransaccionRepository _transacciones;
     private readonly IFundacionService _fundaciones;
+    private readonly IModeracionPublicacionesService _moderacion;
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
 
@@ -150,8 +152,10 @@ public sealed class PublicacionService : IPublicacionService
         var imagenes = await ValidarImagenesAsync(actorId, r.Imagenes ?? new List<string>(), Array.Empty<string>());
 
         var pub = new Publicacion(actorId, Datos(r, categoria, actor, imagenes));
+        var enRevision = await _moderacion.EvaluarAsync(pub, actor, esNueva: true); // las de riesgo esperan a un moderador
         _pubs.Agregar(pub);
         await _uow.GuardarCambiosAsync();
+        if (enRevision) await _moderacion.AvisarEnRevisionAsync(pub);
 
         // Desde "Tengo esto": solo se avisa a la fundación; la publicación no se reserva ni se muestra distinto a nadie.
         if (r.Modo == ModoDto.Donacion && r.ParaNecesidadId is { } necesidad)
@@ -179,8 +183,12 @@ public sealed class PublicacionService : IPublicacionService
         var categoria = await _categorias.ObtenerPorIdAsync(r.CategoriaId) ?? throw new ReglaDeNegocioException("La categoría no existe.");
         // las fotos que ya tenía no se revalidan; las nuevas se limpian
         var imagenes = await ValidarImagenesAsync(actorId, r.Imagenes ?? new List<string>(), p.Imagenes.Select(i => i.Url));
+        var antes = p.EstadoModeracion;
         p.Editar(Datos(r, categoria, actor, imagenes), ahora);
+        // Un cambio de texto puede volverla de riesgo; una rechazada, al corregirla, vuelve a la fila.
+        var enRevision = await _moderacion.EvaluarAsync(p, actor, esNueva: false);
         await _uow.GuardarCambiosAsync(); // RowVersion: si justo llegó una solicitud, 409
+        if (enRevision && antes != EstadoModeracion.Pendiente) await _moderacion.AvisarEnRevisionAsync(p);
         var favorita = (await _favoritos.ObtenerAsync(actorId, p.Id)) is not null;
         var vistas = (await _estadisticas.TotalesAsync(new[] { p.Id })).GetValueOrDefault(p.Id);
         return Mapeos.APublicacionDto(p, actorId, veExacto: true, veModeracion: false, ahora, favorita, vistas);
@@ -244,7 +252,7 @@ public sealed class PublicacionService : IPublicacionService
         // Ver lo oculto, los motivos y las coordenadas exactas exige el rol Y una sesión con 2FA (como las rutas de administración)
         var esModerador = actor is not null && actor.Rol >= RolUsuarioEnum.Administrador && _sesionModeracion.ConDosFactores;
         var aceptada = actor is not null && !esDueno && await _solicitudes.ExisteAceptadaAsync(p.Id, actor.Id);
-        var visiblePublicamente = p.Estado == EstadoPublicacionEnum.Disponible && !p.EstaOculta && !SuspendidoOEliminado(p.Propietario!, ahora);
+        var visiblePublicamente = p.Estado == EstadoPublicacionEnum.Disponible && p.EsVisible && !SuspendidoOEliminado(p.Propietario!, ahora);
         // A quien le ofrecieron este objeto en un trueke puede verlo aunque ya esté reservado (es lo que va a recibir).
         var seLeOfrecio = !visiblePublicamente && actor is not null && !esDueno && await _solicitudes.SeLeOfrecioAsync(p.Id, actor.Id);
 
@@ -470,7 +478,7 @@ public sealed class PublicacionService : IPublicacionService
     {
         var p = await _pubs.ObtenerPorIdAsync(publicacionId);
         var ahora = Ahora;
-        if (p is null || p.EstaOculta || p.Estado != EstadoPublicacionEnum.Disponible && p.Estado != EstadoPublicacionEnum.EnNegociacion
+        if (p is null || !p.EsVisible || p.Estado != EstadoPublicacionEnum.Disponible && p.Estado != EstadoPublicacionEnum.EnNegociacion
             || SuspendidoOEliminado(p.Propietario!, ahora))
             throw new NoEncontradoException("Publicación no encontrada.");
         if (await _favoritos.ObtenerAsync(actorId, publicacionId) is not null) return; // idempotente
@@ -496,7 +504,7 @@ public sealed class PublicacionService : IPublicacionService
         var pubs = (await _pubs.ListarPorIdsAsync(ids)).ToDictionary(p => p.Id);
         var ahora = Ahora;
         var dtos = ids.Where(pubs.ContainsKey).Select(id => pubs[id])
-            .Where(p => !p.EstaOculta && !SuspendidoOEliminado(p.Propietario!, ahora))
+            .Where(p => p.EsVisible && !SuspendidoOEliminado(p.Propietario!, ahora))
             .Select(p => Mapeos.APublicacionDto(p, actorId, veExacto: p.PropietarioId == actorId, veModeracion: false, ahora, esFavorita: true))
             .ToList();
         return new PaginaDto<PublicacionDto>(dtos, total, Math.Max(pagina, 1), Math.Clamp(tamano, 1, 50));

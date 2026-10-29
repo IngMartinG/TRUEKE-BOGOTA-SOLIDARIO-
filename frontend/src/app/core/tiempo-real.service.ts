@@ -65,6 +65,8 @@ export class TiempoRealService {
   readonly escribiendoEn = signal<ReadonlySet<string>>(new Set());
   /** "En línea" de las contrapartes (llega por evento; el valor inicial viene en cada conversación). */
   readonly enLinea = signal<ReadonlyMap<string, boolean>>(new Map());
+  /** Publicaciones que esperan revisión (solo llega a moderadores; null = aún no hubo cambios en esta sesión). */
+  readonly colaModeracion = signal<number | null>(null);
   private readonly temporizadoresEscribiendo = new Map<string, ReturnType<typeof setTimeout>>();
   private ultimoAvisoEscribiendo = new Map<string, number>();
   /** Emite tras reconectar: las pantallas abiertas recargan sus datos. */
@@ -134,6 +136,7 @@ export class TiempoRealService {
     conexion.on('mensaje', (m: MensajeChatDto) => this.alRecibirMensaje(m));
     conexion.on('estadoMensajes', (e: EstadoMensajes) => this.estadoMensajes$.next(e));
     conexion.on('escribiendo', (e: { conversacionId: string }) => this.alEscribir(e.conversacionId));
+    conexion.on('colaModeracion', (c: { publicaciones: number }) => this.colaModeracion.set(c.publicaciones));
     conexion.on('presencia', (p: { usuarioId: string; enLinea: boolean }) =>
       this.enLinea.update((m) => new Map(m).set(p.usuarioId, p.enLinea)),
     );
@@ -177,6 +180,7 @@ export class TiempoRealService {
     const conexion = this.conexion;
     this.conexion = null;
     this.notificacionesNoLeidas.set(0);
+    this.colaModeracion.set(null);
     this.mensajesNoLeidos.set(0);
     this.conectado.set(false);
     // Presencia y "escribiendo…" son de las conversaciones de quien cerró sesión

@@ -338,10 +338,17 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
         ALTER TABLE "Usuarios" ADD "FotoRevisadaUtc" timestamp with time zone;
         ALTER TABLE "Usuarios" ADD "MotivoRechazoFoto" character varying(300);
         ALTER TABLE "Usuarios" ADD "PlazoCambioFotoUtc" timestamp with time zone;
+        ALTER TABLE "Publicaciones" ADD "EstadoModeracion" character varying(20) NOT NULL DEFAULT 'Aprobada';
+        ALTER TABLE "Publicaciones" ADD "PuntajeRiesgo" integer NOT NULL DEFAULT 0;
+        ALTER TABLE "Publicaciones" ADD "MotivosRiesgo" character varying(500);
+        ALTER TABLE "Publicaciones" ADD "MotivoRechazo" character varying(300);
+        ALTER TABLE "Publicaciones" ADD "EnRevisionDesdeUtc" timestamp with time zone;
         """;
     private const string QuitarColumnasPosteriores = """
         ALTER TABLE "Usuarios" DROP COLUMN "EstadoFoto", DROP COLUMN "FotoRevisadaUtc", DROP COLUMN "MotivoRechazoFoto",
             DROP COLUMN "PlazoCambioFotoUtc";
+        ALTER TABLE "Publicaciones" DROP COLUMN "EstadoModeracion", DROP COLUMN "PuntajeRiesgo", DROP COLUMN "MotivosRiesgo",
+            DROP COLUMN "MotivoRechazo", DROP COLUMN "EnRevisionDesdeUtc";
         """;
 
     [SkippableFact]

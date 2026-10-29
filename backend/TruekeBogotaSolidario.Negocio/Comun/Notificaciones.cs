@@ -23,6 +23,11 @@ public static class TiposNotificacion
     public const string PagoEnRevision = "PagoEnRevision";
     public const string PublicacionOcultada = "PublicacionOcultada";
     public const string PublicacionRestaurada = "PublicacionRestaurada";
+    /// <summary>Al dueño: su publicación de riesgo espera a un moderador antes de entrar al catálogo (RecursoId = PublicacionId).</summary>
+    public const string PublicacionEnRevision = "PublicacionEnRevision";
+    public const string PublicacionAprobada = "PublicacionAprobada";
+    /// <summary>Al dueño, con lo que debe corregir: al editarla vuelve a revisión.</summary>
+    public const string PublicacionRechazada = "PublicacionRechazada";
     /// <summary>Al dueño, cuando otra persona comenta su publicación (RecursoId = PublicacionId).</summary>
     public const string ComentarioNuevo = "ComentarioNuevo";
     public const string ComentarioOcultado = "ComentarioOcultado";
@@ -99,6 +104,8 @@ public interface IEmisorTiempoReal
     Task EstadoMensajesAsync(Guid usuarioId, EstadoMensajesDto estado);
     Task EscribiendoAsync(Guid usuarioId, EscribiendoDto escribiendo);
     Task PresenciaAsync(IReadOnlyCollection<Guid> usuarioIds, PresenciaDto presencia);
+    /// <summary>A los moderadores: cambió lo que espera revisión (contador del panel).</summary>
+    Task ColaModeracionAsync(IReadOnlyCollection<Guid> moderadorIds, ColaModeracionDto cola);
 }
 
 public sealed class EmisorTiempoRealNulo : IEmisorTiempoReal
@@ -108,6 +115,7 @@ public sealed class EmisorTiempoRealNulo : IEmisorTiempoReal
     public Task EstadoMensajesAsync(Guid usuarioId, EstadoMensajesDto estado) => Task.CompletedTask;
     public Task EscribiendoAsync(Guid usuarioId, EscribiendoDto escribiendo) => Task.CompletedTask;
     public Task PresenciaAsync(IReadOnlyCollection<Guid> usuarioIds, PresenciaDto presencia) => Task.CompletedTask;
+    public Task ColaModeracionAsync(IReadOnlyCollection<Guid> moderadorIds, ColaModeracionDto cola) => Task.CompletedTask;
 }
 
 public sealed class NotificadorPersistente : INotificador
