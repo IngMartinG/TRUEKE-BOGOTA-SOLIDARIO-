@@ -57,6 +57,10 @@ Verificaciones: `dotnet test` en `backend/` y `npm run verificar` en `frontend/`
 - Arquitectura: [`docs/c4/C4_MODELO_TRUEKE.md`](docs/c4/C4_MODELO_TRUEKE.md)
 - Contrato de la API: [`docs/openapi.json`](docs/openapi.json) (Swagger en `/swagger` en desarrollo)
 - Estado y pendientes: [`docs/ESTADO_Y_PENDIENTES.md`](docs/ESTADO_Y_PENDIENTES.md)
+- Decisiones de producto: [`docs/DECISIONES.md`](docs/DECISIONES.md)
+- Metodología de impacto: [`docs/METODOLOGIA-IMPACTO.md`](docs/METODOLOGIA-IMPACTO.md)
+- Glosario: [`docs/GLOSARIO.md`](docs/GLOSARIO.md)
+- Accesibilidad: [`docs/ACCESIBILIDAD.md`](docs/ACCESIBILIDAD.md)
 
 ## Flujo de trabajo
 
