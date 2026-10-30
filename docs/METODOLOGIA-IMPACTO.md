@@ -73,6 +73,8 @@ Los factores son promedios recortados a la baja, del orden de los estudios de ci
 **Privacidad:** una localidad solo aparece en "Localidades más activas" con al menos 3 intercambios.
 
 ## Cómo se cita en un informe
+Los informes para empresas toman los registros de las publicaciones ligadas a sus campañas (cada registro guarda su campaña),
+guardan una foto inmutable de esos registros con su factor y versión, y la citan así:
 > Los kilogramos reutilizados corresponden a objetos cuya entrega confirmaron ambas partes en Trueke Bogotá Solidario. La
 > estimación de CO₂ usa la metodología interna versión X.Y.Z, con factores conservadores. Los valores son estimaciones y no
 > constituyen una verificación de tercera parte.

@@ -4,6 +4,7 @@ import type {
   ContraofertaRequest,
   ConversacionDto,
   CrearSolicitudRequest,
+  EvidenciaEntregaDto,
   MensajeChatDto,
   SolicitudDto,
 } from '../../api/tipos';
@@ -23,7 +24,10 @@ export class IntercambiosApi {
   rechazar = (id: string, motivo: string | null) =>
     this.api.post<void>(`/solicitudes/${seg(id)}/rechazar`, { motivo });
   cancelar = (id: string) => this.api.post<void>(`/solicitudes/${seg(id)}/cancelar`);
-  confirmarEntrega = (id: string) => this.api.post<SolicitudDto>(`/solicitudes/${seg(id)}/confirmar-entrega`);
+  /** Con foto opcional de la entrega (subida como FotoChat): solo la ven las dos partes y la administración. */
+  confirmarEntrega = (id: string, fotoEvidenciaUrl?: string | null) =>
+    this.api.post<SolicitudDto>(`/solicitudes/${seg(id)}/confirmar-entrega`, fotoEvidenciaUrl ? { fotoEvidenciaUrl } : {});
+  evidencias = (id: string) => this.api.get<EvidenciaEntregaDto[]>(`/solicitudes/${seg(id)}/evidencias`);
   noConcretada = (id: string, motivo: string) =>
     this.api.post<SolicitudDto>(`/solicitudes/${seg(id)}/no-concretada`, { motivo });
   calificar = (id: string, estrellas: number, comentario: string | null) =>

@@ -46,6 +46,8 @@ public static class DatosServiceCollectionExtensions
         services.AddScoped<IBusquedaGuardadaRepository, BusquedaGuardadaRepository>();
         services.AddScoped<IDeseoRepository, DeseoRepository>();
         services.AddScoped<IFundacionRepository, FundacionRepository>();
+        services.AddScoped<IEmpresaRepository, EmpresaRepository>();
+        services.AddScoped<IEvidenciaEntregaRepository, EvidenciaEntregaRepository>();
         services.AddScoped<ICalificacionRepository, CalificacionRepository>();
         services.AddScoped<IFacturaRepository, FacturaRepository>();
         services.AddScoped<IPqrRepository, PqrRepository>();

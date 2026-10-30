@@ -106,7 +106,8 @@ internal static class Mapeos
             p.Condicion.ToString(), p.DetalleCondicion, p.MunicipioCodigo, Divipola.NombreCompleto(p.MunicipioCodigo), p.DepartamentoCodigo,
             esMia ? vistas ?? 0 : null, esMia ? p.ProximoImpulsoPosible : null,
             p.Estado == EstadoPublicacionEnum.Disponible ? interesados : 0, yaSolicite, p.AceptaTrueke,
-            verMotivo ? p.EstadoModeracion.ToString() : null, verMotivo ? p.MotivoRechazo : null, p.PesoEstimadoKg, p.Material?.ToString());
+            verMotivo ? p.EstadoModeracion.ToString() : null, verMotivo ? p.MotivoRechazo : null, p.PesoEstimadoKg, p.Material?.ToString(),
+            esMia ? p.CampanaId : null);
     }
 
     public static DatosFacturacionDto ADatosFacturacion(Usuario u)

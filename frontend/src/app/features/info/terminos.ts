@@ -60,6 +60,15 @@ export default class Terminos {
         ],
       },
       {
+        titulo: 'Empresas, campañas e informes de impacto',
+        parrafos: [
+          'Una cuenta puede registrar a una empresa (persona jurídica) declarando que es su representante legal o que este la autorizó, con la razón social, el NIT y el certificado de existencia y representación legal de la Cámara de Comercio. El equipo lo revisa y puede aprobar o rechazar el registro explicando el motivo. El servicio para empresas se acuerda aparte, por cotización; la plataforma no cobra nada por registrarla.',
+          'Una vez verificada, sus Admin invitan a otras cuentas con un enlace de un solo uso y crean campañas. Cada miembro sigue siendo responsable de sus publicaciones e intercambios y las reglas de la comunidad no cambian por pertenecer a una empresa.',
+          'Los informes de impacto los emite el equipo de Trueke con la metodología publicada y solo cuentan las entregas que confirmaron las dos partes. Son estimaciones, no una certificación ni una verificación de tercera parte, y no identifican a las personas que recibieron los objetos.',
+          'Retiramos la verificación, con aviso del motivo, si la empresa deja de existir, si los datos no eran ciertos o si usa la plataforma para engañar; los informes ya emitidos se conservan.',
+        ],
+      },
+      {
         titulo: 'Publicaciones prohibidas',
         parrafos: ['Solo puedes publicar objetos propios, legales y en el estado que describes. Está prohibido publicar:'],
         lista: [

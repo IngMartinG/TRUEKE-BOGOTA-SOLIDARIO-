@@ -1081,6 +1081,100 @@ public sealed class FundacionRepository : IFundacionRepository
     public void QuitarNecesidad(NecesidadFundacion n) => _db.NecesidadesFundacion.Remove(n);
 }
 
+public sealed class EmpresaRepository : IEmpresaRepository
+{
+    private readonly TruekeDbContext _db;
+    public EmpresaRepository(TruekeDbContext db) => _db = db;
+
+    public Task<Empresa?> ObtenerAsync(Guid empresaId) => _db.Empresas.FirstOrDefaultAsync(e => e.Id == empresaId);
+
+    public async Task<(MiembroEmpresa Miembro, Empresa Empresa)?> MembresiaAsync(Guid usuarioId)
+    {
+        var x = await _db.MiembrosEmpresa.Where(m => m.UsuarioId == usuarioId)
+            .Join(_db.Empresas, m => m.EmpresaId, e => e.Id, (m, e) => new { m, e }).FirstOrDefaultAsync();
+        return x is null ? null : (x.m, x.e);
+    }
+
+    public async Task<IReadOnlyList<MiembroEmpresa>> MiembrosAsync(Guid empresaId)
+        => await _db.MiembrosEmpresa.Where(m => m.EmpresaId == empresaId)
+            .OrderBy(m => m.UsuarioId == null).ThenBy(m => m.Rol).ThenBy(m => m.FechaInvitacionUtc).ThenBy(m => m.Id).ToListAsync();
+
+    public Task<MiembroEmpresa?> InvitacionPorCodigoAsync(string codigoHash)
+        => _db.MiembrosEmpresa.FirstOrDefaultAsync(m => m.CodigoHash == codigoHash);
+
+    public Task<bool> NitEnUsoAsync(string nit, Guid excluirEmpresaId)
+        => _db.Empresas.AnyAsync(e => e.Nit == nit && e.Id != excluirEmpresaId
+            && (e.Estado == EstadoEmpresa.Pendiente || e.Estado == EstadoEmpresa.Aprobada));
+
+    public async Task<IReadOnlyList<Empresa>> PorEstadoAsync(EstadoEmpresa? estado, int maximo)
+        => await _db.Empresas.AsNoTracking().Where(e => estado == null || e.Estado == estado)
+            .OrderBy(e => e.FechaSolicitudUtc).ThenBy(e => e.Id).Take(maximo).ToListAsync();
+
+    public async Task<IReadOnlyList<Campana>> CampanasAsync(Guid empresaId)
+        => await _db.Campanas.AsNoTracking().Where(c => c.EmpresaId == empresaId)
+            .OrderByDescending(c => c.Inicio).ThenBy(c => c.Nombre).ThenBy(c => c.Id).ToListAsync();
+
+    public Task<Campana?> CampanaAsync(Guid campanaId) => _db.Campanas.FirstOrDefaultAsync(c => c.Id == campanaId);
+
+    public async Task<IReadOnlyDictionary<Guid, AvanceCampana>> AvanceCampanasAsync(Guid empresaId)
+    {
+        var ids = _db.Campanas.Where(c => c.EmpresaId == empresaId).Select(c => c.Id);
+        var pubs = await _db.Publicaciones.AsNoTracking().Where(p => p.CampanaId != null && ids.Contains(p.CampanaId.Value)
+                && p.Estado != EstadoPublicacionEnum.Cancelada)
+            .GroupBy(p => p.CampanaId!.Value).Select(g => new { Id = g.Key, Total = g.Count() }).ToListAsync();
+        var registros = await _db.RegistrosImpacto.AsNoTracking().Where(r => r.CampanaId != null && ids.Contains(r.CampanaId.Value))
+            .GroupBy(r => r.CampanaId!.Value)
+            .Select(g => new { Id = g.Key, Objetos = g.Count(), Kg = g.Sum(r => r.Kg), Co2 = g.Sum(r => r.KgCo2) }).ToListAsync();
+        return pubs.Select(p => p.Id).Union(registros.Select(r => r.Id)).ToDictionary(id => id, id =>
+        {
+            var r = registros.FirstOrDefault(x => x.Id == id);
+            return new AvanceCampana(id, pubs.FirstOrDefault(x => x.Id == id)?.Total ?? 0, r?.Objetos ?? 0, r?.Kg ?? 0, r?.Co2 ?? 0);
+        });
+    }
+
+    public async Task<IReadOnlyList<RegistroParaInforme>> RegistrosParaInformeAsync(Guid empresaId, Guid? campanaId, DateTime desdeUtc, DateTime hastaUtc)
+    {
+        var campanas = _db.Campanas.Where(c => c.EmpresaId == empresaId && (campanaId == null || c.Id == campanaId)).Select(c => c.Id);
+        var filas = await _db.RegistrosImpacto.AsNoTracking()
+            .Where(r => r.CampanaId != null && campanas.Contains(r.CampanaId.Value) && r.FechaUtc >= desdeUtc && r.FechaUtc < hastaUtc)
+            .Join(_db.Transacciones.AsNoTracking(), r => r.TransaccionId, t => t.Id, (r, t) => new
+            {
+                r,
+                Evidencia = _db.EvidenciasEntrega.Any(e => e.SolicitudId == t.SolicitudId)
+            })
+            .OrderBy(x => x.r.FechaUtc).ThenBy(x => x.r.Id).ToListAsync();
+        return filas.Select(x => new RegistroParaInforme(x.r, x.Evidencia)).ToList();
+    }
+
+    public async Task<IReadOnlyList<InformeResumen>> InformesAsync(Guid empresaId)
+        => await _db.InformesImpacto.AsNoTracking().Where(i => i.EmpresaId == empresaId).OrderByDescending(i => i.EmitidoUtc)
+            .Select(i => new InformeResumen(i.Id, i.EmpresaId, i.CampanaId, i.Desde, i.Hasta, i.EmitidoUtc, i.Versiones, i.Huella)).ToListAsync();
+
+    public Task<InformeImpacto?> InformeAsync(Guid informeId) => _db.InformesImpacto.AsNoTracking().FirstOrDefaultAsync(i => i.Id == informeId);
+
+    public void Agregar(Empresa e) => _db.Empresas.Add(e);
+    public void AgregarMiembro(MiembroEmpresa m) => _db.MiembrosEmpresa.Add(m);
+    public void QuitarMiembro(MiembroEmpresa m) => _db.MiembrosEmpresa.Remove(m);
+    public void AgregarCampana(Campana c) => _db.Campanas.Add(c);
+    public void AgregarInforme(InformeImpacto i) => _db.InformesImpacto.Add(i);
+}
+
+public sealed class EvidenciaEntregaRepository : IEvidenciaEntregaRepository
+{
+    private readonly TruekeDbContext _db;
+    public EvidenciaEntregaRepository(TruekeDbContext db) => _db = db;
+
+    public async Task<IReadOnlyList<EvidenciaEntrega>> DeSolicitudAsync(Guid solicitudId)
+        => await _db.EvidenciasEntrega.AsNoTracking().Where(e => e.SolicitudId == solicitudId).OrderBy(e => e.FechaUtc).ToListAsync();
+
+    public async Task<IReadOnlyDictionary<Guid, int>> ContarAsync(IReadOnlyCollection<Guid> solicitudIds)
+        => solicitudIds.Count == 0 ? new Dictionary<Guid, int>() : await _db.EvidenciasEntrega.AsNoTracking()
+            .Where(e => solicitudIds.Contains(e.SolicitudId)).GroupBy(e => e.SolicitudId)
+            .Select(g => new { g.Key, Total = g.Count() }).ToDictionaryAsync(x => x.Key, x => x.Total);
+
+    public void Agregar(EvidenciaEntrega e) => _db.EvidenciasEntrega.Add(e);
+}
+
 public sealed class SuscripcionPushRepository : ISuscripcionPushRepository
 {
     private readonly TruekeDbContext _db;

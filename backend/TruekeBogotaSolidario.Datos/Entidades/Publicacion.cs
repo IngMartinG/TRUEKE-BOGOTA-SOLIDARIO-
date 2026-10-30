@@ -93,6 +93,12 @@ public class Publicacion
         if (Modo != ModoTransaccion.Donacion) throw new ReglaDeNegocioException("Solo una donación puede ir para la necesidad de una fundación.");
         NecesidadFundacionId = necesidadId;
     }
+
+    /// <summary>Campaña de una empresa a la que pertenece el dueño: el impacto de este objeto entra en sus informes.</summary>
+    public Guid? CampanaId { get; private set; }
+
+    /// <summary>null la desliga. Quien llama comprueba que la campaña esté activa y sea de la empresa del dueño.</summary>
+    public void LigarACampana(Guid? campanaId) => CampanaId = campanaId;
     /// <summary>Suma de las señales que la mandaron a revisión (más alto = se revisa primero).</summary>
     public int PuntajeRiesgo { get; private set; }
     /// <summary>Señales que vio el evaluador, separadas por "; " (solo las ven los moderadores).</summary>

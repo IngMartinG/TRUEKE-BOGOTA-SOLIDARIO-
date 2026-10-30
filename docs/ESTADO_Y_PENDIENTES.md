@@ -1,4 +1,4 @@
-# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-29)
+# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-30)
 
 ## Hecho — backend completo para conectar el front
 **Base:**
@@ -672,6 +672,37 @@ páginas estáticas para buscadores (`generar-seo.mjs`) y la pantalla de carga y
 HtmlSanitizer no aplica: la API solo devuelve JSON, Angular escapa todo y el texto ya se valida con `TextoSeguro`; además
 rechazaría textos normales como "3 < 5" y guardaría el contenido en los registros.
 
+## Hecho el 2026-10-30 — empresas, campañas e informes
+Decisiones de diseño en `docs/DECISIONES.md` (D-017).
+- **Empresa** (`Empresa`, `MiembroEmpresa`, `Campana`; migración `EmpresasCampanasInformes`, con RLS en las tablas nuevas):
+  persona jurídica con razón social, NIT (empieza por 8 o 9) y certificado de la Cámara de Comercio. La registra una cuenta
+  completa (Mi cuenta → Empresa, `POST /empresas/mia`), que queda como su primer Admin, y la verifica el SuperUsuario con el
+  mismo flujo de documentos que las fundaciones (Administración → Empresas e informes, `POST /admin/empresas/{id}/aprobar|rechazar|retirar`;
+  el certificado se borra al decidir). No es un rol de seguridad ni tiene cobro en la plataforma: se acuerda por cotización.
+- **Miembros por invitación:** el Admin crea un enlace de un solo uso que vence en 7 días (`POST /empresas/mia/invitaciones`;
+  en la base solo queda el SHA-256 del código) y lo comparte por su cuenta: nunca se busca a nadie por correo. Quien lo abre
+  entra con `POST /empresas/unirse`. Roles Admin (equipo y campañas) y Miembro; una cuenta, una empresa; hasta 50 miembros; la
+  empresa no se queda sin Admin. Al suprimir la cuenta se quita su membresía.
+- **Campañas** (nombre y fechas en días de Colombia, hasta 366 días): los miembros ligan una publicación a una campaña activa
+  de su empresa al publicar (`CrearPublicacionRequest.CampanaId`; solo el dueño ve la campaña en la publicación) y
+  `RegistroImpacto.CampanaId` la guarda al completarse el intercambio. Cada campaña muestra publicaciones, objetos entregados,
+  kilos y CO₂e.
+- **Informe de impacto** (`InformeImpacto`): lo emite un Administrador (`POST /admin/empresas/{id}/informes`, con auditoría y
+  aviso a los miembros) por campaña o de todas, con un periodo que ya pasó. Guarda una foto inmutable en JSON de los registros
+  (cada uno con su factor y versión) y su huella SHA-256. El PDF (QuestPDF, licencia Community, probado en linux-x64 dentro de la
+  imagen `aspnet:10.0`) tiene portada, resumen, metodología con su versión y la cita de `docs/METODOLOGIA-IMPACTO.md`,
+  resultados por material, localidad y modo, trazabilidad anonimizada (un código por intercambio, sin personas ni títulos) y
+  anexos (factores usados con su fuente, definiciones, qué no se afirma y la huella). El CSV (`ArchivoCsv`, ";") trae las mismas
+  filas. Los descargan sus miembros (`GET /empresas/mia/informes/{id}/pdf|csv`) y la administración.
+- **Foto de evidencia** (`EvidenciaEntrega`): al confirmar la entrega cada parte puede adjuntar una foto (subida como FotoChat:
+  pasa por `ProcesadorImagenes` y queda en el bucket privado del chat). Solo la ven las dos partes
+  (`GET /solicitudes/{id}/evidencias`) y la administración (`GET /admin/solicitudes/{id}/evidencias`, con auditoría); el informe
+  solo dice si la entrega tiene foto.
+- **Textos legales:** la política (datos de empresa y fotos de la entrega) y los términos (sección "Empresas, campañas e
+  informes de impacto") cambian; versión `2026-10-30`. **Revisar con abogado.**
+- Pruebas: `EmpresasTests` (verificación, invitación de un solo uso, roles, campañas, informe con el PDF y el CSV dando las
+  mismas cifras, informe igual tras cambiar un factor, fotos solo para las partes) y `PostgreSqlTests` (columna nueva y RLS).
+
 ## Hecho el 2026-10-29 — plan Negocio con vitrina
 Decisiones del dueño: el directorio y la vitrina son públicos (como las fundaciones) y el sello lo da un moderador revisando el
 NIT contra el RUES.
@@ -825,7 +856,9 @@ Se revisó un paquete de documentos con bloques de producto (impacto, fundacione
 5. ~~**Plan Negocio (Bloque 4)**~~: hecho (ver arriba). Queda cambiar "plan Empresa" por "plan Negocio" en los términos en la
    próxima versión legal, y decidir el precio de destacar. Lo previsto: el plan Empresa pasa a llamarse Negocio, con vitrina pública, directorio, sello de negocio
    verificado, panel de estadísticas de la cuenta y medios de pago visibles. Precio de destacar por decidir.
-6. **Empresas (Bloque 3):** organización con NIT y varios miembros, campañas, informe de impacto en PDF y exportación CSV.
+6. ~~**Empresas (Bloque 3)**~~: hecho (ver arriba). Queda que el abogado revise los textos legales de la versión
+   `2026-10-30` y, como en el paso 3, que un tercero revise la metodología antes de vender informes. Lo previsto: organización
+   con NIT y varios miembros, campañas, informe de impacto en PDF y exportación CSV.
 7. **Retención (Bloque 5):** "¿Sigue disponible?" para publicaciones inactivas, resumen semanal opcional por correo, logros
    nuevos y meta comunitaria en `/impacto`.
 

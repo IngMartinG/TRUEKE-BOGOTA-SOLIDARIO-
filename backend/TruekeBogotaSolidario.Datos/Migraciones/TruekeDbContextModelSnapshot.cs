@@ -254,6 +254,38 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("Calificaciones");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Campana", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CreadaPorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreadaUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EmpresaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Fin")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("Inicio")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("EmpresaId");
+
+                    b.ToTable("Campanas", (string)null);
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Categoria", b =>
                 {
                     b.Property<int>("Id")
@@ -517,6 +549,53 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("Deseos");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Empresa", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CertificadoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("FechaDecisionUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("FechaSolicitudUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("MotivoDecision")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("Nit")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<string>("RazonSocial")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<Guid>("SolicitadaPorId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Estado");
+
+                    b.HasIndex("Nit");
+
+                    b.ToTable("Empresas", (string)null);
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.EstadisticaPublicacionDiaria", b =>
                 {
                     b.Property<Guid>("PublicacionId")
@@ -531,6 +610,35 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.HasKey("PublicacionId", "Fecha");
 
                     b.ToTable("EstadisticasPublicaciones", (string)null);
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.EvidenciaEntrega", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("FotoUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<Guid>("SolicitudId")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("UsuarioId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.HasIndex("SolicitudId", "UsuarioId")
+                        .IsUnique();
+
+                    b.ToTable("EvidenciasEntrega", (string)null);
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.FactorImpacto", b =>
@@ -864,6 +972,53 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("Fundaciones", (string)null);
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.InformeImpacto", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CampanaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Contenido")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly>("Desde")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("EmitidoPorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("EmitidoUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("EmpresaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateOnly>("Hasta")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Huella")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<string>("Versiones")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CampanaId");
+
+                    b.HasIndex("EmpresaId", "EmitidoUtc");
+
+                    b.ToTable("InformesImpacto", (string)null);
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Mensaje", b =>
                 {
                     b.Property<Guid>("Id")
@@ -916,6 +1071,52 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.HasIndex("ConversacionId", "AutorId", "LeidoUtc");
 
                     b.ToTable("Mensajes");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.MiembroEmpresa", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("CodigoHash")
+                        .HasMaxLength(64)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(64)");
+
+                    b.Property<Guid>("EmpresaId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("ExpiraUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("FechaIngresoUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime>("FechaInvitacionUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("InvitadoPorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("Rol")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("character varying(20)");
+
+                    b.Property<Guid?>("UsuarioId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CodigoHash")
+                        .IsUnique();
+
+                    b.HasIndex("EmpresaId");
+
+                    b.HasIndex("UsuarioId")
+                        .IsUnique();
+
+                    b.ToTable("MiembrosEmpresa", (string)null);
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.MovimientoEcoPuntos", b =>
@@ -1221,6 +1422,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<bool>("AceptaTrueke")
                         .HasColumnType("boolean");
 
+                    b.Property<Guid?>("CampanaId")
+                        .HasColumnType("uuid");
+
                     b.Property<int>("CategoriaId")
                         .HasColumnType("integer");
 
@@ -1357,6 +1561,8 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CampanaId");
+
                     b.HasIndex("CategoriaId");
 
                     b.HasIndex("DestacadaHasta");
@@ -1381,6 +1587,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.RegistroImpacto", b =>
                 {
                     b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid?>("CampanaId")
                         .HasColumnType("uuid");
 
                     b.Property<int>("CategoriaId")
@@ -1453,6 +1662,8 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.HasIndex("PublicacionId");
 
                     b.HasIndex("ReceptorId");
+
+                    b.HasIndex("CampanaId", "FechaUtc");
 
                     b.HasIndex("MunicipioCodigo", "Localidad");
 
@@ -2138,6 +2349,15 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Navigation("Autor");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Campana", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Empresa", null)
+                        .WithMany()
+                        .HasForeignKey("EmpresaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Comentario", b =>
                 {
                     b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", "Autor")
@@ -2222,6 +2442,21 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.EvidenciaEntrega", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Solicitud", null)
+                        .WithMany()
+                        .HasForeignKey("SolicitudId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Factura", b =>
                 {
                     b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Pago", null)
@@ -2261,6 +2496,20 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .IsRequired();
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.InformeImpacto", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Campana", null)
+                        .WithMany()
+                        .HasForeignKey("CampanaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Empresa", null)
+                        .WithMany()
+                        .HasForeignKey("EmpresaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Mensaje", b =>
                 {
                     b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
@@ -2283,6 +2532,20 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Navigation("Conversacion");
 
                     b.Navigation("RespuestaA");
+                });
+
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.MiembroEmpresa", b =>
+                {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Empresa", null)
+                        .WithMany()
+                        .HasForeignKey("EmpresaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Usuario", null)
+                        .WithMany()
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade);
                 });
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.MovimientoEcoPuntos", b =>
@@ -2336,6 +2599,11 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.Publicacion", b =>
                 {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Campana", null)
+                        .WithMany()
+                        .HasForeignKey("CampanaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Categoria", "Categoria")
                         .WithMany()
                         .HasForeignKey("CategoriaId")
@@ -2386,6 +2654,11 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.RegistroImpacto", b =>
                 {
+                    b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Campana", null)
+                        .WithMany()
+                        .HasForeignKey("CampanaId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("TruekeBogotaSolidario.Datos.Entidades.Publicacion", null)
                         .WithMany()
                         .HasForeignKey("PublicacionId")

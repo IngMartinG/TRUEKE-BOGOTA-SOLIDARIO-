@@ -163,7 +163,7 @@ public sealed class AdministracionController : ControllerBase
     /// <summary>CSV (separado por ";") con los datos del comprador, para cargar las facturas en el sistema de facturación.</summary>
     [HttpGet("facturas.csv"), Authorize(Policy = Politicas.Moderador)]
     public async Task<IActionResult> FacturasCsv([FromQuery] EstadoFacturaDto estado = EstadoFacturaDto.Pendiente)
-        => ArchivoCsv(await _admin.ExportarFacturasCsvAsync(User.IdActual(), estado), $"facturas-{estado.ToString().ToLowerInvariant()}.csv");
+        => this.ArchivoCsv(await _admin.ExportarFacturasCsvAsync(User.IdActual(), estado), $"facturas-{estado.ToString().ToLowerInvariant()}.csv");
 
     // ---- PQR
     [HttpGet("pqr"), Authorize(Policy = Politicas.Moderador)]
@@ -199,15 +199,7 @@ public sealed class AdministracionController : ControllerBase
     /// <summary>Pagos cobrados con su factura (conciliación con Wompi y contabilidad).</summary>
     [HttpGet("ingresos.csv"), Authorize(Policy = Politicas.SuperUsuario)]
     public async Task<IActionResult> IngresosCsv([FromQuery] RangoFechasRequest r)
-        => ArchivoCsv(await _admin.ExportarIngresosCsvAsync(User.IdActual(), r), "ingresos.csv");
-
-    /// <summary>UTF-8 con BOM para que Excel en español muestre bien las tildes.</summary>
-    private FileContentResult ArchivoCsv(string contenido, string nombre)
-    {
-        Response.Headers.CacheControl = "no-store";
-        return File(System.Text.Encoding.UTF8.GetPreamble().Concat(System.Text.Encoding.UTF8.GetBytes(contenido)).ToArray(),
-            "text/csv; charset=utf-8", nombre);
-    }
+        => this.ArchivoCsv(await _admin.ExportarIngresosCsvAsync(User.IdActual(), r), "ingresos.csv");
 
     // ---- Solo SuperUsuario
     [HttpPatch("usuarios/{usuarioId:guid}/rol"), Authorize(Policy = Politicas.SuperUsuario)]

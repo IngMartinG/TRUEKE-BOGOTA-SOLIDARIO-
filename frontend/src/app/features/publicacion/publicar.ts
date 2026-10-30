@@ -34,6 +34,7 @@ import {
   type MunicipioDto,
 } from '../../api/tipos';
 import { CatalogoApi } from '../../core/api/catalogo.api';
+import { EmpresasApi } from '../../core/api/empresas.api';
 import { FundacionesApi } from '../../core/api/fundaciones.api';
 import { AvisosService } from '../../core/avisos.service';
 import { ConfigService } from '../../core/config.service';
@@ -290,6 +291,22 @@ const sinTildes = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLo
                     </div>
                   </div>
                 </fieldset>
+
+                @if (campanas().length || form.controls.campanaId.value) {
+                  <div class="campo">
+                    <label class="etiqueta" for="campana">Campaña de tu empresa <span class="font-normal text-tenue">(opcional)</span></label>
+                    <select id="campana" class="entrada" formControlName="campanaId" aria-describedby="campana-ayuda">
+                      <option [ngValue]="null">Ninguna</option>
+                      @for (c of campanas(); track c.id) {
+                        <option [ngValue]="c.id">{{ c.nombre }}</option>
+                      }
+                      @if (campanaTerminada()) {
+                        <option [ngValue]="form.controls.campanaId.value">La campaña con que la publicaste</option>
+                      }
+                    </select>
+                    <p id="campana-ayuda" class="ayuda">Cuando se entregue, su impacto entra en los informes de la campaña. Nadie más ve a qué campaña pertenece.</p>
+                  </div>
+                }
               </div>
             }
 
@@ -527,6 +544,13 @@ export default class Publicar {
   protected readonly sesion = inject(SesionService);
   protected readonly config = inject(ConfigService);
   private readonly fundacionesApi = inject(FundacionesApi);
+  /** Campañas activas de la empresa de la cuenta (vacío si no pertenece a una). */
+  protected readonly campanas = toSignal(inject(EmpresasApi).campanasActivas().pipe(catchError(() => of([]))), { initialValue: [] });
+  /** Al editar: la publicación sigue en una campaña que ya terminó (se conserva si no se cambia). */
+  protected readonly campanaTerminada = computed(() => {
+    const id = this.campanaActual();
+    return !!id && !this.campanas().some((c) => c.id === id);
+  });
 
   /** Presente al editar (`/publicacion/:id/editar`). */
   readonly id = input<string>();
@@ -572,6 +596,7 @@ export default class Publicar {
     aceptaTrueke: [false],
     pesoEstimadoKg: this.fb.control<number | null>(null, [Validators.min(0.05), Validators.max(500)]),
     material: this.fb.control<MaterialDto | null>(null),
+    campanaId: this.fb.control<string | null>(null),
     municipioCodigo: [this.sesion.usuario()?.municipioCodigo ?? CODIGO_BOGOTA, [Validators.required, Validators.pattern(/^\d{5}$/)]],
     localidad: [this.sesion.usuario()?.localidad ?? '', [Validators.required, Validators.minLength(2), Validators.maxLength(60)]],
   });
@@ -629,6 +654,7 @@ export default class Publicar {
   /** Último municipio visto: si cambia por elección del usuario se limpia la localidad (no al cargar una edición). */
   private municipioPrevio = this.form.controls.municipioCodigo.value;
   protected readonly esBogota = computed(() => this.municipioActual() === CODIGO_BOGOTA);
+  private readonly campanaActual = toSignal(this.form.controls.campanaId.valueChanges, { initialValue: this.form.controls.campanaId.value });
   private readonly localidadActual = toSignal(this.form.controls.localidad.valueChanges, { initialValue: this.form.controls.localidad.value });
   protected readonly nombreCategoria = computed(() => this.categorias().find((c) => c.id === this.categoriaActual())?.nombre ?? '');
   protected readonly centroMapa = computed<[number, number] | null>(() => {
@@ -826,6 +852,7 @@ export default class Publicar {
         aceptaTrueke: p.aceptaTrueke ?? false,
         pesoEstimadoKg: p.pesoEstimadoKg ?? null,
         material: (p.material as MaterialDto | null) ?? null,
+        campanaId: p.campanaId ?? null,
         municipioCodigo: p.municipioCodigo ?? CODIGO_BOGOTA,
         localidad: p.localidad ?? '',
       });
@@ -958,6 +985,7 @@ export default class Publicar {
       aceptaTrueke: v.modo === 'Compra' && v.aceptaTrueke,
       pesoEstimadoKg: v.pesoEstimadoKg || null,
       material: v.material ?? undefined,
+      campanaId: v.campanaId,
       latitud: u?.[0] ?? null,
       longitud: u?.[1] ?? null,
       imagenes: this.fotosListas(),

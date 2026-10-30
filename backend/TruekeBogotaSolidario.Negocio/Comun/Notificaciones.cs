@@ -74,6 +74,14 @@ public static class TiposNotificacion
     public const string FundacionRetirada = "FundacionRetirada";
     /// <summary>A la fundación, cuando alguien publica una donación desde "Tengo esto" en una de sus necesidades (RecursoId = PublicacionId).</summary>
     public const string DonacionParaFundacion = "DonacionParaFundacion";
+    /// <summary>A los Admin de la empresa (RecursoId = EmpresaId).</summary>
+    public const string EmpresaAprobada = "EmpresaAprobada";
+    public const string EmpresaRechazada = "EmpresaRechazada";
+    public const string EmpresaRetirada = "EmpresaRetirada";
+    /// <summary>A quien invitó: alguien aceptó la invitación a la empresa (RecursoId = EmpresaId).</summary>
+    public const string EmpresaMiembroNuevo = "EmpresaMiembroNuevo";
+    /// <summary>A los miembros: un Administrador emitió un informe de impacto de la empresa (RecursoId = InformeId).</summary>
+    public const string InformeImpactoEmitido = "InformeImpactoEmitido";
     // Solo para moderadores
     public const string AlertaPagoEnRevision = "AlertaPagoEnRevision";
     public const string PqrNueva = "PqrNueva";
@@ -82,6 +90,8 @@ public static class TiposNotificacion
     public const string MenorDetectado = "MenorDetectado";
     /// <summary>Una cuenta pidió verificarse como fundación (RecursoId = UsuarioId): la revisa un SuperUsuario.</summary>
     public const string FundacionPorRevisar = "FundacionPorRevisar";
+    /// <summary>Una empresa pidió su verificación (RecursoId = EmpresaId): la revisa un SuperUsuario.</summary>
+    public const string EmpresaPorRevisar = "EmpresaPorRevisar";
 }
 
 /// <summary>Carga mínima: el front pide el detalle al API (con su JWT) si lo necesita. Nunca datos de terceros.</summary>

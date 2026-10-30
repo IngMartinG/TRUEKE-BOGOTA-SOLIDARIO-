@@ -18,6 +18,9 @@
     <PackageReference Include="Google.Apis.Auth" Version="1.77.0" />
     <PackageReference Include="Lib.Net.Http.WebPush" Version="3.3.1" />
     <PackageReference Include="MailKit" Version="4.18.2" />
+    <!-- Informes PDF de impacto. Licencia Community (gratis por debajo de USD 1 M de ingresos brutos anuales; se revisa al
+         crecer). Trae sus binarios nativos de Skia para linux-x64 (probado en la imagen aspnet:10.0 de producción). -->
+    <PackageReference Include="QuestPDF" Version="2026.9.1" />
     <!-- Llega transitivo por MimeKit (10.0.0) con CVE-2026-70162 y CVE-2026-84008: se fija la versión corregida;
          quitar cuando MimeKit la traiga solo. -->
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />

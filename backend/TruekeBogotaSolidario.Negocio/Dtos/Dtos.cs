@@ -274,6 +274,8 @@ public sealed class CrearPublicacionRequest
     /// fundación con un enlace a la publicación (como mucho un aviso por donante cada 24 h); la publicación es igual a cualquier otra.
     /// </summary>
     public Guid? ParaNecesidadId { get; init; }
+    /// <summary>Opcional: campaña activa de la empresa a la que pertenece quien publica. Al editar, null la desliga.</summary>
+    public Guid? CampanaId { get; init; }
 }
 
 public sealed class CancelarPublicacionRequest
@@ -781,7 +783,9 @@ public sealed record PublicacionDto(Guid Id, string Titulo, string Descripcion, 
     int? Vistas, DateTime? ProximoImpulsoUtc, int Interesados, bool YaSolicite, bool AceptaTrueke,
     // Revisión previa: solo la ven el dueño y los moderadores (Aprobada, Pendiente o Rechazada, con lo que hay que corregir).
     string? Moderacion = null, string? MotivoRechazoModeracion = null,
-    decimal? PesoEstimadoKg = null, string? Material = null);
+    decimal? PesoEstimadoKg = null, string? Material = null,
+    // Solo para el dueño: campaña de empresa a la que está ligada.
+    Guid? CampanaId = null);
 
 public sealed record PuntoSerieDto(DateTime Fecha, int Vistas);
 
@@ -894,7 +898,9 @@ public sealed record SolicitudDto(Guid Id, Guid PublicacionId, string Publicacio
     Guid? ConversacionId, DateTime? FechaAceptacionUtc, bool ConfirmadaPorDuenio, bool ConfirmadaPorSolicitante,
     DateTime? FechaCierreUtc, DateTime? CierreAutomaticoUtc, bool PuedoCalificar, bool EnEspera,
     IReadOnlyList<PublicacionResumenDto> Ofrecidas, decimal? PrecioPublicadoCop, decimal? PrecioPropuestoCop,
-    bool MeTocaResponder, int Contraofertas, int ContraofertasRestantes, bool PublicacionAceptaTrueke);
+    bool MeTocaResponder, int Contraofertas, int ContraofertasRestantes, bool PublicacionAceptaTrueke,
+    // Fotos de la entrega que adjuntaron las partes (se ven con GET /solicitudes/{id}/evidencias).
+    int Evidencias = 0);
 
 /// <summary>Lo que se ofrece a cambio en un trueke: datos que ya son públicos en el catálogo.</summary>
 public sealed record PublicacionResumenDto(Guid Id, string Titulo, string? Foto, string Condicion, string Estado);
@@ -1169,3 +1175,84 @@ public sealed record FundacionPublicaDto(Guid Id, string Nombre, string? FotoUrl
 public sealed record FundacionAdminDto(Guid UsuarioId, string NombreCuenta, string Correo, string RazonSocial, string Nit, string Descripcion,
     EstadoFundacionDto Estado, string? CertificadoUrl, string? Motivo, DateTime FechaSolicitudUtc, DateTime? FechaDecisionUtc,
     bool RegimenTributarioEspecial = false, string? NotaRegimen = null);
+
+// ---------------- Empresas, campañas e informes de impacto ----------------
+public enum EstadoEmpresaDto { Pendiente = 1, Aprobada = 2, Rechazada = 3, Retirada = 4 }
+public enum RolMiembroEmpresaDto { Admin = 1, Miembro = 2 }
+
+/// <summary>
+/// Registro de una empresa (persona jurídica). CertificadoUrl = certificado de existencia y representación legal de la Cámara de
+/// Comercio subido como Documento (bucket privado; se borra al decidir). No tiene costo en la plataforma: se acuerda por cotización.
+/// </summary>
+public sealed class SolicitarEmpresaRequest
+{
+    [Required, StringLength(150, MinimumLength = 3)] public string RazonSocial { get; init; } = "";
+    [Required, StringLength(20, MinimumLength = 6)] public string Nit { get; init; } = "";
+    [Required, StringLength(500)] public string CertificadoUrl { get; init; } = "";
+    /// <summary>Declara que representa legalmente a la empresa o que su representante la autorizó.</summary>
+    public bool DeclaroRepresentacion { get; init; }
+}
+
+public sealed class CrearInvitacionEmpresaRequest
+{
+    [EnumDataType(typeof(RolMiembroEmpresaDto))] public RolMiembroEmpresaDto Rol { get; init; } = RolMiembroEmpresaDto.Miembro;
+}
+
+public sealed class UnirseEmpresaRequest
+{
+    /// <summary>El código del enlace de invitación.</summary>
+    [Required, StringLength(64, MinimumLength = 20), RegularExpression("^[A-Za-z0-9_-]+$")] public string Codigo { get; init; } = "";
+}
+
+public sealed class CambiarRolMiembroRequest
+{
+    [EnumDataType(typeof(RolMiembroEmpresaDto))] public RolMiembroEmpresaDto Rol { get; init; }
+}
+
+/// <summary>Fechas en días de Colombia (ambos incluidos), hasta 366 días.</summary>
+public sealed class GuardarCampanaRequest
+{
+    [Required, StringLength(100, MinimumLength = 3)] public string Nombre { get; init; } = "";
+    public DateOnly Inicio { get; init; }
+    public DateOnly Fin { get; init; }
+}
+
+/// <summary>Administrador: informe de las campañas de la empresa (o de una) con entregas entre Desde y Hasta (días de Colombia, incluidos).</summary>
+public sealed class EmitirInformeRequest
+{
+    public Guid? CampanaId { get; init; }
+    public DateOnly Desde { get; init; }
+    public DateOnly Hasta { get; init; }
+}
+
+/// <summary>Opcional: foto de la entrega (subida como FotoChat). Solo la ven las dos partes y la administración.</summary>
+public sealed class ConfirmarEntregaRequest
+{
+    [StringLength(500)] public string? FotoEvidenciaUrl { get; init; }
+}
+
+public sealed record MiembroEmpresaDto(Guid Id, Guid UsuarioId, string Nombre, string? FotoUrl, RolMiembroEmpresaDto Rol, DateTime? FechaIngresoUtc, bool SoyYo);
+/// <summary>Invitación sin usar. El código solo se ve una vez, al crearla.</summary>
+public sealed record InvitacionEmpresaDto(Guid Id, RolMiembroEmpresaDto Rol, DateTime FechaUtc, DateTime? ExpiraUtc, bool Vencida);
+/// <summary>Codigo = lo que va en el enlace /empresa/unirse?codigo=… (no se puede volver a consultar).</summary>
+public sealed record InvitacionCreadaDto(Guid Id, string Codigo, RolMiembroEmpresaDto Rol, DateTime ExpiraUtc);
+/// <param name="Objetos">Objetos ya entregados (con doble confirmación) de publicaciones ligadas a la campaña.</param>
+public sealed record CampanaDto(Guid Id, string Nombre, DateOnly Inicio, DateOnly Fin, bool Activa, int Publicaciones, int Objetos, decimal Kg, decimal KgCo2);
+public sealed record InformeImpactoDto(Guid Id, Guid? CampanaId, string? Campana, DateOnly Desde, DateOnly Hasta, DateTime EmitidoUtc,
+    string Versiones, string Huella);
+
+/// <summary>Lo que ve un miembro. Invitaciones solo para los Admin. Motivo = por qué se rechazó o se retiró la verificación.</summary>
+public sealed record MiEmpresaDto(Guid Id, EstadoEmpresaDto Estado, string RazonSocial, string Nit, string? Motivo, DateTime FechaSolicitudUtc,
+    DateTime? FechaDecisionUtc, RolMiembroEmpresaDto MiRol, IReadOnlyList<MiembroEmpresaDto> Miembros, IReadOnlyList<InvitacionEmpresaDto> Invitaciones,
+    IReadOnlyList<CampanaDto> Campanas, IReadOnlyList<InformeImpactoDto> Informes);
+
+/// <summary>
+/// Para la administración. CertificadoUrl (enlace que caduca en 5 minutos) y el correo de quien la registró solo los ve el
+/// SuperUsuario, que es quien verifica.
+/// </summary>
+public sealed record EmpresaAdminDto(Guid Id, string RazonSocial, string Nit, EstadoEmpresaDto Estado, string? CertificadoUrl, string? Motivo,
+    DateTime FechaSolicitudUtc, DateTime? FechaDecisionUtc, string Solicitante, string? CorreoSolicitante, int Miembros);
+public sealed record EmpresaAdminDetalleDto(EmpresaAdminDto Empresa, IReadOnlyList<CampanaDto> Campanas, IReadOnlyList<InformeImpactoDto> Informes);
+
+/// <summary>Url firmada de corta vida. EsMia = la subió quien consulta.</summary>
+public sealed record EvidenciaEntregaDto(Guid Id, string Url, bool EsMia, DateTime FechaUtc);

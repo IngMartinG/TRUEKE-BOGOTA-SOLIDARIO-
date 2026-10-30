@@ -1753,6 +1753,354 @@
         }
       }
     },
+    "/api/v1/admin/empresas": {
+      "get": {
+        "tags": [
+          "AdministracionEmpresas"
+        ],
+        "parameters": [
+          {
+            "name": "estado",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/EstadoEmpresaDto"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmpresaAdminDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmpresaAdminDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EmpresaAdminDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/empresas/{id}": {
+      "get": {
+        "tags": [
+          "AdministracionEmpresas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmpresaAdminDetalleDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmpresaAdminDetalleDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EmpresaAdminDetalleDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/empresas/{id}/aprobar": {
+      "post": {
+        "tags": [
+          "AdministracionEmpresas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/empresas/{id}/rechazar": {
+      "post": {
+        "tags": [
+          "AdministracionEmpresas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/empresas/{id}/retirar": {
+      "post": {
+        "tags": [
+          "AdministracionEmpresas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/empresas/{id}/informes": {
+      "post": {
+        "tags": [
+          "AdministracionEmpresas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmitirInformeRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EmitirInformeRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/EmitirInformeRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InformeImpactoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InformeImpactoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InformeImpactoDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/empresas/informes/{informeId}/pdf": {
+      "get": {
+        "tags": [
+          "AdministracionEmpresas"
+        ],
+        "parameters": [
+          {
+            "name": "informeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/empresas/informes/{informeId}/csv": {
+      "get": {
+        "tags": [
+          "AdministracionEmpresas"
+        ],
+        "parameters": [
+          {
+            "name": "informeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/solicitudes/{solicitudId}/evidencias": {
+      "get": {
+        "tags": [
+          "AdministracionEmpresas"
+        ],
+        "parameters": [
+          {
+            "name": "solicitudId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EvidenciaEntregaDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EvidenciaEntregaDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EvidenciaEntregaDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/archivos/subidas": {
       "post": {
         "tags": [
@@ -3717,6 +4065,485 @@
                 }
               }
             }
+          }
+        }
+      }
+    },
+    "/api/v1/empresas/mia": {
+      "get": {
+        "tags": [
+          "Empresas"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiEmpresaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiEmpresaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiEmpresaDto"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Empresas"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitarEmpresaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitarEmpresaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/SolicitarEmpresaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiEmpresaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiEmpresaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiEmpresaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/empresas/mia/invitaciones": {
+      "post": {
+        "tags": [
+          "Empresas"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearInvitacionEmpresaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearInvitacionEmpresaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CrearInvitacionEmpresaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitacionCreadaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitacionCreadaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvitacionCreadaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/empresas/mia/invitaciones/{id}": {
+      "delete": {
+        "tags": [
+          "Empresas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/empresas/unirse": {
+      "post": {
+        "tags": [
+          "Empresas"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnirseEmpresaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UnirseEmpresaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/UnirseEmpresaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiEmpresaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiEmpresaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiEmpresaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/empresas/mia/miembros/{id}/rol": {
+      "put": {
+        "tags": [
+          "Empresas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarRolMiembroRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarRolMiembroRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/CambiarRolMiembroRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiEmpresaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiEmpresaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MiEmpresaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/empresas/mia/miembros/{id}": {
+      "delete": {
+        "tags": [
+          "Empresas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/empresas/mia/membresia": {
+      "delete": {
+        "tags": [
+          "Empresas"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/empresas/mia/campanas": {
+      "post": {
+        "tags": [
+          "Empresas"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarCampanaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarCampanaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarCampanaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampanaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampanaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampanaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/empresas/mia/campanas/{id}": {
+      "put": {
+        "tags": [
+          "Empresas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarCampanaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarCampanaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarCampanaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampanaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampanaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CampanaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/empresas/mia/campanas-activas": {
+      "get": {
+        "tags": [
+          "Empresas"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CampanaDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CampanaDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/CampanaDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/empresas/mia/informes/{id}/pdf": {
+      "get": {
+        "tags": [
+          "Empresas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/empresas/mia/informes/{id}/csv": {
+      "get": {
+        "tags": [
+          "Empresas"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
           }
         }
       }
@@ -6216,6 +7043,25 @@
             }
           }
         ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmarEntregaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmarEntregaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmarEntregaRequest"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "OK",
@@ -6233,6 +7079,55 @@
               "text/json": {
                 "schema": {
                   "$ref": "#/components/schemas/SolicitudDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/solicitudes/{id}/evidencias": {
+      "get": {
+        "tags": [
+          "Solicitudes"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EvidenciaEntregaDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EvidenciaEntregaDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/EvidenciaEntregaDto"
+                  }
                 }
               }
             }
@@ -7609,11 +8504,60 @@
         },
         "additionalProperties": false
       },
+      "CambiarRolMiembroRequest": {
+        "type": "object",
+        "properties": {
+          "rol": {
+            "$ref": "#/components/schemas/RolMiembroEmpresaDto"
+          }
+        },
+        "additionalProperties": false
+      },
       "CambiarRolRequest": {
         "type": "object",
         "properties": {
           "rol": {
             "$ref": "#/components/schemas/RolDto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "CampanaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date"
+          },
+          "fin": {
+            "type": "string",
+            "format": "date"
+          },
+          "activa": {
+            "type": "boolean"
+          },
+          "publicaciones": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "objetos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "kg": {
+            "type": "number",
+            "format": "double"
+          },
+          "kgCo2": {
+            "type": "number",
+            "format": "double"
           }
         },
         "additionalProperties": false
@@ -7890,6 +8834,18 @@
         },
         "additionalProperties": false
       },
+      "ConfirmarEntregaRequest": {
+        "type": "object",
+        "properties": {
+          "fotoEvidenciaUrl": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
       "ConfirmarIdentidadRequest": {
         "type": "object",
         "properties": {
@@ -8115,6 +9071,15 @@
         },
         "additionalProperties": false
       },
+      "CrearInvitacionEmpresaRequest": {
+        "type": "object",
+        "properties": {
+          "rol": {
+            "$ref": "#/components/schemas/RolMiembroEmpresaDto"
+          }
+        },
+        "additionalProperties": false
+      },
       "CrearPqrPublicaRequest": {
         "required": [
           "asunto",
@@ -8275,6 +9240,11 @@
             "$ref": "#/components/schemas/MaterialDto"
           },
           "paraNecesidadId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "campanaId": {
             "type": "string",
             "format": "uuid",
             "nullable": true
@@ -8968,6 +9938,93 @@
         },
         "additionalProperties": false
       },
+      "EmitirInformeRequest": {
+        "type": "object",
+        "properties": {
+          "campanaId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "additionalProperties": false
+      },
+      "EmpresaAdminDetalleDto": {
+        "type": "object",
+        "properties": {
+          "empresa": {
+            "$ref": "#/components/schemas/EmpresaAdminDto"
+          },
+          "campanas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CampanaDto"
+            }
+          },
+          "informes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InformeImpactoDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
+      "EmpresaAdminDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "razonSocial": {
+            "type": "string"
+          },
+          "nit": {
+            "type": "string"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoEmpresaDto"
+          },
+          "certificadoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "motivo": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaSolicitudUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaDecisionUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "solicitante": {
+            "type": "string"
+          },
+          "correoSolicitante": {
+            "type": "string",
+            "nullable": true
+          },
+          "miembros": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "EnlaceAsistenteDto": {
         "type": "object",
         "properties": {
@@ -9103,6 +10160,15 @@
         ],
         "type": "string"
       },
+      "EstadoEmpresaDto": {
+        "enum": [
+          "Pendiente",
+          "Aprobada",
+          "Rechazada",
+          "Retirada"
+        ],
+        "type": "string"
+      },
       "EstadoFacturaDto": {
         "enum": [
           "Pendiente",
@@ -9147,6 +10213,26 @@
           "EnTramite"
         ],
         "type": "string"
+      },
+      "EvidenciaEntregaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "url": {
+            "type": "string"
+          },
+          "esMia": {
+            "type": "boolean"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
       },
       "FactorImpactoDto": {
         "type": "object",
@@ -9694,6 +10780,28 @@
         },
         "additionalProperties": false
       },
+      "GuardarCampanaRequest": {
+        "required": [
+          "nombre"
+        ],
+        "type": "object",
+        "properties": {
+          "nombre": {
+            "maxLength": 100,
+            "minLength": 3,
+            "type": "string"
+          },
+          "inicio": {
+            "type": "string",
+            "format": "date"
+          },
+          "fin": {
+            "type": "string",
+            "format": "date"
+          }
+        },
+        "additionalProperties": false
+      },
       "GuardarDeseoRequest": {
         "required": [
           "texto"
@@ -9920,6 +11028,43 @@
         },
         "additionalProperties": false
       },
+      "InformeImpactoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "campanaId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
+          },
+          "campana": {
+            "type": "string",
+            "nullable": true
+          },
+          "desde": {
+            "type": "string",
+            "format": "date"
+          },
+          "hasta": {
+            "type": "string",
+            "format": "date"
+          },
+          "emitidoUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "versiones": {
+            "type": "string"
+          },
+          "huella": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "IngresoConceptoDto": {
         "type": "object",
         "properties": {
@@ -10070,6 +11215,26 @@
         },
         "additionalProperties": false
       },
+      "InvitacionCreadaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "codigo": {
+            "type": "string"
+          },
+          "rol": {
+            "$ref": "#/components/schemas/RolMiembroEmpresaDto"
+          },
+          "expiraUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
       "InvitacionDto": {
         "type": "object",
         "properties": {
@@ -10095,6 +11260,31 @@
           "diasCiclo": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "InvitacionEmpresaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "rol": {
+            "$ref": "#/components/schemas/RolMiembroEmpresaDto"
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "expiraUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "vencida": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -10292,6 +11482,65 @@
         },
         "additionalProperties": false
       },
+      "MiEmpresaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "estado": {
+            "$ref": "#/components/schemas/EstadoEmpresaDto"
+          },
+          "razonSocial": {
+            "type": "string"
+          },
+          "nit": {
+            "type": "string"
+          },
+          "motivo": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaSolicitudUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "fechaDecisionUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "miRol": {
+            "$ref": "#/components/schemas/RolMiembroEmpresaDto"
+          },
+          "miembros": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MiembroEmpresaDto"
+            }
+          },
+          "invitaciones": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InvitacionEmpresaDto"
+            }
+          },
+          "campanas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CampanaDto"
+            }
+          },
+          "informes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/InformeImpactoDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "MiFundacionDto": {
         "type": "object",
         "properties": {
@@ -10328,6 +11577,38 @@
             "items": {
               "$ref": "#/components/schemas/NecesidadDto"
             }
+          }
+        },
+        "additionalProperties": false
+      },
+      "MiembroEmpresaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "usuarioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "fotoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "rol": {
+            "$ref": "#/components/schemas/RolMiembroEmpresaDto"
+          },
+          "fechaIngresoUtc": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          },
+          "soyYo": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -11696,6 +12977,11 @@
           "material": {
             "type": "string",
             "nullable": true
+          },
+          "campanaId": {
+            "type": "string",
+            "format": "uuid",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -12035,6 +13321,13 @@
         ],
         "type": "string"
       },
+      "RolMiembroEmpresaDto": {
+        "enum": [
+          "Admin",
+          "Miembro"
+        ],
+        "type": "string"
+      },
       "RolTurnoAsistenteDto": {
         "enum": [
           "Usuario",
@@ -12096,6 +13389,35 @@
           },
           "usuario": {
             "$ref": "#/components/schemas/UsuarioDto"
+          }
+        },
+        "additionalProperties": false
+      },
+      "SolicitarEmpresaRequest": {
+        "required": [
+          "certificadoUrl",
+          "nit",
+          "razonSocial"
+        ],
+        "type": "object",
+        "properties": {
+          "razonSocial": {
+            "maxLength": 150,
+            "minLength": 3,
+            "type": "string"
+          },
+          "nit": {
+            "maxLength": 20,
+            "minLength": 6,
+            "type": "string"
+          },
+          "certificadoUrl": {
+            "maxLength": 500,
+            "minLength": 0,
+            "type": "string"
+          },
+          "declaroRepresentacion": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -12262,6 +13584,10 @@
           },
           "publicacionAceptaTrueke": {
             "type": "boolean"
+          },
+          "evidencias": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -12431,6 +13757,21 @@
           "texto": {
             "maxLength": 1000,
             "minLength": 1,
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
+      "UnirseEmpresaRequest": {
+        "required": [
+          "codigo"
+        ],
+        "type": "object",
+        "properties": {
+          "codigo": {
+            "maxLength": 64,
+            "minLength": 20,
+            "pattern": "^[A-Za-z0-9_-]\u002B$",
             "type": "string"
           }
         },

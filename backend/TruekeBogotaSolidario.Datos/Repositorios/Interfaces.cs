@@ -441,6 +441,55 @@ public interface IFundacionRepository
     void QuitarNecesidad(NecesidadFundacion n);
 }
 
+/// <summary>Lo que va a un informe: el registro inmutable y si alguna de las partes adjuntó foto de la entrega.</summary>
+public sealed record RegistroParaInforme(RegistroImpacto Registro, bool ConEvidencia);
+/// <summary>Avance de una campaña: publicaciones ligadas y lo que ya se entregó.</summary>
+public sealed record AvanceCampana(Guid CampanaId, int Publicaciones, int Objetos, decimal Kg, decimal KgCo2);
+/// <summary>Un informe sin su contenido (para listarlos).</summary>
+public sealed record InformeResumen(Guid Id, Guid EmpresaId, Guid? CampanaId, DateOnly Desde, DateOnly Hasta, DateTime EmitidoUtc,
+    string Versiones, string Huella);
+
+public interface IEmpresaRepository
+{
+    /// <summary>Con tracking.</summary>
+    Task<Empresa?> ObtenerAsync(Guid empresaId);
+    /// <summary>La membresía activa de la cuenta con su empresa (con tracking); null si no pertenece a ninguna.</summary>
+    Task<(MiembroEmpresa Miembro, Empresa Empresa)?> MembresiaAsync(Guid usuarioId);
+    /// <summary>Miembros activos e invitaciones (con tracking): primero los Admin, luego por fecha.</summary>
+    Task<IReadOnlyList<MiembroEmpresa>> MiembrosAsync(Guid empresaId);
+    /// <summary>Con tracking; null si el código no existe.</summary>
+    Task<MiembroEmpresa?> InvitacionPorCodigoAsync(string codigoHash);
+    /// <summary>¿Otra empresa ya tiene ese NIT pendiente o aprobado?</summary>
+    Task<bool> NitEnUsoAsync(string nit, Guid excluirEmpresaId);
+    /// <summary>Por estado (null = todas), las más antiguas primero (sin tracking).</summary>
+    Task<IReadOnlyList<Empresa>> PorEstadoAsync(EstadoEmpresa? estado, int maximo);
+    /// <summary>Más recientes primero (sin tracking).</summary>
+    Task<IReadOnlyList<Campana>> CampanasAsync(Guid empresaId);
+    /// <summary>Con tracking.</summary>
+    Task<Campana?> CampanaAsync(Guid campanaId);
+    Task<IReadOnlyDictionary<Guid, AvanceCampana>> AvanceCampanasAsync(Guid empresaId);
+    /// <summary>
+    /// Registros de impacto de las campañas de la empresa (o de una sola) con fecha en [desde, hasta), por fecha. Sin tracking.
+    /// </summary>
+    Task<IReadOnlyList<RegistroParaInforme>> RegistrosParaInformeAsync(Guid empresaId, Guid? campanaId, DateTime desdeUtc, DateTime hastaUtc);
+    Task<IReadOnlyList<InformeResumen>> InformesAsync(Guid empresaId);
+    /// <summary>Sin tracking (es inmutable).</summary>
+    Task<InformeImpacto?> InformeAsync(Guid informeId);
+    void Agregar(Empresa e);
+    void AgregarMiembro(MiembroEmpresa m);
+    void QuitarMiembro(MiembroEmpresa m);
+    void AgregarCampana(Campana c);
+    void AgregarInforme(InformeImpacto i);
+}
+
+public interface IEvidenciaEntregaRepository
+{
+    Task<IReadOnlyList<EvidenciaEntrega>> DeSolicitudAsync(Guid solicitudId);
+    /// <summary>Cuántas fotos tiene cada solicitud (solo las que tienen alguna).</summary>
+    Task<IReadOnlyDictionary<Guid, int>> ContarAsync(IReadOnlyCollection<Guid> solicitudIds);
+    void Agregar(EvidenciaEntrega e);
+}
+
 public interface ISuscripcionPushRepository
 {
     Task<SuscripcionPush?> PorEndpointAsync(string endpoint);

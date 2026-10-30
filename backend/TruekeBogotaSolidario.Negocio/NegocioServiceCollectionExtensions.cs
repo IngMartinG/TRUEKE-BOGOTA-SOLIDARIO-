@@ -185,6 +185,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<IBusquedaGuardadaService, BusquedaGuardadaService>();
         services.AddScoped<IDeseoService, DeseoService>();
         services.AddScoped<IFundacionService, FundacionService>();
+        services.AddScoped<IEmpresaService, EmpresaService>();
         services.AddScoped<INegocioService, NegocioService>();
         services.AddSingleton<IRegistroVistas, RegistroVistasEnMemoria>();
         services.AddHostedService<VolcadoVistasHostedService>();
