@@ -277,7 +277,7 @@ interface Servicio {
         }
         <article class="tarjeta flex flex-col bg-gradient-to-br from-sol-50 to-superficie p-6 dark:from-sol-500/10">
           <span class="grid size-12 place-items-center rounded-2xl bg-sol-100 text-sol-700 dark:bg-sol-500/20 dark:text-sol-100"><app-icono nombre="corona" [tamano]="24" /></span>
-          <h3 class="mt-4 text-lg font-bold">Premium y Empresa</h3>
+          <h3 class="mt-4 text-lg font-bold">Premium y Negocio</h3>
           <p class="mt-1 flex-1 text-sm text-tenue">
             Destacados gratis cada 30 días, descuentos, más publicaciones y estadísticas.
             @if (resumen.value()?.pruebaPremiumDisponible) {
@@ -308,7 +308,7 @@ interface Servicio {
           <h2 id="titulo-recarga" class="titulo-seccion">Recarga Eco-Puntos</h2>
           <p class="mt-2 text-tenue">
             {{ politica()?.copPorEcoPunto ?? 100 | cop }} = 1 Eco-Punto. Úsalos para impulsar tus publicaciones ({{ politica()?.puntosImpulsar ?? 20 }} puntos cada vez)
-            o para alcanzar un escalón de descuento. El pago se procesa de forma segura con Wompi.
+            o para alcanzar un escalón de descuento. El pago se procesa de forma segura con Wompi (tarjeta, PSE, Nequi o Bancolombia, según los medios activos).
           </p>
         </div>
         <form class="space-y-4" (ngSubmit)="recargar()">
@@ -654,7 +654,7 @@ export default class EcoPuntos {
       },
       {
         concepto: 'Empresa',
-        titulo: 'Empresa',
+        titulo: 'Negocio',
         descripcion: 'Para tiendas de segunda mano, reparadores, fundaciones y emprendimientos circulares.',
         icono: 'edificio',
         precio: p?.precioEmpresaCop ?? 50000,
@@ -663,7 +663,7 @@ export default class EcoPuntos {
           `${p?.destacadosGratisEmpresa ?? 10} destacados gratis cada ${p?.diasCicloDestacadosGratis || 30} días (no se acumulan)`,
           `${p?.descuentoEmpresaPorcentaje ?? 20}% de descuento adicional en destacar y verificar`,
           `Hasta ${p?.maxPublicacionesEmpresa ?? 1000} publicaciones activas`,
-          'Nombre comercial y sello «Empresa con NIT registrado» en tus publicaciones',
+          'Vitrina pública, nombre comercial y sello «Negocio verificado» cuando revisamos tu NIT',
           'Vende sin el límite de artículos para cuentas sin verificar',
           'Gráfica diaria de vistas y factura a nombre de tu empresa',
         ],

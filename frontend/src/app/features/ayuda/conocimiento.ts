@@ -44,7 +44,7 @@ export const TEMAS: readonly TemaAyuda[] = [
   { id: 'intercambios', titulo: 'Intercambios y entregas', icono: 'apreton' },
   { id: 'chat', titulo: 'Chat', icono: 'mensaje' },
   { id: 'puntos', titulo: 'Eco-Puntos, pagos y facturas', icono: 'moneda' },
-  { id: 'planes', titulo: 'Planes Premium y Empresa', icono: 'corona' },
+  { id: 'planes', titulo: 'Planes Premium y Negocio', icono: 'corona' },
   { id: 'seguridad', titulo: 'Reportes, datos y seguridad de tu cuenta', icono: 'bandera' },
 ];
 
@@ -69,7 +69,7 @@ export const CONOCIMIENTO: readonly EntradaConocimiento[] = [
     pregunta: '¿Cuesta algo usar Trueke?',
     variantes: ['es gratis', 'cuánto cuesta', 'hay que pagar para publicar', 'intercambiar o donar cuesta algo'],
     palabrasClave: ['gratis', 'costo', 'cobran', 'precio', 'pagar'],
-    respuesta: 'No. Publicar, intercambiar, vender, comprar y donar es gratis. Solo pagas si quieres un beneficio opcional: destacar una publicación, verificar tu cuenta o un plan Premium o Empresa (mensual o anual, con 2 meses gratis).',
+    respuesta: 'No. Publicar, intercambiar, vender, comprar y donar es gratis. Solo pagas si quieres un beneficio opcional: destacar una publicación, verificar tu cuenta o un plan Premium o Negocio (mensual o anual, con 2 meses gratis).',
     accion: { texto: 'Ver los planes', ruta: '/planes' },
     paginas: ['como-funciona'],
   },
@@ -339,17 +339,17 @@ export const CONOCIMIENTO: readonly EntradaConocimiento[] = [
     variantes: ['pagar un año', 'premium anual', 'empresa anual'],
     palabrasClave: ['anual', 'año', 'meses'],
     respuesta: (p) =>
-      `Pagas una sola vez y tienes ${p?.duracionSuscripcionAnualDias ? `${p.duracionSuscripcionAnualDias} días` : 'un año'} de Premium o Empresa: son 12 meses por el precio de 10. Los destacados gratis se reponen igual, cada ${p?.diasCicloDestacadosGratis ? `${p.diasCicloDestacadosGratis} días` : 'ciclo'}, y si ya tienes el plan mensual los días del anual se suman a los que te quedan.`,
+      `Pagas una sola vez y tienes ${p?.duracionSuscripcionAnualDias ? `${p.duracionSuscripcionAnualDias} días` : 'un año'} de Premium o Negocio: son 12 meses por el precio de 10. Los destacados gratis se reponen igual, cada ${p?.diasCicloDestacadosGratis ? `${p.diasCicloDestacadosGratis} días` : 'ciclo'}, y si ya tienes el plan mensual los días del anual se suman a los que te quedan.`,
     accion: { texto: 'Ver los planes', ruta: '/planes' },
     paginas: ['planes'],
   },
   {
     id: 'cambiar-plan',
     tema: 'planes',
-    pregunta: '¿Puedo pasar de Premium a Empresa?',
+    pregunta: '¿Puedo pasar de Premium a Negocio?',
     variantes: ['cambiar de plan', 'subir a empresa'],
     palabrasClave: ['cambiar', 'empresa', 'premium', 'plan'],
-    respuesta: 'Sí, cuando venza tu Premium. Durante la prueba gratis puedes pasar a Empresa cuando quieras.',
+    respuesta: 'Sí, cuando venza tu Premium. Durante la prueba gratis puedes pasar a Negocio cuando quieras.',
     accion: { texto: 'Ver los planes', ruta: '/planes' },
     paginas: ['planes'],
   },

@@ -18,7 +18,7 @@ interface Fila {
 }
 
 /**
- * Planes: Gratis, Premium y Empresa lado a lado, con lo que cada uno cumple (sale de la política, no de textos fijos),
+ * Planes: Gratis, Premium y Negocio lado a lado, con lo que cada uno cumple (sale de la política, no de textos fijos),
  * la prueba gratis de Premium y las preguntas que más frenan la compra. El pago se hace en Eco-Puntos (?plan=).
  */
 @Component({
@@ -124,7 +124,7 @@ interface Fila {
                 <th scope="col" class="px-4 py-3 font-semibold">Incluye</th>
                 <th scope="col" class="px-4 py-3 font-semibold">Gratis</th>
                 <th scope="col" class="px-4 py-3 font-semibold">Premium</th>
-                <th scope="col" class="px-4 py-3 font-semibold">Empresa</th>
+                <th scope="col" class="px-4 py-3 font-semibold">Negocio</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-borde">
@@ -149,6 +149,7 @@ interface Fila {
         </div>
         <p class="mt-3 text-xs text-tenue">
           Precios en pesos colombianos{{ politica()?.preciosIncluyenIva ? ', IVA incluido' : '' }}. Cada pago genera factura electrónica.
+          Pagas con Wompi: tarjeta, PSE, Nequi o Bancolombia, según los medios que Wompi tenga activos al momento de pagar.
           Destacar y verificar también se pueden pagar con Eco-Puntos desde <a routerLink="/eco-puntos" class="enlace">Eco-Puntos</a>.
         </p>
       </section>
@@ -260,14 +261,14 @@ export default class Planes {
         ],
       },
       {
-        plan: 'Empresa' as Plan, titulo: 'Empresa', icono: 'edificio', precio: empresa, precioAnual: empresaAnual,
+        plan: 'Empresa' as Plan, titulo: 'Negocio', icono: 'edificio', precio: empresa, precioAnual: empresaAnual,
         ahorro: `Los destacados incluidos valen ${this.cop(valorDestacados(p?.destacadosGratisEmpresa ?? 10))}`,
         para: 'Para tiendas de segunda mano, reparadores, fundaciones y emprendimientos.',
         beneficios: [
           `${p?.destacadosGratisEmpresa ?? 10} destacados gratis cada ${ciclo} días (no se acumulan)`,
           `${p?.descuentoEmpresaPorcentaje ?? 20}% de descuento en destacar y verificar`,
           `Hasta ${p?.maxPublicacionesEmpresa ?? 1000} publicaciones activas`,
-          'Nombre comercial y sello «Empresa con NIT registrado» en tus publicaciones',
+          'Vitrina pública, nombre comercial y sello «Negocio verificado» cuando revisamos tu NIT',
           'Vende sin el límite de artículos para cuentas sin verificar',
           'Gráfica diaria de vistas y factura a nombre de tu empresa',
         ],
@@ -282,9 +283,9 @@ export default class Planes {
       { texto: 'Publicaciones activas', valores: { Individual: `${p?.maxPublicacionesIndividual ?? 50}`, Premium: `${p?.maxPublicacionesPremium ?? 150}`, Empresa: `${p?.maxPublicacionesEmpresa ?? 1000}` } },
       { texto: `Destacados gratis cada ${ciclo} días`, valores: { Individual: false, Premium: `${p?.destacadosGratisPremium ?? 3}`, Empresa: `${p?.destacadosGratisEmpresa ?? 10}` } },
       { texto: 'Descuento en destacar y verificar', valores: { Individual: false, Premium: `${p?.descuentoPremiumPorcentaje ?? 15}%`, Empresa: `${p?.descuentoEmpresaPorcentaje ?? 20}%` } },
-      { texto: 'Gráfica diaria de vistas', valores: { Individual: false, Premium: true, Empresa: true } },
-      { texto: 'Insignia en el perfil', valores: { Individual: false, Premium: 'Premium', Empresa: 'Empresa' } },
-      { texto: 'Nombre comercial y sello con NIT', valores: { Individual: false, Premium: false, Empresa: true } },
+      { texto: 'Estadísticas diarias (de cada publicación y de toda la cuenta)', valores: { Individual: false, Premium: true, Empresa: true } },
+      { texto: 'Insignia en el perfil', valores: { Individual: false, Premium: 'Premium', Empresa: 'Negocio' } },
+      { texto: 'Vitrina, nombre comercial y sello de negocio verificado', valores: { Individual: false, Premium: false, Empresa: true } },
       { texto: 'Ventas sin el límite para cuentas sin verificar', valores: { Individual: false, Premium: false, Empresa: true } },
       { texto: 'Chat, Eco-Puntos e impulsar', valores: { Individual: true, Premium: true, Empresa: true } },
     ];

@@ -50,6 +50,10 @@ Son reglas con pesos y motivos visibles para quien revisa, no un clasificador op
 Los roles siguen siendo Cliente, Administrador y SuperUsuario. Ser negocio, fundación o empresa es una capacidad de la cuenta
 (plan, verificación u organización), no un permiso.
 
+## D-016 — Plan Negocio con vitrina pública y sello revisado por personas (2026-10-29)
+El plan Empresa se llama Negocio (solo en lo visible; los pagos no cambian). Su directorio y su vitrina son públicos, con solo
+datos del negocio. El sello "Negocio verificado" lo da un moderador tras revisar el NIT en el RUES; tener el NIT escrito no basta.
+
 ## D-015 — Régimen Tributario Especial sin promesas fiscales (2026-10-29)
 El equipo marca a mano a las fundaciones calificadas en el Régimen Tributario Especial, con la evidencia que revisó. En público
 solo se dice que pertenecen al régimen: que una donación sea deducible depende de cada caso y del certificado que emita la

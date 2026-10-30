@@ -42,6 +42,10 @@ export const PERIODOS_IMPACTO: readonly { valor: PeriodoImpactoDto; etiqueta: st
   { valor: 'Mes', etiqueta: 'Este mes' },
 ];
 
+/** Nombre visible de cada plan: el plan "Empresa" de la API se llama Negocio en la interfaz. */
+export const nombrePlan = (tipoCuenta: string | null | undefined): string =>
+  tipoCuenta === 'Empresa' ? 'Negocio' : tipoCuenta === 'Individual' ? 'Gratis' : (tipoCuenta ?? '');
+
 export const infoCondicion = (c: string | null | undefined) => CONDICIONES.find((x) => x.valor === c) ?? CONDICIONES[2]!;
 
 export const TIPOS_DOCUMENTO: readonly { valor: TipoDocumentoFiscalDto; etiqueta: string }[] = [
@@ -73,9 +77,9 @@ export const ETIQUETA_CONCEPTO: Record<string, string> = {
   Destacar: 'Destacar publicación',
   Verificar: 'Verificar cuenta',
   Premium: 'Plan Premium',
-  Empresa: 'Plan Empresa',
+  Empresa: 'Plan Negocio',
   PremiumAnual: 'Plan Premium anual',
-  EmpresaAnual: 'Plan Empresa anual',
+  EmpresaAnual: 'Plan Negocio anual',
   Recarga: 'Recarga de Eco-Puntos',
 };
 

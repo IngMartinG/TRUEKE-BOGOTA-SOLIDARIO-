@@ -3,7 +3,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom } from 'rxjs';
-import { CODIGO_BOGOTA, LOCALIDADES, NOMBRE_PROVISIONAL } from '../../api/tipos';
+import { CODIGO_BOGOTA, LOCALIDADES, NOMBRE_PROVISIONAL, nombrePlan, type UsuarioDto } from '../../api/tipos';
 import { CuentaApi } from '../../core/api/cuenta.api';
 import { AvisosService } from '../../core/avisos.service';
 import { erroresDeCampos, mensajeDe } from '../../core/http/problema';
@@ -146,9 +146,21 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
           @if (u.tipoCuenta === 'Empresa') {
             <form [formGroup]="empresa" (ngSubmit)="guardarEmpresa()" class="tarjeta space-y-5 p-6" novalidate>
               <div>
-                <h2 class="flex items-center gap-2 text-lg font-bold"><app-icono nombre="edificio" [tamano]="20" />Perfil de empresa</h2>
+                <h2 class="flex items-center gap-2 text-lg font-bold"><app-icono nombre="edificio" [tamano]="20" />Perfil de negocio</h2>
                 <p class="mt-1 text-sm text-tenue">
-                  Mientras el plan Empresa esté vigente, tus publicaciones muestran tu nombre comercial y el sello «Empresa con NIT registrado».
+                  Mientras el plan Negocio esté vigente, tienes una vitrina pública y tus publicaciones muestran tu nombre comercial.
+                  Revisamos tu NIT con el RUES y, si coincide, ganas el sello «Negocio verificado».
+                </p>
+                <p class="mt-3 flex flex-wrap items-center gap-2 text-sm">
+                  @if (u.negocioVerificado) {
+                    <span class="insignia-trueke"><app-icono nombre="verificado" [tamano]="12" />Negocio verificado</span>
+                  } @else if (u.nit) {
+                    <span class="insignia-sol"><app-icono nombre="reloj" [tamano]="12" />NIT en revisión</span>
+                  }
+                  @if (u.nombreComercial) {
+                    <a [routerLink]="['/negocios', u.id]" class="enlace">Ver mi vitrina</a>
+                    <a routerLink="/cuenta/estadisticas" class="enlace">Estadísticas de la cuenta</a>
+                  }
                 </p>
               </div>
               <div class="campo">
@@ -163,6 +175,15 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
                 <p class="ayuda">Si no escribes el dígito de verificación, lo calculamos.</p>
                 <app-error-campo [control]="empresa.controls.nit" etiqueta="El NIT" idError="nit-error" />
               </div>
+              <div class="campo">
+                <label for="descripcion-negocio" class="etiqueta">Qué vende o hace tu negocio <span class="font-normal text-tenue">(opcional)</span></label>
+                <textarea id="descripcion-negocio" class="entrada min-h-24" formControlName="descripcion" maxlength="600"
+                  placeholder="Ej: muebles de segunda restaurados y reparación de sillas en Kennedy."></textarea>
+              </div>
+              <div class="campo">
+                <label for="horario-negocio" class="etiqueta">Horario de atención <span class="font-normal text-tenue">(opcional)</span></label>
+                <input id="horario-negocio" class="entrada" formControlName="horario" maxlength="120" placeholder="Ej: lunes a sábado, 9 a. m. a 6 p. m." />
+              </div>
               <label class="flex items-start gap-3 text-sm">
                 <input type="checkbox" class="mt-0.5 size-5 shrink-0 accent-bosque-600" formControlName="mostrarNit" />
                 <span>
@@ -171,7 +192,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
                 </span>
               </label>
               <div class="flex justify-end">
-                <button type="submit" class="btn btn-primario" [disabled]="empresa.pristine || guardando()">Guardar perfil de empresa</button>
+                <button type="submit" class="btn btn-primario" [disabled]="empresa.pristine || guardando()">Guardar perfil de negocio</button>
               </div>
             </form>
           }
@@ -181,7 +202,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
           <div class="tarjeta p-5">
             <h2 class="font-bold">Tipo de cuenta</h2>
             <p class="mt-2 flex items-center gap-2 font-display text-xl font-extrabold">
-              <app-icono [nombre]="u.tipoCuenta === 'Individual' ? 'usuario' : u.tipoCuenta === 'Empresa' ? 'edificio' : 'corona'" [tamano]="20" class="text-sol-500" />{{ u.tipoCuenta }}
+              <app-icono [nombre]="u.tipoCuenta === 'Individual' ? 'usuario' : u.tipoCuenta === 'Empresa' ? 'edificio' : 'corona'" [tamano]="20" class="text-sol-500" />{{ nombrePlan(u.tipoCuenta) }}
             </p>
             @if (u.planVigenteHasta) {
               <p class="text-sm text-tenue">Vigente hasta el {{ u.planVigenteHasta | fecha }}</p>
@@ -229,6 +250,13 @@ export default class Perfil {
     nombreComercial: ['', [Validators.required, Validators.minLength(2), Validators.maxLength(120), nombreComercial]],
     nit: ['', [Validators.required, Validators.minLength(6), Validators.maxLength(20), nit]],
     mostrarNit: [false],
+    descripcion: ['', [Validators.maxLength(600)]],
+    horario: ['', [Validators.maxLength(120)]],
+  });
+  protected readonly nombrePlan = nombrePlan;
+  private valoresEmpresa = (u: UsuarioDto) => ({
+    nombreComercial: u.nombreComercial ?? '', nit: u.nit ?? '', mostrarNit: !!u.mostrarNit,
+    descripcion: u.descripcionNegocio ?? '', horario: u.horarioNegocio ?? '',
   });
   private readonly municipio = toSignal(this.form.controls.municipioCodigo.valueChanges, { initialValue: CODIGO_BOGOTA });
   protected readonly esBogota = computed(() => this.municipio() === CODIGO_BOGOTA);
@@ -249,7 +277,7 @@ export default class Perfil {
           if (u.nombreRealPendiente) this.form.controls.nombreCompleto.markAsTouched(); // muestra qué le falta
           if (u.localidadPendiente) this.form.controls.localidad.markAsTouched();
         }
-        if (u && this.empresa.pristine) this.empresa.reset({ nombreComercial: u.nombreComercial ?? '', nit: u.nit ?? '', mostrarNit: !!u.mostrarNit });
+        if (u && this.empresa.pristine) this.empresa.reset(this.valoresEmpresa(u));
       });
     });
     // Al elegir otro municipio, la localidad anterior deja de aplicar.
@@ -341,10 +369,13 @@ export default class Perfil {
     this.guardando.set(true);
     try {
       const v = this.empresa.getRawValue();
-      const u = await firstValueFrom(this.api.actualizarEmpresa({ nombreComercial: v.nombreComercial.trim(), nit: v.nit.trim(), mostrarNit: v.mostrarNit }));
+      const u = await firstValueFrom(this.api.actualizarEmpresa({
+        nombreComercial: v.nombreComercial.trim(), nit: v.nit.trim(), mostrarNit: v.mostrarNit,
+        descripcion: v.descripcion.trim() || null, horario: v.horario.trim() || null,
+      }));
       this.sesion.actualizarUsuario(u);
-      this.empresa.reset({ nombreComercial: u.nombreComercial ?? '', nit: u.nit ?? '', mostrarNit: !!u.mostrarNit });
-      this.avisos.exito('Perfil de empresa actualizado', `NIT registrado: ${u.nit}`);
+      this.empresa.reset(this.valoresEmpresa(u));
+      this.avisos.exito('Perfil de negocio actualizado', u.negocioVerificado ? `NIT ${u.nit}` : `NIT ${u.nit}: lo revisaremos para darte el sello.`);
     } catch (e) {
       if (!aplicarErroresServidor(this.empresa.controls, erroresDeCampos(e))) this.avisos.error(mensajeDe(e));
     } finally {

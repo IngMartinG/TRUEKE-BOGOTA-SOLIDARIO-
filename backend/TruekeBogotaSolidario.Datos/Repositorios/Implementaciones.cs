@@ -58,6 +58,18 @@ public sealed class UsuarioRepository : IUsuarioRepository
         => _db.Usuarios.CountAsync(u => u.InvitadoPorId == invitadorId && u.RecompensaInvitacionUtc != null
             && (desdeUtc == null || u.RecompensaInvitacionUtc >= desdeUtc));
 
+    private IQueryable<Usuario> NegociosVigentes(DateTime ahoraUtc)
+        => _db.Usuarios.AsNoTracking().Where(u => u.TipoCuenta == TipoCuenta.Empresa && u.FechaVencimientoSuscripcion > ahoraUtc
+            && u.NombreComercial != null && !u.EstaEliminado && !(u.EstaSuspendido && (u.SuspendidoHasta == null || u.SuspendidoHasta > ahoraUtc)));
+
+    public async Task<IReadOnlyList<Usuario>> ListarNegociosAsync(DateTime ahoraUtc, int maximo)
+        => await NegociosVigentes(ahoraUtc).OrderByDescending(u => u.NitVerificadoUtc != null).ThenBy(u => u.NombreComercial).ThenBy(u => u.Id)
+            .Take(Math.Clamp(maximo, 1, 500)).ToListAsync();
+
+    public async Task<IReadOnlyList<Usuario>> ListarNegociosPorVerificarAsync(DateTime ahoraUtc, int maximo)
+        => await NegociosVigentes(ahoraUtc).Where(u => u.Nit != null && u.NitVerificadoUtc == null && u.NitRechazadoUtc == null)
+            .OrderBy(u => u.FechaRegistro).Take(Math.Clamp(maximo, 1, 200)).ToListAsync();
+
     public async Task<IReadOnlyList<Guid>> ListarIdsModeradoresAsync()
         => await _db.Usuarios.AsNoTracking()
             .Where(u => (u.Rol == RolUsuarioEnum.Administrador || u.Rol == RolUsuarioEnum.SuperUsuario) && !u.EstaEliminado && !u.EstaSuspendido)
@@ -173,6 +185,7 @@ public sealed class PublicacionRepository : IPublicacionRepository
         if (f.PublicadasDesde.HasValue) q = q.Where(p => p.FechaPublicacion > f.PublicadasDesde.Value);
         if (f.PublicadasHasta.HasValue) q = q.Where(p => p.FechaPublicacion <= f.PublicadasHasta.Value);
         if (f.ExcluirPropietarioId.HasValue) q = q.Where(p => p.PropietarioId != f.ExcluirPropietarioId.Value);
+        if (f.PropietarioId.HasValue) q = q.Where(p => p.PropietarioId == f.PropietarioId.Value);
 
         var total = await q.CountAsync();
         var ordenada = f.Orden switch
@@ -321,6 +334,10 @@ public sealed class PublicacionRepository : IPublicacionRepository
 
     public Task<int> ContarPendientesModeracionAsync() => PendientesDeModeracion().CountAsync();
 
+    public async Task<IReadOnlyDictionary<Guid, int>> ContarVisiblesPorPropietarioAsync(IReadOnlyCollection<Guid> propietarioIds, DateTime ahoraUtc)
+        => propietarioIds.Count == 0 ? new Dictionary<Guid, int>() : await Visibles(ahoraUtc).Where(p => propietarioIds.Contains(p.PropietarioId))
+            .GroupBy(p => p.PropietarioId).Select(g => new { g.Key, Total = g.Count() }).ToDictionaryAsync(x => x.Key, x => x.Total);
+
     public void Agregar(Publicacion publicacion) => _db.Publicaciones.Add(publicacion);
 }
 
@@ -414,6 +431,9 @@ public sealed class SolicitudRepository : ISolicitudRepository
 
     public Task<int> ContarPorPublicacionAsync(Guid publicacionId) => _db.Solicitudes.CountAsync(s => s.PublicacionId == publicacionId);
 
+    public Task<int> ContarRecibidasDesdeAsync(Guid propietarioId, DateTime desdeUtc)
+        => _db.Solicitudes.CountAsync(s => s.Publicacion!.PropietarioId == propietarioId && s.FechaSolicitud >= desdeUtc);
+
     public void Agregar(Solicitud solicitud) => _db.Solicitudes.Add(solicitud);
 }
 
@@ -443,6 +463,9 @@ public sealed class TransaccionRepository : ITransaccionRepository
 {
     private readonly TruekeDbContext _db;
     public TransaccionRepository(TruekeDbContext db) => _db = db;
+
+    public Task<int> ContarCompletadosDesdeAsync(Guid usuarioId, DateTime desdeUtc)
+        => _db.Transacciones.CountAsync(t => t.FechaUtc >= desdeUtc && (t.OferenteId == usuarioId || t.ReceptorId == usuarioId));
 
     public Task<int> ContarDesdeAsync(Guid usuarioId, DateTime desdeUtc)
         => _db.Transacciones.CountAsync(t => t.FechaUtc >= desdeUtc
@@ -691,6 +714,10 @@ public sealed class EstadisticaRepository : IEstadisticaRepository
         => await _db.EstadisticasPublicaciones.AsNoTracking().Where(e => publicacionIds.Contains(e.PublicacionId))
             .GroupBy(e => e.PublicacionId).Select(g => new { g.Key, Total = g.Sum(e => e.Vistas) })
             .ToDictionaryAsync(x => x.Key, x => x.Total);
+
+    public async Task<IReadOnlyList<EstadisticaPublicacionDiaria>> SerieDeAsync(IReadOnlyCollection<Guid> publicacionIds, DateTime desdeUtc)
+        => publicacionIds.Count == 0 ? [] : await _db.EstadisticasPublicaciones.AsNoTracking()
+            .Where(e => publicacionIds.Contains(e.PublicacionId) && e.Fecha >= desdeUtc.Date).ToListAsync();
 }
 
 public sealed class SaludBaseDatos : ISaludBaseDatos
@@ -1099,6 +1126,8 @@ public sealed class FavoritoRepository : IFavoritoRepository
 
     public Task<int> ContarAsync(Guid usuarioId) => _db.Favoritos.CountAsync(f => f.UsuarioId == usuarioId);
     public Task<int> ContarPorPublicacionAsync(Guid publicacionId) => _db.Favoritos.CountAsync(f => f.PublicacionId == publicacionId);
+    public Task<int> ContarDePublicacionesAsync(IReadOnlyCollection<Guid> publicacionIds)
+        => publicacionIds.Count == 0 ? Task.FromResult(0) : _db.Favoritos.CountAsync(f => publicacionIds.Contains(f.PublicacionId));
     public void Agregar(Favorito favorito) => _db.Favoritos.Add(favorito);
     public void Quitar(Favorito favorito) => _db.Favoritos.Remove(favorito);
 }

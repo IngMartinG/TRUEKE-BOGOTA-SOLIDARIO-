@@ -30,7 +30,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
         <p class="font-semibold">¿Para qué sirve esta sección?</p>
         <p class="text-tenue">
           Intercambiar, donar y comprar entre personas es gratis y <strong>no genera facturas</strong>. Solo cuando le pagas algo a la
-          plataforma (destacar una publicación, verificar tu cuenta, un plan Premium o Empresa, o una recarga de Eco-Puntos) la ley
+          plataforma (destacar una publicación, verificar tu cuenta, un plan Premium o Negocio, o una recarga de Eco-Puntos) la ley
           colombiana nos obliga a emitir una factura electrónica ante la DIAN, con el IVA incluido.
         </p>
         <p class="text-tenue">

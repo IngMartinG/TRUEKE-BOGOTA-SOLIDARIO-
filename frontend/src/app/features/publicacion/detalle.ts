@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { Title } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
-import { ETIQUETA_ESTADO_PUBLICACION, infoCondicion, INFO_MODO, type ModoDto, type PublicacionDto } from '../../api/tipos';
+import { ETIQUETA_ESTADO_PUBLICACION, infoCondicion, INFO_MODO, nombrePlan, type ModoDto, type PublicacionDto } from '../../api/tipos';
 import { AdminApi } from '../../core/api/admin.api';
 import { CatalogoApi } from '../../core/api/catalogo.api';
 import { CuentaApi } from '../../core/api/cuenta.api';
@@ -249,9 +249,13 @@ import { Volver } from '../../shared/ui/volver';
                 <p class="truncate font-display font-bold">{{ p.propietario?.nombreFundacion || p.propietario?.nombreComercial || p.propietario?.nombre }}</p>
                 @if (p.propietario?.nombreFundacion) {
                   <p class="mt-0.5"><app-insignia-fundacion /></p>
+                } @else if (p.propietario?.negocioVerificado) {
+                  <p class="mt-0.5 flex items-center gap-1 text-xs font-semibold text-bosque-700 dark:text-bosque-300">
+                    <app-icono nombre="verificado" [tamano]="12" />Negocio verificado
+                  </p>
                 } @else if (p.propietario?.nitRegistrado) {
                   <p class="mt-0.5 flex items-center gap-1 text-xs font-semibold text-agua-700 dark:text-agua-100">
-                    <app-icono nombre="verificado" [tamano]="12" />Empresa con NIT registrado
+                    <app-icono nombre="edificio" [tamano]="12" />Negocio con NIT registrado
                   </p>
                 }
                 <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-tenue">
@@ -262,7 +266,7 @@ import { Volver } from '../../shared/ui/volver';
                     <span class="insignia-neutra">Nuevo en Trueke</span>
                   }
                   @if (p.propietario?.tipoCuenta && p.propietario.tipoCuenta !== 'Individual') {
-                    <span class="insignia-sol">{{ p.propietario.tipoCuenta }}</span>
+                    <span class="insignia-sol">{{ nombrePlan(p.propietario.tipoCuenta) }}</span>
                   }
                   <app-insignia-nivel [nivel]="p.propietario?.nivel" />
                 </div>
@@ -473,6 +477,7 @@ export default class Detalle {
   private readonly router = inject(Router);
   private readonly titulo = inject(Title);
   protected readonly sesion = inject(SesionService);
+  protected readonly nombrePlan = nombrePlan;
   protected readonly favoritos = inject(FavoritosService);
 
   readonly id = input.required<string>();

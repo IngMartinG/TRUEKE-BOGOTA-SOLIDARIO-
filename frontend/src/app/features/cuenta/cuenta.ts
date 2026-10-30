@@ -59,6 +59,7 @@ export default class Cuenta {
     // Antes solo se llegaba a estas dos desde el menú del avatar
     { ruta: '/mis-publicaciones', texto: 'Mis publicaciones', icono: 'paquete' },
     { ruta: '/favoritos', texto: 'Favoritos', icono: 'heart' },
+    { ruta: '/cuenta/estadisticas', texto: 'Estadísticas', icono: 'grafica' },
     { ruta: '/lo-que-busco', texto: 'Lo que busco', icono: 'mira' },
     { ruta: '/cuenta/seguridad', texto: 'Seguridad', icono: 'escudo' },
     { ruta: '/cuenta/avisos', texto: 'Avisos', icono: 'campana' },

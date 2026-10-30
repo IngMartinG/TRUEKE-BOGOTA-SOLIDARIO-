@@ -99,6 +99,26 @@ public sealed class AdministracionController : ControllerBase
         return NoContent();
     }
 
+    // ---- Negocios: el sello "Negocio verificado" (NIT revisado contra el RUES)
+    [HttpGet("negocios"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<IReadOnlyList<NegocioPorVerificarDto>>> NegociosPorVerificar([FromServices] INegocioService negocios)
+        => Ok(await negocios.ListarPorVerificarAsync(User.IdActual()));
+
+    [HttpPost("negocios/{usuarioId:guid}/verificar"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<IActionResult> VerificarNegocio(Guid usuarioId, [FromServices] INegocioService negocios)
+    {
+        await negocios.VerificarNitAsync(User.IdActual(), usuarioId);
+        return NoContent();
+    }
+
+    /// <summary>El negocio recibe el motivo; vuelve a la fila cuando corrige el NIT o el nombre comercial.</summary>
+    [HttpPost("negocios/{usuarioId:guid}/rechazar"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<IActionResult> RechazarNegocio(Guid usuarioId, [FromBody] MotivoRequest r, [FromServices] INegocioService negocios)
+    {
+        await negocios.RechazarNitAsync(User.IdActual(), usuarioId, r.Motivo);
+        return NoContent();
+    }
+
     // ---- Cuentas
     [HttpGet("usuarios"), Authorize(Policy = Politicas.Moderador)]
     public async Task<ActionResult<PaginaDto<UsuarioAdminDto>>> BuscarUsuarios([FromQuery] BuscarUsuariosRequest r)

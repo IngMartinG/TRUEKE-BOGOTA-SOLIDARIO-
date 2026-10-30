@@ -672,6 +672,27 @@ páginas estáticas para buscadores (`generar-seo.mjs`) y la pantalla de carga y
 HtmlSanitizer no aplica: la API solo devuelve JSON, Angular escapa todo y el texto ya se valida con `TextoSeguro`; además
 rechazaría textos normales como "3 < 5" y guardaría el contenido en los registros.
 
+## Hecho el 2026-10-29 — plan Negocio con vitrina
+Decisiones del dueño: el directorio y la vitrina son públicos (como las fundaciones) y el sello lo da un moderador revisando el
+NIT contra el RUES.
+- **Nombre:** el plan Empresa se llama **Negocio** en toda la interfaz, en los mensajes de la API y en la descripción de las
+  facturas nuevas. Internamente sigue siendo `TipoCuenta.Empresa` y los conceptos de pago `Empresa`/`EmpresaAnual`, para no
+  romper los pagos. Los **términos** todavía dicen "plan Empresa": cambiarlo exige una versión legal nueva (pendiente abajo).
+- **Perfil de negocio** (`PUT /usuarios/yo/empresa`): además del nombre comercial y el NIT, descripción (600) y horario (120).
+- **Sello "Negocio verificado"** (`Usuario.NitVerificadoUtc`, `NitRechazadoUtc`; migración `PlanNegocioVitrina`): Administración
+  → Negocios (`GET /admin/negocios`, `POST /admin/negocios/{id}/verificar|rechazar`, moderadores con 2FA, auditoría). Cambiar el
+  NIT o el nombre comercial quita el sello y lo devuelve a la fila; uno rechazado sale de la fila hasta que lo corrijan. La
+  tarjeta y el detalle de una publicación ya no muestran el ícono de verificado por solo tener el NIT escrito.
+- **Directorio `/negocios` y vitrina `/negocios/:id`** (públicos, `GET /negocios` en caché de 2 minutos; autorizados por el dueño el
+  2026-10-29): nombre comercial, foto, zona, descripción, horario, sello, calificaciones y el catálogo de la cuenta con búsqueda
+  (`GET /publicaciones?propietarioId=…`). Enlaces en el pie, el menú de cuenta y el perfil público.
+- **Estadísticas de toda la cuenta** (`GET /negocios/mio/estadisticas`, planes Premium y Negocio; página Mi cuenta →
+  Estadísticas): vistas de 30 días con su serie diaria, solicitudes recibidas, intercambios, cuántas personas guardaron sus
+  publicaciones y las 5 más vistas.
+- **Medios de pago visibles** en Planes y en la recarga: tarjeta, PSE, Nequi o Bancolombia, según los que tenga activos Wompi.
+- Pruebas: `NegociosTests` (directorio y vitrina, sello y su pérdida al cambiar el NIT, rechazo, estadísticas solo con plan),
+  `ArquitecturaTests` (los dos endpoints anónimos nuevos) y `negocios.spec.ts`.
+
 ## Hecho el 2026-10-29 — fundaciones 2.0 (régimen tributario, progreso y lo que piden)
 - **Régimen Tributario Especial:** `Fundacion.RegimenTributarioEspecial` con `NotaRegimen` (la evidencia que revisó el equipo,
   nunca pública) y `RegimenRevisadoUtc`. El SuperUsuario lo marca o lo quita en Administración → Fundaciones
@@ -801,7 +822,8 @@ Se revisó un paquete de documentos con bloques de producto (impacto, fundacione
 4. ~~**Fundaciones 2.0 (Bloque 2)**~~: hecho (ver arriba). Queda que el contador o el abogado validen el texto de la marca
    del Régimen Tributario Especial. Lo previsto: marca de Régimen Tributario Especial, página "Lo que piden las fundaciones", sugerir
    fundaciones al publicar una donación y progreso de cada necesidad.
-5. **Plan Negocio (Bloque 4):** el plan Empresa pasa a llamarse Negocio, con vitrina pública, directorio, sello de negocio
+5. ~~**Plan Negocio (Bloque 4)**~~: hecho (ver arriba). Queda cambiar "plan Empresa" por "plan Negocio" en los términos en la
+   próxima versión legal, y decidir el precio de destacar. Lo previsto: el plan Empresa pasa a llamarse Negocio, con vitrina pública, directorio, sello de negocio
    verificado, panel de estadísticas de la cuenta y medios de pago visibles. Precio de destacar por decidir.
 6. **Empresas (Bloque 3):** organización con NIT y varios miembros, campañas, informe de impacto en PDF y exportación CSV.
 7. **Retención (Bloque 5):** "¿Sigue disponible?" para publicaciones inactivas, resumen semanal opcional por correo, logros
