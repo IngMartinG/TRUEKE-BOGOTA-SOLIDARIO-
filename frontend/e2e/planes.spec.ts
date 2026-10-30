@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
 import { cuentaLista, ingresar } from './utilidades';
 
-test('planes: compara Gratis, Premium y Empresa y activa la prueba gratis de Premium una sola vez', async ({ page }) => {
+test('planes: compara Gratis, Premium y Negocio y activa la prueba gratis de Premium una sola vez', async ({ page }) => {
   await test.step('un visitante ve los tres planes y la tabla comparativa', async () => {
     await page.goto('/planes');
     await expect(page.getByRole('heading', { name: 'Planes para mover más cosas' })).toBeVisible();
-    for (const plan of ['Gratis', 'Premium', 'Empresa']) await expect(page.getByRole('heading', { name: plan, exact: true })).toBeVisible();
+    for (const plan of ['Gratis', 'Premium', 'Negocio']) await expect(page.getByRole('heading', { name: plan, exact: true })).toBeVisible();
     await expect(page.getByRole('table', { name: 'Qué incluye cada plan' })).toBeVisible();
   });
 
