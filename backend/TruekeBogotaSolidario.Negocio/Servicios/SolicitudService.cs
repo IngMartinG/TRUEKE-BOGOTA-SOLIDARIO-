@@ -1,7 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Datos.Repositorios;
+using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Dtos;
 
@@ -16,8 +18,15 @@ public interface ISolicitudService
     Task<SolicitudDto> AceptarAsync(Guid actorId, Guid solicitudId);
     Task RechazarAsync(Guid actorId, Guid solicitudId, string? motivo);
     Task CancelarAsync(Guid actorId, Guid solicitudId);
-    /// <summary>Cada parte confirma que la entrega ocurrió. Con ambas confirmaciones se completa y se otorgan los Eco-Puntos.</summary>
-    Task<SolicitudDto> ConfirmarEntregaAsync(Guid actorId, Guid solicitudId);
+    /// <summary>
+    /// Cada parte confirma que la entrega ocurrió. Con ambas confirmaciones se completa y se otorgan los Eco-Puntos. Opcional: una
+    /// foto de la entrega (subida como FotoChat), que solo ven las dos partes y la administración.
+    /// </summary>
+    Task<SolicitudDto> ConfirmarEntregaAsync(Guid actorId, Guid solicitudId, string? fotoEvidenciaUrl = null);
+    /// <summary>Fotos de la entrega con URLs firmadas de corta vida: solo para las dos partes.</summary>
+    Task<IReadOnlyList<EvidenciaEntregaDto>> EvidenciasAsync(Guid actorId, Guid solicitudId);
+    /// <summary>Lo mismo para la moderación (Administrador): queda en la auditoría.</summary>
+    Task<IReadOnlyList<EvidenciaEntregaDto>> EvidenciasAdminAsync(Guid actorId, Guid solicitudId);
     /// <summary>Cualquiera de las partes informa que el intercambio acordado no ocurrió: la publicación vuelve a estar disponible.</summary>
     Task<SolicitudDto> MarcarNoConcretadaAsync(Guid actorId, Guid solicitudId, string motivo);
     Task<CalificacionDto> CalificarAsync(Guid actorId, Guid solicitudId, CalificarRequest r);
@@ -74,13 +83,18 @@ public sealed class SolicitudService : ISolicitudService
     private readonly ILogger<SolicitudService> _log;
     private readonly IImpactoRepository _impacto;
     private readonly IFundacionRepository _fundaciones;
+    private readonly IEvidenciaEntregaRepository _evidencias;
+    private readonly IAlmacenArchivos _almacen;
+    private readonly IAuditoriaRepository _auditoria;
+    private readonly UrlsOpciones _urls;
 
     public SolicitudService(ISolicitudRepository solicitudes, IPublicacionRepository pubs, IUsuarioRepository usuarios,
         ITransaccionRepository transacciones, ICalificacionRepository calificaciones, IUnidadDeTrabajo uow, TimeProvider reloj,
         INotificador notificador, IConversacionRepository conversaciones, IBloqueoRepository bloqueos, IMovimientoEcoPuntosRepository movimientos,
-        ILogger<SolicitudService> log, IImpactoRepository impacto, IFundacionRepository fundaciones)
+        ILogger<SolicitudService> log, IImpactoRepository impacto, IFundacionRepository fundaciones, IEvidenciaEntregaRepository evidencias,
+        IAlmacenArchivos almacen, IAuditoriaRepository auditoria, IOptions<UrlsOpciones> urls)
     {
-        _impacto = impacto; _fundaciones = fundaciones;
+        _impacto = impacto; _fundaciones = fundaciones; _evidencias = evidencias; _almacen = almacen; _auditoria = auditoria; _urls = urls.Value;
         _solicitudes = solicitudes; _pubs = pubs; _usuarios = usuarios; _transacciones = transacciones; _calificaciones = calificaciones;
         _uow = uow; _reloj = reloj; _notificador = notificador; _conversaciones = conversaciones; _bloqueos = bloqueos; _movimientos = movimientos; _log = log;
     }
@@ -134,7 +148,7 @@ public sealed class SolicitudService : ISolicitudService
         await NotificarAsync(pub.PropietarioId, TiposNotificacion.SolicitudNueva, ofrecidas.Count > 0
             ? $"Nueva propuesta de trueke para \"{pub.Titulo}\": te ofrecen {Titulos(ofrecidas)}."
             : precio is { } p ? $"Nueva solicitud para \"{pub.Titulo}\": te ofrecen {Cop(p)}." : $"Nueva solicitud para \"{pub.Titulo}\".", solicitud.Id);
-        return ADto(solicitud, pub, solicitante, actorId, conversacion.Id, puedoCalificar: false, ahora, ofrecidas);
+        return ADto(solicitud, pub, solicitante, actorId, conversacion.Id, puedoCalificar: false, ahora, ofrecidas, evidencias: 0);
     }
 
     private const string PrecioUObjetos = "Propón un precio u objetos a cambio, no las dos cosas.";
@@ -228,9 +242,10 @@ public sealed class SolicitudService : ISolicitudService
         var ids = lista.Select(s => s.Id).ToList();
         var conversaciones = await _conversaciones.IdsPorSolicitudAsync(ids);
         var calificadas = await _calificaciones.SolicitudesCalificadasPorAsync(actorId, ids);
+        var evidencias = await _evidencias.ContarAsync(ids);
         return lista.Select(s => ADto(s, s.Publicacion!, s.Solicitante!, actorId,
             conversaciones.TryGetValue(s.Id, out var c) ? c : null,
-            PuedeCalificar(s, ahora) && !calificadas.Contains(s.Id), ahora, Ofrecidas(s))).ToList();
+            PuedeCalificar(s, ahora) && !calificadas.Contains(s.Id), ahora, Ofrecidas(s), evidencias.GetValueOrDefault(s.Id))).ToList();
     }
 
     public async Task<IReadOnlyList<SolicitudDto>> ListarEnviadasAsync(Guid actorId)
@@ -377,12 +392,20 @@ public sealed class SolicitudService : ISolicitudService
     }
 
     // ---------------- Entrega ----------------
-    public async Task<SolicitudDto> ConfirmarEntregaAsync(Guid actorId, Guid solicitudId)
+    public async Task<SolicitudDto> ConfirmarEntregaAsync(Guid actorId, Guid solicitudId, string? fotoEvidenciaUrl = null)
     {
         var s = await CargarComoParticipanteAsync(actorId, solicitudId);
         var esDuenio = s.Publicacion!.PropietarioId == actorId;
         var ahora = Ahora;
         var ambas = s.ConfirmarEntrega(esDuenio, ahora);
+        if (!string.IsNullOrWhiteSpace(fotoEvidenciaUrl))
+        {
+            // Lo último antes de guardar: valida, limpia (sin GPS ni metadatos) y copia la foto al bucket privado del chat
+            var foto = fotoEvidenciaUrl.Trim();
+            if (_almacen.Habilitado) foto = await _almacen.ValidarArchivoPropioAsync(foto, actorId, TipoArchivoDto.FotoChat);
+            else ValidadorUrls.ExigirHostPermitido(foto, _urls.HostsPermitidosImagenes, "La foto");
+            _evidencias.Agregar(new EvidenciaEntrega(s.Id, actorId, foto, ahora));
+        }
         var otra = esDuenio ? s.SolicitanteId : s.Publicacion.PropietarioId;
         if (ambas)
         {
@@ -395,6 +418,31 @@ public sealed class SolicitudService : ISolicitudService
                 $"La otra parte confirmó la entrega de \"{s.Publicacion.Titulo}\". Confírmala tú también para que los dos sumen Eco-Puntos o, si no se concretó, márcalo así (si no haces nada, se cerrará en {Limites.DiasCierreConUnaConfirmacion} días sin puntos para nadie).", s.Id);
         }
         return await UnaAsync(actorId, s);
+    }
+
+    public async Task<IReadOnlyList<EvidenciaEntregaDto>> EvidenciasAsync(Guid actorId, Guid solicitudId)
+    {
+        var s = await CargarComoParticipanteAsync(actorId, solicitudId);
+        return await FirmarEvidenciasAsync(s.Id, actorId);
+    }
+
+    public async Task<IReadOnlyList<EvidenciaEntregaDto>> EvidenciasAdminAsync(Guid actorId, Guid solicitudId)
+    {
+        var actor = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
+        if (actor.Rol < RolUsuarioEnum.Administrador) throw new AccesoDenegadoException();
+        if (await _solicitudes.ObtenerPorIdAsync(solicitudId) is null) throw new NoEncontradoException("Solicitud no encontrada.");
+        _auditoria.Agregar(new AuditoriaEvento(actorId, "EVIDENCIA_ENTREGA_CONSULTADA", "Solicitud", solicitudId, null, Ahora));
+        await _uow.GuardarCambiosAsync();
+        return await FirmarEvidenciasAsync(solicitudId, actorId);
+    }
+
+    private async Task<IReadOnlyList<EvidenciaEntregaDto>> FirmarEvidenciasAsync(Guid solicitudId, Guid actorId)
+    {
+        var lista = await _evidencias.DeSolicitudAsync(solicitudId);
+        if (lista.Count == 0) return [];
+        var firmadas = await _almacen.UrlsLecturaChatAsync(lista.Select(e => e.FotoUrl).ToList());
+        return lista.Where(e => firmadas.ContainsKey(e.FotoUrl))
+            .Select(e => new EvidenciaEntregaDto(e.Id, firmadas[e.FotoUrl], e.UsuarioId == actorId, e.FechaUtc)).ToList();
     }
 
     public async Task<SolicitudDto> MarcarNoConcretadaAsync(Guid actorId, Guid solicitudId, string motivo)
@@ -685,7 +733,7 @@ public sealed class SolicitudService : ISolicitudService
     }
 
     private static SolicitudDto ADto(Solicitud s, Publicacion pub, Usuario solicitante, Guid actorId, Guid? conversacionId, bool puedoCalificar,
-        DateTime ahora, IReadOnlyList<Publicacion> ofrecidas)
+        DateTime ahora, IReadOnlyList<Publicacion> ofrecidas, int evidencias)
     {
         var resumenes = ofrecidas.Select(o => new PublicacionResumenDto(o.Id, o.Titulo,
             o.Imagenes.OrderBy(i => i.Orden).Select(i => i.Url).FirstOrDefault(), o.Condicion.ToString(), o.Estado.ToString())).ToList();
@@ -701,6 +749,6 @@ public sealed class SolicitudService : ISolicitudService
             EnEspera: s.Estado == EstadoSolicitud.Pendiente && pub.Estado == EstadoPublicacionEnum.EnNegociacion, resumenes,
             pub.Modo == ModoTransaccion.Compra ? pub.PrecioReferenciaCop : null, s.PrecioPropuestoCop,
             MeTocaResponder: s.Estado == EstadoSolicitud.Pendiente && s.TurnoDuenio == soyDuenio, s.Contraofertas,
-            Math.Max(0, Solicitud.MaxContraofertas - s.Contraofertas), pub.Modo == ModoTransaccion.Compra && pub.AceptaTrueke);
+            Math.Max(0, Solicitud.MaxContraofertas - s.Contraofertas), pub.Modo == ModoTransaccion.Compra && pub.AceptaTrueke, evidencias);
     }
 }

@@ -4,6 +4,7 @@ import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import type { CrearPublicacionRequest } from '../../api/tipos';
 import { CatalogoApi } from '../../core/api/catalogo.api';
+import { EmpresasApi } from '../../core/api/empresas.api';
 import { FundacionesApi } from '../../core/api/fundaciones.api';
 import { AvisosService } from '../../core/avisos.service';
 import { ConfigService } from '../../core/config.service';
@@ -30,6 +31,7 @@ async function montar(entradas: Record<string, string>) {
       provideRouter([]),
       { provide: CatalogoApi, useValue: { categorias$: of([{ id: 1, nombre: 'Libros' }]), objetosTipicos$: of([]), crear } },
       { provide: FundacionesApi, useValue: { listado$: of([]) } },
+      { provide: EmpresasApi, useValue: { campanasActivas: () => of([]) } },
       { provide: AvisosService, useValue: avisos },
       { provide: SubidasService, useValue: {} },
       { provide: ConfigService, useValue: { maxImagenes: signal(5), tamanoMaximo: signal(5 * 1024 * 1024) } },

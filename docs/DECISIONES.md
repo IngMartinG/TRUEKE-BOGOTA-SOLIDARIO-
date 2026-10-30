@@ -50,6 +50,20 @@ Son reglas con pesos y motivos visibles para quien revisa, no un clasificador op
 Los roles siguen siendo Cliente, Administrador y SuperUsuario. Ser negocio, fundación o empresa es una capacidad de la cuenta
 (plan, verificación u organización), no un permiso.
 
+## D-017 — Empresas por invitación e informes como foto inmutable (2026-10-30)
+- La empresa es una organización a la que pertenecen cuentas normales (D-013), verificada por el SuperUsuario con el
+  certificado de la Cámara de Comercio. No tiene cobro en la plataforma: el servicio se acuerda por cotización.
+- Los miembros entran con un enlace de un solo uso que el Admin comparte por su cuenta. No se busca a nadie por correo, así la
+  API no revela qué cuentas existen ni comparte correos entre usuarios. Una cuenta pertenece a una sola empresa.
+- El impacto de una empresa sale de las publicaciones que sus miembros ligan a una campaña activa; el registro inmutable guarda
+  la campaña. Solo cuentan las entregas con doble confirmación (D-014).
+- Un informe lo emite un Administrador de la plataforma, no la empresa, y guarda una foto de los datos con su huella SHA-256.
+  El PDF y el CSV se generan siempre desde esa foto: dan las mismas cifras y no cambian si después cambian los factores.
+- La trazabilidad es anónima: un código por intercambio, sin personas, títulos ni coordenadas. La foto de la entrega es
+  opcional, privada para las dos partes y la moderación, y el informe solo dice si existe.
+- Los PDF se hacen con QuestPDF (licencia Community, gratis por debajo de USD 1 M de ingresos brutos anuales); al acercarse a
+  ese umbral hay que comprar la licencia o cambiar de librería.
+
 ## D-016 — Plan Negocio con vitrina pública y sello revisado por personas (2026-10-29)
 El plan Empresa se llama Negocio (solo en lo visible; los pagos no cambian). Su directorio y su vitrina son públicos, con solo
 datos del negocio. El sello "Negocio verificado" lo da un moderador tras revisar el NIT en el RUES; tener el NIT escrito no basta.

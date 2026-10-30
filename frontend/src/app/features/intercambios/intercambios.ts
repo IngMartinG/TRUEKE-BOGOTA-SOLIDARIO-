@@ -3,13 +3,15 @@ import { rxResource, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { filter, firstValueFrom, type Observable } from 'rxjs';
-import type { PublicacionDto, SolicitudDto } from '../../api/tipos';
+import type { EvidenciaEntregaDto, PublicacionDto, SolicitudDto } from '../../api/tipos';
 import { CatalogoApi } from '../../core/api/catalogo.api';
 import { CuentaApi } from '../../core/api/cuenta.api';
 import { IntercambiosApi } from '../../core/api/intercambios.api';
 import { AvisosService } from '../../core/avisos.service';
+import { ConfigService } from '../../core/config.service';
 import { mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
+import { SubidasService } from '../../core/subidas.service';
 import { TiempoRealService } from '../../core/tiempo-real.service';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Estrellas } from '../../shared/ui/estrellas';
@@ -101,10 +103,40 @@ const TIPOS_SOLICITUD = /^(Solicitud|Entrega|Intercambio|Calificacion)/;
     <!-- Confirmar antes de lo que no se puede deshacer o afecta a otras personas -->
     <app-modal [(abierto)]="confirmarAbierto" [titulo]="textoConfirmacion().titulo" [subtitulo]="textoConfirmacion().subtitulo">
       <p class="text-sm">{{ textoConfirmacion().cuerpo }}</p>
+      @if (accionConfirmar() === 'confirmar' && config.subidasHabilitadas()) {
+        <div class="campo mt-4">
+          <span class="etiqueta" id="evidencia-etiqueta">Foto de la entrega <span class="font-normal text-tenue">(opcional)</span></span>
+          <label class="flex cursor-pointer items-center gap-3 rounded-2xl border-2 border-dashed border-borde p-3 hover:border-bosque-300 focus-within:border-bosque-500">
+            <app-icono [nombre]="fotoEvidencia() ? 'check' : 'camara'" [class]="fotoEvidencia() ? 'text-bosque-600' : 'text-tenue'" />
+            <span class="text-sm">{{ subiendoEvidencia() ? 'Subiendo…' : fotoEvidencia() ? 'Foto lista. Toca para cambiarla.' : 'Toma o elige una foto del objeto entregado' }}</span>
+            <input type="file" class="sr-only" accept="image/jpeg,image/png,image/webp" aria-labelledby="evidencia-etiqueta"
+              aria-describedby="evidencia-ayuda" (change)="subirEvidencia($event)" />
+          </label>
+          <p id="evidencia-ayuda" class="ayuda">Solo la ven ustedes dos y el equipo de moderación. Le quitamos la ubicación y los datos de la cámara.</p>
+          @if (errorEvidencia()) {
+            <p class="text-sm text-tierra-700 dark:text-tierra-400" role="alert">{{ errorEvidencia() }}</p>
+          }
+        </div>
+      }
       <div pie class="flex justify-end gap-2 border-t border-borde p-4">
         <button type="button" class="btn btn-fantasma" (click)="confirmarAbierto.set(false)">Todavía no</button>
-        <button type="button" class="btn btn-primario" (click)="confirmarAccion()">{{ textoConfirmacion().boton }}</button>
+        <button type="button" class="btn btn-primario" [disabled]="subiendoEvidencia()" (click)="confirmarAccion()">{{ textoConfirmacion().boton }}</button>
       </div>
+    </app-modal>
+
+    <app-modal [(abierto)]="evidenciasAbierto" titulo="Fotos de la entrega" subtitulo="Solo las ven ustedes dos y el equipo de moderación.">
+      @if (evidencias().length) {
+        <ul class="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          @for (e of evidencias(); track e.id) {
+            <li>
+              <img [src]="e.url" [alt]="e.esMia ? 'Foto que adjuntaste' : 'Foto que adjuntó la otra persona'" class="aspect-square w-full rounded-2xl object-cover" loading="lazy" />
+              <p class="mt-1 text-xs text-tenue">{{ e.esMia ? 'Tu foto' : 'De la otra persona' }}</p>
+            </li>
+          }
+        </ul>
+      } @else {
+        <p class="text-sm text-tenue">Cargando…</p>
+      }
     </app-modal>
 
     <!-- Contraofertar: otro precio (Compra) u otros objetos de quien solicita (Trueke); en una venta que acepta trueke, cualquiera -->
@@ -265,6 +297,46 @@ export default class Intercambios {
   });
   private seleccionada: SolicitudDto | null = null;
 
+  // Foto de la entrega
+  protected readonly config = inject(ConfigService);
+  private readonly subidas = inject(SubidasService);
+  protected readonly fotoEvidencia = signal<string | null>(null);
+  protected readonly subiendoEvidencia = signal(false);
+  protected readonly errorEvidencia = signal<string | null>(null);
+  protected readonly evidenciasAbierto = signal(false);
+  protected readonly evidencias = signal<EvidenciaEntregaDto[]>([]);
+
+  protected async subirEvidencia(e: Event): Promise<void> {
+    const input = e.target as HTMLInputElement;
+    const archivo = input.files?.[0];
+    input.value = '';
+    if (!archivo) return;
+    const invalido = this.subidas.validar(archivo, 'FotoChat');
+    if (invalido) {
+      this.errorEvidencia.set(invalido);
+      return;
+    }
+    this.subiendoEvidencia.set(true);
+    this.errorEvidencia.set(null);
+    try {
+      this.fotoEvidencia.set(await this.subidas.subirTodo(archivo, 'FotoChat'));
+    } catch (err) {
+      this.errorEvidencia.set(mensajeDe(err));
+    } finally {
+      this.subiendoEvidencia.set(false);
+    }
+  }
+
+  private async verEvidencias(s: SolicitudDto): Promise<void> {
+    this.evidencias.set([]);
+    this.evidenciasAbierto.set(true);
+    try {
+      this.evidencias.set(await firstValueFrom(this.api.evidencias(s.id!)));
+    } catch {
+      this.evidenciasAbierto.set(false); // el interceptor ya mostró el error
+    }
+  }
+
   // Contraoferta
   private readonly catalogo = inject(CatalogoApi);
   private readonly cuenta = inject(CuentaApi);
@@ -366,7 +438,12 @@ export default class Intercambios {
       case 'aceptar':
       case 'confirmar':
         this.accionConfirmar.set(accion);
+        this.fotoEvidencia.set(null);
+        this.errorEvidencia.set(null);
         this.confirmarAbierto.set(true);
+        break;
+      case 'evidencias':
+        void this.verEvidencias(s);
         break;
       case 'cancelar':
         void this.correr(s, () => this.api.cancelar(s.id!), 'Solicitud retirada');
@@ -447,7 +524,7 @@ export default class Intercambios {
       await this.correr(s, () => this.api.aceptar(s.id!), '¡Contraoferta aceptada!', 'La publicación quedó reservada para ti. Coordinen la entrega por el chat.');
     else if (this.accionConfirmar() === 'aceptar')
       await this.correr(s, () => this.api.aceptar(s.id!), '¡Solicitud aceptada!', 'La publicación quedó reservada. Coordinen la entrega por el chat; si hay más interesados, quedan en lista de espera.');
-    else await this.correr(s, () => this.api.confirmarEntrega(s.id!), 'Entrega confirmada', 'Cuando la otra persona también confirme, ambos recibirán Eco-Puntos.');
+    else await this.correr(s, () => this.api.confirmarEntrega(s.id!, this.fotoEvidencia()), 'Entrega confirmada', 'Cuando la otra persona también confirme, ambos recibirán Eco-Puntos.');
   }
 
   protected async confirmarMotivo(): Promise<void> {

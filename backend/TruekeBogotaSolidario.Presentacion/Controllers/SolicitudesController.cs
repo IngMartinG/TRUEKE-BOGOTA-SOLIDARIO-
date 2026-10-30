@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.RateLimiting;
 using TruekeBogotaSolidario.Negocio.Dtos;
 using TruekeBogotaSolidario.Negocio.Servicios;
@@ -58,9 +59,19 @@ public sealed class SolicitudesController : ControllerBase
         return NoContent();
     }
 
-    /// <summary>Cada parte confirma que la entrega ocurrió. Con las dos confirmaciones queda Completada y se otorgan los Eco-Puntos.</summary>
+    /// <summary>
+    /// Cada parte confirma que la entrega ocurrió. Con las dos confirmaciones queda Completada y se otorgan los Eco-Puntos.
+    /// Cuerpo opcional: una foto de la entrega (subida como FotoChat) que solo ven las dos partes y la administración.
+    /// </summary>
     [HttpPost("{id:guid}/confirmar-entrega")]
-    public async Task<ActionResult<SolicitudDto>> ConfirmarEntrega(Guid id) => Ok(await _solicitudes.ConfirmarEntregaAsync(User.IdActual(), id));
+    public async Task<ActionResult<SolicitudDto>> ConfirmarEntrega(Guid id,
+        [FromBody(EmptyBodyBehavior = EmptyBodyBehavior.Allow)] ConfirmarEntregaRequest? r)
+        => Ok(await _solicitudes.ConfirmarEntregaAsync(User.IdActual(), id, r?.FotoEvidenciaUrl));
+
+    /// <summary>Fotos de la entrega (URLs firmadas de corta vida). Solo para las dos partes.</summary>
+    [HttpGet("{id:guid}/evidencias")]
+    public async Task<ActionResult<IReadOnlyList<EvidenciaEntregaDto>>> Evidencias(Guid id)
+        => Ok(await _solicitudes.EvidenciasAsync(User.IdActual(), id));
 
     /// <summary>El intercambio acordado no ocurrió (solo si nadie confirmó la entrega). La publicación vuelve a estar disponible.</summary>
     [HttpPost("{id:guid}/no-concretada")]

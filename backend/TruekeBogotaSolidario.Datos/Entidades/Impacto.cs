@@ -79,6 +79,7 @@ public class RegistroImpacto
         Version = factor.Version;
         MunicipioCodigo = objeto.MunicipioCodigo;
         Localidad = objeto.Localidad;
+        CampanaId = objeto.CampanaId;
         FechaUtc = fechaUtc;
     }
 
@@ -100,5 +101,7 @@ public class RegistroImpacto
     public string Version { get; private set; }
     public string MunicipioCodigo { get; private set; }
     public string Localidad { get; private set; }
+    /// <summary>Campaña de empresa con que se publicó el objeto (entra en sus informes).</summary>
+    public Guid? CampanaId { get; private set; }
     public DateTime FechaUtc { get; private set; }
 }

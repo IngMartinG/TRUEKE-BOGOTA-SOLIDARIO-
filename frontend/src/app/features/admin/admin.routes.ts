@@ -18,6 +18,7 @@ export default [
       { path: 'publicaciones', title: 'Moderación · Publicaciones en revisión', loadComponent: () => import('./publicaciones-pendientes') },
       { path: 'fotos', title: 'Moderación · Fotos de perfil', loadComponent: () => import('./fotos') },
       { path: 'negocios', title: 'Moderación · Negocios', loadComponent: () => import('./negocios') },
+      { path: 'empresas', title: 'Administración · Empresas e informes', loadComponent: () => import('./empresas') },
       { path: 'verificaciones', title: 'Moderación · Verificaciones', loadComponent: () => import('./verificaciones') },
       { path: 'pagos', title: 'Moderación · Pagos', loadComponent: () => import('./pagos') },
       { path: 'facturas', title: 'Administración · Facturas', loadComponent: () => import('./facturas') },

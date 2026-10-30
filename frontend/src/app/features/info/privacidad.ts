@@ -58,6 +58,8 @@ export default class Privacidad {
           'Datos de facturación, si los registras: tipo y número de documento, nombre o razón social, correo y dirección.',
           'Registro de vendedor, solo si vendes en modo Compra y venta: nombre o razón social, tipo y número de documento, dirección de notificaciones, municipio y teléfono. El documento, la dirección y el teléfono se guardan cifrados y nunca se muestran a otras personas de la comunidad.',
           'Perfil de fundación, solo si tu cuenta representa a una entidad sin ánimo de lucro y pide la verificación: razón social, NIT, descripción, lo que necesita y el certificado de existencia y representación legal de la Cámara de Comercio. La razón social, la descripción, lo que necesita y, si la fundación lo elige, el NIT se muestran en su página pública; el certificado no.',
+          'Datos de empresa, solo si tu cuenta registra una empresa o se une a una por invitación: razón social, NIT y certificado de existencia y representación legal de la Cámara de Comercio, quiénes son sus miembros y sus campañas. Nada de esto es público: lo ven los miembros de la empresa y el equipo de Trueke.',
+          'Fotos de la entrega, solo si decides adjuntar una al confirmar que un objeto cambió de manos: les quitamos la ubicación y los datos ocultos, quedan en un almacenamiento privado y solo las ven las dos partes y el equipo de moderación. Los informes de impacto de una empresa solo dicen si una entrega tiene foto, nunca la muestran.',
           'Datos técnicos: dirección IP, tipo de dispositivo y registros de seguridad (inicios de sesión, cambios de contraseña), para proteger tu cuenta y prevenir fraudes.',
         ],
       },
@@ -81,7 +83,7 @@ export default class Privacidad {
         parrafos: [
           'La foto de perfil donde se ve tu cara y la imagen de tu documento de identidad para verificar la cuenta pueden considerarse datos sensibles. Su entrega es facultativa: no estás obligado a autorizar su tratamiento, y sin ellos puedes explorar el catálogo.',
           'La foto de perfil se pide para publicar, solicitar, chatear y pagar, para que la comunidad sepa con quién intercambia. Antes de publicarla le quitamos la ubicación y los datos ocultos (EXIF). La imagen del documento se guarda en un almacenamiento privado y se elimina en cuanto se resuelve la verificación.',
-          'El certificado de existencia de una fundación no es un dato sensible, pero puede incluir el nombre y el documento de su representante legal: también se guarda en un almacenamiento privado, solo lo ve el SuperUsuario que revisa la solicitud (con verificación en dos pasos) y se elimina en cuanto la aprueba o la rechaza.',
+          'El certificado de existencia de una fundación o de una empresa no es un dato sensible, pero puede incluir el nombre y el documento de su representante legal: también se guarda en un almacenamiento privado, solo lo ve el SuperUsuario que revisa la solicitud (con verificación en dos pasos) y se elimina en cuanto la aprueba o la rechaza.',
         ],
       },
       {

@@ -65,9 +65,9 @@ public sealed class PublicacionService : IPublicacionService
         IOptions<UrlsOpciones> urls, TimeProvider reloj, INotificador notificador, IAlmacenArchivos almacen, IRegistroVistas vistas,
         ICalificacionRepository calificaciones, IPresencia presencia, ISolicitudService truekes, ISesionModeracion sesionModeracion,
         ITransaccionRepository transacciones, IFundacionService fundaciones, IModeracionPublicacionesService moderacion,
-        IImpactoRepository impacto)
+        IImpactoRepository impacto, IEmpresaService empresas)
     {
-        _impacto = impacto;
+        _impacto = impacto; _empresas = empresas;
         _sesionModeracion = sesionModeracion; _transacciones = transacciones; _fundaciones = fundaciones; _moderacion = moderacion;
         _pubs = pubs; _usuarios = usuarios; _categorias = categorias; _solicitudes = solicitudes; _favoritos = favoritos;
         _estadisticas = estadisticas; _uow = uow; _urls = urls.Value; _reloj = reloj; _notificador = notificador; _almacen = almacen;
@@ -79,6 +79,7 @@ public sealed class PublicacionService : IPublicacionService
     private readonly ISesionModeracion _sesionModeracion;
     private readonly ITransaccionRepository _transacciones;
     private readonly IFundacionService _fundaciones;
+    private readonly IEmpresaService _empresas;
     private readonly IModeracionPublicacionesService _moderacion;
     private readonly IImpactoRepository _impacto;
 
@@ -158,6 +159,11 @@ public sealed class PublicacionService : IPublicacionService
         // "Tengo esto": la donación queda ligada a la necesidad y, al entregársela a la fundación, suma a su progreso.
         if (r.Modo == ModoDto.Donacion && r.ParaNecesidadId is { } paraNecesidad && await _fundaciones.NecesidadAbiertaAsync(paraNecesidad))
             pub.DestinarANecesidad(paraNecesidad);
+        if (r.CampanaId is { } campana)
+        {
+            await _empresas.ExigirCampanaParaPublicarAsync(actorId, campana);
+            pub.LigarACampana(campana);
+        }
         var enRevision = await _moderacion.EvaluarAsync(pub, actor, esNueva: true); // las de riesgo esperan a un moderador
         _pubs.Agregar(pub);
         await _uow.GuardarCambiosAsync();
@@ -191,6 +197,9 @@ public sealed class PublicacionService : IPublicacionService
         var imagenes = await ValidarImagenesAsync(actorId, r.Imagenes ?? new List<string>(), p.Imagenes.Select(i => i.Url));
         var antes = p.EstadoModeracion;
         p.Editar(Datos(r, categoria, actor, imagenes), ahora);
+        // La campaña que ya tenía se conserva aunque haya terminado; cambiarla exige una activa de su empresa.
+        if (r.CampanaId is { } campana && campana != p.CampanaId) await _empresas.ExigirCampanaParaPublicarAsync(actorId, campana);
+        p.LigarACampana(r.CampanaId);
         // Un cambio de texto puede volverla de riesgo; una rechazada, al corregirla, vuelve a la fila.
         var enRevision = await _moderacion.EvaluarAsync(p, actor, esNueva: false);
         await _uow.GuardarCambiosAsync(); // RowVersion: si justo llegó una solicitud, 409

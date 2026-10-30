@@ -32,6 +32,11 @@ public class TruekeDbContext : DbContext
     public DbSet<Deseo> Deseos => Set<Deseo>();
     public DbSet<Fundacion> Fundaciones => Set<Fundacion>();
     public DbSet<NecesidadFundacion> NecesidadesFundacion => Set<NecesidadFundacion>();
+    public DbSet<Empresa> Empresas => Set<Empresa>();
+    public DbSet<MiembroEmpresa> MiembrosEmpresa => Set<MiembroEmpresa>();
+    public DbSet<Campana> Campanas => Set<Campana>();
+    public DbSet<InformeImpacto> InformesImpacto => Set<InformeImpacto>();
+    public DbSet<EvidenciaEntrega> EvidenciasEntrega => Set<EvidenciaEntrega>();
     public DbSet<Calificacion> Calificaciones => Set<Calificacion>();
     public DbSet<Factura> Facturas => Set<Factura>();
     public DbSet<Pqr> Pqrs => Set<Pqr>();
@@ -145,6 +150,8 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => x.EstadoModeracion);
             // Sin llave foránea: la fundación puede borrar la necesidad y la donación sigue igual.
             e.HasIndex(x => x.NecesidadFundacionId);
+            e.HasOne<Campana>().WithMany().HasForeignKey(x => x.CampanaId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.CampanaId);
             e.Ignore(x => x.EsVisible);
             e.Property(x => x.PrecioReferenciaCop).HasPrecision(18, 2);
             e.Property(x => x.PesoEstimadoKg).HasPrecision(8, 2);
@@ -478,6 +485,73 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => new { x.MunicipioCodigo, x.Localidad });
             e.HasIndex(x => x.OferenteId);
             e.HasIndex(x => x.ReceptorId);
+            e.HasOne<Campana>().WithMany().HasForeignKey(x => x.CampanaId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.CampanaId, x.FechaUtc });
+        });
+
+        mb.Entity<Empresa>(e =>
+        {
+            e.ToTable("Empresas");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.RazonSocial).HasMaxLength(150).IsRequired();
+            e.Property(x => x.Nit).HasMaxLength(20).IsUnicode(false).IsRequired();
+            e.Property(x => x.Estado).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.CertificadoUrl).HasMaxLength(500);
+            e.Property(x => x.MotivoDecision).HasMaxLength(300);
+            e.Ignore(x => x.EstaAprobada);
+            e.HasIndex(x => x.Estado);
+            e.HasIndex(x => x.Nit);
+        });
+
+        mb.Entity<MiembroEmpresa>(e =>
+        {
+            e.ToTable("MiembrosEmpresa");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Rol).HasConversion<string>().HasMaxLength(20);
+            e.Property(x => x.CodigoHash).HasMaxLength(64).IsUnicode(false);
+            e.Ignore(x => x.EsActivo);
+            e.Ignore(x => x.EsAdmin);
+            e.HasOne<Empresa>().WithMany().HasForeignKey(x => x.EmpresaId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Cascade);
+            e.HasIndex(x => x.UsuarioId).IsUnique(); // una cuenta, una empresa (las invitaciones tienen UsuarioId null)
+            e.HasIndex(x => x.CodigoHash).IsUnique();
+            e.HasIndex(x => x.EmpresaId);
+        });
+
+        mb.Entity<Campana>(e =>
+        {
+            e.ToTable("Campanas");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Nombre).HasMaxLength(Campana.LongitudNombre).IsRequired();
+            e.HasOne<Empresa>().WithMany().HasForeignKey(x => x.EmpresaId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => x.EmpresaId);
+        });
+
+        mb.Entity<InformeImpacto>(e =>
+        {
+            e.ToTable("InformesImpacto");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.Versiones).HasMaxLength(200).IsRequired();
+            e.Property(x => x.Contenido).IsRequired();
+            e.Property(x => x.Huella).HasMaxLength(64).IsUnicode(false).IsRequired();
+            e.HasOne<Empresa>().WithMany().HasForeignKey(x => x.EmpresaId).OnDelete(DeleteBehavior.Restrict);
+            e.HasOne<Campana>().WithMany().HasForeignKey(x => x.CampanaId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.EmpresaId, x.EmitidoUtc });
+        });
+
+        mb.Entity<EvidenciaEntrega>(e =>
+        {
+            e.ToTable("EvidenciasEntrega");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.FotoUrl).HasMaxLength(500).IsRequired();
+            e.HasOne<Solicitud>().WithMany().HasForeignKey(x => x.SolicitudId).OnDelete(DeleteBehavior.Cascade);
+            e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.UsuarioId).OnDelete(DeleteBehavior.Restrict);
+            e.HasIndex(x => new { x.SolicitudId, x.UsuarioId }).IsUnique(); // una foto por persona y entrega
         });
 
         mb.Entity<AuditoriaEvento>(e =>

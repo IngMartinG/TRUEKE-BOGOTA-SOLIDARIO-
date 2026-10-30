@@ -8,7 +8,7 @@ import { Icono } from '../../shared/ui/icono';
 import { ImagenPublicacion } from '../../shared/ui/imagen-publicacion';
 import { InsigniaModo } from '../../shared/ui/insignia-modo';
 
-export type AccionSolicitud = 'aceptar' | 'contraofertar' | 'rechazar' | 'cancelar' | 'confirmar' | 'noConcretada' | 'calificar';
+export type AccionSolicitud = 'aceptar' | 'contraofertar' | 'rechazar' | 'cancelar' | 'confirmar' | 'noConcretada' | 'calificar' | 'evidencias';
 
 @Component({
   selector: 'app-tarjeta-solicitud',
@@ -216,6 +216,7 @@ export class TarjetaSolicitud {
       lista.push({ accion: 'noConcretada', texto: 'No se concretó', icono: 'alerta', clase: 'btn-fantasma' });
       lista.push({ accion: 'confirmar', texto: 'Confirmar entrega', icono: 'apreton', clase: 'btn-primario' });
     }
+    if (s.evidencias) lista.push({ accion: 'evidencias', texto: s.evidencias === 1 ? 'Foto de la entrega' : `Fotos de la entrega (${s.evidencias})`, icono: 'camara', clase: 'btn-fantasma' });
     if (s.puedoCalificar) lista.push({ accion: 'calificar', texto: 'Calificar', icono: 'estrella', clase: 'btn-sol' });
     return lista;
   });

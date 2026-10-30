@@ -97,6 +97,7 @@ const paginas: Routes = [
       { path: 'facturacion', title: 'Pagos y facturas', loadComponent: () => import('./features/cuenta/facturacion') },
       { path: 'vendedor', title: 'Registro de vendedor', loadComponent: () => import('./features/cuenta/vendedor') },
       { path: 'fundacion', title: 'Fundación', loadComponent: () => import('./features/cuenta/fundacion') },
+      { path: 'empresa', title: 'Empresa', loadComponent: () => import('./features/cuenta/empresa') },
       { path: 'soporte', title: 'Soporte y PQR', loadComponent: () => import('./features/cuenta/soporte') },
       { path: 'reportes', title: 'Reportes sobre ti', loadComponent: () => import('./features/cuenta/reportes') },
       { path: 'avisos', title: 'Avisos y notificaciones', loadComponent: () => import('./features/cuenta/avisos') },

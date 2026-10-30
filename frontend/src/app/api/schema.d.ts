@@ -1609,6 +1609,355 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/empresas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: {
+                    estado?: components["schemas"]["EstadoEmpresaDto"];
+                };
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EmpresaAdminDto"][];
+                        "application/json": components["schemas"]["EmpresaAdminDto"][];
+                        "text/json": components["schemas"]["EmpresaAdminDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/empresas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EmpresaAdminDetalleDto"];
+                        "application/json": components["schemas"]["EmpresaAdminDetalleDto"];
+                        "text/json": components["schemas"]["EmpresaAdminDetalleDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/empresas/{id}/aprobar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/empresas/{id}/rechazar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MotivoRequest"];
+                    "text/json": components["schemas"]["MotivoRequest"];
+                    "application/*+json": components["schemas"]["MotivoRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/empresas/{id}/retirar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MotivoRequest"];
+                    "text/json": components["schemas"]["MotivoRequest"];
+                    "application/*+json": components["schemas"]["MotivoRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/empresas/{id}/informes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["EmitirInformeRequest"];
+                    "text/json": components["schemas"]["EmitirInformeRequest"];
+                    "application/*+json": components["schemas"]["EmitirInformeRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InformeImpactoDto"];
+                        "application/json": components["schemas"]["InformeImpactoDto"];
+                        "text/json": components["schemas"]["InformeImpactoDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/empresas/informes/{informeId}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    informeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/empresas/informes/{informeId}/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    informeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/solicitudes/{solicitudId}/evidencias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    solicitudId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EvidenciaEntregaDto"][];
+                        "application/json": components["schemas"]["EvidenciaEntregaDto"][];
+                        "text/json": components["schemas"]["EvidenciaEntregaDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/archivos/subidas": {
         parameters: {
             query?: never;
@@ -3466,6 +3815,499 @@ export interface paths {
                         "application/json": components["schemas"]["CotizacionDto"];
                         "text/json": components["schemas"]["CotizacionDto"];
                     };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/empresas/mia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MiEmpresaDto"];
+                        "application/json": components["schemas"]["MiEmpresaDto"];
+                        "text/json": components["schemas"]["MiEmpresaDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["SolicitarEmpresaRequest"];
+                    "text/json": components["schemas"]["SolicitarEmpresaRequest"];
+                    "application/*+json": components["schemas"]["SolicitarEmpresaRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MiEmpresaDto"];
+                        "application/json": components["schemas"]["MiEmpresaDto"];
+                        "text/json": components["schemas"]["MiEmpresaDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/empresas/mia/invitaciones": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CrearInvitacionEmpresaRequest"];
+                    "text/json": components["schemas"]["CrearInvitacionEmpresaRequest"];
+                    "application/*+json": components["schemas"]["CrearInvitacionEmpresaRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["InvitacionCreadaDto"];
+                        "application/json": components["schemas"]["InvitacionCreadaDto"];
+                        "text/json": components["schemas"]["InvitacionCreadaDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/empresas/mia/invitaciones/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/empresas/unirse": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["UnirseEmpresaRequest"];
+                    "text/json": components["schemas"]["UnirseEmpresaRequest"];
+                    "application/*+json": components["schemas"]["UnirseEmpresaRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MiEmpresaDto"];
+                        "application/json": components["schemas"]["MiEmpresaDto"];
+                        "text/json": components["schemas"]["MiEmpresaDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/empresas/mia/miembros/{id}/rol": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["CambiarRolMiembroRequest"];
+                    "text/json": components["schemas"]["CambiarRolMiembroRequest"];
+                    "application/*+json": components["schemas"]["CambiarRolMiembroRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MiEmpresaDto"];
+                        "application/json": components["schemas"]["MiEmpresaDto"];
+                        "text/json": components["schemas"]["MiEmpresaDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/empresas/mia/miembros/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/empresas/mia/membresia": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/empresas/mia/campanas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["GuardarCampanaRequest"];
+                    "text/json": components["schemas"]["GuardarCampanaRequest"];
+                    "application/*+json": components["schemas"]["GuardarCampanaRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CampanaDto"];
+                        "application/json": components["schemas"]["CampanaDto"];
+                        "text/json": components["schemas"]["CampanaDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/empresas/mia/campanas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["GuardarCampanaRequest"];
+                    "text/json": components["schemas"]["GuardarCampanaRequest"];
+                    "application/*+json": components["schemas"]["GuardarCampanaRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CampanaDto"];
+                        "application/json": components["schemas"]["CampanaDto"];
+                        "text/json": components["schemas"]["CampanaDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/empresas/mia/campanas-activas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["CampanaDto"][];
+                        "application/json": components["schemas"]["CampanaDto"][];
+                        "text/json": components["schemas"]["CampanaDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/empresas/mia/informes/{id}/pdf": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/empresas/mia/informes/{id}/csv": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
                 };
             };
         };
@@ -5639,7 +6481,13 @@ export interface paths {
                 };
                 cookie?: never;
             };
-            requestBody?: never;
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ConfirmarEntregaRequest"];
+                    "text/json": components["schemas"]["ConfirmarEntregaRequest"];
+                    "application/*+json": components["schemas"]["ConfirmarEntregaRequest"];
+                };
+            };
             responses: {
                 /** @description OK */
                 200: {
@@ -5654,6 +6502,45 @@ export interface paths {
                 };
             };
         };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/solicitudes/{id}/evidencias": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EvidenciaEntregaDto"][];
+                        "application/json": components["schemas"]["EvidenciaEntregaDto"][];
+                        "text/json": components["schemas"]["EvidenciaEntregaDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -6639,8 +7526,29 @@ export interface components {
         CambiarFotoRequest: {
             url: string;
         };
+        CambiarRolMiembroRequest: {
+            rol?: components["schemas"]["RolMiembroEmpresaDto"];
+        };
         CambiarRolRequest: {
             rol?: components["schemas"]["RolDto"];
+        };
+        CampanaDto: {
+            /** Format: uuid */
+            id?: string;
+            nombre?: string;
+            /** Format: date */
+            inicio?: string;
+            /** Format: date */
+            fin?: string;
+            activa?: boolean;
+            /** Format: int32 */
+            publicaciones?: number;
+            /** Format: int32 */
+            objetos?: number;
+            /** Format: double */
+            kg?: number;
+            /** Format: double */
+            kgCo2?: number;
         };
         CancelarPublicacionRequest: {
             motivo?: string | null;
@@ -6732,6 +7640,9 @@ export interface components {
             donacionUrl?: string | null;
             asistenteIa?: boolean;
         };
+        ConfirmarEntregaRequest: {
+            fotoEvidenciaUrl?: string | null;
+        };
         ConfirmarIdentidadRequest: {
             clave?: string | null;
             googleIdToken?: string | null;
@@ -6804,6 +7715,9 @@ export interface components {
             motivo?: components["schemas"]["MotivoDenunciaDto"];
             detalle?: string | null;
         };
+        CrearInvitacionEmpresaRequest: {
+            rol?: components["schemas"]["RolMiembroEmpresaDto"];
+        };
         CrearPqrPublicaRequest: {
             nombre: string;
             /** Format: email */
@@ -6842,6 +7756,8 @@ export interface components {
             material?: components["schemas"]["MaterialDto"];
             /** Format: uuid */
             paraNecesidadId?: string | null;
+            /** Format: uuid */
+            campanaId?: string | null;
         };
         CrearSolicitudRequest: {
             /** Format: uuid */
@@ -7039,6 +7955,36 @@ export interface components {
             numeroDian: string;
             cufe: string;
         };
+        EmitirInformeRequest: {
+            /** Format: uuid */
+            campanaId?: string | null;
+            /** Format: date */
+            desde?: string;
+            /** Format: date */
+            hasta?: string;
+        };
+        EmpresaAdminDetalleDto: {
+            empresa?: components["schemas"]["EmpresaAdminDto"];
+            campanas?: components["schemas"]["CampanaDto"][];
+            informes?: components["schemas"]["InformeImpactoDto"][];
+        };
+        EmpresaAdminDto: {
+            /** Format: uuid */
+            id?: string;
+            razonSocial?: string;
+            nit?: string;
+            estado?: components["schemas"]["EstadoEmpresaDto"];
+            certificadoUrl?: string | null;
+            motivo?: string | null;
+            /** Format: date-time */
+            fechaSolicitudUtc?: string;
+            /** Format: date-time */
+            fechaDecisionUtc?: string | null;
+            solicitante?: string;
+            correoSolicitante?: string | null;
+            /** Format: int32 */
+            miembros?: number;
+        };
         EnlaceAsistenteDto: {
             texto?: string;
             ruta?: string;
@@ -7087,6 +8033,8 @@ export interface components {
         /** @enum {string} */
         EstadoDenunciaDto: "Pendiente" | "Resuelta" | "Descartada";
         /** @enum {string} */
+        EstadoEmpresaDto: "Pendiente" | "Aprobada" | "Rechazada" | "Retirada";
+        /** @enum {string} */
         EstadoFacturaDto: "Pendiente" | "Emitida" | "Anulada" | "Reemplazada";
         /** @enum {string} */
         EstadoFundacionDto: "Pendiente" | "Aprobada" | "Rechazada" | "Retirada";
@@ -7096,6 +8044,14 @@ export interface components {
         EstadoPagoDto: "Pendiente" | "Aprobado" | "Rechazado" | "Expirado" | "RequiereRevision" | "Reembolsado";
         /** @enum {string} */
         EstadoPqrDto: "Abierta" | "Respondida" | "EnTramite";
+        EvidenciaEntregaDto: {
+            /** Format: uuid */
+            id?: string;
+            url?: string;
+            esMia?: boolean;
+            /** Format: date-time */
+            fechaUtc?: string;
+        };
         FactorImpactoDto: {
             material?: string;
             /** Format: double */
@@ -7286,6 +8242,13 @@ export interface components {
             soloVerificados?: boolean;
             alertas?: boolean;
         };
+        GuardarCampanaRequest: {
+            nombre: string;
+            /** Format: date */
+            inicio?: string;
+            /** Format: date */
+            fin?: string;
+        };
         GuardarDeseoRequest: {
             texto: string;
             /** Format: int32 */
@@ -7363,6 +8326,21 @@ export interface components {
             /** Format: double */
             kgCo2Evitado?: number;
         };
+        InformeImpactoDto: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            campanaId?: string | null;
+            campana?: string | null;
+            /** Format: date */
+            desde?: string;
+            /** Format: date */
+            hasta?: string;
+            /** Format: date-time */
+            emitidoUtc?: string;
+            versiones?: string;
+            huella?: string;
+        };
         IngresoConceptoDto: {
             concepto?: string;
             /** Format: int64 */
@@ -7422,6 +8400,14 @@ export interface components {
             /** Format: int32 */
             puntosAUsar?: number;
         };
+        InvitacionCreadaDto: {
+            /** Format: uuid */
+            id?: string;
+            codigo?: string;
+            rol?: components["schemas"]["RolMiembroEmpresaDto"];
+            /** Format: date-time */
+            expiraUtc?: string;
+        };
         InvitacionDto: {
             codigo?: string;
             /** Format: int32 */
@@ -7434,6 +8420,16 @@ export interface components {
             puntosPorInvitacion?: number;
             /** Format: int32 */
             diasCiclo?: number;
+        };
+        InvitacionEmpresaDto: {
+            /** Format: uuid */
+            id?: string;
+            rol?: components["schemas"]["RolMiembroEmpresaDto"];
+            /** Format: date-time */
+            fechaUtc?: string;
+            /** Format: date-time */
+            expiraUtc?: string | null;
+            vencida?: boolean;
         };
         LegalPublicoDto: {
             versionPoliticaDatos?: string;
@@ -7497,6 +8493,23 @@ export interface components {
             /** Format: date-time */
             fechaUtc?: string;
         };
+        MiEmpresaDto: {
+            /** Format: uuid */
+            id?: string;
+            estado?: components["schemas"]["EstadoEmpresaDto"];
+            razonSocial?: string;
+            nit?: string;
+            motivo?: string | null;
+            /** Format: date-time */
+            fechaSolicitudUtc?: string;
+            /** Format: date-time */
+            fechaDecisionUtc?: string | null;
+            miRol?: components["schemas"]["RolMiembroEmpresaDto"];
+            miembros?: components["schemas"]["MiembroEmpresaDto"][];
+            invitaciones?: components["schemas"]["InvitacionEmpresaDto"][];
+            campanas?: components["schemas"]["CampanaDto"][];
+            informes?: components["schemas"]["InformeImpactoDto"][];
+        };
         MiFundacionDto: {
             estado?: components["schemas"]["EstadoFundacionDto"];
             razonSocial?: string;
@@ -7509,6 +8522,18 @@ export interface components {
             /** Format: date-time */
             fechaDecisionUtc?: string | null;
             necesidades?: components["schemas"]["NecesidadDto"][];
+        };
+        MiembroEmpresaDto: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            usuarioId?: string;
+            nombre?: string;
+            fotoUrl?: string | null;
+            rol?: components["schemas"]["RolMiembroEmpresaDto"];
+            /** Format: date-time */
+            fechaIngresoUtc?: string | null;
+            soyYo?: boolean;
         };
         /** @enum {string} */
         ModoDto: "Trueke" | "Compra" | "Donacion";
@@ -8012,6 +9037,8 @@ export interface components {
             /** Format: double */
             pesoEstimadoKg?: number | null;
             material?: string | null;
+            /** Format: uuid */
+            campanaId?: string | null;
         };
         PublicacionDtoPaginaDto: {
             items?: components["schemas"]["PublicacionDto"][];
@@ -8109,6 +9136,8 @@ export interface components {
         /** @enum {string} */
         RolDto: "Cliente" | "Administrador" | "SuperUsuario";
         /** @enum {string} */
+        RolMiembroEmpresaDto: "Admin" | "Miembro";
+        /** @enum {string} */
         RolTurnoAsistenteDto: "Usuario" | "Asistente";
         SenalesConfianzaDto: {
             correoVerificado?: boolean;
@@ -8129,6 +9158,12 @@ export interface components {
             /** Format: date-time */
             expiraUtc?: string;
             usuario?: components["schemas"]["UsuarioDto"];
+        };
+        SolicitarEmpresaRequest: {
+            razonSocial: string;
+            nit: string;
+            certificadoUrl: string;
+            declaroRepresentacion?: boolean;
         };
         SolicitarFundacionRequest: {
             razonSocial: string;
@@ -8182,6 +9217,8 @@ export interface components {
             /** Format: int32 */
             contraofertasRestantes?: number;
             publicacionAceptaTrueke?: boolean;
+            /** Format: int32 */
+            evidencias?: number;
         };
         SubidaArchivoDto: {
             urlSubida?: string;
@@ -8228,6 +9265,9 @@ export interface components {
         TurnoAsistenteRequest: {
             rol?: components["schemas"]["RolTurnoAsistenteDto"];
             texto: string;
+        };
+        UnirseEmpresaRequest: {
+            codigo: string;
         };
         UsuarioAdminDto: {
             /** Format: uuid */
@@ -8363,7 +9403,9 @@ export type CalificacionExportDto = components['schemas']['CalificacionExportDto
 export type CalificarRequest = components['schemas']['CalificarRequest'];
 export type CambiarClaveRequest = components['schemas']['CambiarClaveRequest'];
 export type CambiarFotoRequest = components['schemas']['CambiarFotoRequest'];
+export type CambiarRolMiembroRequest = components['schemas']['CambiarRolMiembroRequest'];
 export type CambiarRolRequest = components['schemas']['CambiarRolRequest'];
+export type CampanaDto = components['schemas']['CampanaDto'];
 export type CancelarPublicacionRequest = components['schemas']['CancelarPublicacionRequest'];
 export type CategoriaDto = components['schemas']['CategoriaDto'];
 export type CodigoDosFactoresRequest = components['schemas']['CodigoDosFactoresRequest'];
@@ -8377,6 +9419,7 @@ export type ConceptoPagoDto = components['schemas']['ConceptoPagoDto'];
 export type CondicionDto = components['schemas']['CondicionDto'];
 export type ConfiguracionDosFactoresDto = components['schemas']['ConfiguracionDosFactoresDto'];
 export type ConfiguracionPublicaDto = components['schemas']['ConfiguracionPublicaDto'];
+export type ConfirmarEntregaRequest = components['schemas']['ConfirmarEntregaRequest'];
 export type ConfirmarIdentidadRequest = components['schemas']['ConfirmarIdentidadRequest'];
 export type ConsultarPqrRequest = components['schemas']['ConsultarPqrRequest'];
 export type ContraofertaRequest = components['schemas']['ContraofertaRequest'];
@@ -8386,6 +9429,7 @@ export type CotizacionDto = components['schemas']['CotizacionDto'];
 export type CrearApelacionRequest = components['schemas']['CrearApelacionRequest'];
 export type CrearComentarioRequest = components['schemas']['CrearComentarioRequest'];
 export type CrearDenunciaRequest = components['schemas']['CrearDenunciaRequest'];
+export type CrearInvitacionEmpresaRequest = components['schemas']['CrearInvitacionEmpresaRequest'];
 export type CrearPqrPublicaRequest = components['schemas']['CrearPqrPublicaRequest'];
 export type CrearPqrRequest = components['schemas']['CrearPqrRequest'];
 export type CrearPublicacionRequest = components['schemas']['CrearPublicacionRequest'];
@@ -8407,17 +9451,22 @@ export type EcoPuntosResumenDto = components['schemas']['EcoPuntosResumenDto'];
 export type EditarFundacionRequest = components['schemas']['EditarFundacionRequest'];
 export type EliminarCuentaRequest = components['schemas']['EliminarCuentaRequest'];
 export type EmitirFacturaRequest = components['schemas']['EmitirFacturaRequest'];
+export type EmitirInformeRequest = components['schemas']['EmitirInformeRequest'];
+export type EmpresaAdminDetalleDto = components['schemas']['EmpresaAdminDetalleDto'];
+export type EmpresaAdminDto = components['schemas']['EmpresaAdminDto'];
 export type EnlaceAsistenteDto = components['schemas']['EnlaceAsistenteDto'];
 export type EnviarMensajeRequest = components['schemas']['EnviarMensajeRequest'];
 export type EstadisticasCuentaDto = components['schemas']['EstadisticasCuentaDto'];
 export type EstadisticasPublicacionDto = components['schemas']['EstadisticasPublicacionDto'];
 export type EstadoApelacionDto = components['schemas']['EstadoApelacionDto'];
 export type EstadoDenunciaDto = components['schemas']['EstadoDenunciaDto'];
+export type EstadoEmpresaDto = components['schemas']['EstadoEmpresaDto'];
 export type EstadoFacturaDto = components['schemas']['EstadoFacturaDto'];
 export type EstadoFundacionDto = components['schemas']['EstadoFundacionDto'];
 export type EstadoMensajeDto = components['schemas']['EstadoMensajeDto'];
 export type EstadoPagoDto = components['schemas']['EstadoPagoDto'];
 export type EstadoPqrDto = components['schemas']['EstadoPqrDto'];
+export type EvidenciaEntregaDto = components['schemas']['EvidenciaEntregaDto'];
 export type FactorImpactoDto = components['schemas']['FactorImpactoDto'];
 export type FacturaAdminDto = components['schemas']['FacturaAdminDto'];
 export type FacturaAdminDtoPaginaDto = components['schemas']['FacturaAdminDtoPaginaDto'];
@@ -8431,17 +9480,21 @@ export type FundacionResumenDto = components['schemas']['FundacionResumenDto'];
 export type GananciaDto = components['schemas']['GananciaDto'];
 export type GoogleLoginRequest = components['schemas']['GoogleLoginRequest'];
 export type GuardarBusquedaRequest = components['schemas']['GuardarBusquedaRequest'];
+export type GuardarCampanaRequest = components['schemas']['GuardarCampanaRequest'];
 export type GuardarDeseoRequest = components['schemas']['GuardarDeseoRequest'];
 export type GuardarNecesidadRequest = components['schemas']['GuardarNecesidadRequest'];
 export type ImpactoDto = components['schemas']['ImpactoDto'];
 export type ImpactoLocalidadDto = components['schemas']['ImpactoLocalidadDto'];
 export type ImpactoMaterialDto = components['schemas']['ImpactoMaterialDto'];
 export type ImpactoPersonalDto = components['schemas']['ImpactoPersonalDto'];
+export type InformeImpactoDto = components['schemas']['InformeImpactoDto'];
 export type IngresoConceptoDto = components['schemas']['IngresoConceptoDto'];
 export type IngresoMesDto = components['schemas']['IngresoMesDto'];
 export type IngresosDto = components['schemas']['IngresosDto'];
 export type IniciarPagoRequest = components['schemas']['IniciarPagoRequest'];
+export type InvitacionCreadaDto = components['schemas']['InvitacionCreadaDto'];
 export type InvitacionDto = components['schemas']['InvitacionDto'];
+export type InvitacionEmpresaDto = components['schemas']['InvitacionEmpresaDto'];
 export type LegalPublicoDto = components['schemas']['LegalPublicoDto'];
 export type LoginRequest = components['schemas']['LoginRequest'];
 export type LogroDto = components['schemas']['LogroDto'];
@@ -8449,7 +9502,9 @@ export type MaterialDto = components['schemas']['MaterialDto'];
 export type MensajeChatDto = components['schemas']['MensajeChatDto'];
 export type MensajeCitadoDto = components['schemas']['MensajeCitadoDto'];
 export type MensajeExportDto = components['schemas']['MensajeExportDto'];
+export type MiEmpresaDto = components['schemas']['MiEmpresaDto'];
 export type MiFundacionDto = components['schemas']['MiFundacionDto'];
+export type MiembroEmpresaDto = components['schemas']['MiembroEmpresaDto'];
 export type ModoDto = components['schemas']['ModoDto'];
 export type MotivoDenunciaDto = components['schemas']['MotivoDenunciaDto'];
 export type MotivoRequest = components['schemas']['MotivoRequest'];
@@ -8502,9 +9557,11 @@ export type ResponderPqrRequest = components['schemas']['ResponderPqrRequest'];
 export type RespuestaAsistenteDto = components['schemas']['RespuestaAsistenteDto'];
 export type RestablecerClaveRequest = components['schemas']['RestablecerClaveRequest'];
 export type RolDto = components['schemas']['RolDto'];
+export type RolMiembroEmpresaDto = components['schemas']['RolMiembroEmpresaDto'];
 export type RolTurnoAsistenteDto = components['schemas']['RolTurnoAsistenteDto'];
 export type SenalesConfianzaDto = components['schemas']['SenalesConfianzaDto'];
 export type SesionDto = components['schemas']['SesionDto'];
+export type SolicitarEmpresaRequest = components['schemas']['SolicitarEmpresaRequest'];
 export type SolicitarFundacionRequest = components['schemas']['SolicitarFundacionRequest'];
 export type SolicitarSubidaRequest = components['schemas']['SolicitarSubidaRequest'];
 export type SolicitudDto = components['schemas']['SolicitudDto'];
@@ -8518,6 +9575,7 @@ export type TipoPqrDto = components['schemas']['TipoPqrDto'];
 export type TokenRequest = components['schemas']['TokenRequest'];
 export type TransaccionExportDto = components['schemas']['TransaccionExportDto'];
 export type TurnoAsistenteRequest = components['schemas']['TurnoAsistenteRequest'];
+export type UnirseEmpresaRequest = components['schemas']['UnirseEmpresaRequest'];
 export type UsuarioAdminDto = components['schemas']['UsuarioAdminDto'];
 export type UsuarioAdminDtoPaginaDto = components['schemas']['UsuarioAdminDtoPaginaDto'];
 export type UsuarioDto = components['schemas']['UsuarioDto'];
