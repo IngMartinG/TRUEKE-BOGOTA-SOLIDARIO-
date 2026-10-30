@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, input, li
 import { rxResource } from '@angular/core/rxjs-interop';
 import { Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
+import { nombrePlan } from '../../api/tipos';
 import { CuentaApi } from '../../core/api/cuenta.api';
 import { SesionService } from '../../core/sesion.service';
 import { HacePipe, KilosPipe } from '../../shared/pipes';
@@ -57,10 +58,16 @@ import { Volver } from '../../shared/ui/volver';
                 }
                 <app-insignia-nivel [nivel]="p.nivel" [siempre]="true" />
                 @if (p.tipoCuenta && p.tipoCuenta !== 'Individual') {
-                  <span class="insignia-sol"><app-icono nombre="corona" [tamano]="12" />{{ p.tipoCuenta }}</span>
+                  <span class="insignia-sol"><app-icono nombre="corona" [tamano]="12" />{{ nombrePlan(p.tipoCuenta) }}</span>
+                }
+                @if (p.negocioVerificado) {
+                  <span class="insignia-trueke"><app-icono nombre="verificado" [tamano]="12" />Negocio verificado</span>
                 }
                 @if (p.nitRegistrado) {
-                  <span class="insignia-agua"><app-icono nombre="edificio" [tamano]="12" />{{ p.nit ? 'NIT ' + p.nit : 'Empresa con NIT registrado' }}</span>
+                  <span class="insignia-agua"><app-icono nombre="edificio" [tamano]="12" />{{ p.nit ? 'NIT ' + p.nit : 'Negocio con NIT registrado' }}</span>
+                }
+                @if (p.nombreComercial) {
+                  <a [routerLink]="['/negocios', p.id]" class="enlace text-sm font-semibold">Ver su vitrina</a>
                 }
               </div>
               <p class="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-tenue sm:justify-start">
@@ -279,6 +286,7 @@ export default class PerfilPublico {
   private readonly api = inject(CuentaApi);
   private readonly titulo = inject(Title);
   protected readonly sesion = inject(SesionService);
+  protected readonly nombrePlan = nombrePlan;
   readonly id = input.required<string>();
   protected readonly paginaPub = signal(1);
   protected readonly paginaCal = signal(1);

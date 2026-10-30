@@ -20,6 +20,8 @@ public class FiltroPublicaciones
     public DateTime? PublicadasDesde { get; set; }
     public DateTime? PublicadasHasta { get; set; }
     public Guid? ExcluirPropietarioId { get; set; }
+    /// <summary>Solo las de esta cuenta (vitrina de un negocio).</summary>
+    public Guid? PropietarioId { get; set; }
     public OrdenPublicaciones Orden { get; set; } = OrdenPublicaciones.Recientes;
     public int Pagina { get; set; } = 1;
     public int Tamano { get; set; } = 20;
@@ -52,6 +54,10 @@ public interface IUsuarioRepository
     Task<int> ContarInvitacionesRecompensadasAsync(Guid invitadorId, DateTime? desdeUtc);
     /// <summary>Administradores y SuperUsuarios activos (para alertas internas).</summary>
     Task<IReadOnlyList<Guid>> ListarIdsModeradoresAsync();
+    /// <summary>Cuentas con el plan Negocio vigente y nombre comercial, activas: las verificadas primero y luego por nombre (sin tracking).</summary>
+    Task<IReadOnlyList<Usuario>> ListarNegociosAsync(DateTime ahoraUtc, int maximo);
+    /// <summary>Negocios vigentes con NIT registrado que un moderador aún no revisa, los más antiguos primero (sin tracking).</summary>
+    Task<IReadOnlyList<Usuario>> ListarNegociosPorVerificarAsync(DateTime ahoraUtc, int maximo);
     /// <summary>SuperUsuarios activos (revisan las fundaciones).</summary>
     Task<IReadOnlyList<Guid>> ListarIdsSuperUsuariosAsync();
     /// <summary>Con tracking: planes pagos que vencen entre las fechas y a los que aún no se les envió recordatorio.</summary>
@@ -108,6 +114,8 @@ public interface IPublicacionRepository
     Task<IReadOnlyList<Publicacion>> ListarActivasParaActualizarAsync(Guid propietarioId);
     /// <summary>La publicación más antigua del usuario que sigue activa (visible, disponible o en negociación) desde la fecha o antes.</summary>
     Task<Publicacion?> PrimeraActivaDesdeAsync(Guid propietarioId, DateTime publicadaHastaUtc);
+    /// <summary>Cuántas publicaciones visibles en el catálogo tiene cada cuenta.</summary>
+    Task<IReadOnlyDictionary<Guid, int>> ContarVisiblesPorPropietarioAsync(IReadOnlyCollection<Guid> propietarioIds, DateTime ahoraUtc);
     /// <summary>Cuántas de sus publicaciones (en cualquier estado) entraron al catálogo: las primeras siempre se revisan.</summary>
     Task<int> ContarAprobadasDePropietarioAsync(Guid propietarioId);
     /// <summary>Fila de revisión previa, sin seguimiento: primero las de más riesgo y luego las que llevan más tiempo esperando.</summary>
@@ -158,6 +166,8 @@ public interface ISolicitudRepository
     Task<IReadOnlyList<Solicitud>> ListarPendientesDelUsuarioAsync(Guid usuarioId);
     /// <summary>Total de solicitudes que ha recibido la publicación (interés), en cualquier estado.</summary>
     Task<int> ContarPorPublicacionAsync(Guid publicacionId);
+    /// <summary>Solicitudes que recibieron las publicaciones de esta cuenta desde la fecha (contactos).</summary>
+    Task<int> ContarRecibidasDesdeAsync(Guid propietarioId, DateTime desdeUtc);
     void Agregar(Solicitud solicitud);
 }
 
@@ -203,6 +213,8 @@ public interface ITransaccionRepository
 {
     /// <summary>Transacciones desde <paramref name="desdeUtc"/> en las que ESTE usuario recibió puntos (tope anti-farmeo).</summary>
     Task<int> ContarDesdeAsync(Guid usuarioId, DateTime desdeUtc);
+    /// <summary>Intercambios completados desde la fecha en los que participó (entregó o recibió), con o sin puntos.</summary>
+    Task<int> ContarCompletadosDesdeAsync(Guid usuarioId, DateTime desdeUtc);
     /// <summary>Intercambios por modo en los que ESTE usuario recibió puntos (logros: lo que el anti-farmeo dejó contar).</summary>
     Task<(int Truekes, int Compras, int Donaciones)> ContarConPuntosPorModoAsync(Guid usuarioId);
     /// <summary>¿Estas dos personas ya completaron, desde la fecha, un intercambio que otorgó puntos (en cualquier sentido)?</summary>
@@ -262,6 +274,8 @@ public interface IEstadisticaRepository
     Task SumarVistasAsync(IReadOnlyCollection<(Guid PublicacionId, DateTime Dia, int Vistas)> vistas);
     Task<IReadOnlyList<EstadisticaPublicacionDiaria>> SerieAsync(Guid publicacionId, DateTime desdeUtc);
     Task<IReadOnlyDictionary<Guid, int>> TotalesAsync(IReadOnlyCollection<Guid> publicacionIds);
+    /// <summary>Vistas por publicación y día desde la fecha (para el panel de toda la cuenta).</summary>
+    Task<IReadOnlyList<EstadisticaPublicacionDiaria>> SerieDeAsync(IReadOnlyCollection<Guid> publicacionIds, DateTime desdeUtc);
 }
 
 /// <summary>Usado por el health check de readiness.</summary>
@@ -446,6 +460,8 @@ public interface IFavoritoRepository
     /// <summary>Ids de las favoritas, más recientes primero.</summary>
     Task<(IReadOnlyList<Guid> Ids, int Total)> ListarAsync(Guid usuarioId, int pagina, int tamano);
     Task<int> ContarAsync(Guid usuarioId);
+    /// <summary>Cuántas personas guardaron alguna de estas publicaciones (suma por publicación).</summary>
+    Task<int> ContarDePublicacionesAsync(IReadOnlyCollection<Guid> publicacionIds);
     /// <summary>Cuántas personas guardaron la publicación.</summary>
     Task<int> ContarPorPublicacionAsync(Guid publicacionId);
     void Agregar(Favorito favorito);

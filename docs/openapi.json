@@ -419,6 +419,109 @@
         }
       }
     },
+    "/api/v1/admin/negocios": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NegocioPorVerificarDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NegocioPorVerificarDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NegocioPorVerificarDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/negocios/{usuarioId}/verificar": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
+    "/api/v1/admin/negocios/{usuarioId}/rechazar": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "usuarioId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/MotivoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/admin/usuarios": {
       "get": {
         "tags": [
@@ -4178,6 +4281,113 @@
         }
       }
     },
+    "/api/v1/negocios": {
+      "get": {
+        "tags": [
+          "Negocios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NegocioResumenDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NegocioResumenDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/NegocioResumenDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/negocios/{id}": {
+      "get": {
+        "tags": [
+          "Negocios"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/NegocioPublicoDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NegocioPublicoDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NegocioPublicoDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/negocios/mio/estadisticas": {
+      "get": {
+        "tags": [
+          "Negocios"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadisticasCuentaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadisticasCuentaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstadisticasCuentaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/notificaciones": {
       "get": {
         "tags": [
@@ -4914,6 +5124,14 @@
             "in": "query",
             "schema": {
               "type": "boolean"
+            }
+          },
+          {
+            "name": "PropietarioId",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "format": "uuid"
             }
           },
           {
@@ -8784,6 +9002,48 @@
         },
         "additionalProperties": false
       },
+      "EstadisticasCuentaDto": {
+        "type": "object",
+        "properties": {
+          "vistas30Dias": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "vistasTotales": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "favoritos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "solicitudes30Dias": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "intercambios30Dias": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "publicacionesActivas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "serie": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PuntoSerieDto"
+            }
+          },
+          "masVistas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/PublicacionDestacadaDto"
+            }
+          }
+        },
+        "additionalProperties": false
+      },
       "EstadisticasPublicacionDto": {
         "type": "object",
         "properties": {
@@ -10231,6 +10491,123 @@
         },
         "additionalProperties": false
       },
+      "NegocioPorVerificarDto": {
+        "type": "object",
+        "properties": {
+          "usuarioId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombreComercial": {
+            "type": "string"
+          },
+          "nit": {
+            "type": "string"
+          },
+          "nombreCuenta": {
+            "type": "string"
+          },
+          "planVigenteHasta": {
+            "type": "string",
+            "format": "date-time",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "NegocioPublicoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "fotoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "localidad": {
+            "type": "string"
+          },
+          "municipio": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "horario": {
+            "type": "string",
+            "nullable": true
+          },
+          "verificado": {
+            "type": "boolean"
+          },
+          "nit": {
+            "type": "string",
+            "nullable": true
+          },
+          "miembroDesde": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "calificacionPromedio": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "totalCalificaciones": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "publicaciones": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "NegocioResumenDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombre": {
+            "type": "string"
+          },
+          "fotoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "localidad": {
+            "type": "string"
+          },
+          "municipio": {
+            "type": "string"
+          },
+          "descripcion": {
+            "type": "string",
+            "nullable": true
+          },
+          "horario": {
+            "type": "string",
+            "nullable": true
+          },
+          "verificado": {
+            "type": "boolean"
+          },
+          "publicaciones": {
+            "type": "integer",
+            "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
       "NivelEcoPuntosDto": {
         "type": "object",
         "properties": {
@@ -10567,6 +10944,18 @@
           },
           "mostrarNit": {
             "type": "boolean"
+          },
+          "descripcion": {
+            "maxLength": 600,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
+          },
+          "horario": {
+            "maxLength": 120,
+            "minLength": 0,
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -10623,6 +11012,9 @@
           "nombreFundacion": {
             "type": "string",
             "nullable": true
+          },
+          "negocioVerificado": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -10723,6 +11115,9 @@
           "nombreFundacion": {
             "type": "string",
             "nullable": true
+          },
+          "negocioVerificado": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -11146,6 +11541,23 @@
           "distanciaKm": {
             "type": "number",
             "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PublicacionDestacadaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "titulo": {
+            "type": "string"
+          },
+          "vistas": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -12248,6 +12660,17 @@
             "nullable": true
           },
           "fotoValida": {
+            "type": "boolean"
+          },
+          "descripcionNegocio": {
+            "type": "string",
+            "nullable": true
+          },
+          "horarioNegocio": {
+            "type": "string",
+            "nullable": true
+          },
+          "negocioVerificado": {
             "type": "boolean"
           }
         },

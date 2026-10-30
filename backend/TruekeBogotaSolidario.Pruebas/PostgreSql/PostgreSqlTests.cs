@@ -338,6 +338,10 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
         ALTER TABLE "Usuarios" ADD "FotoRevisadaUtc" timestamp with time zone;
         ALTER TABLE "Usuarios" ADD "MotivoRechazoFoto" character varying(300);
         ALTER TABLE "Usuarios" ADD "PlazoCambioFotoUtc" timestamp with time zone;
+        ALTER TABLE "Usuarios" ADD "DescripcionNegocio" character varying(600);
+        ALTER TABLE "Usuarios" ADD "HorarioNegocio" character varying(120);
+        ALTER TABLE "Usuarios" ADD "NitVerificadoUtc" timestamp with time zone;
+        ALTER TABLE "Usuarios" ADD "NitRechazadoUtc" timestamp with time zone;
         ALTER TABLE "Publicaciones" ADD "EstadoModeracion" character varying(20) NOT NULL DEFAULT 'Aprobada';
         ALTER TABLE "Publicaciones" ADD "PuntajeRiesgo" integer NOT NULL DEFAULT 0;
         ALTER TABLE "Publicaciones" ADD "MotivosRiesgo" character varying(500);
@@ -349,7 +353,8 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
         """;
     private const string QuitarColumnasPosteriores = """
         ALTER TABLE "Usuarios" DROP COLUMN "EstadoFoto", DROP COLUMN "FotoRevisadaUtc", DROP COLUMN "MotivoRechazoFoto",
-            DROP COLUMN "PlazoCambioFotoUtc";
+            DROP COLUMN "PlazoCambioFotoUtc", DROP COLUMN "DescripcionNegocio", DROP COLUMN "HorarioNegocio",
+            DROP COLUMN "NitVerificadoUtc", DROP COLUMN "NitRechazadoUtc";
         ALTER TABLE "Publicaciones" DROP COLUMN "EstadoModeracion", DROP COLUMN "PuntajeRiesgo", DROP COLUMN "MotivosRiesgo",
             DROP COLUMN "MotivoRechazo", DROP COLUMN "EnRevisionDesdeUtc", DROP COLUMN "PesoEstimadoKg", DROP COLUMN "Material",
             DROP COLUMN "NecesidadFundacionId";
@@ -372,6 +377,10 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
                 ALTER TABLE "Publicaciones" ADD "PesoEstimadoKg" numeric(8,2);
                 ALTER TABLE "Publicaciones" ADD "Material" character varying(20);
                 ALTER TABLE "Publicaciones" ADD "NecesidadFundacionId" uuid;
+                ALTER TABLE "Usuarios" ADD "DescripcionNegocio" character varying(600);
+                ALTER TABLE "Usuarios" ADD "HorarioNegocio" character varying(120);
+                ALTER TABLE "Usuarios" ADD "NitVerificadoUtc" timestamp with time zone;
+                ALTER TABLE "Usuarios" ADD "NitRechazadoUtc" timestamp with time zone;
                 """);
             var ropa = await db.Categorias.FirstAsync(c => c.Id == 1);
             var ahora = DateTime.UtcNow;
@@ -397,7 +406,11 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
             db.Transacciones.AddRange(t1, t2);
             await db.SaveChangesAsync();
             (confirmada, sola) = (t1.Id, t2.Id);
-            await db.Database.ExecuteSqlRawAsync("""ALTER TABLE "Publicaciones" DROP COLUMN "PesoEstimadoKg", DROP COLUMN "Material", DROP COLUMN "NecesidadFundacionId";""");
+            await db.Database.ExecuteSqlRawAsync("""
+                ALTER TABLE "Publicaciones" DROP COLUMN "PesoEstimadoKg", DROP COLUMN "Material", DROP COLUMN "NecesidadFundacionId";
+                ALTER TABLE "Usuarios" DROP COLUMN "DescripcionNegocio", DROP COLUMN "HorarioNegocio", DROP COLUMN "NitVerificadoUtc",
+                    DROP COLUMN "NitRechazadoUtc";
+                """);
         }
 
         await using (var db = Contexto(cadena)) await db.Database.MigrateAsync();

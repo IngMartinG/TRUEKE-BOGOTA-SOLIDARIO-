@@ -160,6 +160,10 @@ public sealed class PerfilEmpresaRequest
     public string Nit { get; init; } = "";
     /// <summary>Mostrar el número de NIT en el perfil público (si es persona natural, el NIT es su cédula). Por defecto no.</summary>
     public bool MostrarNit { get; init; }
+    /// <summary>Vitrina: qué vende o hace el negocio (opcional).</summary>
+    [StringLength(600)] public string? Descripcion { get; init; }
+    /// <summary>Vitrina: horario de atención en texto libre, por ejemplo "Lunes a sábado, 9 a. m. a 6 p. m." (opcional).</summary>
+    [StringLength(120)] public string? Horario { get; init; }
 }
 
 public sealed class DatosFacturacionRequest : IValidatableObject
@@ -348,6 +352,8 @@ public sealed class FiltroPublicacionesRequest
     [Range(0, 1_000_000_000)] public decimal? PrecioMax { get; init; }
     /// <summary>Solo publicaciones de cuentas con identidad verificada.</summary>
     public bool SoloVerificados { get; init; }
+    /// <summary>Solo las de esta cuenta (vitrina de un negocio).</summary>
+    public Guid? PropietarioId { get; init; }
     /// <summary>Recientes (destacadas primero), PrecioAsc o PrecioDesc. Para ordenar por cercanía usa /publicaciones/cercanas.</summary>
     [EnumDataType(typeof(OrdenPublicacionesDto))] public OrdenPublicacionesDto Orden { get; init; } = OrdenPublicacionesDto.Recientes;
     [Range(1, 10_000)] public int Pagina { get; init; } = 1;
@@ -655,7 +661,7 @@ public sealed record UsuarioDto(Guid Id, string NombreCompleto, string Localidad
     bool MostrarNit = false, DateOnly? FechaNacimiento = null, bool NombreRealPendiente = false,
     string? PoliticaDatosVersion = null, string? TerminosVersion = null, bool MenorDetectado = false, bool RegistroOferente = false,
     bool LocalidadPendiente = false, string EstadoFoto = "SinRevisar", string? MotivoRechazoFoto = null, DateTime? PlazoCambioFotoUtc = null,
-    bool FotoValida = false);
+    bool FotoValida = false, string? DescripcionNegocio = null, string? HorarioNegocio = null, bool NegocioVerificado = false);
 
 public sealed record SesionDto(string Token, DateTime ExpiraUtc, UsuarioDto Usuario);
 
@@ -693,14 +699,34 @@ public sealed record ResultadoAutenticacion(SesionDto Sesion, string TokenRefres
 /// </summary>
 public sealed record PerfilPublicoDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
     decimal? CalificacionPromedio, int TotalCalificaciones, string Municipio, string? NombreComercial, string? FotoUrl = null,
-    bool NitRegistrado = false, string Nivel = "Semilla", string? NombreFundacion = null);
+    bool NitRegistrado = false, string Nivel = "Semilla", string? NombreFundacion = null, bool NegocioVerificado = false);
 
 public sealed record PerfilUsuarioDto(Guid Id, string Nombre, string Localidad, decimal Reputacion, bool Verificado, string TipoCuenta,
     DateTime MiembroDesde, int TruekesCompletados, int ComprasRealizadas, int DonacionesRealizadas,
     decimal? CalificacionPromedio, int TotalCalificaciones, int PublicacionesActivas, string Municipio, string? NombreComercial,
     string? FotoUrl, SenalesConfianzaDto Confianza, bool NitRegistrado = false, string? Nit = null,
     IReadOnlyList<DeseoPublicoDto>? Deseos = null, string Nivel = "Semilla", IReadOnlyList<LogroDto>? Logros = null,
-    ImpactoPersonalDto? Impacto = null, string? NombreFundacion = null);
+    ImpactoPersonalDto? Impacto = null, string? NombreFundacion = null, bool NegocioVerificado = false);
+
+// ---------------- Negocios (plan Negocio, internamente TipoCuenta.Empresa) ----------------
+/// <summary>Tarjeta del directorio público. Id = id de la cuenta (vitrina, perfil y publicaciones).</summary>
+public sealed record NegocioResumenDto(Guid Id, string Nombre, string? FotoUrl, string Localidad, string Municipio, string? Descripcion,
+    string? Horario, bool Verificado, int Publicaciones);
+/// <summary>Vitrina pública. Nit solo si el negocio eligió mostrarlo. Nunca correo ni datos de facturación.</summary>
+public sealed record NegocioPublicoDto(Guid Id, string Nombre, string? FotoUrl, string Localidad, string Municipio, string? Descripcion,
+    string? Horario, bool Verificado, string? Nit, DateTime MiembroDesde, decimal? CalificacionPromedio, int TotalCalificaciones,
+    int Publicaciones);
+/// <summary>Para los moderadores: negocios con NIT registrado por revisar contra el RUES.</summary>
+public sealed record NegocioPorVerificarDto(Guid UsuarioId, string NombreComercial, string Nit, string NombreCuenta, DateTime? PlanVigenteHasta);
+
+/// <summary>Una publicación en el panel de la cuenta.</summary>
+public sealed record PublicacionDestacadaDto(Guid Id, string Titulo, int Vistas);
+/// <summary>
+/// Rendimiento de toda la cuenta en los últimos 30 días (planes pagos): vistas, personas que la guardaron, solicitudes
+/// recibidas (contactos), intercambios completados, serie diaria de vistas y las publicaciones más vistas.
+/// </summary>
+public sealed record EstadisticasCuentaDto(int Vistas30Dias, int VistasTotales, int Favoritos, int Solicitudes30Dias, int Intercambios30Dias,
+    int PublicacionesActivas, IReadOnlyList<PuntoSerieDto> Serie, IReadOnlyList<PublicacionDestacadaDto> MasVistas);
 
 /// <summary>
 /// Una medalla del perfil (solo reconocimiento). Grado = "Bronce", "Plata" u "Oro" en los logros por modo (null en los demás).

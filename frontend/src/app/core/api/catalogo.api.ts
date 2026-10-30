@@ -34,6 +34,8 @@ export interface FiltrosCatalogo {
   precioMin?: number | null;
   precioMax?: number | null;
   soloVerificados?: boolean;
+  /** Solo las de esta cuenta (vitrina de un negocio). */
+  propietarioId?: string;
   orden?: OrdenPublicacionesDto;
   pagina?: number;
   tamano?: number;

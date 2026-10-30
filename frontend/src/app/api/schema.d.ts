@@ -464,6 +464,119 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/negocios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["NegocioPorVerificarDto"][];
+                        "application/json": components["schemas"]["NegocioPorVerificarDto"][];
+                        "text/json": components["schemas"]["NegocioPorVerificarDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/negocios/{usuarioId}/verificar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    usuarioId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/negocios/{usuarioId}/rechazar": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    usuarioId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["MotivoRequest"];
+                    "text/json": components["schemas"]["MotivoRequest"];
+                    "application/*+json": components["schemas"]["MotivoRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/usuarios": {
         parameters: {
             query?: never;
@@ -3852,6 +3965,119 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/negocios": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["NegocioResumenDto"][];
+                        "application/json": components["schemas"]["NegocioResumenDto"][];
+                        "text/json": components["schemas"]["NegocioResumenDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/negocios/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["NegocioPublicoDto"];
+                        "application/json": components["schemas"]["NegocioPublicoDto"];
+                        "text/json": components["schemas"]["NegocioPublicoDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/negocios/mio/estadisticas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["EstadisticasCuentaDto"];
+                        "application/json": components["schemas"]["EstadisticasCuentaDto"];
+                        "text/json": components["schemas"]["EstadisticasCuentaDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/notificaciones": {
         parameters: {
             query?: never;
@@ -4500,6 +4726,7 @@ export interface paths {
                     PrecioMin?: number;
                     PrecioMax?: number;
                     SoloVerificados?: boolean;
+                    PropietarioId?: string;
                     Orden?: components["schemas"]["OrdenPublicacionesDto"];
                     Pagina?: number;
                     Tamano?: number;
@@ -6822,6 +7049,22 @@ export interface components {
             respuestaAId?: string | null;
             fotoUrl?: string | null;
         };
+        EstadisticasCuentaDto: {
+            /** Format: int32 */
+            vistas30Dias?: number;
+            /** Format: int32 */
+            vistasTotales?: number;
+            /** Format: int32 */
+            favoritos?: number;
+            /** Format: int32 */
+            solicitudes30Dias?: number;
+            /** Format: int32 */
+            intercambios30Dias?: number;
+            /** Format: int32 */
+            publicacionesActivas?: number;
+            serie?: components["schemas"]["PuntoSerieDto"][];
+            masVistas?: components["schemas"]["PublicacionDestacadaDto"][];
+        };
         EstadisticasPublicacionDto: {
             /** Format: uuid */
             publicacionId?: string;
@@ -7323,6 +7566,48 @@ export interface components {
             recibidos?: number;
             cubierta?: boolean;
         };
+        NegocioPorVerificarDto: {
+            /** Format: uuid */
+            usuarioId?: string;
+            nombreComercial?: string;
+            nit?: string;
+            nombreCuenta?: string;
+            /** Format: date-time */
+            planVigenteHasta?: string | null;
+        };
+        NegocioPublicoDto: {
+            /** Format: uuid */
+            id?: string;
+            nombre?: string;
+            fotoUrl?: string | null;
+            localidad?: string;
+            municipio?: string;
+            descripcion?: string | null;
+            horario?: string | null;
+            verificado?: boolean;
+            nit?: string | null;
+            /** Format: date-time */
+            miembroDesde?: string;
+            /** Format: double */
+            calificacionPromedio?: number | null;
+            /** Format: int32 */
+            totalCalificaciones?: number;
+            /** Format: int32 */
+            publicaciones?: number;
+        };
+        NegocioResumenDto: {
+            /** Format: uuid */
+            id?: string;
+            nombre?: string;
+            fotoUrl?: string | null;
+            localidad?: string;
+            municipio?: string;
+            descripcion?: string | null;
+            horario?: string | null;
+            verificado?: boolean;
+            /** Format: int32 */
+            publicaciones?: number;
+        };
         NivelEcoPuntosDto: {
             nombre?: string;
             /** Format: int32 */
@@ -7443,6 +7728,8 @@ export interface components {
             nombreComercial: string;
             nit: string;
             mostrarNit?: boolean;
+            descripcion?: string | null;
+            horario?: string | null;
         };
         PerfilPublicoDto: {
             /** Format: uuid */
@@ -7463,6 +7750,7 @@ export interface components {
             nitRegistrado?: boolean;
             nivel?: string;
             nombreFundacion?: string | null;
+            negocioVerificado?: boolean;
         };
         PerfilUsuarioDto: {
             /** Format: uuid */
@@ -7498,6 +7786,7 @@ export interface components {
             logros?: components["schemas"]["LogroDto"][] | null;
             impacto?: components["schemas"]["ImpactoPersonalDto"];
             nombreFundacion?: string | null;
+            negocioVerificado?: boolean;
         };
         /** @enum {string} */
         PeriodoImpactoDto: "Todo" | "Mes" | "Trimestre" | "Anio";
@@ -7668,6 +7957,13 @@ export interface components {
             publicacion?: components["schemas"]["PublicacionDto"];
             /** Format: double */
             distanciaKm?: number;
+        };
+        PublicacionDestacadaDto: {
+            /** Format: uuid */
+            id?: string;
+            titulo?: string;
+            /** Format: int32 */
+            vistas?: number;
         };
         PublicacionDto: {
             /** Format: uuid */
@@ -8017,6 +8313,9 @@ export interface components {
             /** Format: date-time */
             plazoCambioFotoUtc?: string | null;
             fotoValida?: boolean;
+            descripcionNegocio?: string | null;
+            horarioNegocio?: string | null;
+            negocioVerificado?: boolean;
         };
         VendedorDePqrDto: {
             /** Format: uuid */
@@ -8110,6 +8409,7 @@ export type EliminarCuentaRequest = components['schemas']['EliminarCuentaRequest
 export type EmitirFacturaRequest = components['schemas']['EmitirFacturaRequest'];
 export type EnlaceAsistenteDto = components['schemas']['EnlaceAsistenteDto'];
 export type EnviarMensajeRequest = components['schemas']['EnviarMensajeRequest'];
+export type EstadisticasCuentaDto = components['schemas']['EstadisticasCuentaDto'];
 export type EstadisticasPublicacionDto = components['schemas']['EstadisticasPublicacionDto'];
 export type EstadoApelacionDto = components['schemas']['EstadoApelacionDto'];
 export type EstadoDenunciaDto = components['schemas']['EstadoDenunciaDto'];
@@ -8157,6 +8457,9 @@ export type MovimientoEcoPuntosDto = components['schemas']['MovimientoEcoPuntosD
 export type MovimientoEcoPuntosDtoPaginaDto = components['schemas']['MovimientoEcoPuntosDtoPaginaDto'];
 export type MunicipioDto = components['schemas']['MunicipioDto'];
 export type NecesidadDto = components['schemas']['NecesidadDto'];
+export type NegocioPorVerificarDto = components['schemas']['NegocioPorVerificarDto'];
+export type NegocioPublicoDto = components['schemas']['NegocioPublicoDto'];
+export type NegocioResumenDto = components['schemas']['NegocioResumenDto'];
 export type NivelEcoPuntosDto = components['schemas']['NivelEcoPuntosDto'];
 export type NivelPoliticaDto = components['schemas']['NivelPoliticaDto'];
 export type NoConcretadaRequest = components['schemas']['NoConcretadaRequest'];
@@ -8182,6 +8485,7 @@ export type PqrDto = components['schemas']['PqrDto'];
 export type PreferenciasAvisosDto = components['schemas']['PreferenciasAvisosDto'];
 export type PreguntaAsistenteRequest = components['schemas']['PreguntaAsistenteRequest'];
 export type PublicacionCercanaDto = components['schemas']['PublicacionCercanaDto'];
+export type PublicacionDestacadaDto = components['schemas']['PublicacionDestacadaDto'];
 export type PublicacionDto = components['schemas']['PublicacionDto'];
 export type PublicacionDtoPaginaDto = components['schemas']['PublicacionDtoPaginaDto'];
 export type PublicacionEnRevisionDto = components['schemas']['PublicacionEnRevisionDto'];

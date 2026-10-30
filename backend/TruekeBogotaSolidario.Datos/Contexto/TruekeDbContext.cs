@@ -74,6 +74,8 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => x.CorreoCanonico).IsUnique();
             e.Property(x => x.MunicipioCodigo).HasMaxLength(5).IsUnicode(false).IsRequired();
             e.Property(x => x.NombreComercial).HasMaxLength(120);
+            e.Property(x => x.DescripcionNegocio).HasMaxLength(Usuario.LongitudDescripcionNegocio);
+            e.Property(x => x.HorarioNegocio).HasMaxLength(Usuario.LongitudHorarioNegocio);
             e.Property(x => x.NombreFundacion).HasMaxLength(150);
             e.Property(x => x.Nit).HasMaxLength(20).IsUnicode(false);
             e.Property(x => x.FacturacionTipoDocumento).HasConversion<string>().HasMaxLength(20);

@@ -1793,6 +1793,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<bool>("CorreoVerificado")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("DescripcionNegocio")
+                        .HasMaxLength(600)
+                        .HasColumnType("character varying(600)");
+
                     b.Property<int>("DestacadosGratisRestantes")
                         .HasColumnType("integer");
 
@@ -1881,6 +1885,10 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .IsUnicode(false)
                         .HasColumnType("character varying(64)");
 
+                    b.Property<string>("HorarioNegocio")
+                        .HasMaxLength(120)
+                        .HasColumnType("character varying(120)");
+
                     b.Property<int>("IntentosFallidosLogin")
                         .HasColumnType("integer");
 
@@ -1920,6 +1928,12 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(20)
                         .IsUnicode(false)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<DateTime?>("NitRechazadoUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("NitVerificadoUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("NombreComercial")
                         .HasMaxLength(120)

@@ -7,6 +7,8 @@ const paginas: Routes = [
   { path: 'como-funciona', title: 'Cómo funciona', loadComponent: () => import('./features/info/como-funciona') },
   { path: 'impacto', title: 'Impacto de la comunidad', loadComponent: () => import('./features/info/impacto') },
   { path: 'fundaciones', title: 'Fundaciones', loadComponent: () => import('./features/fundaciones/fundaciones') },
+  { path: 'negocios', title: 'Negocios', loadComponent: () => import('./features/negocios/negocios') },
+  { path: 'negocios/:id', title: 'Negocio', loadComponent: () => import('./features/negocios/vitrina') },
   { path: 'fundaciones/necesidades', title: 'Lo que piden las fundaciones', loadComponent: () => import('./features/fundaciones/necesidades') },
   { path: 'fundaciones/:id', title: 'Fundación', loadComponent: () => import('./features/fundaciones/fundacion') },
   { path: 'apoya', title: 'Apoya el proyecto', loadComponent: () => import('./features/info/apoya') },
@@ -90,6 +92,7 @@ const paginas: Routes = [
     children: [
       { path: '', pathMatch: 'full', redirectTo: 'perfil' },
       { path: 'perfil', title: 'Mi cuenta', loadComponent: () => import('./features/cuenta/perfil') },
+      { path: 'estadisticas', title: 'Estadísticas de la cuenta', loadComponent: () => import('./features/cuenta/estadisticas') },
       { path: 'seguridad', title: 'Seguridad', loadComponent: () => import('./features/cuenta/seguridad') },
       { path: 'facturacion', title: 'Pagos y facturas', loadComponent: () => import('./features/cuenta/facturacion') },
       { path: 'vendedor', title: 'Registro de vendedor', loadComponent: () => import('./features/cuenta/vendedor') },

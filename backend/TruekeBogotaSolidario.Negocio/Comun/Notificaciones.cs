@@ -25,6 +25,9 @@ public static class TiposNotificacion
     public const string PublicacionRestaurada = "PublicacionRestaurada";
     /// <summary>Al dueño: su publicación de riesgo espera a un moderador antes de entrar al catálogo (RecursoId = PublicacionId).</summary>
     public const string PublicacionEnRevision = "PublicacionEnRevision";
+    /// <summary>Un moderador revisó el NIT del negocio: ya muestra el sello "Negocio verificado".</summary>
+    public const string NegocioVerificado = "NegocioVerificado";
+    public const string NegocioNoVerificado = "NegocioNoVerificado";
     public const string PublicacionAprobada = "PublicacionAprobada";
     /// <summary>Al dueño, con lo que debe corregir: al editarla vuelve a revisión.</summary>
     public const string PublicacionRechazada = "PublicacionRechazada";

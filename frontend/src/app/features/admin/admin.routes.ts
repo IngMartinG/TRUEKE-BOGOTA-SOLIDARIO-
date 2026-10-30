@@ -17,6 +17,7 @@ export default [
       { path: 'usuarios', title: 'Moderación · Usuarios', loadComponent: () => import('./usuarios') },
       { path: 'publicaciones', title: 'Moderación · Publicaciones en revisión', loadComponent: () => import('./publicaciones-pendientes') },
       { path: 'fotos', title: 'Moderación · Fotos de perfil', loadComponent: () => import('./fotos') },
+      { path: 'negocios', title: 'Moderación · Negocios', loadComponent: () => import('./negocios') },
       { path: 'verificaciones', title: 'Moderación · Verificaciones', loadComponent: () => import('./verificaciones') },
       { path: 'pagos', title: 'Moderación · Pagos', loadComponent: () => import('./pagos') },
       { path: 'facturas', title: 'Administración · Facturas', loadComponent: () => import('./facturas') },

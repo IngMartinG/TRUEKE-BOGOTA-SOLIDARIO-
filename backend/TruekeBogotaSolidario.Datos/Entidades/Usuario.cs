@@ -49,6 +49,32 @@ public class Usuario
     public string? Nit { get; private set; }
     /// <summary>La empresa decide si su NIT se ve en el perfil público (si es persona natural, el NIT es su cédula).</summary>
     public bool MostrarNit { get; private set; }
+    /// <summary>Vitrina del negocio: qué vende o hace y en qué horario atiende (texto libre).</summary>
+    public string? DescripcionNegocio { get; private set; }
+    public string? HorarioNegocio { get; private set; }
+    /// <summary>Un moderador comparó el NIT y el nombre con el RUES. Se pierde si cambia el NIT.</summary>
+    public DateTime? NitVerificadoUtc { get; private set; }
+    /// <summary>Un moderador no pudo verificarlo: sale de la fila hasta que el negocio corrija el NIT o el nombre.</summary>
+    public DateTime? NitRechazadoUtc { get; private set; }
+
+    public const int LongitudDescripcionNegocio = 600;
+    public const int LongitudHorarioNegocio = 120;
+
+    /// <summary>Sello "Negocio verificado": plan Negocio vigente con el NIT revisado por un moderador.</summary>
+    public bool NegocioVerificado(DateTime ahoraUtc) => EmpresaVigente(ahoraUtc) && !string.IsNullOrEmpty(Nit) && NitVerificadoUtc.HasValue;
+
+    public void VerificarNit(DateTime ahoraUtc)
+    {
+        if (!EmpresaVigente(ahoraUtc) || string.IsNullOrEmpty(Nit)) throw new ReglaDeNegocioException("La cuenta no tiene el plan Negocio vigente con un NIT registrado.");
+        NitVerificadoUtc = ahoraUtc;
+        NitRechazadoUtc = null;
+    }
+
+    public void RechazarNit(DateTime ahoraUtc)
+    {
+        NitVerificadoUtc = null;
+        NitRechazadoUtc = ahoraUtc;
+    }
 
     /// <summary>
     /// Razón social mientras la cuenta sea una fundación verificada (null si no lo es). Copia de <see cref="Fundacion"/> para mostrar
@@ -321,15 +347,30 @@ public class Usuario
     /// Nombre comercial (en las publicaciones y el perfil) y NIT registrado mientras el plan Empresa esté vigente.
     /// El número de NIT solo se muestra en el perfil público si la empresa lo elige.
     /// </summary>
-    public void ActualizarPerfilEmpresa(string nombreComercial, string nit, bool mostrarNit, DateTime ahoraUtc)
+    public void ActualizarPerfilEmpresa(string nombreComercial, string nit, bool mostrarNit, DateTime ahoraUtc,
+        string? descripcion = null, string? horario = null)
     {
-        if (!EmpresaVigente(ahoraUtc)) throw new ReglaDeNegocioException("El perfil de empresa está disponible con el plan Empresa vigente.");
+        if (!EmpresaVigente(ahoraUtc)) throw new ReglaDeNegocioException("El perfil de negocio está disponible con el plan Negocio vigente.");
         var nombre = FormatosTexto.Compactar(nombreComercial);
         if (nombre.Length is < 2 or > 120) throw new ReglaDeNegocioException("El nombre comercial debe tener entre 2 y 120 caracteres.");
         if (!FormatosTexto.EsNombreComercial(nombre)) throw new ReglaDeNegocioException(FormatosTexto.MensajeNombreComercial);
+        var desc = string.IsNullOrWhiteSpace(descripcion) ? null : descripcion.Trim();
+        var hora = string.IsNullOrWhiteSpace(horario) ? null : FormatosTexto.Compactar(horario);
+        if (desc is { Length: > LongitudDescripcionNegocio }) throw new ReglaDeNegocioException($"La descripción admite hasta {LongitudDescripcionNegocio} caracteres.");
+        if (hora is { Length: > LongitudHorarioNegocio }) throw new ReglaDeNegocioException($"El horario admite hasta {LongitudHorarioNegocio} caracteres.");
+        if ((desc is not null && !TextoSeguro.EsSeguro(desc, multilinea: true)) || (hora is not null && !TextoSeguro.EsSeguro(hora)))
+            throw new ReglaDeNegocioException(TextoSeguro.Mensaje);
+        var nitNuevo = DocumentosFiscales.NormalizarNit(nit);
+        if (nitNuevo != Nit || nombre != NombreComercial)
+        {
+            NitVerificadoUtc = null; // lo revisado era otro NIT u otro nombre: vuelve a la fila
+            NitRechazadoUtc = null;
+        }
         NombreComercial = nombre;
-        Nit = DocumentosFiscales.NormalizarNit(nit);
+        Nit = nitNuevo;
         MostrarNit = mostrarNit;
+        DescripcionNegocio = desc;
+        HorarioNegocio = hora;
     }
 
     // ---------------- Facturación electrónica ----------------
@@ -614,6 +655,10 @@ public class Usuario
         NombreComercial = null;
         Nit = null;
         MostrarNit = false;
+        DescripcionNegocio = null;
+        HorarioNegocio = null;
+        NitVerificadoUtc = null;
+        NitRechazadoUtc = null;
         NombreFundacion = null;
         BorrarDatosFacturacion();
         BorrarRegistroOferente();
@@ -850,7 +895,7 @@ public class Usuario
     public void ValidarPuedeSuscribirse(TipoCuenta plan, DateTime ahoraUtc)
     {
         if (plan == TipoCuenta.Individual) throw new ReglaDeNegocioException("El plan Individual es gratuito.");
-        if (plan == TipoCuenta.Premium && EmpresaVigente(ahoraUtc)) throw new ReglaDeNegocioException("Ya tienes un plan Empresa vigente.");
+        if (plan == TipoCuenta.Premium && EmpresaVigente(ahoraUtc)) throw new ReglaDeNegocioException("Ya tienes un plan Negocio vigente.");
         if (plan == TipoCuenta.Empresa && PremiumVigente(ahoraUtc) && !EnPruebaPremium)
             throw new ReglaDeNegocioException("Tienes un plan Premium vigente; podrás pasar a Empresa cuando venza.");
     }

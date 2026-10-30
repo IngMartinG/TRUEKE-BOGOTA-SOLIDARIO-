@@ -124,7 +124,7 @@ export default class Avisos {
   protected readonly opciones: { clave: Clave; titulo: string; descripcion: string; icono: string }[] = [
     { clave: 'intercambios', titulo: 'Solicitudes e intercambios', descripcion: 'Cuando alguien solicita tu publicación, te responden, se confirma una entrega o te califican.', icono: 'apreton' },
     { clave: 'mensajes', titulo: 'Mensajes nuevos', descripcion: 'Un aviso (sin el texto del mensaje) como mucho cada 2 horas por conversación.', icono: 'mensaje' },
-    { clave: 'planes', titulo: 'Recordatorios de tu plan', descripcion: 'Tres días antes de que venza tu plan Premium o Empresa.', icono: 'corona' },
+    { clave: 'planes', titulo: 'Recordatorios de tu plan', descripcion: 'Tres días antes de que venza tu plan Premium o Negocio.', icono: 'corona' },
     { clave: 'novedades', titulo: 'Novedades y consejos', descripcion: 'Mejoras de la plataforma e ideas para darle una segunda vida a tus cosas. Solo con tu autorización.', icono: 'hoja' },
   ];
 

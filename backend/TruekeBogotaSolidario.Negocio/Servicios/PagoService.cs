@@ -425,9 +425,9 @@ public sealed class PagoService : IPagoService
         ConceptoPago.Destacar => "Destacar publicación",
         ConceptoPago.Verificar => "Verificar cuenta",
         ConceptoPago.Premium => "Plan Premium",
-        ConceptoPago.Empresa => "Plan Empresa",
+        ConceptoPago.Empresa => "Plan Negocio",
         ConceptoPago.PremiumAnual => "Plan Premium anual",
-        ConceptoPago.EmpresaAnual => "Plan Empresa anual",
+        ConceptoPago.EmpresaAnual => "Plan Negocio anual",
         _ => "Recarga",
     };
 

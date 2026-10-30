@@ -193,6 +193,7 @@ export class Encabezado {
     { ruta: '/planes', texto: 'Planes', icono: 'corona' },
     { ruta: '/impacto', texto: 'Impacto de la comunidad', icono: 'hoja' },
     { ruta: '/fundaciones', texto: 'Fundaciones', icono: 'heart' },
+    { ruta: '/negocios', texto: 'Negocios', icono: 'edificio' },
     { ruta: '/ayuda', texto: 'Centro de ayuda', icono: 'soporte' },
   ];
 

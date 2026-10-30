@@ -30,7 +30,7 @@ internal static class Mapeos
     public static PerfilPublicoDto APerfilPublico(Usuario u, DateTime ahora)
         => new(u.Id, NombrePublico(u.NombreCompleto), u.Localidad, u.Reputacion, u.EsVerificado, TipoCuentaEfectivo(u, ahora),
             u.CalificacionPromedio, u.CalificacionesTotal, Divipola.NombreCompleto(u.MunicipioCodigo), NombreComercialVisible(u, ahora),
-            FotoVisible(u), NitRegistrado(u, ahora), NivelVisible(u), FundacionVisible(u));
+            FotoVisible(u), NitRegistrado(u, ahora), NivelVisible(u), FundacionVisible(u), u.NegocioVerificado(ahora));
 
     /// <summary>A los demás solo se muestra el nombre del nivel (nunca el saldo ni los puntos); cuentas eliminadas o suspendidas quedan en Semilla.</summary>
     private static string NivelVisible(Usuario u)
@@ -60,7 +60,8 @@ internal static class Mapeos
             u.TotalTruekesCompletados, u.TotalComprasRealizadas, u.TotalDonacionesRealizadas,
             u.CalificacionPromedio, u.CalificacionesTotal, publicacionesActivas, Divipola.NombreCompleto(u.MunicipioCodigo),
             NombreComercialVisible(u, ahora), FotoVisible(u), confianza, NitRegistrado(u, ahora),
-            NitRegistrado(u, ahora) && u.MostrarNit ? u.Nit : null, Nivel: NivelVisible(u), NombreFundacion: FundacionVisible(u));
+            NitRegistrado(u, ahora) && u.MostrarNit ? u.Nit : null, Nivel: NivelVisible(u), NombreFundacion: FundacionVisible(u),
+            NegocioVerificado: u.NegocioVerificado(ahora));
 
     public static UsuarioDto AUsuarioDto(Usuario u, DateTime ahora)
     {
@@ -73,7 +74,8 @@ internal static class Mapeos
             u.MunicipioCodigo, Divipola.NombreCompleto(u.MunicipioCodigo), u.NombreComercial, u.Nit, u.TieneDatosFacturacion, u.FotoUrl,
             u.MostrarNit, u.FechaNacimiento, u.NombreRealPendiente, u.PoliticaDatosVersion, u.TerminosVersion, u.MenorDetectado, u.RegistroOferenteCompleto,
             u.LocalidadPendiente, u.EstadoFoto.ToString(), u.MotivoRechazoFoto,
-            u.EstadoFoto == EstadoFotoPerfil.Rechazada ? u.PlazoCambioFotoUtc : null, u.TieneFotoValida(ahora));
+            u.EstadoFoto == EstadoFotoPerfil.Rechazada ? u.PlazoCambioFotoUtc : null, u.TieneFotoValida(ahora),
+            u.DescripcionNegocio, u.HorarioNegocio, u.NegocioVerificado(ahora));
     }
 
     public static CategoriaDto ACategoriaDto(Categoria c) => new(c.Id, c.NombreCategoria, c.Descripcion);
@@ -133,9 +135,9 @@ internal static class Mapeos
         ConceptoPago.Destacar => $"Publicación destacada por {PoliticaEcoPuntos.DuracionDestacadoDias} días",
         ConceptoPago.Verificar => "Verificación de identidad de la cuenta",
         ConceptoPago.Premium => $"Plan Premium ({PoliticaEcoPuntos.DuracionSuscripcionDias} días)",
-        ConceptoPago.Empresa => $"Plan Empresa ({PoliticaEcoPuntos.DuracionSuscripcionDias} días)",
+        ConceptoPago.Empresa => $"Plan Negocio ({PoliticaEcoPuntos.DuracionSuscripcionDias} días)",
         ConceptoPago.PremiumAnual => $"Plan Premium anual ({PoliticaEcoPuntos.DuracionSuscripcionAnualDias} días)",
-        ConceptoPago.EmpresaAnual => $"Plan Empresa anual ({PoliticaEcoPuntos.DuracionSuscripcionAnualDias} días)",
+        ConceptoPago.EmpresaAnual => $"Plan Negocio anual ({PoliticaEcoPuntos.DuracionSuscripcionAnualDias} días)",
         ConceptoPago.Recarga => "Recarga de Eco-Puntos (crédito de servicios en la plataforma)",
         _ => c.ToString()
     };

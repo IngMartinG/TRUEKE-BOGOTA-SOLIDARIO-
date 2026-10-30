@@ -135,7 +135,7 @@ public sealed class PublicacionService : IPublicacionService
         if (await _pubs.ContarVentasActivasAsync(actor.Id, excepto) >= PoliticaEcoPuntos.MaxVentasActivasSinIdentificar)
             throw new ReglaDeNegocioException(
                 $"Para tener más de {PoliticaEcoPuntos.MaxVentasActivasSinIdentificar} artículos a la venta al mismo tiempo debes verificar tu identidad " +
-                "o tener el plan Empresa (Estatuto del Consumidor, art. 53). Puedes hacerlo desde Eco-Puntos.");
+                "o tener el plan Negocio (Estatuto del Consumidor, art. 53). Puedes hacerlo desde Eco-Puntos.");
     }
 
     public async Task<PublicacionDto> CrearAsync(Guid actorId, CrearPublicacionRequest r)
@@ -217,6 +217,7 @@ public sealed class PublicacionService : IPublicacionService
             PrecioMin = f.PrecioMin,
             PrecioMax = f.PrecioMax,
             SoloVerificados = f.SoloVerificados,
+            PropietarioId = f.PropietarioId,
             Orden = (OrdenPublicaciones)(int)f.Orden,
             Pagina = f.Pagina,
             Tamano = f.Tamano

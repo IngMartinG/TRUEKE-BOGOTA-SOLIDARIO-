@@ -53,6 +53,7 @@ export default class Panel {
     { ruta: 'usuarios', texto: 'Usuarios', icono: 'usuarios' },
     { ruta: 'fotos', texto: 'Fotos de perfil', icono: 'camara' },
     { ruta: 'verificaciones', texto: 'Verificaciones', icono: 'verificado' },
+    { ruta: 'negocios', texto: 'Negocios', icono: 'edificio' },
     { ruta: 'pagos', texto: 'Pagos en revisión', icono: 'billetera' },
     { ruta: 'facturas', texto: 'Facturas', icono: 'factura' },
     { ruta: 'pqr', texto: 'PQR', icono: 'soporte' },
