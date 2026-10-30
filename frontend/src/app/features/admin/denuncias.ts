@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -10,11 +10,13 @@ import { HacePipe } from '../../shared/pipes';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
+import { ErrorCarga } from '../../shared/ui/error-carga';
 
 @Component({
-  imports: [FormsModule, RouterLink, Icono, Modal, EstadoVacio, HacePipe],
+  imports: [ErrorCarga, FormsModule, RouterLink, Icono, Modal, EstadoVacio, HacePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-error-carga [recurso]="recurso" />
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h2 class="text-xl font-bold">Denuncias</h2>
       <div class="pestanas">
@@ -30,7 +32,7 @@ import { Modal } from '../../shared/ui/modal';
           <li class="esqueleto h-36 rounded-tarjeta"></li>
         }
       }
-      @for (d of recurso.value() ?? []; track d.denunciaId) {
+      @for (d of datos() ?? []; track d.denunciaId) {
         <li class="tarjeta p-5">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -83,7 +85,7 @@ import { Modal } from '../../shared/ui/modal';
         </li>
       }
     </ul>
-    @if (!recurso.isLoading() && !recurso.value()?.length) {
+    @if (!recurso.isLoading() && !datos()?.length) {
       <app-estado-vacio icono="checkCirculo" [titulo]="estado() === 'Pendiente' ? '¡Todo en orden!' : 'Sin denuncias en este estado'" descripcion="No hay denuncias para revisar." />
     }
 
@@ -115,6 +117,7 @@ export default class Denuncias {
     Deseo: 'Lo que busca',
   };
   protected readonly recurso = rxResource({ params: () => this.estado(), stream: ({ params }) => this.api.denuncias(params) });
+  protected readonly datos = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));
   protected readonly titulos: Record<AccionDenunciaDto, string> = {
     Descartar: 'Descartar denuncia',
     MarcarRevisada: 'Marcar como revisada',

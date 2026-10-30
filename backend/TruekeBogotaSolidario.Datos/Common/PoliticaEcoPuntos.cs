@@ -116,7 +116,7 @@ public static class PoliticaEcoPuntos
     public const int HorasEntreImpulsos = 24;
 
     // ---- Beneficios pagados (COP, IVA incluido) ----
-    public const int PrecioDestacarCop = 6_000;
+    public const int PrecioDestacarCop = 5_000;
     public const int DuracionDestacadoDias = 7;
     public const int PrecioVerificarCop = 20_000;
     public const int PrecioPremiumCop = 15_000;

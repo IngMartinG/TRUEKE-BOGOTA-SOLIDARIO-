@@ -8,14 +8,16 @@ import { AvisosService } from '../../core/avisos.service';
 import { descargar } from '../../shared/descargar';
 import { CopPipe, NumeroPipe } from '../../shared/pipes';
 import { Icono } from '../../shared/ui/icono';
+import { ErrorCarga } from '../../shared/ui/error-carga';
 
 const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
 /** Tablero financiero (solo SuperUsuario): lo cobrado, reembolsos, ingreso recurrente y pendientes de facturar. */
 @Component({
-  imports: [FormsModule, Icono, CopPipe, NumeroPipe],
+  imports: [ErrorCarga, FormsModule, Icono, CopPipe, NumeroPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-error-carga [recurso]="recurso" />
     <div class="flex flex-wrap items-end justify-between gap-3">
       <div>
         <h2 class="text-xl font-bold">Ingresos</h2>
@@ -36,7 +38,7 @@ const MESES = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'o
       </div>
     </div>
 
-    @if (recurso.value(); as i) {
+    @if (datos(); as i) {
       <div class="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <div class="tarjeta p-5"><p class="text-xs text-tenue">Neto del periodo</p><p class="mt-1 font-display text-2xl font-extrabold">{{ i.netoCop | cop }}</p><p class="text-xs text-tenue">{{ i.pagos | numero }} pagos</p></div>
         <div class="tarjeta p-5"><p class="text-xs text-tenue">Cobrado</p><p class="mt-1 font-display text-2xl font-extrabold">{{ i.aprobadoCop | cop }}</p><p class="text-xs text-tierra-600 dark:text-tierra-500">−{{ i.reembolsadoCop | cop }} reembolsado</p></div>
@@ -104,13 +106,14 @@ export default class Ingresos {
     params: () => this.rango(),
     stream: ({ params }) => this.api.ingresos(params.desde, params.hasta),
   });
+  protected readonly datos = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));
 
   protected mes(m?: number, a?: number): string {
     return `${MESES[(m ?? 1) - 1]} ${String(a ?? '').slice(2)}`;
   }
 
   protected altura(valor: number): number {
-    const max = Math.max(1, ...(this.recurso.value()?.porMes ?? []).map((x) => (x.aprobadoCop ?? 0) - (x.reembolsadoCop ?? 0)));
+    const max = Math.max(1, ...(this.datos()?.porMes ?? []).map((x) => (x.aprobadoCop ?? 0) - (x.reembolsadoCop ?? 0)));
     return Math.max(2, Math.round((Math.max(0, valor) / max) * 100));
   }
 

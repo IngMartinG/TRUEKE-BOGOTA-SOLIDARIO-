@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -8,13 +8,15 @@ import { AvisosService } from '../../core/avisos.service';
 import { CopPipe, FechaPipe } from '../../shared/pipes';
 import { Modal } from '../../shared/ui/modal';
 import { Paginador } from '../../shared/ui/paginador';
+import { ErrorCarga } from '../../shared/ui/error-carga';
 
 const TAMANO = 20;
 
 @Component({
-  imports: [FormsModule, Modal, Paginador, CopPipe, FechaPipe],
+  imports: [ErrorCarga, FormsModule, Modal, Paginador, CopPipe, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-error-carga [recurso]="recurso" />
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h2 class="text-xl font-bold">Pagos</h2>
@@ -33,7 +35,7 @@ const TAMANO = 20;
           <tr><th class="px-4 py-3">Referencia</th><th class="px-4 py-3">Concepto</th><th class="px-4 py-3">Monto</th><th class="px-4 py-3">Estado</th><th class="px-4 py-3">Fecha</th><th class="px-4 py-3"></th></tr>
         </thead>
         <tbody class="divide-y divide-borde">
-          @for (p of recurso.value()?.items ?? []; track p.referencia) {
+          @for (p of datos()?.items ?? []; track p.referencia) {
             <tr>
               <td class="px-4 py-3 font-mono text-xs">{{ p.referencia }}</td>
               <td class="px-4 py-3">{{ p.concepto }}</td>
@@ -52,7 +54,7 @@ const TAMANO = 20;
         </tbody>
       </table>
     </div>
-    <app-paginador [pagina]="pagina()" [total]="recurso.value()?.total ?? 0" [tamano]="tamano" (cambiar)="pagina.set($event)" />
+    <app-paginador [pagina]="pagina()" [total]="datos()?.total ?? 0" [tamano]="tamano" (cambiar)="pagina.set($event)" />
 
     <app-modal [(abierto)]="abierto" titulo="Registrar reembolso" [subtitulo]="'Referencia ' + (seleccionado()?.referencia ?? '')">
       <form id="form-reembolso" (ngSubmit)="reembolsar()" class="campo">
@@ -84,6 +86,7 @@ export default class Pagos {
     params: () => ({ estado: this.estado(), pagina: this.pagina() }),
     stream: ({ params }) => this.api.pagos(params.estado, params.pagina, TAMANO),
   });
+  protected readonly datos = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));
   protected readonly abierto = signal(false);
   protected readonly seleccionado = signal<PagoAdminDto | null>(null);
   protected readonly nota = signal('');

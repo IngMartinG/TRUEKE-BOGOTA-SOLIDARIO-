@@ -9,6 +9,7 @@ import { HacePipe, NumeroPipe } from '../../shared/pipes';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
+import { ErrorCarga } from '../../shared/ui/error-carga';
 
 /** Motivos frecuentes: un clic y listo (la persona los lee tal cual). */
 const MOTIVOS = [
@@ -22,16 +23,17 @@ const MOTIVOS = [
  * R rechaza, flechas para moverse): con volumen, decenas se resuelven en pocos minutos.
  */
 @Component({
-  imports: [FormsModule, Icono, Modal, EstadoVacio, HacePipe, NumeroPipe],
+  imports: [ErrorCarga, FormsModule, Icono, Modal, EstadoVacio, HacePipe, NumeroPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown)': 'tecla($event)' },
   template: `
+    <app-error-carga [recurso]="recurso" />
     <div class="flex flex-wrap items-end justify-between gap-3">
       <div>
         <h2 class="text-xl font-bold">Fotos de perfil en revisión</h2>
         <p class="mt-1 text-sm text-tenue">Aprueba si se ve la cara de una persona real. Si no, recházala: tendrá {{ dias }} días para cambiarla.</p>
       </div>
-      @if (recurso.value(); as r) {
+      @if (datos(); as r) {
         <p class="text-sm text-tenue" aria-live="polite">
           <strong class="text-tinta">{{ r.total | numero }}</strong> por revisar
           @if (r.sinRevisar) { · {{ r.sinRevisar | numero }} antiguas aún en revisión automática }
@@ -114,10 +116,11 @@ export default class Fotos {
   protected readonly dias = 7;
   protected readonly motivos = MOTIVOS;
   protected readonly recurso = rxResource({ stream: () => this.api.fotosEnRevision() });
+  protected readonly datos = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));
   /** Las ya resueltas salen de la lista al instante, sin esperar a recargar. */
   private readonly resueltas = signal<ReadonlySet<string>>(new Set());
   protected readonly items = computed(() =>
-    (this.recurso.value()?.items ?? []).filter((f) => !this.resueltas().has(f.usuarioId ?? '')),
+    (this.datos()?.items ?? []).filter((f) => !this.resueltas().has(f.usuarioId ?? '')),
   );
   protected readonly indice = signal(0);
   protected readonly actual = computed<FotoEnRevisionDto | undefined>(() => {

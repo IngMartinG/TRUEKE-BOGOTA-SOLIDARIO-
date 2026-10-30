@@ -114,7 +114,7 @@ Los **Eco-Puntos y la reputación se otorgan solo al completarse**. La fuente ú
   - correos desechables bloqueados (lista + `Seguridad:DominiosCorreoBloqueados`);
   - el bono de bienvenida llega al confirmar el correo, no al registrarse.
 - **Uso directo de los puntos:** **Impulsar** (20 pts) sube la publicación al primer lugar de "Más recientes", una vez cada 24 h. Es lo único que se paga 100 % con puntos (no tiene precio en pesos).
-- **Beneficios (IVA incluido):** Destacar $6.000 (25 % o 40 % con ≥200 o ≥500 pts) · Verificar $20.000 (20 % o 35 %).
+- **Beneficios (IVA incluido):** Destacar $5.000 (25 % o 40 % con ≥200 o ≥500 pts) · Verificar $20.000 (20 % o 35 %).
 
 | Plan | Precio | Destacados gratis/mes | Descuento extra | Publicaciones activas | Otros |
 |---|---|---|---|---|---|

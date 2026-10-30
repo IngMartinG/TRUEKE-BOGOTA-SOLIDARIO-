@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -10,6 +10,7 @@ import { FechaPipe, HacePipe } from '../../shared/pipes';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
+import { ErrorCarga } from '../../shared/ui/error-carga';
 
 type Decision = 'rechazar' | 'retirar' | 'regimen' | 'quitarRegimen';
 
@@ -18,9 +19,10 @@ type Decision = 'rechazar' | 'retirar' | 'regimen' | 'quitarRegimen';
  * certificado de la Cámara de Comercio (y, si hace falta, con el RUES). El certificado se borra al aprobar o rechazar.
  */
 @Component({
-  imports: [FormsModule, RouterLink, Icono, Modal, EstadoVacio, HacePipe, FechaPipe],
+  imports: [ErrorCarga, FormsModule, RouterLink, Icono, Modal, EstadoVacio, HacePipe, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-error-carga [recurso]="recurso" />
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
         <h2 class="text-xl font-bold">Fundaciones</h2>
@@ -38,7 +40,7 @@ type Decision = 'rechazar' | 'retirar' | 'regimen' | 'quitarRegimen';
     </div>
 
     <ul class="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
-      @for (f of recurso.value() ?? []; track f.usuarioId) {
+      @for (f of datos() ?? []; track f.usuarioId) {
         <li class="tarjeta flex flex-col gap-3 p-5">
           <div>
             <p class="font-display text-lg font-bold">{{ f.razonSocial }}</p>
@@ -90,7 +92,7 @@ type Decision = 'rechazar' | 'retirar' | 'regimen' | 'quitarRegimen';
         </li>
       }
     </ul>
-    @if (!recurso.isLoading() && !recurso.value()?.length) {
+    @if (!recurso.isLoading() && !datos()?.length) {
       <app-estado-vacio icono="heart" [titulo]="estado() === 'Pendiente' ? 'No hay fundaciones por revisar' : 'No hay fundaciones en este estado'" />
     }
 
@@ -118,6 +120,7 @@ export default class FundacionesAdmin {
   ];
   protected readonly estado = signal<EstadoFundacionDto>('Pendiente');
   protected readonly recurso = rxResource({ params: () => this.estado(), stream: ({ params }) => this.api.revision(params) });
+  protected readonly datos = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));
   protected readonly modalAbierto = signal(false);
   protected readonly decision = signal<Decision>('rechazar');
   protected readonly motivo = signal('');

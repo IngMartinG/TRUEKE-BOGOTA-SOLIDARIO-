@@ -127,8 +127,8 @@ public class MonetizacionTests
 
         var cotizacion = await e.EnScopeAsync<IPagoService, CotizacionDto?>(s => s.CotizarAsync(tienda, ConceptoPagoDto.Destacar));
         Assert.Equal(PoliticaEcoPuntos.DescuentoEmpresaPorcentaje, cotizacion!.DescuentoPorcentaje);
-        Assert.Equal(4_800, cotizacion.TotalCop);
-        Assert.Equal(766.39m, cotizacion.IvaIncluidoCop); // 4.800 incluye IVA del 19 %
+        Assert.Equal(4_000, cotizacion.TotalCop);
+        Assert.Equal(638.66m, cotizacion.IvaIncluidoCop); // 4.000 incluye IVA del 19 %
 
         var pub = await CrearAsync(e, tienda, Pub());
         await e.EnScopeAsync<IPagoService>(s => s.DestacarGratisAsync(tienda, pub.Id));

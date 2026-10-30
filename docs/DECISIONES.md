@@ -91,6 +91,6 @@ con el factor y la versión con que se calculó. Un intercambio que se cierra so
 suma impacto, Eco-Puntos ni reputación: quien confirmó tiene el incentivo de pedirle a la otra parte que confirme.
 
 ## Pendientes de decidir
-- Precio de "Destacar" (hoy 6.000 COP por 7 días).
+- Precio de "Destacar": 5.000 COP por 7 días desde el 2026-10-30 (antes 6.000). Revisar con datos reales cuando se encienda el cobro.
 - Punto físico o 100 % digital.
 - Dominio propio.

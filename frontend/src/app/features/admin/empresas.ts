@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom, of } from 'rxjs';
@@ -13,6 +13,7 @@ import { FechaPipe, HacePipe, KilosPipe, NumeroPipe } from '../../shared/pipes';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
+import { ErrorCarga } from '../../shared/ui/error-carga';
 
 type Decision = 'rechazar' | 'retirar';
 
@@ -21,9 +22,10 @@ type Decision = 'rechazar' | 'retirar';
  * Administrador emite sus informes de impacto, que guardan una foto inmutable de los registros del periodo.
  */
 @Component({
-  imports: [FormsModule, Icono, Modal, EstadoVacio, HacePipe, FechaPipe, KilosPipe, NumeroPipe],
+  imports: [ErrorCarga, FormsModule, Icono, Modal, EstadoVacio, HacePipe, FechaPipe, KilosPipe, NumeroPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-error-carga [recurso]="recurso" />
     <div class="flex flex-wrap items-end justify-between gap-4">
       <div>
         <h2 class="text-xl font-bold">Empresas</h2>
@@ -45,7 +47,7 @@ type Decision = 'rechazar' | 'retirar';
     </div>
 
     <ul class="mt-6 space-y-3">
-      @for (e of recurso.value() ?? []; track e.id) {
+      @for (e of datos() ?? []; track e.id) {
         <li class="tarjeta p-5">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="min-w-0">
@@ -91,7 +93,7 @@ type Decision = 'rechazar' | 'retirar';
             <div [id]="'informes-' + e.id" class="mt-4 space-y-6 border-t border-borde pt-4">
               @if (detalle.isLoading()) {
                 <div class="esqueleto h-24 w-full rounded-tarjeta"></div>
-              } @else if (detalle.value(); as d) {
+              } @else if (detalle.hasValue() ? detalle.value() : null; as d) {
                 <section aria-label="Campañas">
                   <h3 class="font-bold">Campañas</h3>
                   <ul class="mt-2 divide-y divide-borde text-sm">
@@ -174,7 +176,7 @@ type Decision = 'rechazar' | 'retirar';
         </li>
       }
     </ul>
-    @if (!recurso.isLoading() && !recurso.value()?.length) {
+    @if (!recurso.isLoading() && !datos()?.length) {
       <app-estado-vacio icono="edificio" [titulo]="estado() === 'Pendiente' ? 'No hay empresas por revisar' : 'No hay empresas en este estado'" />
     }
 
@@ -208,6 +210,7 @@ export default class EmpresasAdmin {
     : [{ valor: 'Aprobada', texto: 'Verificadas' }];
   protected readonly estado = signal<EstadoEmpresaDto>(this.estados[0]!.valor);
   protected readonly recurso = rxResource({ params: () => this.estado(), stream: ({ params }) => this.api.listarAdmin(params) });
+  protected readonly datos = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));
 
   protected readonly abierta = signal<string | null>(null);
   protected readonly detalle = rxResource({

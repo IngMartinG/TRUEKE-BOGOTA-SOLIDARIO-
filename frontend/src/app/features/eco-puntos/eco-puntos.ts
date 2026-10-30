@@ -618,7 +618,7 @@ export default class EcoPuntos {
         titulo: 'Destacar publicación',
         descripcion: 'Aparece primero en el catálogo y llega a más vecinos.',
         icono: 'destello',
-        precio: p?.precioDestacarCop ?? 6000,
+        precio: p?.precioDestacarCop ?? 5000,
         extra: '',
         beneficios: [
           `Primera en el catálogo durante ${p?.duracionDestacadoDias ?? 7} días, con cualquier orden`,

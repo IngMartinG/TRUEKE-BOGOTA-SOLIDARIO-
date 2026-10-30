@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -10,12 +10,14 @@ import { HacePipe } from '../../shared/pipes';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
+import { ErrorCarga } from '../../shared/ui/error-carga';
 
 /** Segunda instancia: la versión de la persona denunciada frente a la decisión original. */
 @Component({
-  imports: [FormsModule, RouterLink, Icono, Modal, EstadoVacio, HacePipe],
+  imports: [ErrorCarga, FormsModule, RouterLink, Icono, Modal, EstadoVacio, HacePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-error-carga [recurso]="recurso" />
     <div class="flex flex-wrap items-center justify-between gap-3">
       <div>
         <h2 class="text-xl font-bold">Apelaciones</h2>
@@ -34,7 +36,7 @@ import { Modal } from '../../shared/ui/modal';
           <li class="esqueleto h-44 rounded-tarjeta"></li>
         }
       }
-      @for (a of recurso.value() ?? []; track a.id) {
+      @for (a of datos() ?? []; track a.id) {
         <li class="tarjeta p-5">
           <div class="flex flex-wrap items-start justify-between gap-3">
             <div class="flex flex-wrap items-center gap-2">
@@ -94,7 +96,7 @@ import { Modal } from '../../shared/ui/modal';
         </li>
       }
     </ul>
-    @if (!recurso.isLoading() && !recurso.value()?.length) {
+    @if (!recurso.isLoading() && !datos()?.length) {
       <app-estado-vacio icono="balanza" [titulo]="estado() === 'Pendiente' ? 'Sin apelaciones pendientes' : 'Sin apelaciones en este estado'" descripcion="Aquí llegan las versiones de las personas denunciadas." />
     }
 
@@ -125,6 +127,7 @@ export default class Apelaciones {
     Deseo: 'Lo que busca',
   };
   protected readonly recurso = rxResource({ params: () => this.estado(), stream: ({ params }) => this.api.apelaciones(params) });
+  protected readonly datos = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));
   protected readonly abierto = signal(false);
   protected readonly aceptar = signal(false);
   protected readonly nota = signal('');

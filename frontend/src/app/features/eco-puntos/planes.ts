@@ -232,7 +232,7 @@ export default class Planes {
   protected readonly tarjetas = computed(() => {
     const p = this.politica();
     const ciclo = p?.diasCicloDestacadosGratis || 30;
-    const destacar = p?.precioDestacarCop ?? 6000;
+    const destacar = p?.precioDestacarCop ?? 5000;
     const premium = p?.precioPremiumCop ?? 15000;
     const empresa = p?.precioEmpresaCop ?? 50000;
     const premiumAnual = p?.precioPremiumAnualCop ?? 150000;

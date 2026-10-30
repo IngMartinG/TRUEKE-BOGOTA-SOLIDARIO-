@@ -8,6 +8,7 @@ import { CatalogoApi } from '../../core/api/catalogo.api';
 import { AvisosService } from '../../core/avisos.service';
 import { KilosPipe } from '../../shared/pipes';
 import { Icono } from '../../shared/ui/icono';
+import { ErrorCarga } from '../../shared/ui/error-carga';
 
 /** Siguiente versión menor: 2.0.0 → 2.1.0 (se puede cambiar antes de guardar). */
 const siguienteVersion = (v: string) => {
@@ -20,16 +21,17 @@ const siguienteVersion = (v: string) => {
  * intercambios ya contados conservan el factor con que se calcularon.
  */
 @Component({
-  imports: [FormsModule, Icono, KilosPipe],
+  imports: [ErrorCarga, FormsModule, Icono, KilosPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-error-carga [recurso]="recurso" />
     <h2 class="text-xl font-bold">Factores de impacto</h2>
     <p class="mt-1 max-w-prose text-sm text-tenue">
       kg de CO₂ que se evitan por cada kg reutilizado. Al cambiar un factor, anota la fuente y sube la versión
       (documéntala en la metodología): lo ya contado no se recalcula. Versión vigente: <strong class="text-tinta">{{ version() }}</strong>.
     </p>
 
-    @if (recurso.value(); as d) {
+    @if (datos(); as d) {
       <div class="mt-6 overflow-x-auto rounded-tarjeta border border-borde">
         <table class="w-full text-left text-sm">
           <caption class="sr-only">Factores por material</caption>
@@ -130,7 +132,8 @@ export default class FactoresImpacto {
   protected readonly nombre = nombreMaterial;
   // Sin la caché de la sesión: tras guardar se recarga con los factores nuevos.
   protected readonly recurso = rxResource({ stream: () => this.catalogo.impactoFiltrado({}) });
-  protected readonly version = computed(() => this.recurso.value()?.versionMetodologia ?? '');
+  protected readonly datos = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));
+  protected readonly version = computed(() => this.datos()?.versionMetodologia ?? '');
   protected readonly editando = signal<string | null>(null);
   protected readonly guardando = signal(false);
   protected readonly valor = signal<number | null>(null);

@@ -672,6 +672,28 @@ páginas estáticas para buscadores (`generar-seo.mjs`) y la pantalla de carga y
 HtmlSanitizer no aplica: la API solo devuelve JSON, Angular escapa todo y el texto ya se valida con `TextoSeguro`; además
 rechazaría textos normales como "3 < 5" y guardaría el contenido en los registros.
 
+## Hecho el 2026-10-30 — administración más rápida y vertical, Negocios en el menú, precio de destacar
+- **Por qué la administración "no cargaba":** en Angular 22, leer `value()` de un recurso que falló lanza un error. Si una
+  petición del panel fallaba (típico en el arranque en frío de Render), la vista se rompía en silencio: tabla vacía, sin
+  "Cargando…" ni mensaje. Ahora cada sección lee `datos()` (solo con `hasValue()`) y muestra `<app-error-carga>` con
+  **Reintentar**. El contador del panel tampoco se rompe si la cola falla.
+- **Medición:** en local, cada petición del panel tarda 17-36 ms y las consultas (`GET /admin/usuarios` pagina y cuenta sobre
+  `Usuarios`, sin `Include`) no son el cuello de botella. En producción, con la API despierta, 150-200 ms; la primera vez que
+  se usa cada consulta, 0,5-1,5 s (compilación de EF y JIT).
+- **Arranque en frío:** la imagen Docker se publica con **ReadyToRun** (`linux-x64`). Medido con 0,1 CPU y 512 MB (lo de
+  Render gratis): de 45-77 s a 19-34 s hasta `/health/live`.
+- **Navegación vertical:** la administración pasa de 15 pestañas horizontales a una barra lateral fija agrupada (Moderación,
+  Personas, Organizaciones, Dinero y Plataforma) con `aria-current`; en celular y tablet, un selector nativo con los mismos
+  grupos.
+- **Negocios** en el menú principal de escritorio, junto a Fundaciones (en celular ya estaba en el menú de la cuenta).
+- **Monitor de cron-job.org:** pasa a cada 5 min (`docs/DESPLIEGUE.md` §7.2, con los pasos y el aviso de que cron-job.org
+  desactiva solo un trabajo tras varios fallos). Lo configura el dueño.
+- **Destacar:** de $6.000 a **$5.000** por 7 días (con 25 % / 40 % de descuento: $3.750 / $3.000). Referencia: OLX ya no opera
+  en Colombia (2023); impulsar en Facebook Marketplace pide ~US$1 al día (~$4.000 diarios); Mercado Libre cobra destacados
+  solo en vehículos e inmuebles ($90.000+). Los términos no citan el precio: no cambia la versión legal.
+- **Aportes ("Apoya"):** con Wompi una donación de $1.500 deja ~$620 (2,65 % + $700 + IVA). Las alternativas quedan para
+  decisión del dueño (ver Pendiente).
+
 ## Hecho el 2026-10-30 — retención: "¿Sigue disponible?", resumen semanal, logros y metas
 Paso 7 del plan de producto (Bloque 5, D-018). Migración `Retencion`.
 - **"¿Sigue disponible?"** (`IRetencionService`, desde `MantenimientoHostedService` cada hora): a una publicación disponible sin
@@ -909,7 +931,11 @@ Los pasos 3 a 7 cambian textos legales: cada uno sube la versión y queda para r
   de la sociedad; subir la versión de la política y los términos si el abogado lo indica; y replantear la Fase 4 (aportes),
   que hoy supone que el dinero lo recibe una persona natural.
 - **Brevo con un Gmail como remitente:** algunos correos pueden caer en spam. Con dominio propio, autenticarlo en Brevo (DKIM y DMARC) y usar `no-responder@tudominio`.
-- **API despierta y Supabase activo:** resuelto el 2026-10-23 con un monitor de cron-job.org a `/health/ready` cada 10 min.
+- **API despierta y Supabase activo:** monitor de cron-job.org a `/health/ready`; el 2026-10-30 se pidió pasarlo de 10 a 5 min
+  y revisar que no se haya desactivado solo (un usuario nuevo esperó cerca de 1 minuto).
+- **Aportes (por decidir el dueño):** con Wompi (2,65 % + $700 + IVA por transacción) los aportes pequeños pierden casi la
+  mitad. Opciones: llave Bre-B / QR de Nequi o Bancolombia (gratis para recibir como persona natural), o subir el aporte
+  mínimo sugerido.
   El workflow de GitHub queda de respaldo: en la práctica corre cada 3 a 5 horas (`docs/DESPLIEGUE.md` §7.2).
 - **Dominio propio:**
   - resuelve la cookie de sesión entre sitios distintos (Safari/iPhone);
