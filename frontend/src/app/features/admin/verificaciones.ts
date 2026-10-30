@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -10,16 +10,18 @@ import { Avatar } from '../../shared/ui/avatar';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
+import { ErrorCarga } from '../../shared/ui/error-carga';
 
 @Component({
-  imports: [FormsModule, Avatar, Icono, Modal, EstadoVacio, HacePipe],
+  imports: [ErrorCarga, FormsModule, Avatar, Icono, Modal, EstadoVacio, HacePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-error-carga [recurso]="recurso" />
     <h2 class="text-xl font-bold">Verificaciones de identidad</h2>
     <p class="mt-1 text-sm text-tenue">El documento se borra automáticamente al aprobar o rechazar.</p>
 
     <ul class="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
-      @for (v of recurso.value() ?? []; track v.usuarioId) {
+      @for (v of datos() ?? []; track v.usuarioId) {
         <li class="tarjeta p-5">
           <div class="flex items-center gap-3">
             @if (v.fotoUrl) {
@@ -52,7 +54,7 @@ import { Modal } from '../../shared/ui/modal';
         </li>
       }
     </ul>
-    @if (!recurso.isLoading() && !recurso.value()?.length) {
+    @if (!recurso.isLoading() && !datos()?.length) {
       <app-estado-vacio icono="verificado" titulo="No hay verificaciones pendientes" />
     }
 
@@ -72,6 +74,7 @@ export default class Verificaciones {
   private readonly api = inject(AdminApi);
   private readonly avisos = inject(AvisosService);
   protected readonly recurso = rxResource({ stream: () => this.api.verificaciones() });
+  protected readonly datos = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));
   protected readonly rechazoAbierto = signal(false);
   protected readonly motivo = signal('');
   /** Lo mismo para cada persona: la cara, el nombre y que el documento sirva. */

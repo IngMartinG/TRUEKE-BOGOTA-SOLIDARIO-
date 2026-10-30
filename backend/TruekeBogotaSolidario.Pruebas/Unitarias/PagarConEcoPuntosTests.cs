@@ -52,8 +52,8 @@ public class PagarConEcoPuntosTests
         var cot = await e.EnScopeAsync<IPagoService, CotizacionDto?>(s => s.CotizarAsync(ana, ConceptoPagoDto.Destacar));
         Assert.Equal(0, cot!.PuntosACanjear);
         Assert.Equal(PoliticaEcoPuntos.PrecioDestacarCop, cot.TotalCop);
-        Assert.Equal(60, cot.PuntosParaCubrirTodo);
-        Assert.Equal(60, cot.PuntosMaximos);
+        Assert.Equal(50, cot.PuntosParaCubrirTodo);
+        Assert.Equal(50, cot.PuntosMaximos);
 
         var pago = await IniciarAsync(e, ana, Destacar(pub, 0));
         Assert.Equal(PoliticaEcoPuntos.PrecioDestacarCop, pago.MontoCop);
@@ -67,7 +67,7 @@ public class PagarConEcoPuntosTests
         var (ana, pub) = await PreparadoAsync(e, 100);
 
         var pago = await IniciarAsync(e, ana, Destacar(pub, 30));
-        Assert.Equal(3_000, pago.MontoCop);
+        Assert.Equal(2_000, pago.MontoCop);
         Assert.False(pago.AplicadoConPuntos);
         Assert.Equal(70, await SaldoAsync(e, ana));
 
@@ -81,16 +81,16 @@ public class PagarConEcoPuntosTests
         using var e = new EntornoNegocio();
         var (ana, pub) = await PreparadoAsync(e, 75);
 
-        var pago = await IniciarAsync(e, ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Destacar, PublicacionId = pub, PuntosAUsar = 60 });
+        var pago = await IniciarAsync(e, ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Destacar, PublicacionId = pub, PuntosAUsar = 50 });
         Assert.True(pago.AplicadoConPuntos);
         Assert.Equal(0, pago.MontoCop);
-        Assert.Equal(15, await SaldoAsync(e, ana));
+        Assert.Equal(25, await SaldoAsync(e, ana));
         Assert.Equal(0, await FacturasAsync(e));
         var publicacion = await e.EnScopeAsync<IPublicacionService, PublicacionDto>(s => s.ObtenerAsync(ana, pub));
         Assert.True(publicacion.Destacada);
 
         var historial = await e.EnScopeAsync<IEcoPuntosService, PaginaDto<MovimientoEcoPuntosDto>>(s => s.MovimientosAsync(ana, 1, 10));
-        Assert.Contains(historial.Items, m => m.Puntos == -60 && m.Concepto == "CanjeDescuento");
+        Assert.Contains(historial.Items, m => m.Puntos == -50 && m.Concepto == "CanjeDescuento");
     }
 
     [Fact]
@@ -101,17 +101,17 @@ public class PagarConEcoPuntosTests
         await e.PagarAsync(ana, new IniciarPagoRequest { Concepto = ConceptoPagoDto.Empresa, FacturaANombre = false, AceptoConsumidorFinal = true });
 
         var cot = await e.EnScopeAsync<IPagoService, CotizacionDto?>(s => s.CotizarAsync(ana, ConceptoPagoDto.Destacar));
-        Assert.Equal(4_800, cot!.PrecioConPlanCop);
-        Assert.Equal(48, cot.PuntosParaCubrirTodo);
+        Assert.Equal(4_000, cot!.PrecioConPlanCop);
+        Assert.Equal(40, cot.PuntosParaCubrirTodo);
 
-        var pago = await IniciarAsync(e, ana, Destacar(pub, 48));
+        var pago = await IniciarAsync(e, ana, Destacar(pub, 40));
         Assert.True(pago.AplicadoConPuntos);
-        Assert.Equal(52, await SaldoAsync(e, ana));
+        Assert.Equal(60, await SaldoAsync(e, ana));
     }
 
     [Theory]
-    [InlineData(50, 100)]  // dejaría $1.000: menos del mínimo que cobra la pasarela
-    [InlineData(61, 100)]  // más de lo que cuesta
+    [InlineData(40, 100)]  // dejaría $1.000: menos del mínimo que cobra la pasarela
+    [InlineData(51, 100)]  // más de lo que cuesta
     [InlineData(40, 20)]   // más de los que tiene
     public async Task Combinaciones_imposibles_se_rechazan_sin_tocar_el_saldo(int puntos, int saldo)
     {

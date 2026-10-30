@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input, linkedSignal, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, linkedSignal, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -12,13 +12,15 @@ import { Avatar } from '../../shared/ui/avatar';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
 import { Paginador } from '../../shared/ui/paginador';
+import { ErrorCarga } from '../../shared/ui/error-carga';
 
 const TAMANO = 20;
 
 @Component({
-  imports: [FormsModule, RouterLink, Avatar, Icono, Modal, Paginador, FechaPipe],
+  imports: [ErrorCarga, FormsModule, RouterLink, Avatar, Icono, Modal, Paginador, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-error-carga [recurso]="recurso" />
     <div class="flex flex-wrap items-center justify-between gap-3">
       <h2 class="text-xl font-bold">Usuarios</h2>
       <form class="flex flex-wrap items-center gap-2" (ngSubmit)="buscar()">
@@ -35,7 +37,7 @@ const TAMANO = 20;
           <tr><th class="px-4 py-3">Usuario</th><th class="px-4 py-3">Rol</th><th class="px-4 py-3">Estado</th><th class="px-4 py-3">Reputación</th><th class="px-4 py-3 text-right">Acciones</th></tr>
         </thead>
         <tbody class="divide-y divide-borde">
-          @for (u of recurso.value()?.items ?? []; track u.id) {
+          @for (u of datos()?.items ?? []; track u.id) {
             <tr class="align-top">
               <td class="px-4 py-3">
                 <a [routerLink]="['/usuarios', u.id]" class="flex items-center gap-3">
@@ -102,12 +104,12 @@ const TAMANO = 20;
               </td>
             </tr>
           } @empty {
-            <tr><td colspan="5" class="px-4 py-10 text-center text-tenue">{{ recurso.isLoading() ? 'Cargando…' : 'No hay usuarios que coincidan.' }}</td></tr>
+            <tr><td colspan="5" class="px-4 py-10 text-center text-tenue">{{ recurso.isLoading() ? 'Cargando…' : recurso.error() ? 'No se pudo cargar la lista.' : 'No hay usuarios que coincidan.' }}</td></tr>
           }
         </tbody>
       </table>
     </div>
-    <app-paginador [pagina]="pagina()" [total]="recurso.value()?.total ?? 0" [tamano]="tamano" (cambiar)="pagina.set($event)" />
+    <app-paginador [pagina]="pagina()" [total]="datos()?.total ?? 0" [tamano]="tamano" (cambiar)="pagina.set($event)" />
 
     <app-modal [(abierto)]="suspenderAbierto" titulo="Suspender cuenta" [subtitulo]="seleccionado()?.nombreCompleto ?? ''">
       <form id="form-suspender" (ngSubmit)="suspender()" class="space-y-4">
@@ -196,6 +198,7 @@ export default class Usuarios {
     params: () => ({ texto: this.texto(), solo: this.soloSuspendidos(), menor: this.soloMenor(), pagina: this.pagina() }),
     stream: ({ params }) => this.api.usuarios(params.texto, params.solo, params.pagina, TAMANO, params.menor),
   });
+  protected readonly datos = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));
 
   protected readonly suspenderAbierto = signal(false);
   protected readonly descartarAbierto = signal(false);

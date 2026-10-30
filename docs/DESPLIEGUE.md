@@ -148,11 +148,11 @@ Sin esto, el botón "Ayuda" responde solo con la guía local. Con la IA activa, 
 - El servidor solo envía a los servicios de push reconocidos (`fcm.googleapis.com`, `*.push.services.mozilla.com`, `*.notify.windows.com`, `*.push.apple.com`): nunca a una URL arbitraria.
 
 ## 7. Limitaciones de la fase gratis
-- **Arranque en frío:** tras 15 min sin uso, la primera petición tarda 30-60 s. Lo evita el monitor de cron-job.org (§7.2); mientras tanto, la pantalla de carga del front explica que el servidor está despertando.
+- **Arranque en frío:** tras 15 min sin uso, la primera petición tarda 20-35 s (la imagen va compilada con ReadyToRun; sin eso eran 45-75 s, medido con 0,1 CPU y 512 MB, igual que Render gratis). Lo evita el monitor de cron-job.org (§7.2); mientras tanto, la pantalla de carga del front explica que el servidor está despertando.
 - **iPhone/Safari:** el front (`github.io`) y la API (`onrender.com`) son sitios distintos, y Safari bloquea esa cookie de sesión "de terceros". En Safari la sesión se cierra cuando vence el token (15 min). En Chrome, Edge y Firefox funciona bien. **Se resuelve con dominio propio** (§8).
 - **Pausa de Supabase por inactividad:** si el proyecto pasa 7 días sin actividad, Supabase lo pausa y avisa por correo. La API sigue viva, pero `/health/ready` y todo lo que use la base fallan. Para reactivarlo: panel de Supabase → proyecto → **Restore project** (1-2 minutos). Los datos no se pierden. Con usuarios entrando cada semana no pasa. Además: 500 MB de base (las fotos van aparte) y 5 GB de salida al mes; el consumo se ve en *Project Settings → Usage*.
 - Sin Redis: el límite de intentos es por instancia (correcto mientras haya una sola).
-- **API despierta:** el monitor externo consulta `/health/ready` cada 10 min (750 horas gratis al mes alcanzan para una sola instancia encendida siempre) y, de paso, evita la pausa de Supabase. Ver §7.2.
+- **API despierta:** el monitor externo consulta `/health/ready` cada 5 min (750 horas gratis al mes alcanzan para una sola instancia encendida siempre) y, de paso, evita la pausa de Supabase. Ver §7.2.
 
 ### 7.1 Monitoreo de errores (Sentry, gratis: 5.000 errores al mes)
 Sin esto, los errores solo quedan en los **logs de Render** (*trueke-api → Logs*; el plan gratis guarda pocos días) y nadie se entera. Con Sentry, cada error 500 de la API y cada fallo de JavaScript en el navegador llega agrupado, con la ruta y la versión, y avisa por correo. Es opcional: sin DSN queda apagado.
@@ -170,7 +170,9 @@ Sin esto, los errores solo quedan en los **logs de Render** (*trueke-api → Log
 Si se agota el cupo del mes, Sentry descarta los errores nuevos hasta el mes siguiente; la app no se afecta.
 
 ### 7.2 Chequeo de disponibilidad y API despierta
-- **Monitor principal (activo desde el 2026-10-23):** [cron-job.org](https://cron-job.org) (cuenta propia, gratis) consulta `https://<API>/health/ready` cada 10 min. Así la API no se duerme y Supabase no se pausa. Conviene activar en el trabajo el aviso por correo cuando falle.
+- **Monitor principal (activo desde el 2026-10-23; cada 5 min desde el 2026-10-30):** [cron-job.org](https://cron-job.org) (cuenta propia, gratis) consulta `https://<API>/health/ready`. Así la API no se duerme y Supabase no se pausa. Con 10 min bastaba una ejecución fallida o retrasada para pasar de los 15 min y que Render la durmiera; con 5 min hay margen. La consulta no gasta horas extra: la instancia ya está encendida.
+  - Configuración del trabajo: *Cronjobs → (el trabajo) → Edit*. **URL:** `https://<API>/health/ready` (sin `/api/v1`). **Execution schedule:** *Every 5 minutes*. **Advanced → Timeout:** el máximo que permita el plan (30 s). **Notifications:** activar *execution fails* y *job is disabled automatically*. Guardar y comprobar que el interruptor quede en **Enabled**.
+  - **Ojo:** cron-job.org **desactiva solo** un trabajo después de varias ejecuciones fallidas seguidas (por ejemplo, durante un despliegue largo o una pausa de Supabase) y avisa por correo. Si la API vuelve a dormirse, lo primero es revisar en *History* que el trabajo siga activo y que responda `200` en menos de 1 s.
 - **Respaldo:** `.github/workflows/mantener-despierta.yml` consulta la misma URL (variable del repositorio `API_URL`). Si la API no responde 200 en 3 intentos, la ejecución falla y GitHub avisa por correo. **No basta solo:** aunque pide cada 10 min, en la práctica GitHub lo ejecuta cada 3 a 5 horas, y **se desactiva tras 60 días sin commits** (se reactiva en *Actions → Mantener la API despierta → Enable workflow*).
 - Alternativa al monitor principal: [UptimeRobot](https://uptimerobot.com) a la misma URL cada 5 min. `/health/live` no toca la base; `/health/ready` sí (por eso mantiene activa a Supabase).
 

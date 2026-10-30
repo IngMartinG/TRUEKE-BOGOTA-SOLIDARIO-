@@ -11,6 +11,7 @@ import { Avatar } from '../../shared/ui/avatar';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
+import { ErrorCarga } from '../../shared/ui/error-carga';
 
 /** Motivos frecuentes: el dueño los lee tal cual y sabe qué corregir. */
 const MOTIVOS = [
@@ -26,10 +27,11 @@ const KBD = 'rounded-md border border-current/30 px-1.5 py-0.5 font-sans text-xs
  * (A aprueba, R rechaza, flechas para moverse, X marca) y las marcadas se aprueban juntas: lo normal es aprobar.
  */
 @Component({
-  imports: [FormsModule, Avatar, Icono, Modal, EstadoVacio, CopPipe, HacePipe, NumeroPipe],
+  imports: [ErrorCarga, FormsModule, Avatar, Icono, Modal, EstadoVacio, CopPipe, HacePipe, NumeroPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown)': 'tecla($event)' },
   template: `
+    <app-error-carga [recurso]="recurso" />
     <div class="flex flex-wrap items-end justify-between gap-3">
       <div>
         <h2 class="text-xl font-bold">Publicaciones en revisión</h2>
@@ -38,7 +40,7 @@ const KBD = 'rounded-md border border-current/30 px-1.5 py-0.5 font-sans text-xs
           artículos prohibidos o varias denuncias. Las demás se publican al instante.
         </p>
       </div>
-      @if (recurso.value(); as r) {
+      @if (datos(); as r) {
         <p class="text-sm text-tenue" aria-live="polite">
           <strong class="text-tinta">{{ pendientesEnVivo() ?? r.total | numero }}</strong> por revisar
           @if (hayNuevas()) {
@@ -212,9 +214,10 @@ export default class PublicacionesPendientes {
   protected readonly motivos = MOTIVOS;
   protected readonly modos: Record<string, string> = { Trueke: 'Trueke', Compra: 'Venta', Donacion: 'Donación' };
   protected readonly recurso = rxResource({ stream: () => this.api.publicacionesEnRevision() });
+  protected readonly datos = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));
   /** Las ya resueltas salen de la lista al instante, sin esperar a recargar. */
   private readonly resueltas = signal<ReadonlySet<string>>(new Set());
-  protected readonly items = computed(() => (this.recurso.value()?.items ?? []).filter((p) => !this.resueltas().has(p.id ?? '')));
+  protected readonly items = computed(() => (this.datos()?.items ?? []).filter((p) => !this.resueltas().has(p.id ?? '')));
   protected readonly indice = signal(0);
   protected readonly actual = computed<PublicacionEnRevisionDto | undefined>(() => {
     const lista = this.items();

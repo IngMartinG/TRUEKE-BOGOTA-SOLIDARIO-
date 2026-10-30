@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule, NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
@@ -15,6 +15,7 @@ import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
 import { Paginador } from '../../shared/ui/paginador';
 import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
+import { ErrorCarga } from '../../shared/ui/error-carga';
 
 const TAMANO = 20;
 
@@ -23,9 +24,10 @@ const TAMANO = 20;
  * portal de la DIAN o en su proveedor tecnológico (con los datos del CSV) y registra aquí el número y el CUFE.
  */
 @Component({
-  imports: [FormsModule, ReactiveFormsModule, CampoAccesible, EnfocarError, Icono, Modal, Paginador, SelectorMunicipio, CopPipe, FechaPipe],
+  imports: [ErrorCarga, FormsModule, ReactiveFormsModule, CampoAccesible, EnfocarError, Icono, Modal, Paginador, SelectorMunicipio, CopPipe, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-error-carga [recurso]="recurso" />
     <div class="flex flex-wrap items-end justify-between gap-3">
       <div>
         <h2 class="text-xl font-bold">Facturas electrónicas</h2>
@@ -48,7 +50,7 @@ const TAMANO = 20;
           <tr><th class="px-4 py-3">Fecha</th><th class="px-4 py-3">Comprador</th><th class="px-4 py-3">Concepto</th><th class="px-4 py-3">Base</th><th class="px-4 py-3">IVA</th><th class="px-4 py-3">Total</th><th class="px-4 py-3"></th></tr>
         </thead>
         <tbody class="divide-y divide-borde">
-          @for (f of recurso.value()?.items ?? []; track f.id) {
+          @for (f of datos()?.items ?? []; track f.id) {
             <tr>
               <td class="px-4 py-3 text-xs">{{ f.fechaUtc | fecha: true }}<span class="block font-mono text-xs text-tenue">{{ f.referencia }}</span></td>
               <td class="px-4 py-3">
@@ -95,7 +97,7 @@ const TAMANO = 20;
         </tbody>
       </table>
     </div>
-    <app-paginador [pagina]="pagina()" [total]="recurso.value()?.total ?? 0" [tamano]="tamano" (cambiar)="pagina.set($event)" />
+    <app-paginador [pagina]="pagina()" [total]="datos()?.total ?? 0" [tamano]="tamano" (cambiar)="pagina.set($event)" />
 
     <app-modal [(abierto)]="abierto" titulo="Registrar factura emitida" [subtitulo]="(seleccionada()?.compradorNombre ?? '') + ' · ' + (seleccionada()?.referencia ?? '')">
       <form id="form-factura" (ngSubmit)="registrar()" class="space-y-4">
@@ -178,6 +180,7 @@ export default class Facturas {
     params: () => ({ estado: this.estado(), pagina: this.pagina() }),
     stream: ({ params }) => this.api.facturas(params.estado, params.pagina, TAMANO),
   });
+  protected readonly datos = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));
   protected readonly abierto = signal(false);
   protected readonly seleccionada = signal<FacturaAdminDto | null>(null);
   protected readonly numero = signal('');

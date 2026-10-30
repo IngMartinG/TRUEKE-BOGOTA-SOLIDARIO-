@@ -19,7 +19,8 @@ import { Logo } from '../shared/ui/logo';
     <header class="sticky top-0 z-50 border-b border-borde bg-fondo/85 backdrop-blur-xl">
       <!--
         Celular y tablet (< lg): logo, búsqueda (desde md), avisos y cuenta; el resto está en la barra inferior.
-        PC (≥ lg): menú principal, Publicar y Mensajes. El texto del logo se oculta donde no cabe.
+        PC (≥ lg): menú principal, Publicar y Mensajes. El texto del logo (y el de Publicar) se oculta donde no cabe; Apoya queda
+        como corazón con su nombre para el lector de pantalla.
       -->
       <div class="contenedor flex h-16 items-center gap-2 sm:gap-3 xl:gap-6">
         <a routerLink="/" class="shrink-0 rounded-full" aria-label="Trueke Bogotá Solidario, inicio">
@@ -31,7 +32,7 @@ import { Logo } from '../shared/ui/logo';
             <a
               [routerLink]="e.ruta"
               routerLinkActive="bg-bosque-100 text-bosque-800 dark:bg-bosque-900 dark:text-bosque-100"
-              class="rounded-full px-3.5 py-2 text-sm font-semibold text-tenue transition hover:text-tinta"
+              class="rounded-full px-3.5 py-2 text-sm font-semibold text-tenue transition hover:text-tinta lg:px-2"
               >{{ e.texto }}</a
             >
           }
@@ -39,8 +40,8 @@ import { Logo } from '../shared/ui/logo';
             <a
               routerLink="/apoya"
               routerLinkActive="bg-tierra-100 dark:bg-tierra-700/30"
-              class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold text-tierra-600 transition hover:bg-tierra-50 dark:text-tierra-500 dark:hover:bg-tierra-700/20"
-              ><app-icono nombre="heart" [tamano]="16" [relleno]="true" class="origin-center animate-latido [animation-iteration-count:4]" />Apoya</a
+              class="inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-bold text-tierra-600 lg:px-2 transition hover:bg-tierra-50 dark:text-tierra-500 dark:hover:bg-tierra-700/20"
+              ><app-icono nombre="heart" [tamano]="16" [relleno]="true" class="origin-center animate-latido [animation-iteration-count:4]" /><span class="lg:sr-only">Apoya</span></a
             >
           }
         </nav>
@@ -77,8 +78,9 @@ import { Logo } from '../shared/ui/logo';
             </a>
           }
           @if (sesion.autenticado() && sesion.correoVerificado()) {
-            <a routerLink="/publicar" class="btn btn-primario hidden lg:inline-flex">
-              <app-icono nombre="mas" [tamano]="18" />Publicar
+            <!-- Entre lg y xl no cabe el texto: queda el ícono (el nombre sigue para el lector de pantalla) -->
+            <a routerLink="/publicar" class="btn btn-primario hidden lg:inline-flex lg:max-xl:px-3">
+              <app-icono nombre="mas" [tamano]="18" /><span class="lg:max-xl:sr-only">Publicar</span>
             </a>
             <a routerLink="/mensajes" class="btn-icono relative hidden lg:inline-flex"
               [attr.aria-label]="tiempoReal.mensajesNoLeidos() ? 'Mensajes, ' + tiempoReal.mensajesNoLeidos() + ' sin leer' : 'Mensajes'">
@@ -179,6 +181,7 @@ export class Encabezado {
     { ruta: '/como-funciona', texto: 'Cómo funciona' },
     { ruta: '/eco-puntos', texto: 'Eco-Puntos' },
     { ruta: '/fundaciones', texto: 'Fundaciones' },
+    { ruta: '/negocios', texto: 'Negocios' },
     { ruta: '/impacto', texto: 'Impacto' },
   ];
 

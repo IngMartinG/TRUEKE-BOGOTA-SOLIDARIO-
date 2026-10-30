@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -11,6 +11,7 @@ import { FechaPipe } from '../../shared/pipes';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
 import { Paginador } from '../../shared/ui/paginador';
+import { ErrorCarga } from '../../shared/ui/error-carga';
 
 const TAMANO = 20;
 
@@ -19,9 +20,10 @@ const TAMANO = 20;
  * personales y 15 para lo demás. "Abiertas" incluye las que están en trámite.
  */
 @Component({
-  imports: [FormsModule, RouterLink, Icono, Modal, Paginador, FechaPipe],
+  imports: [ErrorCarga, FormsModule, RouterLink, Icono, Modal, Paginador, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-error-carga [recurso]="recurso" />
     <div class="flex flex-wrap items-end justify-between gap-3">
       <div>
         <h2 class="text-xl font-bold">PQR</h2>
@@ -35,7 +37,7 @@ const TAMANO = 20;
     </div>
 
     <ul class="mt-6 space-y-3">
-      @for (p of recurso.value()?.items ?? []; track p.id) {
+      @for (p of datos()?.items ?? []; track p.id) {
         <li class="tarjeta p-5" [class.ring-2]="p.vencida" [class.ring-tierra-400]="p.vencida">
           <div class="flex flex-wrap items-start justify-between gap-2">
             <div>
@@ -106,7 +108,7 @@ const TAMANO = 20;
         <li class="py-10 text-center text-tenue">{{ recurso.isLoading() ? 'Cargando…' : 'No hay solicitudes en este estado.' }}</li>
       }
     </ul>
-    <app-paginador [pagina]="pagina()" [total]="recurso.value()?.total ?? 0" [tamano]="tamano" (cambiar)="pagina.set($event)" />
+    <app-paginador [pagina]="pagina()" [total]="datos()?.total ?? 0" [tamano]="tamano" (cambiar)="pagina.set($event)" />
 
     <app-modal [(abierto)]="abierto" titulo="Responder solicitud" [subtitulo]="seleccionada()?.radicado ?? ''">
       <form id="form-pqr" (ngSubmit)="responder()" class="campo">
@@ -133,6 +135,7 @@ export default class Pqr {
     params: () => ({ estado: this.estado(), pagina: this.pagina() }),
     stream: ({ params }) => this.api.pqr(params.estado, params.pagina, TAMANO),
   });
+  protected readonly datos = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));
   protected readonly abierto = signal(false);
   protected readonly seleccionada = signal<PqrAdminDto | null>(null);
   protected readonly respuesta = signal('');

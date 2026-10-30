@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
@@ -10,15 +10,17 @@ import { FechaPipe } from '../../shared/pipes';
 import { EstadoVacio } from '../../shared/ui/estado-vacio';
 import { Icono } from '../../shared/ui/icono';
 import { Modal } from '../../shared/ui/modal';
+import { ErrorCarga } from '../../shared/ui/error-carga';
 
 /**
  * Sello "Negocio verificado": se compara el NIT y el nombre comercial con el registro mercantil (RUES). Si no coinciden, el
  * negocio recibe el motivo y vuelve a la fila cuando corrige el NIT o el nombre.
  */
 @Component({
-  imports: [FormsModule, RouterLink, Icono, Modal, EstadoVacio, FechaPipe],
+  imports: [ErrorCarga, FormsModule, RouterLink, Icono, Modal, EstadoVacio, FechaPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
+    <app-error-carga [recurso]="recurso" />
     <h2 class="text-xl font-bold">Negocios por verificar</h2>
     <p class="mt-1 max-w-2xl text-sm text-tenue">
       Busca el NIT en el RUES: debe estar activo y la razón social debe corresponder al nombre comercial (o ser de la misma persona).
@@ -26,7 +28,7 @@ import { Modal } from '../../shared/ui/modal';
     </p>
 
     <ul class="mt-6 grid grid-cols-1 gap-3 md:grid-cols-2">
-      @for (n of recurso.value() ?? []; track n.usuarioId) {
+      @for (n of datos() ?? []; track n.usuarioId) {
         <li class="tarjeta flex flex-col gap-3 p-5">
           <div>
             <p class="font-display text-lg font-bold">{{ n.nombreComercial }}</p>
@@ -46,7 +48,7 @@ import { Modal } from '../../shared/ui/modal';
         </li>
       }
     </ul>
-    @if (!recurso.isLoading() && !recurso.value()?.length) {
+    @if (!recurso.isLoading() && !datos()?.length) {
       <app-estado-vacio icono="edificio" titulo="No hay negocios por verificar" />
     }
 
@@ -67,6 +69,7 @@ export default class NegociosAdmin {
   private readonly api = inject(NegociosApi);
   private readonly avisos = inject(AvisosService);
   protected readonly recurso = rxResource({ stream: () => this.api.porVerificar() });
+  protected readonly datos = computed(() => (this.recurso.hasValue() ? this.recurso.value() : undefined));
   protected readonly ocupado = signal(false);
   protected readonly rechazoAbierto = signal(false);
   protected readonly motivo = signal('');
