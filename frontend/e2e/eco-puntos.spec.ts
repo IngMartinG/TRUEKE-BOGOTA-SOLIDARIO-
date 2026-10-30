@@ -25,16 +25,16 @@ test('destacar pagando todo con Eco-Puntos: la persona elige usarlos y se aplica
     const dialogo = page.getByRole('dialog');
     await expect(dialogo.getByLabel('¿Qué publicación quieres destacar?')).toHaveValue(id);
 
-    await dialogo.getByRole('button', { name: /Pagar todo con 60 Eco-Puntos/ }).click();
+    await dialogo.getByRole('button', { name: /Pagar todo con 50 Eco-Puntos/ }).click();
     await expect(dialogo.getByText(/sin pasarela ni factura/)).toBeVisible();
-    await dialogo.getByRole('button', { name: 'Usar 60 Eco-Puntos' }).click();
+    await dialogo.getByRole('button', { name: 'Usar 50 Eco-Puntos' }).click();
     await expect(dialogo).toBeHidden();
   });
 
-  await test.step('la publicación queda destacada y el saldo baja exactamente 60', async () => {
+  await test.step('la publicación queda destacada y el saldo baja exactamente 50', async () => {
     const resumen = await page.request.get('/api/v1/eco-puntos/resumen', { headers: auth });
     const { saldo } = (await resumen.json()) as { saldo: number };
-    expect(saldo).toBe(150 - 60); // 10 de bienvenida + 30 de perfil completo + 100 de la recarga + 10 de bono
+    expect(saldo).toBe(150 - 50); // 10 de bienvenida + 30 de perfil completo + 100 de la recarga + 10 de bono
     const pub = await page.request.get(`/api/v1/publicaciones/${id}`, { headers: auth });
     expect(((await pub.json()) as { destacada: boolean }).destacada).toBe(true);
   });
