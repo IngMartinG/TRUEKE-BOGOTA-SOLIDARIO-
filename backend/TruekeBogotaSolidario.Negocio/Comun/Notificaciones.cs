@@ -82,6 +82,10 @@ public static class TiposNotificacion
     public const string EmpresaMiembroNuevo = "EmpresaMiembroNuevo";
     /// <summary>A los miembros: un Administrador emitió un informe de impacto de la empresa (RecursoId = InformeId).</summary>
     public const string InformeImpactoEmitido = "InformeImpactoEmitido";
+    /// <summary>Al dueño: 30 días sin actividad, ¿sigue disponible? (RecursoId = PublicacionId).</summary>
+    public const string PublicacionSigueDisponible = "PublicacionSigueDisponible";
+    /// <summary>Al dueño: nadie confirmó en 7 días y se pausó (RecursoId = PublicacionId).</summary>
+    public const string PublicacionPausada = "PublicacionPausada";
     // Solo para moderadores
     public const string AlertaPagoEnRevision = "AlertaPagoEnRevision";
     public const string PqrNueva = "PqrNueva";

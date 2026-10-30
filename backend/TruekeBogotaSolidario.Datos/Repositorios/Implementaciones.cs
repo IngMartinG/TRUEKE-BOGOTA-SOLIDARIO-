@@ -87,6 +87,13 @@ public sealed class UsuarioRepository : IUsuarioRepository
                         && (u.RecordatorioVencimientoPara == null || u.RecordatorioVencimientoPara != u.FechaVencimientoSuscripcion))
             .OrderBy(u => u.FechaVencimientoSuscripcion).Take(Math.Clamp(maximo, 1, 500)).ToListAsync();
 
+    public async Task<IReadOnlyList<Usuario>> ListarParaResumenSemanalAsync(DateTime enviadoAntesDeUtc, DateTime ahoraUtc, int maximo)
+        => await _db.Usuarios
+            .Where(u => u.ResumenSemanal && u.CorreoVerificado && !u.EstaEliminado
+                        && !(u.EstaSuspendido && (u.SuspendidoHasta == null || u.SuspendidoHasta > ahoraUtc))
+                        && (u.ResumenSemanalEnviadoUtc == null || u.ResumenSemanalEnviadoUtc < enviadoAntesDeUtc))
+            .OrderBy(u => u.ResumenSemanalEnviadoUtc).ThenBy(u => u.Id).Take(Math.Clamp(maximo, 1, 500)).ToListAsync();
+
     public async Task<IReadOnlyList<Guid>> ListarConBonosPendientesAsync(DateTime publicadaHastaUtc, DateTime ahoraUtc, int maximo)
         => await _db.Usuarios.AsNoTracking()
             .Where(u => !u.EstaEliminado && !(u.EstaSuspendido && (u.SuspendidoHasta == null || u.SuspendidoHasta > ahoraUtc))
@@ -288,13 +295,16 @@ public sealed class PublicacionRepository : IPublicacionRepository
         => await _db.Publicaciones.AsNoTracking().Include(p => p.Categoria).Include(p => p.Propietario)
             .Where(p => p.PropietarioId == propietarioId).OrderByDescending(p => p.FechaPublicacion).Take(200).ToListAsync();
 
+    // Las pausadas cuentan para los límites: el dueño las puede reactivar en cualquier momento.
     public Task<int> ContarActivasPorUsuarioAsync(Guid usuarioId)
         => _db.Publicaciones.CountAsync(p => p.PropietarioId == usuarioId
-            && (p.Estado == EstadoPublicacionEnum.Disponible || p.Estado == EstadoPublicacionEnum.EnNegociacion));
+            && (p.Estado == EstadoPublicacionEnum.Disponible || p.Estado == EstadoPublicacionEnum.EnNegociacion
+                || p.Estado == EstadoPublicacionEnum.Pausada));
 
     public Task<int> ContarVentasActivasAsync(Guid usuarioId, Guid? excepto = null)
         => _db.Publicaciones.CountAsync(p => p.PropietarioId == usuarioId && p.Modo == ModoTransaccion.Compra
-            && (p.Estado == EstadoPublicacionEnum.Disponible || p.Estado == EstadoPublicacionEnum.EnNegociacion)
+            && (p.Estado == EstadoPublicacionEnum.Disponible || p.Estado == EstadoPublicacionEnum.EnNegociacion
+                || p.Estado == EstadoPublicacionEnum.Pausada)
             && (excepto == null || p.Id != excepto));
 
     public async Task<IReadOnlyList<Publicacion>> ListarDestacadasAsync(string? departamentoCodigo, string? municipioCodigo, int? categoriaId, int maximo, DateTime ahoraUtc)
@@ -309,7 +319,8 @@ public sealed class PublicacionRepository : IPublicacionRepository
 
     public async Task<IReadOnlyList<Publicacion>> ListarActivasParaActualizarAsync(Guid propietarioId)
         => await _db.Publicaciones.Where(p => p.PropietarioId == propietarioId
-            && (p.Estado == EstadoPublicacionEnum.Disponible || p.Estado == EstadoPublicacionEnum.EnNegociacion)).ToListAsync();
+            && (p.Estado == EstadoPublicacionEnum.Disponible || p.Estado == EstadoPublicacionEnum.EnNegociacion
+                || p.Estado == EstadoPublicacionEnum.Pausada)).ToListAsync();
 
     public Task<Publicacion?> PrimeraActivaDesdeAsync(Guid propietarioId, DateTime publicadaHastaUtc)
         => _db.Publicaciones.AsNoTracking()
@@ -333,6 +344,24 @@ public sealed class PublicacionRepository : IPublicacionRepository
             .Take(Math.Clamp(maximo, 1, 200)).ToListAsync();
 
     public Task<int> ContarPendientesModeracionAsync() => PendientesDeModeracion().CountAsync();
+
+    public async Task<IReadOnlyList<Publicacion>> ListarSinActividadAsync(DateTime sinActividadDesdeUtc, DateTime ahoraUtc, int maximo)
+        => await _db.Publicaciones.Include(p => p.Propietario)
+            .Where(p => p.Estado == EstadoPublicacionEnum.Disponible && p.DisponibilidadPedidaUtc == null && !p.EstaOculta
+                        && p.EstadoModeracion == EstadoModeracion.Aprobada
+                        && p.FechaRelevancia < sinActividadDesdeUtc
+                        && (p.FechaEdicion == null || p.FechaEdicion < sinActividadDesdeUtc)
+                        && (p.DisponibilidadConfirmadaUtc == null || p.DisponibilidadConfirmadaUtc < sinActividadDesdeUtc)
+                        && !_db.Solicitudes.Any(s => s.PublicacionId == p.Id && s.FechaSolicitud >= sinActividadDesdeUtc)
+                        && !p.Propietario!.EstaEliminado
+                        && !(p.Propietario.EstaSuspendido && (p.Propietario.SuspendidoHasta == null || p.Propietario.SuspendidoHasta > ahoraUtc)))
+            .OrderBy(p => p.FechaRelevancia).ThenBy(p => p.Id).Take(Math.Clamp(maximo, 1, 500)).ToListAsync();
+
+    public async Task<IReadOnlyList<Publicacion>> ListarParaPausarAsync(DateTime preguntadasAntesDeUtc, int maximo)
+        => await _db.Publicaciones.Include(p => p.Propietario)
+            .Where(p => p.Estado == EstadoPublicacionEnum.Disponible && p.DisponibilidadPedidaUtc != null
+                        && p.DisponibilidadPedidaUtc < preguntadasAntesDeUtc)
+            .OrderBy(p => p.DisponibilidadPedidaUtc).ThenBy(p => p.Id).Take(Math.Clamp(maximo, 1, 500)).ToListAsync();
 
     public async Task<IReadOnlyDictionary<Guid, int>> ContarVisiblesPorPropietarioAsync(IReadOnlyCollection<Guid> propietarioIds, DateTime ahoraUtc)
         => propietarioIds.Count == 0 ? new Dictionary<Guid, int>() : await Visibles(ahoraUtc).Where(p => propietarioIds.Contains(p.PropietarioId))
@@ -544,6 +573,26 @@ public sealed class ImpactoRepository : IImpactoRepository
     }
 
     public void Agregar(RegistroImpacto registro) => _db.RegistrosImpacto.Add(registro);
+
+    public async Task<(int DonacionesANecesidad, int EntregasDeCampana)> LogrosAsync(Guid usuarioId)
+    {
+        var entregados = _db.RegistrosImpacto.AsNoTracking().Where(r => r.OferenteId == usuarioId);
+        var necesidad = await entregados.CountAsync(r => r.Modo == ModoTransaccion.Donacion
+            && _db.Publicaciones.Any(p => p.Id == r.PublicacionId && p.NecesidadFundacionId != null));
+        var campana = await entregados.CountAsync(r => r.CampanaId != null);
+        return (necesidad, campana);
+    }
+
+    public async Task<IReadOnlyList<MetaComunitaria>> ListarMetasAsync()
+        => await _db.MetasComunitarias.AsNoTracking().OrderBy(m => m.Localidad).ThenBy(m => m.Id).ToListAsync();
+
+    public Task<MetaComunitaria?> ObtenerMetaAsync(Guid id) => _db.MetasComunitarias.FirstOrDefaultAsync(m => m.Id == id);
+
+    public Task<MetaComunitaria?> MetaDeLocalidadAsync(string municipioCodigo, string localidad)
+        => _db.MetasComunitarias.FirstOrDefaultAsync(m => m.MunicipioCodigo == municipioCodigo && m.Localidad == localidad);
+
+    public void AgregarMeta(MetaComunitaria meta) => _db.MetasComunitarias.Add(meta);
+    public void QuitarMeta(MetaComunitaria meta) => _db.MetasComunitarias.Remove(meta);
 }
 
 public sealed class PagoRepository : IPagoRepository

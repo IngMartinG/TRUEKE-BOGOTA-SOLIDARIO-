@@ -117,15 +117,16 @@ export default class Avisos {
   protected readonly push = inject(NotificacionesPushService);
   protected readonly ios = esIos();
   private readonly recurso = rxResource({ stream: () => this.api.preferenciasAvisos() });
-  protected readonly valores = signal<Required<PreferenciasAvisosDto>>({ intercambios: true, mensajes: true, planes: true, novedades: false });
+  protected readonly valores = signal<Required<PreferenciasAvisosDto>>({ intercambios: true, mensajes: true, planes: true, novedades: false, resumenSemanal: false });
   protected readonly cargado = signal(false);
   protected readonly guardando = signal(false);
 
   protected readonly opciones: { clave: Clave; titulo: string; descripcion: string; icono: string }[] = [
-    { clave: 'intercambios', titulo: 'Solicitudes e intercambios', descripcion: 'Cuando alguien solicita tu publicación, te responden, se confirma una entrega o te califican.', icono: 'apreton' },
+    { clave: 'intercambios', titulo: 'Solicitudes e intercambios', descripcion: 'Cuando alguien solicita tu publicación, te responden, se confirma una entrega o te califican, y cuando te preguntamos si una publicación sigue disponible.', icono: 'apreton' },
     { clave: 'mensajes', titulo: 'Mensajes nuevos', descripcion: 'Un aviso (sin el texto del mensaje) como mucho cada 2 horas por conversación.', icono: 'mensaje' },
     { clave: 'planes', titulo: 'Recordatorios de tu plan', descripcion: 'Tres días antes de que venza tu plan Premium o Negocio.', icono: 'corona' },
     { clave: 'novedades', titulo: 'Novedades y consejos', descripcion: 'Mejoras de la plataforma e ideas para darle una segunda vida a tus cosas. Solo con tu autorización.', icono: 'hoja' },
+    { clave: 'resumenSemanal', titulo: 'Resumen semanal', descripcion: 'Un correo a la semana con lo nuevo en tu localidad y lo que coincide con «Lo que busco». Solo si hay novedades.', icono: 'calendario' },
   ];
 
   constructor() {
@@ -133,7 +134,7 @@ export default class Avisos {
       const v = this.recurso.value();
       untracked(() => {
         if (!v) return;
-        this.valores.set({ intercambios: !!v.intercambios, mensajes: !!v.mensajes, planes: !!v.planes, novedades: !!v.novedades });
+        this.valores.set({ intercambios: !!v.intercambios, mensajes: !!v.mensajes, planes: !!v.planes, novedades: !!v.novedades, resumenSemanal: !!v.resumenSemanal });
         this.cargado.set(true);
       });
     });

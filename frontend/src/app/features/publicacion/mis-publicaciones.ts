@@ -68,6 +68,11 @@ type Filtro = 'activas' | 'negociacion' | 'cerradas';
                     }
                   </div>
                   <p class="mt-1.5 truncate font-display font-bold">{{ p.titulo }}</p>
+                  @if (p.estado === 'Pausada') {
+                    <p class="mt-0.5 text-xs text-tierra-700 dark:text-tierra-500">No aparece en el catálogo porque no confirmaste que siguiera disponible. Reactívala si aún la tienes.</p>
+                  } @else if (p.estado === 'Disponible' && p.disponibilidadPedidaUtc) {
+                    <p class="mt-0.5 text-xs font-semibold text-sol-600 dark:text-sol-300">¿Sigue disponible? Confírmalo antes del {{ limitePausa(p) | fecha }} o la pausaremos.</p>
+                  }
                   @if (p.moderacion === 'Rechazada' && p.motivoRechazoModeracion) {
                     <p class="mt-0.5 text-xs text-tierra-700 dark:text-tierra-500">{{ p.motivoRechazoModeracion }} Edítala para enviarla de nuevo.</p>
                   }
@@ -88,6 +93,11 @@ type Filtro = 'activas' | 'negociacion' | 'cerradas';
                 </div>
               </a>
               <div class="flex shrink-0 flex-wrap gap-2">
+                @if (p.estado === 'Pausada') {
+                  <button type="button" class="btn btn-primario btn-sm" (click)="sigueDisponible(p)" [disabled]="trabajando()"><app-icono nombre="refrescar" [tamano]="14" />Reactivar</button>
+                } @else if (p.estado === 'Disponible' && p.disponibilidadPedidaUtc) {
+                  <button type="button" class="btn btn-primario btn-sm" (click)="sigueDisponible(p)" [disabled]="trabajando()"><app-icono nombre="check" [tamano]="14" />Sí, sigue disponible</button>
+                }
                 <button type="button" class="btn btn-secundario btn-sm" (click)="abrirEstadisticas(p.id!)"><app-icono nombre="grafica" [tamano]="14" />Estadísticas</button>
                 @if (p.estado === 'Disponible') {
                   <button type="button" class="btn btn-secundario btn-sm" (click)="impulsar(p)" [disabled]="trabajando() || !puedeImpulsar(p)"
@@ -178,7 +188,7 @@ export default class MisPublicaciones {
   );
 
   private readonly grupo = (estado: string | undefined): Filtro =>
-    estado === 'Disponible' ? 'activas' : estado === 'EnNegociacion' ? 'negociacion' : 'cerradas';
+    estado === 'Disponible' || estado === 'Pausada' ? 'activas' : estado === 'EnNegociacion' ? 'negociacion' : 'cerradas';
 
   protected readonly visibles = computed(() => (this.recurso.value() ?? []).filter((p) => this.grupo(p.estado) === this.filtro()));
   protected readonly conteo = computed(() => {
@@ -202,6 +212,25 @@ export default class MisPublicaciones {
 
   protected puedeImpulsar(p: PublicacionDto): boolean {
     return !p.proximoImpulsoUtc || Date.parse(p.proximoImpulsoUtc) <= Date.now();
+  }
+
+  /** Se pausa 7 días después de la pregunta (DiasParaResponderDisponibilidad en el backend). */
+  protected limitePausa(p: PublicacionDto): string {
+    return new Date(Date.parse(p.disponibilidadPedidaUtc!) + 7 * 86_400_000).toISOString();
+  }
+
+  protected async sigueDisponible(p: PublicacionDto): Promise<void> {
+    const reactivar = p.estado === 'Pausada';
+    this.trabajando.set(true);
+    try {
+      await firstValueFrom(this.api.sigueDisponible(p.id!));
+      this.avisos.exito(reactivar ? 'Publicación reactivada' : '¡Gracias por confirmar!', reactivar ? 'Ya aparece de nuevo en el catálogo.' : 'Volveremos a preguntarte en 30 días sin actividad.');
+      this.recurso.reload();
+    } catch (e) {
+      this.avisos.error(mensajeDe(e));
+    } finally {
+      this.trabajando.set(false);
+    }
   }
 
   protected altura(vistas: number): number {

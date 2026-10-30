@@ -63,6 +63,8 @@ public sealed class MantenimientoHostedService : BackgroundService
                 await scope.ServiceProvider.GetRequiredService<IDeseoService>().RevisarAvisosAsync(500);
             }
             catch (Exception ex) { _log.LogError(ex, "Fallo revisando los avisos de la lista de deseos"); }
+            try { await RetenerAsync(); }
+            catch (Exception ex) { _log.LogError(ex, "Fallo en \"¿Sigue disponible?\" o en el resumen semanal"); }
 
             try { await Task.Delay(Intervalo, ct); }
             catch (OperationCanceledException) { break; }
@@ -173,6 +175,17 @@ public sealed class MantenimientoHostedService : BackgroundService
         }
         _log.LogInformation("Recordatorios de vencimiento enviados: {Total}", usuarios.Count);
         return usuarios.Count;
+    }
+
+    /// <summary>Primero se pausa lo que ya venció y después se pregunta: una publicación nunca se pregunta y se pausa en la misma vuelta.</summary>
+    internal async Task RetenerAsync()
+    {
+        using (var scope = _fabrica.CreateScope())
+            await scope.ServiceProvider.GetRequiredService<IRetencionService>().PausarSinRespuestaAsync(200);
+        using (var scope = _fabrica.CreateScope())
+            await scope.ServiceProvider.GetRequiredService<IRetencionService>().PreguntarDisponibilidadAsync(200);
+        using (var scope = _fabrica.CreateScope())
+            await scope.ServiceProvider.GetRequiredService<IRetencionService>().EnviarResumenesSemanalesAsync(200);
     }
 
     internal async Task<int> LimpiarAsync()

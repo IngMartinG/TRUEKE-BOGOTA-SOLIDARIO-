@@ -36,7 +36,7 @@ public class HabeasDataTests : IClassFixture<FabricaApi>
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
         var d = await r.Content.ReadFromJsonAsync<JsonElement>();
         Assert.Equal(ses.Usuario.Correo, d.GetProperty("perfil").GetProperty("correo").GetString());
-        Assert.Equal("2026-10-30", d.GetProperty("politicaDatosVersion").GetString());
+        Assert.Equal("2026-10-31", d.GetProperty("politicaDatosVersion").GetString());
         Assert.Single(d.GetProperty("publicaciones").EnumerateArray());
         Assert.Single(d.GetProperty("solicitudesEnviadas").EnumerateArray());
         Assert.Equal("Comentario mío", Assert.Single(d.GetProperty("comentarios").EnumerateArray()).GetProperty("texto").GetString());

@@ -15,6 +15,9 @@ public interface IImpactoService
     IReadOnlyList<ObjetoTipicoDto> ObjetosTipicos();
     /// <summary>Solo SuperUsuario: cambia un factor con su fuente y una versión nueva (lo ya registrado no cambia).</summary>
     Task<FactorImpactoDto> ActualizarFactorAsync(Guid actorId, MaterialDto material, ActualizarFactorImpactoRequest r);
+    /// <summary>Solo SuperUsuario: crea la meta mensual de una localidad o cambia la que ya tiene.</summary>
+    Task<MetaComunitariaDto> GuardarMetaAsync(Guid actorId, GuardarMetaComunitariaRequest r);
+    Task QuitarMetaAsync(Guid actorId, Guid metaId);
 }
 
 public sealed class ImpactoService : IImpactoService
@@ -113,9 +116,75 @@ public sealed class ImpactoService : IImpactoService
                 var tipico = ImpactoAmbiental.Tipico(c.Id);
                 return new PesoCategoriaDto(c.NombreCategoria, tipico.Kg, tipico.Material.ToString());
             }).ToList(),
-            disponibles.Select(ALocalidad).ToList());
+            disponibles.Select(ALocalidad).ToList(), await MetasAsync(ahora));
         _cache.Set(clave, dto, Duracion);
         return dto;
+    }
+
+    // ---------------- Metas comunitarias ----------------
+    public const int MaxMetas = 12;
+
+    /// <summary>Todas las metas con el avance del mes; se calculan una vez por generación de la caché (no por cada filtro).</summary>
+    private async Task<IReadOnlyList<MetaComunitariaDto>> MetasAsync(DateTime ahora)
+    {
+        var clave = $"impacto:{_generacion}:metas";
+        if (_cache.TryGetValue(clave, out IReadOnlyList<MetaComunitariaDto>? enCache) && enCache is not null) return enCache;
+        var lista = new List<MetaComunitariaDto>();
+        foreach (var m in await _impacto.ListarMetasAsync()) lista.Add(await AMetaAsync(m, ahora));
+        _cache.Set(clave, (IReadOnlyList<MetaComunitariaDto>)lista, Duracion);
+        return lista;
+    }
+
+    private async Task<MetaComunitariaDto> AMetaAsync(MetaComunitaria m, DateTime ahora)
+    {
+        var t = await _impacto.TotalesAsync(new FiltroImpacto(InicioPeriodoUtc(PeriodoImpactoDto.Mes, ahora), null, m.MunicipioCodigo, m.Localidad));
+        var reservado = t.Intercambios < MinimoPorLocalidad;
+        var kg = Math.Round(t.Kg, 1);
+        return new MetaComunitariaDto(m.Id, m.Localidad, Divipola.ObtenerMunicipio(m.MunicipioCodigo)?.Nombre ?? "", m.MunicipioCodigo, m.MetaKg,
+            reservado ? null : kg, reservado ? null : (int)Math.Min(100, Math.Floor(kg * 100 / m.MetaKg)), reservado);
+    }
+
+    private async Task ExigirSuperUsuarioAsync(Guid actorId)
+    {
+        var actor = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
+        if (actor.Rol != RolUsuarioEnum.SuperUsuario) throw new AccesoDenegadoException();
+    }
+
+    public async Task<MetaComunitariaDto> GuardarMetaAsync(Guid actorId, GuardarMetaComunitariaRequest r)
+    {
+        await ExigirSuperUsuarioAsync(actorId);
+        var mpio = r.MunicipioCodigo ?? Divipola.CodigoBogota;
+        var nombre = r.Localidad.Trim();
+        // Solo localidades con datos suficientes: así la meta coincide con el texto exacto con que se registra el impacto
+        ImpactoLocalidad? Buscar(IReadOnlyList<ImpactoLocalidad> l) => l.FirstOrDefault(x => x.MunicipioCodigo == mpio && x.Localidad == nombre);
+        var localidad = Buscar(await LocalidadesDisponiblesAsync()) ?? Buscar(await LocalidadesDisponiblesAsync(refrescar: true))
+            ?? throw new ReglaDeNegocioException($"Esa localidad aún no tiene {MinimoPorLocalidad} intercambios: elige una de la lista.");
+        var ahora = _reloj.GetUtcNow().UtcDateTime;
+        var meta = await _impacto.MetaDeLocalidadAsync(localidad.MunicipioCodigo, localidad.Localidad);
+        var antes = meta?.MetaKg;
+        if (meta is null)
+        {
+            if ((await _impacto.ListarMetasAsync()).Count >= MaxMetas) throw new ReglaDeNegocioException($"Puedes tener como máximo {MaxMetas} metas.");
+            meta = new MetaComunitaria(localidad.MunicipioCodigo, localidad.Localidad, r.MetaKg, actorId, ahora);
+            _impacto.AgregarMeta(meta);
+        }
+        else meta.CambiarMeta(r.MetaKg);
+        _auditoria.Agregar(new AuditoriaEvento(actorId, "META_COMUNITARIA_GUARDADA", "MetaComunitaria", meta.Id,
+            $"{meta.Localidad}: {(antes is null ? "nueva" : $"{antes} kg")} → {meta.MetaKg} kg", ahora));
+        await _uow.GuardarCambiosAsync();
+        Interlocked.Increment(ref _generacion);
+        return await AMetaAsync(meta, ahora);
+    }
+
+    public async Task QuitarMetaAsync(Guid actorId, Guid metaId)
+    {
+        await ExigirSuperUsuarioAsync(actorId);
+        var meta = await _impacto.ObtenerMetaAsync(metaId) ?? throw new NoEncontradoException("Meta no encontrada.");
+        _impacto.QuitarMeta(meta);
+        _auditoria.Agregar(new AuditoriaEvento(actorId, "META_COMUNITARIA_QUITADA", "MetaComunitaria", meta.Id,
+            $"{meta.Localidad}: {meta.MetaKg} kg", _reloj.GetUtcNow().UtcDateTime));
+        await _uow.GuardarCambiosAsync();
+        Interlocked.Increment(ref _generacion);
     }
 
     private static FactorImpactoDto AFactor(FactorImpacto f) => new(f.Material.ToString(), f.KgCo2PorKg, f.Fuente, f.Version);

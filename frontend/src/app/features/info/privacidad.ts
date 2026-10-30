@@ -76,6 +76,7 @@ export default class Privacidad {
           'Verificar que una cuenta representa a una fundación o entidad sin ánimo de lucro existente antes de mostrar la insignia «Fundación verificada» y su página pública, para que la comunidad sepa a quién dona.',
           'Cumplir obligaciones legales, contables y tributarias, y responder a requerimientos de autoridades competentes.',
           'Opcionales, solo si lo autorizas en tu cuenta: avisos por correo cuando no estás conectado y notificaciones push en tu dispositivo. Puedes desactivarlos cuando quieras.',
+          'Resumen semanal por correo, solo si lo activas en Cuenta → Avisos (viene apagado): usamos tu localidad y tu lista «Lo que busco» para contarte qué se publicó cerca de ti y qué coincide con lo que buscas. Puedes apagarlo cuando quieras.',
         ],
       },
       {

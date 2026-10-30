@@ -2,10 +2,11 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { nombreMaterial, type FactorImpactoDto, type MaterialDto } from '../../api/tipos';
+import { nombreMaterial, type FactorImpactoDto, type MaterialDto, type MetaComunitariaDto } from '../../api/tipos';
 import { AdminApi } from '../../core/api/admin.api';
 import { CatalogoApi } from '../../core/api/catalogo.api';
 import { AvisosService } from '../../core/avisos.service';
+import { KilosPipe } from '../../shared/pipes';
 import { Icono } from '../../shared/ui/icono';
 
 /** Siguiente versión menor: 2.0.0 → 2.1.0 (se puede cambiar antes de guardar). */
@@ -19,7 +20,7 @@ const siguienteVersion = (v: string) => {
  * intercambios ya contados conservan el factor con que se calcularon.
  */
 @Component({
-  imports: [FormsModule, Icono],
+  imports: [FormsModule, Icono, KilosPipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h2 class="text-xl font-bold">Factores de impacto</h2>
@@ -82,6 +83,41 @@ const siguienteVersion = (v: string) => {
           </tbody>
         </table>
       </div>
+
+      <h2 class="mt-10 text-xl font-bold">Metas comunitarias</h2>
+      <p class="mt-1 max-w-prose text-sm text-tenue">
+        Kilos que una localidad quiere reutilizar cada mes; se muestran con su avance en la página de impacto. Solo se pueden
+        poner en localidades con al menos 3 intercambios, y el avance del mes se oculta mientras tenga menos de 3.
+      </p>
+      <form class="mt-4 flex flex-wrap items-end gap-3" (submit)="$event.preventDefault(); guardarMeta()">
+        <div>
+          <label class="etiqueta" for="meta-localidad">Localidad</label>
+          <select id="meta-localidad" class="entrada" [(ngModel)]="metaLocalidad" name="localidad">
+            <option value="">Elige una</option>
+            @for (l of d.localidadesDisponibles ?? []; track $index) {
+              <option [value]="l.municipioCodigo + '|' + l.localidad">{{ l.localidad }} · {{ l.municipio }}</option>
+            }
+          </select>
+        </div>
+        <div>
+          <label class="etiqueta" for="meta-kg">Meta (kg al mes)</label>
+          <input id="meta-kg" type="number" min="10" max="100000" step="10" class="entrada w-36" [(ngModel)]="metaKg" name="kg" />
+        </div>
+        <button type="submit" class="btn btn-primario" [disabled]="!metaValida() || guardando()">Guardar meta</button>
+      </form>
+      @if (d.metas?.length) {
+        <ul class="mt-5 space-y-2">
+          @for (m of d.metas; track m.id) {
+            <li class="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-borde px-4 py-2.5 text-sm">
+              <span><strong>{{ m.localidad }}</strong> <span class="text-tenue">· {{ m.municipio }}</span>: {{ m.metaKg | kilos }}
+                <span class="text-tenue">· {{ m.reservado ? 'avance reservado (menos de 3 intercambios este mes)' : (m.kgEsteMes | kilos) + ' (' + m.porcentaje + ' %)' }}</span></span>
+              <button type="button" class="btn btn-fantasma btn-sm" (click)="quitarMeta(m)" [disabled]="guardando()" [attr.aria-label]="'Quitar la meta de ' + m.localidad">
+                <app-icono nombre="basura" [tamano]="14" />Quitar
+              </button>
+            </li>
+          }
+        </ul>
+      }
     } @else if (recurso.isLoading()) {
       <div class="esqueleto mt-6 h-64 rounded-tarjeta" aria-hidden="true"></div>
     }
@@ -110,6 +146,42 @@ export default class FactoresImpacto {
     this.fuente.set(f.fuente ?? '');
     this.versionNueva.set(siguienteVersion(this.version() || f.version || '2.0.0'));
     this.editando.set(f.material ?? null);
+  }
+
+  protected readonly metaLocalidad = signal('');
+  protected readonly metaKg = signal<number | null>(1000);
+  protected readonly metaValida = computed(() => {
+    const kg = this.metaKg();
+    return !!this.metaLocalidad() && kg !== null && kg >= 10 && kg <= 100_000;
+  });
+
+  protected async guardarMeta(): Promise<void> {
+    if (!this.metaValida()) return;
+    const [municipioCodigo, ...resto] = this.metaLocalidad().split('|');
+    this.guardando.set(true);
+    try {
+      const m = await firstValueFrom(this.admin.guardarMetaComunitaria({ municipioCodigo, localidad: resto.join('|'), metaKg: this.metaKg()! }));
+      this.avisos.exito(`Meta de ${m.localidad} guardada`);
+      this.metaLocalidad.set('');
+      this.recurso.reload();
+    } catch {
+      // El interceptor ya mostró el error.
+    } finally {
+      this.guardando.set(false);
+    }
+  }
+
+  protected async quitarMeta(m: MetaComunitariaDto): Promise<void> {
+    this.guardando.set(true);
+    try {
+      await firstValueFrom(this.admin.quitarMetaComunitaria(m.id!));
+      this.avisos.exito(`Meta de ${m.localidad} quitada`);
+      this.recurso.reload();
+    } catch {
+      // El interceptor ya mostró el error.
+    } finally {
+      this.guardando.set(false);
+    }
   }
 
   protected async guardar(f: FactorImpactoDto): Promise<void> {

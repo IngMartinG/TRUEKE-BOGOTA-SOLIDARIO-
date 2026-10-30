@@ -69,6 +69,13 @@ export default class Terminos {
         ],
       },
       {
+        titulo: 'Publicaciones inactivas',
+        parrafos: [
+          'Para que el catálogo muestre solo lo que de verdad está disponible, si una publicación pasa 30 días sin actividad (sin editarla, impulsarla, confirmarla ni recibir solicitudes) te preguntamos si sigue disponible, con una notificación y, si tienes activos los avisos de intercambios, un correo.',
+          'Si no respondes en los 7 días siguientes, la pausamos: sale del catálogo, pero no se borra y puedes reactivarla desde Mis publicaciones cuando quieras. Las publicaciones pausadas siguen contando para el límite de tu plan.',
+        ],
+      },
+      {
         titulo: 'Publicaciones prohibidas',
         parrafos: ['Solo puedes publicar objetos propios, legales y en el estado que describes. Está prohibido publicar:'],
         lista: [

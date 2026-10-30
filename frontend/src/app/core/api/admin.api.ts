@@ -4,7 +4,9 @@ import type {
   ColaModeracionDto,
   ActualizarFactorImpactoRequest,
   FactorImpactoDto,
+  GuardarMetaComunitariaRequest,
   MaterialDto,
+  MetaComunitariaDto,
   PublicacionesEnRevisionDto,
   ApelacionAdminDto,
   DenunciaAgrupadaDto,
@@ -73,6 +75,9 @@ export class AdminApi {
   /** Solo SuperUsuario: lo ya registrado conserva el factor y la versión con que se calculó. */
   actualizarFactorImpacto = (material: MaterialDto, r: ActualizarFactorImpactoRequest) =>
     this.api.put<FactorImpactoDto>(`/admin/impacto/factores/${seg(material)}`, r);
+  /** Solo SuperUsuario: crea la meta mensual de una localidad o cambia la que tiene. */
+  guardarMetaComunitaria = (r: GuardarMetaComunitariaRequest) => this.api.put<MetaComunitariaDto>('/admin/impacto/metas', r);
+  quitarMetaComunitaria = (id: string) => this.api.delete<void>(`/admin/impacto/metas/${seg(id)}`);
   colaModeracion = () => this.api.get<ColaModeracionDto>('/admin/moderacion/cola');
   /** Devuelve cuántas se aprobaron (las que otro moderador ya resolvió se ignoran). */
   aprobarPublicaciones = (ids: readonly string[]) => this.api.post<number>('/admin/moderacion/publicaciones/aprobar', { ids });

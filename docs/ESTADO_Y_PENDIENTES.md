@@ -672,6 +672,32 @@ páginas estáticas para buscadores (`generar-seo.mjs`) y la pantalla de carga y
 HtmlSanitizer no aplica: la API solo devuelve JSON, Angular escapa todo y el texto ya se valida con `TextoSeguro`; además
 rechazaría textos normales como "3 < 5" y guardaría el contenido en los registros.
 
+## Hecho el 2026-10-30 — retención: "¿Sigue disponible?", resumen semanal, logros y metas
+Paso 7 del plan de producto (Bloque 5, D-018). Migración `Retencion`.
+- **"¿Sigue disponible?"** (`IRetencionService`, desde `MantenimientoHostedService` cada hora): a una publicación disponible sin
+  actividad en 30 días (no se publicó, impulsó, editó ni confirmó, y no recibió solicitudes) se le pregunta al dueño con una
+  notificación (`PublicacionSigueDisponible`) y, si tiene activos los avisos de intercambios, un correo con todas sus
+  publicaciones en esa situación. Si nadie responde en 7 días, pasa al estado nuevo **`Pausada`** (`PublicacionPausada`): sale del
+  catálogo y del detalle para los demás, pero no se borra. El dueño responde o reactiva con
+  `POST /publicaciones/{id}/sigue-disponible` (reactivar exige cuenta completa, como publicar); editar o impulsar también cuenta
+  como respuesta. Las pausadas siguen contando para el límite del plan. Columnas `DisponibilidadPedidaUtc` y
+  `DisponibilidadConfirmadaUtc` en `Publicaciones`.
+- **Resumen semanal por correo** (`Usuario.ResumenSemanal`, apagado por defecto; Cuenta → Avisos): una vez cada 7 días, las
+  publicaciones nuevas en su localidad y las coincidencias con "Lo que busco", sin las de personas bloqueadas. Si no hay
+  novedades no se escribe. Se marca antes de enviar, así que nunca llega dos veces.
+- **Logros nuevos:** "Aliado de fundaciones" (entregó una donación publicada para una necesidad), "100 kg reutilizados" (suma de lo
+  que entregó y recibió en `RegistrosImpacto`) y "Primera campaña" (entregó un objeto ligado a una campaña de empresa). Salen de los
+  registros de impacto, así que solo cuentan las entregas con doble confirmación.
+- **Metas comunitarias** (tabla `MetasComunitarias` con RLS; Administración → Factores de impacto, solo SuperUsuario con
+  `PUT/DELETE /admin/impacto/metas`, con auditoría): kilos al mes por localidad, una por localidad y como mucho 12. Solo en
+  localidades con al menos 3 intercambios, y el avance del mes se oculta mientras tenga menos de 3. `/impacto` las muestra con
+  una barra de progreso.
+- **Arreglo:** el panel de administración llamaba a `inject` dentro de `rxResource` (error NG0203 y contador de pendientes vacío).
+- **Textos legales:** los términos (sección "Publicaciones inactivas") y la política (resumen semanal) cambian; versión
+  `2026-10-31`. **Revisar con abogado.**
+- Pruebas: `RetencionTests` (pregunta, pausa, reactivación, editar como respuesta, resumen una vez por semana, metas con el mínimo
+  y el logro de 100 kg), `LogrosTests` y `PostgreSqlTests` (columnas nuevas y RLS).
+
 ## Hecho el 2026-10-30 — empresas, campañas e informes
 Decisiones de diseño en `docs/DECISIONES.md` (D-017).
 - **Empresa** (`Empresa`, `MiembroEmpresa`, `Campana`; migración `EmpresasCampanasInformes`, con RLS en las tablas nuevas):
@@ -859,8 +885,9 @@ Se revisó un paquete de documentos con bloques de producto (impacto, fundacione
 6. ~~**Empresas (Bloque 3)**~~: hecho (ver arriba). Queda que el abogado revise los textos legales de la versión
    `2026-10-30` y, como en el paso 3, que un tercero revise la metodología antes de vender informes. Lo previsto: organización
    con NIT y varios miembros, campañas, informe de impacto en PDF y exportación CSV.
-7. **Retención (Bloque 5):** "¿Sigue disponible?" para publicaciones inactivas, resumen semanal opcional por correo, logros
-   nuevos y meta comunitaria en `/impacto`.
+7. ~~**Retención (Bloque 5)**~~: hecho (ver arriba). Queda que el abogado revise los textos legales de la versión `2026-10-31`
+   (publicaciones inactivas y resumen semanal). Lo previsto: "¿Sigue disponible?" para publicaciones inactivas, resumen semanal
+   opcional por correo, logros nuevos y meta comunitaria en `/impacto`.
 
 Los pasos 3 a 7 cambian textos legales: cada uno sube la versión y queda para revisión del abogado.
 

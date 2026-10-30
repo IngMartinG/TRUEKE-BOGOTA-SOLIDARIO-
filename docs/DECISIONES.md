@@ -50,6 +50,18 @@ Son reglas con pesos y motivos visibles para quien revisa, no un clasificador op
 Los roles siguen siendo Cliente, Administrador y SuperUsuario. Ser negocio, fundación o empresa es una capacidad de la cuenta
 (plan, verificación u organización), no un permiso.
 
+## D-018 — Retención sin presión: preguntar antes de pausar y avisos opcionales (2026-10-30)
+- Una publicación sin actividad en 30 días no se borra ni se esconde de golpe: primero se le pregunta al dueño y solo si no
+  responde en 7 días se pausa. Pausada no es cancelada: se reactiva con un clic y sigue contando para el límite del plan, para
+  que pausar y reactivar no sirva para saltarse ese límite.
+- Cuenta como actividad todo lo que muestra que el dueño o la comunidad siguen ahí: publicarla, editarla, impulsarla, confirmarla
+  o que alguien la solicite.
+- El resumen semanal es opcional y viene apagado (como las novedades, por la Ley 1581): solo se envía con algo que contar.
+- Los logros siguen siendo solo un reconocimiento (sin puntos ni descuentos) y salen de los registros de impacto, así que solo
+  cuentan entregas con doble confirmación (D-014).
+- Las metas comunitarias las fija el SuperUsuario por localidad y respetan el mínimo de 3 intercambios: con menos, la meta se
+  muestra pero su avance no, para que no se pueda adivinar quién participó.
+
 ## D-017 — Empresas por invitación e informes como foto inmutable (2026-10-30)
 - La empresa es una organización a la que pertenecen cuentas normales (D-013), verificada por el SuperUsuario con el
   certificado de la Cámara de Comercio. No tiene cobro en la plataforma: el servicio se acuerda por cotización.

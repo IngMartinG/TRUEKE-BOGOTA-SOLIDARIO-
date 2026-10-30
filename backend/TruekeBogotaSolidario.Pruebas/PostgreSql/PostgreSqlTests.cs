@@ -342,6 +342,10 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
         ALTER TABLE "Usuarios" ADD "HorarioNegocio" character varying(120);
         ALTER TABLE "Usuarios" ADD "NitVerificadoUtc" timestamp with time zone;
         ALTER TABLE "Usuarios" ADD "NitRechazadoUtc" timestamp with time zone;
+        ALTER TABLE "Usuarios" ADD "ResumenSemanal" boolean NOT NULL DEFAULT FALSE;
+        ALTER TABLE "Usuarios" ADD "ResumenSemanalEnviadoUtc" timestamp with time zone;
+        ALTER TABLE "Publicaciones" ADD "DisponibilidadPedidaUtc" timestamp with time zone;
+        ALTER TABLE "Publicaciones" ADD "DisponibilidadConfirmadaUtc" timestamp with time zone;
         ALTER TABLE "Publicaciones" ADD "EstadoModeracion" character varying(20) NOT NULL DEFAULT 'Aprobada';
         ALTER TABLE "Publicaciones" ADD "PuntajeRiesgo" integer NOT NULL DEFAULT 0;
         ALTER TABLE "Publicaciones" ADD "MotivosRiesgo" character varying(500);
@@ -355,10 +359,11 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
     private const string QuitarColumnasPosteriores = """
         ALTER TABLE "Usuarios" DROP COLUMN "EstadoFoto", DROP COLUMN "FotoRevisadaUtc", DROP COLUMN "MotivoRechazoFoto",
             DROP COLUMN "PlazoCambioFotoUtc", DROP COLUMN "DescripcionNegocio", DROP COLUMN "HorarioNegocio",
-            DROP COLUMN "NitVerificadoUtc", DROP COLUMN "NitRechazadoUtc";
+            DROP COLUMN "NitVerificadoUtc", DROP COLUMN "NitRechazadoUtc", DROP COLUMN "ResumenSemanal", DROP COLUMN "ResumenSemanalEnviadoUtc";
         ALTER TABLE "Publicaciones" DROP COLUMN "EstadoModeracion", DROP COLUMN "PuntajeRiesgo", DROP COLUMN "MotivosRiesgo",
             DROP COLUMN "MotivoRechazo", DROP COLUMN "EnRevisionDesdeUtc", DROP COLUMN "PesoEstimadoKg", DROP COLUMN "Material",
-            DROP COLUMN "NecesidadFundacionId", DROP COLUMN "CampanaId";
+            DROP COLUMN "NecesidadFundacionId", DROP COLUMN "CampanaId", DROP COLUMN "DisponibilidadPedidaUtc",
+            DROP COLUMN "DisponibilidadConfirmadaUtc";
         """;
 
     [SkippableFact]
@@ -379,10 +384,14 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
                 ALTER TABLE "Publicaciones" ADD "Material" character varying(20);
                 ALTER TABLE "Publicaciones" ADD "NecesidadFundacionId" uuid;
                 ALTER TABLE "Publicaciones" ADD "CampanaId" uuid;
+                ALTER TABLE "Publicaciones" ADD "DisponibilidadPedidaUtc" timestamp with time zone;
+                ALTER TABLE "Publicaciones" ADD "DisponibilidadConfirmadaUtc" timestamp with time zone;
                 ALTER TABLE "Usuarios" ADD "DescripcionNegocio" character varying(600);
                 ALTER TABLE "Usuarios" ADD "HorarioNegocio" character varying(120);
                 ALTER TABLE "Usuarios" ADD "NitVerificadoUtc" timestamp with time zone;
                 ALTER TABLE "Usuarios" ADD "NitRechazadoUtc" timestamp with time zone;
+                ALTER TABLE "Usuarios" ADD "ResumenSemanal" boolean NOT NULL DEFAULT FALSE;
+                ALTER TABLE "Usuarios" ADD "ResumenSemanalEnviadoUtc" timestamp with time zone;
                 """);
             var ropa = await db.Categorias.FirstAsync(c => c.Id == 1);
             var ahora = DateTime.UtcNow;
@@ -410,9 +419,9 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
             (confirmada, sola) = (t1.Id, t2.Id);
             await db.Database.ExecuteSqlRawAsync("""
                 ALTER TABLE "Publicaciones" DROP COLUMN "PesoEstimadoKg", DROP COLUMN "Material", DROP COLUMN "NecesidadFundacionId",
-                    DROP COLUMN "CampanaId";
+                    DROP COLUMN "CampanaId", DROP COLUMN "DisponibilidadPedidaUtc", DROP COLUMN "DisponibilidadConfirmadaUtc";
                 ALTER TABLE "Usuarios" DROP COLUMN "DescripcionNegocio", DROP COLUMN "HorarioNegocio", DROP COLUMN "NitVerificadoUtc",
-                    DROP COLUMN "NitRechazadoUtc";
+                    DROP COLUMN "NitRechazadoUtc", DROP COLUMN "ResumenSemanal", DROP COLUMN "ResumenSemanalEnviadoUtc";
                 """);
         }
 

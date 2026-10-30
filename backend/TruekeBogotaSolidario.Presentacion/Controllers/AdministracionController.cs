@@ -224,6 +224,19 @@ public sealed class AdministracionController : ControllerBase
         [FromServices] IImpactoService impacto)
         => Ok(await impacto.ActualizarFactorAsync(User.IdActual(), material, r));
 
+    /// <summary>Crea la meta mensual de kilos de una localidad (o cambia la que tiene). Se ve con su avance en /impacto.</summary>
+    [HttpPut("impacto/metas"), Authorize(Policy = Politicas.SuperUsuario)]
+    public async Task<ActionResult<MetaComunitariaDto>> GuardarMetaComunitaria([FromBody] GuardarMetaComunitariaRequest r,
+        [FromServices] IImpactoService impacto)
+        => Ok(await impacto.GuardarMetaAsync(User.IdActual(), r));
+
+    [HttpDelete("impacto/metas/{id:guid}"), Authorize(Policy = Politicas.SuperUsuario)]
+    public async Task<IActionResult> QuitarMetaComunitaria(Guid id, [FromServices] IImpactoService impacto)
+    {
+        await impacto.QuitarMetaAsync(User.IdActual(), id);
+        return NoContent();
+    }
+
     // ---- Solo SuperUsuario: fundaciones verificadas
     /// <summary>Por estado (Pendiente por defecto). En las pendientes, el certificado llega como enlace que caduca en 5 minutos.</summary>
     [HttpGet("fundaciones"), Authorize(Policy = Politicas.SuperUsuario)]

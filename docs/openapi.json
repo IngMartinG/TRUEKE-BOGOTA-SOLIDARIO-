@@ -1499,6 +1499,77 @@
         }
       }
     },
+    "/api/v1/admin/impacto/metas": {
+      "put": {
+        "tags": [
+          "Administracion"
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarMetaComunitariaRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarMetaComunitariaRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/GuardarMetaComunitariaRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetaComunitariaDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetaComunitariaDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MetaComunitariaDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/impacto/metas/{id}": {
+      "delete": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/admin/fundaciones": {
       "get": {
         "tags": [
@@ -6437,6 +6508,46 @@
         }
       }
     },
+    "/api/v1/publicaciones/{id}/sigue-disponible": {
+      "post": {
+        "tags": [
+          "Publicaciones"
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PublicacionDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/publicaciones/{id}/favorito": {
       "post": {
         "tags": [
@@ -8138,6 +8249,9 @@
             "type": "boolean"
           },
           "novedades": {
+            "type": "boolean"
+          },
+          "resumenSemanal": {
             "type": "boolean"
           }
         },
@@ -10827,6 +10941,32 @@
         },
         "additionalProperties": false
       },
+      "GuardarMetaComunitariaRequest": {
+        "required": [
+          "localidad"
+        ],
+        "type": "object",
+        "properties": {
+          "localidad": {
+            "maxLength": 60,
+            "minLength": 2,
+            "type": "string"
+          },
+          "municipioCodigo": {
+            "maxLength": 5,
+            "minLength": 5,
+            "type": "string",
+            "nullable": true
+          },
+          "metaKg": {
+            "maximum": 100000,
+            "minimum": 10,
+            "type": "number",
+            "format": "double"
+          }
+        },
+        "additionalProperties": false
+      },
       "GuardarNecesidadRequest": {
         "required": [
           "texto"
@@ -10966,6 +11106,13 @@
             "items": {
               "$ref": "#/components/schemas/ImpactoLocalidadDto"
             }
+          },
+          "metas": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MetaComunitariaDto"
+            },
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11478,6 +11625,42 @@
           "fechaUtc": {
             "type": "string",
             "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MetaComunitariaDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "localidad": {
+            "type": "string"
+          },
+          "municipio": {
+            "type": "string"
+          },
+          "municipioCodigo": {
+            "type": "string"
+          },
+          "metaKg": {
+            "type": "number",
+            "format": "double"
+          },
+          "kgEsteMes": {
+            "type": "number",
+            "format": "double",
+            "nullable": true
+          },
+          "porcentaje": {
+            "type": "integer",
+            "format": "int32",
+            "nullable": true
+          },
+          "reservado": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -12788,6 +12971,9 @@
           },
           "novedades": {
             "type": "boolean"
+          },
+          "resumenSemanal": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -12981,6 +13167,11 @@
           "campanaId": {
             "type": "string",
             "format": "uuid",
+            "nullable": true
+          },
+          "disponibilidadPedidaUtc": {
+            "type": "string",
+            "format": "date-time",
             "nullable": true
           }
         },

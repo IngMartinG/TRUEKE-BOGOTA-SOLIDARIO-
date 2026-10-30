@@ -21,7 +21,29 @@ public class LogrosTests
         Assert.All(todos, l => Assert.False(l.Obtenido));
         Assert.Empty(Logros.Obtenidos(Datos(), Ahora));
         Assert.Equal(new[] { "primer-intercambio", "truekero", "corazon-solidario", "segunda-mano", "bien-calificado",
-            "cumplidor", "responde-rapido", "un-anio" }, todos.Select(l => l.Clave));
+            "cumplidor", "responde-rapido", "aliado-fundaciones", "cien-kg", "primera-campana", "un-anio" }, todos.Select(l => l.Clave));
+    }
+
+    [Theory]
+    [InlineData(0, false, 0)]
+    [InlineData(99.9, false, 99)]
+    [InlineData(100, true, 100)]
+    [InlineData(450.5, true, 100)]
+    public void Cien_kg_cuenta_los_kilos_reutilizados(double kg, bool obtenido, int progreso)
+    {
+        var l = Logro(Datos() with { KgReutilizados = (decimal)kg }, "cien-kg");
+        Assert.Equal(obtenido, l.Obtenido);
+        Assert.Equal(progreso, l.Progreso);
+        Assert.Equal(Logros.KgReutilizadosMeta, l.Meta);
+    }
+
+    [Fact]
+    public void Aliado_de_fundaciones_y_primera_campana_se_ganan_con_una_entrega()
+    {
+        Assert.False(Logro(Datos(), "aliado-fundaciones").Obtenido);
+        Assert.True(Logro(Datos() with { DonacionesANecesidad = 1 }, "aliado-fundaciones").Obtenido);
+        Assert.False(Logro(Datos(), "primera-campana").Obtenido);
+        Assert.True(Logro(Datos() with { EntregasDeCampana = 2 }, "primera-campana").Obtenido);
     }
 
     [Theory]

@@ -57,6 +57,10 @@ public sealed class PublicacionesController : ControllerBase
         return CreatedAtAction(nameof(Obtener), new { id = creada.Id }, creada);
     }
 
+    /// <summary>"¿Sigue disponible?": el dueño confirma que sí (o reactiva la publicación si ya se pausó por falta de respuesta).</summary>
+    [HttpPost("publicaciones/{id:guid}/sigue-disponible"), EnableRateLimiting(Politicas.LimiteEscritura)]
+    public async Task<ActionResult<PublicacionDto>> SigueDisponible(Guid id) => Ok(await _pubs.ConfirmarDisponibilidadAsync(User.IdActual(), id));
+
     /// <summary>Editar (solo el dueño y solo si está Disponible). Reemplaza todos los campos, incluida la lista de fotos.</summary>
     [HttpPut("publicaciones/{id:guid}"), EnableRateLimiting(Politicas.LimiteEscritura)]
     public async Task<ActionResult<PublicacionDto>> Editar(Guid id, [FromBody] CrearPublicacionRequest r)

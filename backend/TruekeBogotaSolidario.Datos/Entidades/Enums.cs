@@ -8,7 +8,8 @@ public enum RolUsuarioEnum { Invitado = 0, Cliente = 1, Administrador = 2, Super
 
 public enum ModoTransaccion { Trueke = 1, Compra = 2, Donacion = 3 }
 
-public enum EstadoPublicacionEnum { Disponible = 1, EnNegociacion = 2, Intercambiada = 3, Cancelada = 4 }
+/// <summary>Pausada: nadie confirmó a tiempo que seguía disponible. Sale del catálogo y el dueño la puede reactivar.</summary>
+public enum EstadoPublicacionEnum { Disponible = 1, EnNegociacion = 2, Intercambiada = 3, Cancelada = 4, Pausada = 5 }
 
 public enum TipoCuenta { Individual = 1, Premium = 2, Empresa = 3 }
 
