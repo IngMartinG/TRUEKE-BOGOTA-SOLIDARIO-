@@ -1367,6 +1367,84 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/impacto/metas": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["GuardarMetaComunitariaRequest"];
+                    "text/json": components["schemas"]["GuardarMetaComunitariaRequest"];
+                    "application/*+json": components["schemas"]["GuardarMetaComunitariaRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MetaComunitariaDto"];
+                        "application/json": components["schemas"]["MetaComunitariaDto"];
+                        "text/json": components["schemas"]["MetaComunitariaDto"];
+                    };
+                };
+            };
+        };
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/impacto/metas/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/fundaciones": {
         parameters: {
             query?: never;
@@ -5860,6 +5938,45 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/publicaciones/{id}/sigue-disponible": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    id: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["PublicacionDto"];
+                        "application/json": components["schemas"]["PublicacionDto"];
+                        "text/json": components["schemas"]["PublicacionDto"];
+                    };
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/publicaciones/{id}/favorito": {
         parameters: {
             query?: never;
@@ -7407,6 +7524,7 @@ export interface components {
             mensajes?: boolean;
             planes?: boolean;
             novedades?: boolean;
+            resumenSemanal?: boolean;
         };
         AlertasBusquedaRequest: {
             activas?: boolean;
@@ -8256,6 +8374,12 @@ export interface components {
             publico?: boolean;
             avisos?: boolean;
         };
+        GuardarMetaComunitariaRequest: {
+            localidad: string;
+            municipioCodigo?: string | null;
+            /** Format: double */
+            metaKg?: number;
+        };
         GuardarNecesidadRequest: {
             texto: string;
             /** Format: int32 */
@@ -8301,6 +8425,7 @@ export interface components {
             factores?: components["schemas"]["FactorImpactoDto"][];
             pesosPorCategoria?: components["schemas"]["PesoCategoriaDto"][];
             localidadesDisponibles?: components["schemas"]["ImpactoLocalidadDto"][];
+            metas?: components["schemas"]["MetaComunitariaDto"][] | null;
         };
         ImpactoLocalidadDto: {
             localidad?: string;
@@ -8492,6 +8617,20 @@ export interface components {
             texto?: string;
             /** Format: date-time */
             fechaUtc?: string;
+        };
+        MetaComunitariaDto: {
+            /** Format: uuid */
+            id?: string;
+            localidad?: string;
+            municipio?: string;
+            municipioCodigo?: string;
+            /** Format: double */
+            metaKg?: number;
+            /** Format: double */
+            kgEsteMes?: number | null;
+            /** Format: int32 */
+            porcentaje?: number | null;
+            reservado?: boolean;
         };
         MiEmpresaDto: {
             /** Format: uuid */
@@ -8973,6 +9112,7 @@ export interface components {
             mensajes?: boolean;
             planes?: boolean;
             novedades?: boolean;
+            resumenSemanal?: boolean;
         };
         PreguntaAsistenteRequest: {
             pregunta: string;
@@ -9039,6 +9179,8 @@ export interface components {
             material?: string | null;
             /** Format: uuid */
             campanaId?: string | null;
+            /** Format: date-time */
+            disponibilidadPedidaUtc?: string | null;
         };
         PublicacionDtoPaginaDto: {
             items?: components["schemas"]["PublicacionDto"][];
@@ -9482,6 +9624,7 @@ export type GoogleLoginRequest = components['schemas']['GoogleLoginRequest'];
 export type GuardarBusquedaRequest = components['schemas']['GuardarBusquedaRequest'];
 export type GuardarCampanaRequest = components['schemas']['GuardarCampanaRequest'];
 export type GuardarDeseoRequest = components['schemas']['GuardarDeseoRequest'];
+export type GuardarMetaComunitariaRequest = components['schemas']['GuardarMetaComunitariaRequest'];
 export type GuardarNecesidadRequest = components['schemas']['GuardarNecesidadRequest'];
 export type ImpactoDto = components['schemas']['ImpactoDto'];
 export type ImpactoLocalidadDto = components['schemas']['ImpactoLocalidadDto'];
@@ -9502,6 +9645,7 @@ export type MaterialDto = components['schemas']['MaterialDto'];
 export type MensajeChatDto = components['schemas']['MensajeChatDto'];
 export type MensajeCitadoDto = components['schemas']['MensajeCitadoDto'];
 export type MensajeExportDto = components['schemas']['MensajeExportDto'];
+export type MetaComunitariaDto = components['schemas']['MetaComunitariaDto'];
 export type MiEmpresaDto = components['schemas']['MiEmpresaDto'];
 export type MiFundacionDto = components['schemas']['MiFundacionDto'];
 export type MiembroEmpresaDto = components['schemas']['MiembroEmpresaDto'];

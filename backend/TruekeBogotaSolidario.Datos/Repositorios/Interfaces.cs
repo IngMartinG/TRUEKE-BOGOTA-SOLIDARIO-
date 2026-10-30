@@ -62,6 +62,8 @@ public interface IUsuarioRepository
     Task<IReadOnlyList<Guid>> ListarIdsSuperUsuariosAsync();
     /// <summary>Con tracking: planes pagos que vencen entre las fechas y a los que aún no se les envió recordatorio.</summary>
     Task<IReadOnlyList<Usuario>> ListarPlanesPorVencerAsync(DateTime desdeUtc, DateTime hastaUtc, int maximo);
+    /// <summary>Con seguimiento: activaron el resumen semanal, tienen el correo verificado y no lo recibieron desde la fecha.</summary>
+    Task<IReadOnlyList<Usuario>> ListarParaResumenSemanalAsync(DateTime enviadoAntesDeUtc, DateTime ahoraUtc, int maximo);
     /// <summary>
     /// Cuentas activas (ni eliminadas ni suspendidas) a las que les falta recibir un bono de una sola vez que ya ganaron: perfil
     /// completo, o una publicación activa (visible, disponible o en negociación) desde <paramref name="publicadaHastaUtc"/> o antes.
@@ -121,6 +123,13 @@ public interface IPublicacionRepository
     /// <summary>Fila de revisión previa, sin seguimiento: primero las de más riesgo y luego las que llevan más tiempo esperando.</summary>
     Task<IReadOnlyList<Publicacion>> ListarPendientesModeracionAsync(int maximo);
     Task<int> ContarPendientesModeracionAsync();
+    /// <summary>
+    /// Con seguimiento y su dueño: disponibles, sin pregunta pendiente y sin actividad desde la fecha (ni publicada, impulsada,
+    /// editada o confirmada, ni con solicitudes nuevas). Solo las de dueños activos.
+    /// </summary>
+    Task<IReadOnlyList<Publicacion>> ListarSinActividadAsync(DateTime sinActividadDesdeUtc, DateTime ahoraUtc, int maximo);
+    /// <summary>Con seguimiento y su dueño: disponibles a las que se les preguntó antes de la fecha y nadie respondió.</summary>
+    Task<IReadOnlyList<Publicacion>> ListarParaPausarAsync(DateTime preguntadasAntesDeUtc, int maximo);
     void Agregar(Publicacion publicacion);
 }
 
@@ -207,6 +216,14 @@ public interface IImpactoRepository
     /// <summary>Lo que una persona entregó o recibió.</summary>
     Task<(int Objetos, decimal Kg, decimal KgCo2)> DeUsuarioAsync(Guid usuarioId);
     void Agregar(RegistroImpacto registro);
+    /// <summary>Para los logros: donaciones que entregó para una necesidad de fundación y objetos que entregó ligados a una campaña.</summary>
+    Task<(int DonacionesANecesidad, int EntregasDeCampana)> LogrosAsync(Guid usuarioId);
+    Task<IReadOnlyList<MetaComunitaria>> ListarMetasAsync();
+    /// <summary>Con seguimiento, para editarla o quitarla.</summary>
+    Task<MetaComunitaria?> ObtenerMetaAsync(Guid id);
+    Task<MetaComunitaria?> MetaDeLocalidadAsync(string municipioCodigo, string localidad);
+    void AgregarMeta(MetaComunitaria meta);
+    void QuitarMeta(MetaComunitaria meta);
 }
 
 public interface ITransaccionRepository

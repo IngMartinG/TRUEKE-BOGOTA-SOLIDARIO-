@@ -105,3 +105,39 @@ public class RegistroImpacto
     public Guid? CampanaId { get; private set; }
     public DateTime FechaUtc { get; private set; }
 }
+
+/// <summary>
+/// Meta mensual de kilos reutilizados en una localidad (por ejemplo "Bosa: 1 tonelada este mes"). La fija el SuperUsuario y se
+/// repite cada mes; el avance se calcula con los registros de impacto del mes en curso.
+/// </summary>
+public class MetaComunitaria
+{
+    public const decimal KgMinimo = 10m;
+    public const decimal KgMaximo = 100_000m;
+
+    private MetaComunitaria() { MunicipioCodigo = ""; Localidad = ""; } // EF Core
+
+    public MetaComunitaria(string municipioCodigo, string localidad, decimal metaKg, Guid creadaPorId, DateTime ahoraUtc)
+    {
+        Id = Guid.NewGuid();
+        MunicipioCodigo = municipioCodigo;
+        Localidad = localidad;
+        CreadaPorId = creadaPorId;
+        FechaUtc = ahoraUtc;
+        CambiarMeta(metaKg);
+    }
+
+    public Guid Id { get; private set; }
+    public string MunicipioCodigo { get; private set; }
+    public string Localidad { get; private set; }
+    public decimal MetaKg { get; private set; }
+    public Guid CreadaPorId { get; private set; }
+    public DateTime FechaUtc { get; private set; }
+
+    public void CambiarMeta(decimal metaKg)
+    {
+        if (metaKg < KgMinimo || metaKg > KgMaximo)
+            throw new ReglaDeNegocioException($"La meta debe estar entre {KgMinimo:0} y {KgMaximo:0} kg.");
+        MetaKg = Math.Round(metaKg, 0);
+    }
+}

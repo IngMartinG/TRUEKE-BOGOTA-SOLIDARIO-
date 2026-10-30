@@ -42,7 +42,8 @@ import { Icono } from '../../shared/ui/icono';
 })
 export default class Panel {
   protected readonly sesion = inject(SesionService);
-  private readonly cola = rxResource({ stream: () => inject(AdminApi).colaModeracion() });
+  private readonly admin = inject(AdminApi);
+  private readonly cola = rxResource({ stream: () => this.admin.colaModeracion() });
   private readonly tiempoReal = inject(TiempoRealService);
   /** Lo que espera revisión: llega en vivo; mientras no cambie, el valor con que se abrió el panel. */
   protected readonly pendientes = computed(() => this.tiempoReal.colaModeracion() ?? this.cola.value()?.publicaciones ?? 0);

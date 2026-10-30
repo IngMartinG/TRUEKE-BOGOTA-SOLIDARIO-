@@ -184,6 +184,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddHostedService<ResumenPqrPublicasHostedService>();
         services.AddScoped<IBusquedaGuardadaService, BusquedaGuardadaService>();
         services.AddScoped<IDeseoService, DeseoService>();
+        services.AddScoped<IRetencionService, RetencionService>();
         services.AddScoped<IFundacionService, FundacionService>();
         services.AddScoped<IEmpresaService, EmpresaService>();
         services.AddScoped<INegocioService, NegocioService>();

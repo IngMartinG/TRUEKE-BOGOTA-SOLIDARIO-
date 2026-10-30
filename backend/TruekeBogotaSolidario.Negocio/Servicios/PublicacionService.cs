@@ -27,6 +27,8 @@ public interface IPublicacionService
     Task CancelarAsync(Guid actorId, Guid id, string? motivo);
     /// <summary>Sube la publicación al primer lugar de "Más recientes" a cambio de Eco-Puntos (una vez cada 24 h).</summary>
     Task<PublicacionDto> ImpulsarAsync(Guid actorId, Guid id);
+    /// <summary>"¿Sigue disponible?": el dueño responde que sí, o reactiva la publicación si ya se pausó.</summary>
+    Task<PublicacionDto> ConfirmarDisponibilidadAsync(Guid actorId, Guid id);
     /// <summary>Rendimiento de la publicación (solo el dueño). La serie diaria es un beneficio de los planes pagos.</summary>
     Task<EstadisticasPublicacionDto> ObtenerEstadisticasAsync(Guid actorId, Guid id);
     /// <summary>Perfil público; usuarios eliminados o suspendidos "no existen" (404).</summary>
@@ -402,6 +404,21 @@ public sealed class PublicacionService : IPublicacionService
         return Mapeos.APublicacionDto(p, actorId, veExacto: true, veModeracion: false, ahora, favorita, vistas);
     }
 
+    public async Task<PublicacionDto> ConfirmarDisponibilidadAsync(Guid actorId, Guid id)
+    {
+        var p = await _pubs.ObtenerPorIdAsync(id);
+        if (p is null || p.PropietarioId != actorId) throw new NoEncontradoException("Publicación no encontrada.");
+        var actor = await _usuarios.ObtenerPorIdAsync(actorId) ?? throw new AutenticacionException("Sesión no válida.");
+        var ahora = Ahora;
+        // Reactivar es volver a ponerla en el catálogo: exige lo mismo que publicar
+        if (p.Estado == EstadoPublicacionEnum.Pausada) Guardas.ExigirCuentaCompleta(actor, ahora);
+        p.ConfirmarDisponibilidad(ahora);
+        await _uow.GuardarCambiosAsync();
+        var vistas = (await _estadisticas.TotalesAsync(new[] { p.Id })).GetValueOrDefault(p.Id);
+        var favorita = (await _favoritos.ObtenerAsync(actorId, p.Id)) is not null;
+        return Mapeos.APublicacionDto(p, actorId, veExacto: true, veModeracion: false, ahora, favorita, vistas);
+    }
+
     public async Task<EstadisticasPublicacionDto> ObtenerEstadisticasAsync(Guid actorId, Guid id)
     {
         var p = await _pubs.ObtenerPorIdAsync(id);
@@ -454,8 +471,10 @@ public sealed class PublicacionService : IPublicacionService
     private async Task<DatosLogros> DatosLogrosAsync(Usuario u, SenalesConfianzaDto confianza)
     {
         var (truekes, compras, donaciones) = await _transacciones.ContarConPuntosPorModoAsync(u.Id);
+        var (necesidad, campana) = await _impacto.LogrosAsync(u.Id);
+        var (_, kg, _) = await _impacto.DeUsuarioAsync(u.Id);
         return new DatosLogros(truekes, compras, donaciones, u.CalificacionPromedio, u.CalificacionesTotal,
-            confianza.TasaConcrecion, confianza.RespuestaHoras, u.FechaRegistro);
+            confianza.TasaConcrecion, confianza.RespuestaHoras, u.FechaRegistro, necesidad, campana, kg);
     }
 
     /// <summary>Hechos verificables y agregados del último año que ayudan a decidir si intercambiar con alguien.</summary>

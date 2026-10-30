@@ -79,6 +79,8 @@ export class CatalogoApi {
     this.api.post<void>(`/publicaciones/${seg(id)}/cancelar`, { motivo });
   destacarGratis = (id: string) => this.api.post<void>(`/publicaciones/${seg(id)}/destacar-gratis`);
   impulsar = (id: string) => this.api.post<PublicacionDto>(`/publicaciones/${seg(id)}/impulsar`, {}, { silencioso: true });
+  /** "¿Sigue disponible?": confirma que sí, o reactiva la publicación si ya se pausó. */
+  sigueDisponible = (id: string) => this.api.post<PublicacionDto>(`/publicaciones/${seg(id)}/sigue-disponible`, {}, { silencioso: true });
   estadisticas = (id: string) => this.api.get<EstadisticasPublicacionDto>(`/publicaciones/${seg(id)}/estadisticas`);
   destacadas = (f: { departamentoCodigo?: string | null; municipioCodigo?: string | null; categoriaId?: number | null }, max = 8) =>
     this.api.get<PublicacionDto[]>('/publicaciones/destacadas', { params: { ...f, max }, silencioso: true });

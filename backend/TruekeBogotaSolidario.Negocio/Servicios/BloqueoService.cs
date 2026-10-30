@@ -62,14 +62,14 @@ public sealed class BloqueoService : IBloqueoService
     }
 
     private static PreferenciasAvisosDto ADto(Usuario u)
-        => new(u.AvisosCorreoIntercambios, u.AvisosCorreoMensajes, u.AvisosCorreoPlanes, u.AceptaNovedades);
+        => new(u.AvisosCorreoIntercambios, u.AvisosCorreoMensajes, u.AvisosCorreoPlanes, u.AceptaNovedades, u.ResumenSemanal);
 
     public async Task<PreferenciasAvisosDto> PreferenciasAsync(Guid actorId) => ADto(await ActorAsync(actorId));
 
     public async Task<PreferenciasAvisosDto> ActualizarPreferenciasAsync(Guid actorId, ActualizarPreferenciasAvisosRequest r)
     {
         var u = await ActorAsync(actorId);
-        u.ActualizarPreferenciasAvisos(r.Intercambios, r.Mensajes, r.Planes, r.Novedades);
+        u.ActualizarPreferenciasAvisos(r.Intercambios, r.Mensajes, r.Planes, r.Novedades, r.ResumenSemanal);
         await _uow.GuardarCambiosAsync();
         return ADto(u);
     }

@@ -152,14 +152,21 @@ public class Usuario
     public bool AvisosCorreoPlanes { get; private set; } = true;
     /// <summary>Novedades y consejos: comunicaciones no transaccionales, solo con consentimiento expreso (Ley 1581).</summary>
     public bool AceptaNovedades { get; private set; }
+    /// <summary>Resumen semanal por correo (novedades en su localidad y coincidencias con "Lo que busco"). Apagado por defecto.</summary>
+    public bool ResumenSemanal { get; private set; }
+    public DateTime? ResumenSemanalEnviadoUtc { get; private set; }
 
-    public void ActualizarPreferenciasAvisos(bool intercambios, bool mensajes, bool planes, bool novedades)
+    public void ActualizarPreferenciasAvisos(bool intercambios, bool mensajes, bool planes, bool novedades, bool resumenSemanal)
     {
         AvisosCorreoIntercambios = intercambios;
         AvisosCorreoMensajes = mensajes;
         AvisosCorreoPlanes = planes;
         AceptaNovedades = novedades;
+        ResumenSemanal = resumenSemanal;
     }
+
+    /// <summary>Se marca aunque no haya nada que contar: así se revisa una sola vez por semana.</summary>
+    public void MarcarResumenSemanal(DateTime ahoraUtc) => ResumenSemanalEnviadoUtc = ahoraUtc;
     public string? MotivoRechazoVerificacion { get; private set; }
 
     // Identidad y cumplimiento (Ley 1581 de 2012)

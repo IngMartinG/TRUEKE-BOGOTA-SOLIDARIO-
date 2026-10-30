@@ -748,7 +748,7 @@ public sealed record SenalesConfianzaDto(bool CorreoVerificado, bool IdentidadVe
 public sealed record BloqueadoDto(PerfilPublicoDto Perfil, DateTime FechaUtc);
 
 /// <summary>Avisos por correo opcionales. Los de seguridad, pagos, PQR y moderación siempre se envían.</summary>
-public sealed record PreferenciasAvisosDto(bool Intercambios, bool Mensajes, bool Planes, bool Novedades);
+public sealed record PreferenciasAvisosDto(bool Intercambios, bool Mensajes, bool Planes, bool Novedades, bool ResumenSemanal);
 
 public sealed class ActualizarPreferenciasAvisosRequest
 {
@@ -756,6 +756,8 @@ public sealed class ActualizarPreferenciasAvisosRequest
     public bool Mensajes { get; init; }
     public bool Planes { get; init; }
     public bool Novedades { get; init; }
+    /// <summary>Resumen semanal por correo (apagado por defecto).</summary>
+    public bool ResumenSemanal { get; init; }
 }
 
 public sealed class CambiarFotoRequest
@@ -785,7 +787,9 @@ public sealed record PublicacionDto(Guid Id, string Titulo, string Descripcion, 
     string? Moderacion = null, string? MotivoRechazoModeracion = null,
     decimal? PesoEstimadoKg = null, string? Material = null,
     // Solo para el dueño: campaña de empresa a la que está ligada.
-    Guid? CampanaId = null);
+    Guid? CampanaId = null,
+    // Solo para el dueño: cuándo se le preguntó si sigue disponible (se pausa si no responde en 7 días).
+    DateTime? DisponibilidadPedidaUtc = null);
 
 public sealed record PuntoSerieDto(DateTime Fecha, int Vistas);
 
@@ -970,7 +974,22 @@ public sealed record ImpactoDto(int ObjetosConNuevoHogar, int Truekes, int Compr
     decimal KgReutilizados, decimal KgCo2Evitado, decimal KgDeclarados, int Intercambios, bool Reservado, string VersionMetodologia,
     string Periodo, string? Modo, string? MunicipioCodigo, string? Localidad,
     IReadOnlyList<ImpactoMaterialDto> PorMaterial, IReadOnlyList<FactorImpactoDto> Factores, IReadOnlyList<PesoCategoriaDto> PesosPorCategoria,
-    IReadOnlyList<ImpactoLocalidadDto> LocalidadesDisponibles);
+    IReadOnlyList<ImpactoLocalidadDto> LocalidadesDisponibles, IReadOnlyList<MetaComunitariaDto>? Metas = null);
+
+/// <summary>
+/// Meta mensual de una localidad con su avance del mes en curso (hora de Colombia). Con menos de 3 intercambios en el mes,
+/// el avance queda reservado (KgEsteMes y Porcentaje en null) para que no se pueda adivinar quién participó.
+/// </summary>
+public sealed record MetaComunitariaDto(Guid Id, string Localidad, string Municipio, string MunicipioCodigo, decimal MetaKg,
+    decimal? KgEsteMes, int? Porcentaje, bool Reservado);
+
+public sealed class GuardarMetaComunitariaRequest
+{
+    /// <summary>Una de LocalidadesDisponibles de /impacto (las que ya tienen al menos 3 intercambios).</summary>
+    [Required, StringLength(60, MinimumLength = 2)] public string Localidad { get; init; } = "";
+    [StringLength(5, MinimumLength = 5)] public string? MunicipioCodigo { get; init; }
+    [Range(10, 100_000)] public decimal MetaKg { get; init; }
+}
 public sealed record ImpactoLocalidadDto(string Localidad, string Municipio, int Intercambios, string MunicipioCodigo = "");
 public sealed record ImpactoMaterialDto(string Material, int Objetos, decimal Kg, decimal KgCo2);
 /// <summary>kg de CO₂e evitados por kg reutilizado de un material, con su fuente y versión (se publica para que sea verificable).</summary>

@@ -120,6 +120,29 @@ const METODOLOGIA = 'https://github.com/IngMartinG/TRUEKE-BOGOTA-SOLIDARIO-/blob
           }
         </div>
 
+        @if (d.metas?.length) {
+          <section class="mt-12" aria-labelledby="titulo-metas">
+            <h2 id="titulo-metas" class="titulo-seccion">Metas de este mes</h2>
+            <p class="mt-2 text-sm text-tenue">Kilos que cada localidad quiere darle una segunda vida antes de que termine el mes.</p>
+            <ul class="mt-5 grid gap-3 sm:grid-cols-2">
+              @for (m of d.metas; track m.id) {
+                <li class="tarjeta p-4">
+                  <p class="font-display font-bold">{{ m.localidad }}: {{ m.metaKg | kilos }} este mes</p>
+                  @if (m.reservado) {
+                    <p class="mt-1 text-sm text-tenue">El avance se muestra cuando la localidad tenga al menos 3 intercambios este mes.</p>
+                  } @else {
+                    <div class="mt-3 h-3 overflow-hidden rounded-full bg-superficie-2" role="progressbar" [attr.aria-valuenow]="m.porcentaje" aria-valuemin="0" aria-valuemax="100"
+                      [attr.aria-label]="'Avance de la meta de ' + m.localidad">
+                      <div class="h-full rounded-full bg-bosque-500" [style.width.%]="m.porcentaje"></div>
+                    </div>
+                    <p class="mt-1.5 text-sm tabular-nums"><span class="font-semibold">{{ m.kgEsteMes | kilos }}</span> <span class="text-tenue">· {{ m.porcentaje }} %</span></p>
+                  }
+                </li>
+              }
+            </ul>
+          </section>
+        }
+
         @if (d.localidadesMasActivas?.length) {
           <section class="mt-12" aria-labelledby="titulo-localidades">
             <h2 id="titulo-localidades" class="titulo-seccion">Localidades más activas</h2>

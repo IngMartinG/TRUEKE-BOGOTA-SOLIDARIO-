@@ -61,6 +61,6 @@ public class CaptchaIntegracionTests : IClassFixture<FabricaApi>
         var cfg = JsonDocument.Parse(texto).RootElement;
         Assert.Equal("clave-publica-de-sitio", cfg.GetProperty("captchaClaveSitio").GetString());
         Assert.Equal(5, cfg.GetProperty("maxImagenesPorPublicacion").GetInt32());
-        Assert.Equal("2026-10-30", cfg.GetProperty("versionPoliticaDatos").GetString());
+        Assert.Equal("2026-10-31", cfg.GetProperty("versionPoliticaDatos").GetString());
     }
 }

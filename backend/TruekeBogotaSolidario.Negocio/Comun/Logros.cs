@@ -7,7 +7,9 @@ namespace TruekeBogotaSolidario.Negocio.Comun;
 /// Eco-Puntos: así el anti-farmeo (5 al día, misma pareja 1 vez cada 30 días) también protege las medallas.
 /// </summary>
 public sealed record DatosLogros(int Truekes, int Compras, int Donaciones, decimal? CalificacionPromedio, int TotalCalificaciones,
-    int? TasaConcrecion, double? RespuestaHoras, DateTime FechaRegistroUtc);
+    int? TasaConcrecion, double? RespuestaHoras, DateTime FechaRegistroUtc,
+    // De los registros de impacto (solo intercambios que ambas partes confirmaron)
+    int DonacionesANecesidad = 0, int EntregasDeCampana = 0, decimal KgReutilizados = 0);
 
 /// <summary>
 /// Medallas del perfil. Son solo un reconocimiento (decisión del dueño): no dan Eco-Puntos, permisos ni descuentos.
@@ -24,6 +26,7 @@ public static class Logros
     public const double HorasRespuestaRapida = 12;
     public const int MinimoIntercambiosRespuesta = 3;
     public const int DiasAnio = 365;
+    public const int KgReutilizadosMeta = 100;
     /// <summary>Quien se registró antes de esta fecha es pionero. No se puede ganar después, así que nunca se muestra como pendiente.</summary>
     public static readonly DateTime FinEtapaPionera = new(2027, 1, 1, 5, 0, 0, DateTimeKind.Utc); // medianoche en Colombia
 
@@ -47,6 +50,10 @@ public static class Logros
                 total, MinimoIntercambiosCumplidor, total >= MinimoIntercambiosCumplidor && d.TasaConcrecion >= TasaCumplidor),
             Condicion("responde-rapido", "Responde rápido", $"Acepta solicitudes en menos de {HorasRespuestaRapida:0} horas (mediana).",
                 total, MinimoIntercambiosRespuesta, total >= MinimoIntercambiosRespuesta && d.RespuestaHoras <= HorasRespuestaRapida),
+            Simple("aliado-fundaciones", "Aliado de fundaciones", "Entregó una donación para una necesidad de una fundación.", d.DonacionesANecesidad, 1),
+            Simple("cien-kg", $"{KgReutilizadosMeta} kg reutilizados", $"Entre lo que entregó y recibió, {KgReutilizadosMeta} kg volvieron a usarse.",
+                (int)Math.Floor(Math.Max(d.KgReutilizados, 0)), KgReutilizadosMeta),
+            Simple("primera-campana", "Primera campaña", "Entregó un objeto de una campaña de su empresa.", d.EntregasDeCampana, 1),
             Simple("un-anio", "Un año en la comunidad", "Lleva un año o más en Trueke.",
                 (int)Math.Clamp((ahoraUtc - d.FechaRegistroUtc).TotalDays, 0, DiasAnio), DiasAnio),
         };

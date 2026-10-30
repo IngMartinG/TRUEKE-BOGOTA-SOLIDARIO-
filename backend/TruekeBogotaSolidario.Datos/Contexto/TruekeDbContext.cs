@@ -14,6 +14,7 @@ public class TruekeDbContext : DbContext
     public DbSet<Transaccion> Transacciones => Set<Transaccion>();
     public DbSet<FactorImpacto> FactoresImpacto => Set<FactorImpacto>();
     public DbSet<RegistroImpacto> RegistrosImpacto => Set<RegistroImpacto>();
+    public DbSet<MetaComunitaria> MetasComunitarias => Set<MetaComunitaria>();
     public DbSet<MovimientoEcoPuntos> MovimientosEcoPuntos => Set<MovimientoEcoPuntos>();
     public DbSet<Pago> Pagos => Set<Pago>();
     public DbSet<AuditoriaEvento> Auditoria => Set<AuditoriaEvento>();
@@ -152,6 +153,7 @@ public class TruekeDbContext : DbContext
             e.HasIndex(x => x.NecesidadFundacionId);
             e.HasOne<Campana>().WithMany().HasForeignKey(x => x.CampanaId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => x.CampanaId);
+            e.HasIndex(x => new { x.Estado, x.DisponibilidadPedidaUtc }); // "¿Sigue disponible?"
             e.Ignore(x => x.EsVisible);
             e.Property(x => x.PrecioReferenciaCop).HasPrecision(18, 2);
             e.Property(x => x.PesoEstimadoKg).HasPrecision(8, 2);
@@ -488,6 +490,18 @@ public class TruekeDbContext : DbContext
             e.HasOne<Campana>().WithMany().HasForeignKey(x => x.CampanaId).OnDelete(DeleteBehavior.Restrict);
             e.HasIndex(x => new { x.CampanaId, x.FechaUtc });
         });
+
+        mb.Entity<MetaComunitaria>(e =>
+        {
+            e.ToTable("MetasComunitarias");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Id).ValueGeneratedNever();
+            e.Property(x => x.MunicipioCodigo).HasMaxLength(5).IsUnicode(false).IsRequired();
+            e.Property(x => x.Localidad).HasMaxLength(60).IsRequired();
+            e.Property(x => x.MetaKg).HasPrecision(10, 0);
+            e.HasIndex(x => new { x.MunicipioCodigo, x.Localidad }).IsUnique(); // una meta por localidad
+        });
+
 
         mb.Entity<Empresa>(e =>
         {

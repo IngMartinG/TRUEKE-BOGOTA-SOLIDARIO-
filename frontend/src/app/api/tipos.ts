@@ -145,6 +145,7 @@ export const ETIQUETA_ESTADO_PUBLICACION: Record<string, string> = {
   EnNegociacion: 'Reservada',
   Intercambiada: 'Intercambiada',
   Cancelada: 'Cancelada',
+  Pausada: 'Pausada',
 };
 
 export const ETIQUETA_ESTADO_SOLICITUD: Record<string, { texto: string; clase: string }> = {
@@ -252,6 +253,9 @@ export const ICONO_LOGRO: Record<string, string> = {
   'bien-calificado': 'estrella',
   cumplidor: 'checkCirculo',
   'responde-rapido': 'rayo',
+  'aliado-fundaciones': 'regalo',
+  'cien-kg': 'balanza',
+  'primera-campana': 'edificio',
   'un-anio': 'calendario',
   pionero: 'brote',
 };

@@ -1073,6 +1073,40 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.ToTable("Mensajes");
                 });
 
+            modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.MetaComunitaria", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("CreadaPorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("FechaUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Localidad")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("character varying(60)");
+
+                    b.Property<decimal>("MetaKg")
+                        .HasPrecision(10)
+                        .HasColumnType("numeric(10,0)");
+
+                    b.Property<string>("MunicipioCodigo")
+                        .IsRequired()
+                        .HasMaxLength(5)
+                        .IsUnicode(false)
+                        .HasColumnType("character varying(5)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("MunicipioCodigo", "Localidad")
+                        .IsUnique();
+
+                    b.ToTable("MetasComunitarias", (string)null);
+                });
+
             modelBuilder.Entity("TruekeBogotaSolidario.Datos.Entidades.MiembroEmpresa", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1451,6 +1485,12 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
 
+                    b.Property<DateTime?>("DisponibilidadConfirmadaUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("DisponibilidadPedidaUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<DateTime?>("EnRevisionDesdeUtc")
                         .HasColumnType("timestamp with time zone");
 
@@ -1576,6 +1616,8 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.HasIndex("PropietarioId");
 
                     b.HasIndex("DepartamentoCodigo", "MunicipioCodigo");
+
+                    b.HasIndex("Estado", "DisponibilidadPedidaUtc");
 
                     b.HasIndex("Estado", "EstaOculta");
 
@@ -2215,6 +2257,12 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<decimal>("Reputacion")
                         .HasPrecision(3, 2)
                         .HasColumnType("numeric(3,2)");
+
+                    b.Property<bool>("ResumenSemanal")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("ResumenSemanalEnviadoUtc")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("Rol")
                         .IsRequired()

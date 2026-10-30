@@ -99,6 +99,39 @@ public class Publicacion
 
     /// <summary>null la desliga. Quien llama comprueba que la campaña esté activa y sea de la empresa del dueño.</summary>
     public void LigarACampana(Guid? campanaId) => CampanaId = campanaId;
+
+    // "¿Sigue disponible?": a los 30 días sin actividad se le pregunta al dueño; sin respuesta en 7 días más, se pausa.
+    public const int DiasSinActividadParaPreguntar = 30;
+    public const int DiasParaResponderDisponibilidad = 7;
+    /// <summary>Cuándo se le preguntó al dueño si sigue disponible (null = no hay pregunta pendiente).</summary>
+    public DateTime? DisponibilidadPedidaUtc { get; private set; }
+    /// <summary>Última vez que el dueño confirmó que sigue disponible o la reactivó (cuenta como actividad).</summary>
+    public DateTime? DisponibilidadConfirmadaUtc { get; private set; }
+
+    public void PedirConfirmacionDisponibilidad(DateTime ahoraUtc)
+    {
+        if (Estado != EstadoPublicacionEnum.Disponible) throw new ReglaDeNegocioException("Solo se pregunta por publicaciones disponibles.");
+        DisponibilidadPedidaUtc = ahoraUtc;
+    }
+
+    /// <summary>Nadie respondió a tiempo: sale del catálogo hasta que el dueño la reactive.</summary>
+    public void Pausar()
+    {
+        if (Estado != EstadoPublicacionEnum.Disponible || DisponibilidadPedidaUtc is null)
+            throw new ReglaDeNegocioException("Solo se pausa una publicación disponible a la que se le preguntó si seguía disponible.");
+        Estado = EstadoPublicacionEnum.Pausada;
+    }
+
+    /// <summary>El dueño responde "sigue disponible" (o la reactiva si ya estaba pausada).</summary>
+    public void ConfirmarDisponibilidad(DateTime ahoraUtc)
+    {
+        if (Estado is not (EstadoPublicacionEnum.Disponible or EstadoPublicacionEnum.Pausada))
+            throw new ReglaDeNegocioException("Solo se puede confirmar una publicación disponible o pausada.");
+        Estado = EstadoPublicacionEnum.Disponible;
+        DisponibilidadPedidaUtc = null;
+        DisponibilidadConfirmadaUtc = ahoraUtc;
+    }
+
     /// <summary>Suma de las señales que la mandaron a revisión (más alto = se revisa primero).</summary>
     public int PuntajeRiesgo { get; private set; }
     /// <summary>Señales que vio el evaluador, separadas por "; " (solo las ven los moderadores).</summary>
@@ -185,6 +218,7 @@ public class Publicacion
         if (EstaOculta) throw new ReglaDeNegocioException("No se puede editar una publicación oculta por moderación.");
         Aplicar(datos);
         FechaEdicion = ahoraUtc;
+        DisponibilidadPedidaUtc = null; // editarla es responder que sigue disponible
     }
 
     // ---------------- Ciclo de vida ----------------
@@ -214,6 +248,7 @@ public class Publicacion
         ValidarPuedeImpulsarse(ahoraUtc);
         FechaImpulso = ahoraUtc;
         FechaRelevancia = ahoraUtc;
+        DisponibilidadPedidaUtc = null;
     }
 
     /// <summary>El dueño eligió a una de las personas interesadas: queda reservada y sale del catálogo.</summary>
@@ -221,6 +256,7 @@ public class Publicacion
     {
         if (Estado != EstadoPublicacionEnum.Disponible) throw new ReglaDeNegocioException("La publicación no está disponible.");
         Estado = EstadoPublicacionEnum.EnNegociacion;
+        DisponibilidadPedidaUtc = null;
     }
 
     /// <summary>Se usa cuando el intercambio aceptado no se concreta: vuelve al catálogo (NO reinicia FechaPublicacion).</summary>
