@@ -8,7 +8,8 @@ import { SesionService } from '../../core/sesion.service';
 import { HacePipe, KilosPipe } from '../../shared/pipes';
 
 /** La API manda solo mes y año como el día 1 a medianoche UTC: en hora de Colombia caería en el mes anterior. */
-const formatoMesAnio = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+// La API envía el día de registro a las 12:00 UTC (sin la hora exacta): se muestra en UTC para no correr el día.
+const formatoDia = new Intl.DateTimeFormat('es-CO', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 import { Avatar } from '../../shared/ui/avatar';
 import { Bloquear } from '../../shared/ui/bloquear';
 import { Denunciar } from '../../shared/ui/denunciar';
@@ -72,7 +73,7 @@ import { Volver } from '../../shared/ui/volver';
               </div>
               <p class="mt-1 flex flex-wrap items-center justify-center gap-x-3 gap-y-1 text-sm text-tenue sm:justify-start">
                 <span class="flex items-center gap-1"><app-icono nombre="pin" [tamano]="14" /><span>{{ p.localidad }}{{ p.municipio ? ', ' + p.municipio : '' }}</span></span>
-                <span>Miembro desde {{ mesYAnio(p.miembroDesde) }}</span>
+                <span>Miembro desde el {{ dia(p.miembroDesde) }}</span>
               </p>
               @if (p.nombreFundacion) {
                 <a [routerLink]="['/fundaciones', p.id]" class="enlace mt-2 inline-flex items-center gap-1 text-sm font-semibold">
@@ -352,8 +353,8 @@ export default class PerfilPublico {
     return [5, 4, 3, 2, 1].map((n) => ({ estrellas: n, total: e[n - 1] ?? 0, porcentaje: Math.round((100 * (e[n - 1] ?? 0)) / total) }));
   });
 
-  protected mesYAnio(fecha: string | null | undefined): string {
-    return fecha ? formatoMesAnio.format(Date.parse(fecha)) : '';
+  protected dia(fecha: string | null | undefined): string {
+    return fecha ? formatoDia.format(Date.parse(fecha)) : '';
   }
 
   protected respuesta(horas: number | null | undefined): string {

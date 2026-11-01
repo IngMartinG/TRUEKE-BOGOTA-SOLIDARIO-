@@ -41,7 +41,7 @@ public class CatalogoTests : IClassFixture<FabricaApi>
         var perfil = JsonDocument.Parse(cuerpo).RootElement;
         Assert.Equal("perfilada P.", perfil.GetProperty("nombre").GetString());
         Assert.Equal(1, perfil.GetProperty("publicacionesActivas").GetInt32());
-        Assert.EndsWith("-01T00:00:00.000Z", perfil.GetProperty("miembroDesde").GetString()); // solo mes y año
+        Assert.EndsWith("T12:00:00.000Z", perfil.GetProperty("miembroDesde").GetString()); // el día, sin la hora exacta
 
         var pubs = await anonimo.GetFromJsonAsync<JsonElement>($"/api/v1/usuarios/{idPropietario}/publicaciones");
         Assert.Equal(1, pubs.GetProperty("total").GetInt32());
