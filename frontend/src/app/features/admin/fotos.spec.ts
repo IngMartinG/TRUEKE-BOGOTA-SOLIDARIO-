@@ -22,6 +22,7 @@ describe('Fotos de perfil en revisión', () => {
     ],
     total: 2,
     sinRevisar: 0,
+    detectorDisponible: true,
   };
 
   async function crear(datos: FotosEnRevisionDto = cola) {
@@ -75,7 +76,13 @@ describe('Fotos de perfil en revisión', () => {
   });
 
   it('sin fotos pendientes lo dice', async () => {
-    const { el } = await crear({ items: [], total: 0, sinRevisar: 3 });
+    const { el } = await crear({ items: [], total: 0, sinRevisar: 3, detectorDisponible: true });
     expect(el.textContent).toContain('No hay fotos por revisar');
+    expect(el.textContent).not.toContain('detector de rostros no funciona');
+  });
+
+  it('avisa si el detector de rostros no funciona en el servidor', async () => {
+    const { el } = await crear({ ...cola, detectorDisponible: false });
+    expect(el.querySelector('[role=alert]')?.textContent).toContain('El detector de rostros no funciona en este servidor');
   });
 });

@@ -37,6 +37,7 @@ public sealed class FotoPerfilService : IFotoPerfilService
     private readonly IUnidadDeTrabajo _uow;
     private readonly IAlmacenArchivos _almacen;
     private readonly IRevisorFotoPerfil _revisor;
+    private readonly IDetectorRostros _detector;
     private readonly IAuditoriaRepository _auditoria;
     private readonly UrlsOpciones _urls;
     private readonly FotosPerfilOpciones _opciones;
@@ -45,10 +46,10 @@ public sealed class FotoPerfilService : IFotoPerfilService
     private readonly ILogger<FotoPerfilService> _log;
 
     public FotoPerfilService(IUsuarioRepository usuarios, IUnidadDeTrabajo uow, IAlmacenArchivos almacen, IRevisorFotoPerfil revisor,
-        IAuditoriaRepository auditoria, IOptions<UrlsOpciones> urls, IOptions<FotosPerfilOpciones> opciones, TimeProvider reloj,
+        IDetectorRostros detector, IAuditoriaRepository auditoria, IOptions<UrlsOpciones> urls, IOptions<FotosPerfilOpciones> opciones, TimeProvider reloj,
         INotificador notificador, ILogger<FotoPerfilService> log)
     {
-        _usuarios = usuarios; _uow = uow; _almacen = almacen; _revisor = revisor; _auditoria = auditoria; _urls = urls.Value;
+        _usuarios = usuarios; _uow = uow; _almacen = almacen; _revisor = revisor; _detector = detector; _auditoria = auditoria; _urls = urls.Value;
         _opciones = opciones.Value; _reloj = reloj; _notificador = notificador; _log = log;
     }
 
@@ -71,6 +72,13 @@ public sealed class FotoPerfilService : IFotoPerfilService
                 throw new ReglaDeNegocioException(ReglaFotoPerfil.MensajeSinRostro);
             }
             estado = revisada;
+            // Si el detector está activo pero no pudo revisarla (no cargó o no leyó la imagen), la foto no pasa en silencio:
+            // queda en la cola de un moderador.
+            if (estado == EstadoFotoPerfil.SinRevisar && _opciones.DetectorHabilitado)
+            {
+                _log.LogWarning("No se pudo revisar automáticamente la foto de perfil de {UsuarioId}: queda para un moderador", actorId);
+                estado = EstadoFotoPerfil.EnRevision;
+            }
         }
         else
         {
@@ -132,7 +140,7 @@ public sealed class FotoPerfilService : IFotoPerfilService
         var lista = await _usuarios.ListarPorEstadoFotoAsync(EstadoFotoPerfil.EnRevision, 100);
         var items = lista.Select(u => new FotoEnRevisionDto(u.Id, u.NombreCompleto, u.FotoUrl!, u.FotoRevisadaUtc ?? u.FechaRegistro)).ToList();
         return new FotosEnRevisionDto(items, await _usuarios.ContarPorEstadoFotoAsync(EstadoFotoPerfil.EnRevision),
-            await _usuarios.ContarPorEstadoFotoAsync(EstadoFotoPerfil.SinRevisar));
+            await _usuarios.ContarPorEstadoFotoAsync(EstadoFotoPerfil.SinRevisar), _detector.Disponible);
     }
 
     public async Task AprobarAsync(Guid actorId, Guid usuarioId)

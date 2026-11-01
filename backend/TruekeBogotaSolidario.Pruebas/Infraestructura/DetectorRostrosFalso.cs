@@ -13,5 +13,7 @@ public sealed class DetectorRostrosFalso : IDetectorRostros
     /// <summary>Si se indica, decide según la imagen (tiene prioridad sobre <see cref="Resultado"/>).</summary>
     public Func<byte[], IReadOnlyList<RostroDetectado>?>? PorImagen { get; set; }
 
+    public bool Disponible { get; set; } = true;
+
     public IReadOnlyList<RostroDetectado>? Detectar(byte[] imagen) => PorImagen is { } decidir ? decidir(imagen) : Resultado;
 }

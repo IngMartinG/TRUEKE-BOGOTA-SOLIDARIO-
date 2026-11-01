@@ -19,9 +19,10 @@ import { CampoAccesible } from '../../shared/ui/campo-accesible';
 import { EnfocarError } from '../../shared/ui/enfocar-error';
 import { Icono } from '../../shared/ui/icono';
 import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
+import { VisorImagenes } from '../../shared/ui/visor-imagenes';
 
 @Component({
-  imports: [ReactiveFormsModule, RouterLink, ErrorCampo, CampoAccesible, EnfocarError, Icono, NumeroPipe, FechaPipe, SelectorMunicipio, Avatar],
+  imports: [ReactiveFormsModule, RouterLink, ErrorCampo, CampoAccesible, EnfocarError, Icono, NumeroPipe, FechaPipe, SelectorMunicipio, Avatar, VisorImagenes],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <h1 class="text-2xl font-extrabold">Mi cuenta</h1>
@@ -30,7 +31,15 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
     @if (sesion.usuario(); as u) {
       <section id="foto" class="tarjeta mt-6 flex scroll-mt-24 flex-col items-center gap-4 p-5 text-center sm:flex-row sm:text-left" aria-labelledby="titulo-foto">
         <div class="relative">
-          <app-avatar [nombre]="u.nombreCompleto" [foto]="u.fotoUrl" [tamano]="96" />
+          @if (u.fotoUrl && !subiendoFoto()) {
+            <button type="button" class="block cursor-zoom-in rounded-full focus-visible:outline-offset-4" (click)="fotoAbierta.set(true)"
+              aria-label="Ver tu foto de perfil en grande">
+              <app-avatar [nombre]="u.nombreCompleto" [foto]="u.fotoUrl" [tamano]="96" />
+            </button>
+            <app-visor-imagenes [imagenes]="[u.fotoUrl]" [titulo]="u.nombreCompleto ?? 'Tu foto'" [(abierto)]="fotoAbierta" />
+          } @else {
+            <app-avatar [nombre]="u.nombreCompleto" [foto]="u.fotoUrl" [tamano]="96" />
+          }
           @if (subiendoFoto()) {
             <span class="absolute inset-0 grid place-items-center rounded-full bg-black/45 text-xs font-semibold text-white">Subiendo…</span>
           }
@@ -236,6 +245,7 @@ export default class Perfil {
   protected readonly localidades = LOCALIDADES;
   protected readonly guardando = signal(false);
   protected readonly subiendoFoto = signal(false);
+  protected readonly fotoAbierta = signal(false);
   private readonly subidas = inject(SubidasService);
   private readonly router = inject(Router);
   /** A dónde volver después de subir la foto, cuando se llegó aquí porque hacía falta (?volver=...). */

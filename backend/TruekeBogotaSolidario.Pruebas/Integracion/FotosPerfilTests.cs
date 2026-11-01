@@ -40,6 +40,7 @@ public sealed class FotosPerfilTests : IClassFixture<FabricaApi>, IDisposable
     {
         _fabrica.Detector.Resultado = DetectorRostrosFalso.CaraClara;
         _fabrica.Detector.PorImagen = null;
+        _fabrica.Detector.Disponible = true;
     }
 
     private async Task<HttpResponseMessage> SubirFotoAsync(HttpClient c)
@@ -103,6 +104,22 @@ public sealed class FotosPerfilTests : IClassFixture<FabricaApi>, IDisposable
         Assert.Contains("FotoPerfilAprobada", await TiposAvisosAsync(c));
         cola = await mod.GetFromJsonAsync<FotosEnRevisionDto>("/api/v1/admin/fotos");
         Assert.DoesNotContain(cola!.Items, i => i.UsuarioId == ses.Usuario.Id);
+    }
+
+    [Fact]
+    public async Task Si_el_detector_no_puede_revisarla_la_foto_no_pasa_en_silencio_sino_a_un_moderador()
+    {
+        var ses = await Api.RegistrarSesionAsync(_f, "sinDetector");
+        var c = Api.ConToken(_f, ses.Token);
+        _fabrica.Detector.Resultado = null; // el modelo no cargó o no pudo leer la imagen
+        _fabrica.Detector.Disponible = false;
+
+        var yo = await (await SubirFotoAsync(c)).Content.ReadFromJsonAsync<JsonElement>();
+
+        Assert.Equal("EnRevision", yo.GetProperty("estadoFoto").GetString());
+        var cola = await (await ModeradorAsync()).GetFromJsonAsync<FotosEnRevisionDto>("/api/v1/admin/fotos");
+        Assert.Contains(cola!.Items, i => i.UsuarioId == ses.Usuario.Id);
+        Assert.False(cola.DetectorDisponible); // el panel avisa que el detector no funciona en este servidor
     }
 
     [Fact]

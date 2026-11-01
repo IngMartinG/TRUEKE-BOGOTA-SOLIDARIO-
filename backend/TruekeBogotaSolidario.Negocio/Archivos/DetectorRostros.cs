@@ -31,6 +31,8 @@ public interface IDetectorRostros
 {
     /// <summary>Rostros de la imagen (JPEG, PNG o WEBP ya limpia). null si el detector no está disponible o no pudo leerla.</summary>
     IReadOnlyList<RostroDetectado>? Detectar(byte[] imagen);
+    /// <summary>false si está apagado por configuración o el modelo no cargó en este servidor (lo ve el panel de moderación).</summary>
+    bool Disponible { get; }
 }
 
 /// <summary>
@@ -87,6 +89,8 @@ public sealed class DetectorRostrosOnnx : IDetectorRostros, IDisposable
         _habilitado = opciones.Value.DetectorHabilitado;
         _sesion = new Lazy<InferenceSession?>(Cargar, LazyThreadSafetyMode.ExecutionAndPublication);
     }
+
+    public bool Disponible => _habilitado && _sesion.Value is not null;
 
     private InferenceSession? Cargar()
     {

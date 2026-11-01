@@ -40,6 +40,12 @@ const MOTIVOS = [
         </p>
       }
     </div>
+    @if (datos()?.detectorDisponible === false) {
+      <p role="alert" class="mt-4 flex items-start gap-2 rounded-xl bg-sol-50 p-3 text-sm dark:bg-sol-500/10">
+        <app-icono nombre="alerta" [tamano]="18" class="mt-px shrink-0 text-sol-700 dark:text-sol-300" />
+        <span><strong>El detector de rostros no funciona en este servidor.</strong> Todas las fotos nuevas llegan aquí para revisarlas a mano. Revisa el registro de la API (busca "detector de rostros").</span>
+      </p>
+    }
 
     @if (actual(); as f) {
       <div class="mt-6 grid gap-6 md:grid-cols-[minmax(0,22rem)_1fr]">

@@ -8275,6 +8275,7 @@ export interface components {
             total?: number;
             /** Format: int32 */
             sinRevisar?: number;
+            detectorDisponible?: boolean;
         };
         FundacionAdminDto: {
             /** Format: uuid */

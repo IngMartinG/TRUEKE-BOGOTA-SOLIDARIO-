@@ -925,8 +925,8 @@ public sealed record CalificacionDto(Guid Id, PerfilPublicoDto Autor, int Estrel
 
 /// <summary>Foto de perfil que el detector dejó en duda: la aprueba o la rechaza un moderador.</summary>
 public sealed record FotoEnRevisionDto(Guid UsuarioId, string NombreCompleto, string FotoUrl, DateTime DesdeUtc);
-/// <summary>La cola (hasta 100, las más antiguas primero), su total y cuántas fotos anteriores a la regla faltan por revisar.</summary>
-public sealed record FotosEnRevisionDto(IReadOnlyList<FotoEnRevisionDto> Items, int Total, int SinRevisar);
+/// <summary>La cola (hasta 100, las más antiguas primero), su total, cuántas fotos anteriores a la regla faltan por revisar y si el detector funciona en este servidor.</summary>
+public sealed record FotosEnRevisionDto(IReadOnlyList<FotoEnRevisionDto> Items, int Total, int SinRevisar, bool DetectorDisponible);
 
 /// <param name="FotoUrl">Foto de perfil, para compararla con la del documento.</param>
 public sealed record VerificacionPendienteDto(Guid UsuarioId, string NombreCompleto, string Correo, string DocumentoUrl, DateTime FechaRegistro,
