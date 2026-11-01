@@ -64,7 +64,7 @@ export default class Accesibilidad {
           'Las fotos las suben las personas que publican y no siempre tienen una descripción alternativa detallada: el lector de pantalla anuncia el título de la publicación.',
           'Algunas pantallas de administración y moderación, que usa solo el equipo de la plataforma, tienen tablas que en celular se recorren deslizando de lado.',
           'No hemos hecho todavía una auditoría con personas usuarias de lectores de pantalla ni una evaluación externa.',
-          'El inicio de sesión con Google, la verificación reCAPTCHA y la pasarela de pagos son servicios de terceros: su accesibilidad depende de esos proveedores.',
+          'El inicio de sesión con Google, la verificación contra robots (Cloudflare Turnstile) y la pasarela de pagos son servicios de terceros: su accesibilidad depende de esos proveedores.',
         ],
       },
       {

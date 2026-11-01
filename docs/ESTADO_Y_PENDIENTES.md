@@ -15,7 +15,7 @@
 - verificación de correo y recuperación de clave;
 - login con Google;
 - **2FA TOTP** obligatoria para administración;
-- **reCAPTCHA v3**;
+- **captcha con Cloudflare Turnstile** (sin cookies de seguimiento);
 - Habeas Data (Ley 1581).
 
 **Funcionalidad:**

@@ -8996,7 +8996,7 @@
             "format": "email"
           },
           "captchaToken": {
-            "maxLength": 4096,
+            "maxLength": 2048,
             "type": "string",
             "nullable": true
           }
@@ -9229,7 +9229,7 @@
             "type": "string"
           },
           "captchaToken": {
-            "maxLength": 4096,
+            "maxLength": 2048,
             "type": "string",
             "nullable": true
           }
@@ -11495,7 +11495,7 @@
             "nullable": true
           },
           "captchaToken": {
-            "maxLength": 4096,
+            "maxLength": 2048,
             "type": "string",
             "nullable": true
           }
@@ -12214,7 +12214,7 @@
             "format": "email"
           },
           "captchaToken": {
-            "maxLength": 4096,
+            "maxLength": 2048,
             "type": "string",
             "nullable": true
           }
@@ -13411,7 +13411,7 @@
             "type": "boolean"
           },
           "captchaToken": {
-            "maxLength": 4096,
+            "maxLength": 2048,
             "type": "string",
             "nullable": true
           },

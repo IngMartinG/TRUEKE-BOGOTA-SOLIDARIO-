@@ -23,7 +23,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddOptions<SeguridadOpciones>().Bind(config.GetSection(SeguridadOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
         services.AddOptions<UrlsOpciones>().Bind(config.GetSection(UrlsOpciones.Seccion));
         services.AddOptions<CaptchaOpciones>().Bind(config.GetSection(CaptchaOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
-        services.AddHttpClient<IVerificadorCaptcha, VerificadorRecaptcha>(c => c.Timeout = TimeSpan.FromSeconds(5));
+        services.AddHttpClient<IVerificadorCaptcha, VerificadorTurnstile>(c => c.Timeout = TimeSpan.FromSeconds(5));
         services.AddOptions<GoogleOpciones>().Bind(config.GetSection(GoogleOpciones.Seccion));
         services.AddSingleton<IValidadorGoogle, ValidadorGoogle>();
         services.AddOptions<LegalOpciones>().Bind(config.GetSection(LegalOpciones.Seccion)).ValidateDataAnnotations()

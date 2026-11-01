@@ -1,6 +1,6 @@
 const cargados = new Map<string, Promise<void>>();
 
-/** Carga un script de terceros una sola vez (reCAPTCHA, Google Identity Services). */
+/** Carga un script de terceros una sola vez (Turnstile, Google Identity Services). */
 export function cargarScript(src: string): Promise<void> {
   let promesa = cargados.get(src);
   if (!promesa) {

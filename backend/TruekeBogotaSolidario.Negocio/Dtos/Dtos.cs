@@ -47,8 +47,8 @@ public sealed class RegistroRequest
     /// <summary>Aceptación de los términos de uso y declaración de ser mayor de 18 años (casilla separada de la autorización de datos).</summary>
     [Range(typeof(bool), "true", "true", ErrorMessage = "Debes aceptar los términos de uso y declarar que eres mayor de 18 años.")]
     public bool AceptoTerminos { get; init; }
-    /// <summary>Token de reCAPTCHA v3 (grecaptcha.execute). Obligatorio cuando el captcha está habilitado.</summary>
-    [MaxLength(4096)] public string? CaptchaToken { get; init; }
+    /// <summary>Token de Cloudflare Turnstile. Obligatorio cuando el captcha está habilitado.</summary>
+    [MaxLength(2048)] public string? CaptchaToken { get; init; }
     /// <summary>Código de quien invitó (enlace /registro?invita=). Si no existe, la cuenta se crea igual, sin invitación.</summary>
     [RegularExpression(FormatosInvitacion.Codigo, ErrorMessage = "El código de invitación no es válido.")] public string? CodigoInvitacion { get; init; }
 }
@@ -86,8 +86,8 @@ public sealed class LoginRequest
     [Required, StringLength(128, MinimumLength = 1)] public string Clave { get; init; } = "";
     /// <summary>Solo si la cuenta tiene verificación en dos pasos: 6 dígitos de la app o un código de recuperación.</summary>
     [MaxLength(20)] public string? CodigoDosFactores { get; init; }
-    /// <summary>Token de reCAPTCHA v3 (grecaptcha.execute). Obligatorio cuando el captcha está habilitado.</summary>
-    [MaxLength(4096)] public string? CaptchaToken { get; init; }
+    /// <summary>Token de Cloudflare Turnstile. Obligatorio cuando el captcha está habilitado.</summary>
+    [MaxLength(2048)] public string? CaptchaToken { get; init; }
 }
 
 public sealed class CambiarClaveRequest
@@ -114,8 +114,8 @@ public sealed class TokenRequest
 public sealed class OlvideClaveRequest
 {
     [Required, EmailAddress, MaxLength(160)] public string Correo { get; init; } = "";
-    /// <summary>Token de reCAPTCHA v3 (grecaptcha.execute). Obligatorio cuando el captcha está habilitado.</summary>
-    [MaxLength(4096)] public string? CaptchaToken { get; init; }
+    /// <summary>Token de Cloudflare Turnstile. Obligatorio cuando el captcha está habilitado.</summary>
+    [MaxLength(2048)] public string? CaptchaToken { get; init; }
 }
 
 public sealed class RestablecerClaveRequest
@@ -462,8 +462,8 @@ public sealed class CrearPqrPublicaRequest
     [EnumDataType(typeof(TipoPqrDto))] public TipoPqrDto Tipo { get; init; } = TipoPqrDto.Peticion;
     [Required, StringLength(120, MinimumLength = 5), TextoLimpio] public string Asunto { get; init; } = "";
     [Required, StringLength(2000, MinimumLength = 10), TextoLimpio(Multilinea = true)] public string Descripcion { get; init; } = "";
-    /// <summary>Token de reCAPTCHA v3. Obligatorio cuando el captcha está habilitado.</summary>
-    [MaxLength(4096)] public string? CaptchaToken { get; init; }
+    /// <summary>Token de Cloudflare Turnstile. Obligatorio cuando el captcha está habilitado.</summary>
+    [MaxLength(2048)] public string? CaptchaToken { get; init; }
 }
 
 /// <summary>Consultar el estado de una PQRS con su radicado y el correo con que se radicó (canal público).</summary>
@@ -472,7 +472,7 @@ public sealed class ConsultarPqrRequest
     [Required, RegularExpression(FormatosPqr.Radicado, ErrorMessage = "El radicado tiene la forma PQR-AAAAMMDD-XXXXXX.")]
     public string Radicado { get; init; } = "";
     [Required, EmailAddress, MaxLength(160)] public string Correo { get; init; } = "";
-    [MaxLength(4096)] public string? CaptchaToken { get; init; }
+    [MaxLength(2048)] public string? CaptchaToken { get; init; }
 }
 
 public static class FormatosPqr
