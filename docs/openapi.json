@@ -10630,6 +10630,9 @@
           "sinRevisar": {
             "type": "integer",
             "format": "int32"
+          },
+          "detectorDisponible": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
