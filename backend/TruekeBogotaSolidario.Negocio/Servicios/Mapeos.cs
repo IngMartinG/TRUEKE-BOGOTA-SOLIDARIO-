@@ -51,12 +51,22 @@ internal static class Mapeos
     /// <summary>Insignia "Fundación verificada" (razón social): nunca en cuentas eliminadas o suspendidas.</summary>
     public static string? FundacionVisible(Usuario u) => u.EstaEliminado || u.EstaSuspendido ? null : u.NombreFundacion;
 
+    /// <summary>
+    /// Día en que se registró (fecha de Colombia, UTC-5), sin la hora exacta: se envía a las 12:00 UTC para que el día
+    /// no cambie al mostrarlo en cualquier zona horaria del continente.
+    /// </summary>
+    public static DateTime DiaDeRegistro(Usuario u)
+    {
+        var bogota = u.FechaRegistro.AddHours(-5);
+        return new DateTime(bogota.Year, bogota.Month, bogota.Day, 12, 0, 0, DateTimeKind.Utc);
+    }
+
     /// <summary>Cuentas eliminadas o suspendidas no muestran foto.</summary>
     public static string? FotoVisible(Usuario u) => u.EstaEliminado || u.EstaSuspendido ? null : u.FotoUrl;
 
     public static PerfilUsuarioDto APerfilUsuario(Usuario u, int publicacionesActivas, SenalesConfianzaDto confianza, DateTime ahora)
         => new(u.Id, NombrePublico(u.NombreCompleto), u.Localidad, u.Reputacion, u.EsVerificado, TipoCuentaEfectivo(u, ahora),
-            new DateTime(u.FechaRegistro.Year, u.FechaRegistro.Month, 1, 0, 0, 0, DateTimeKind.Utc), // solo mes y año
+            DiaDeRegistro(u),
             u.TotalTruekesCompletados, u.TotalComprasRealizadas, u.TotalDonacionesRealizadas,
             u.CalificacionPromedio, u.CalificacionesTotal, publicacionesActivas, Divipola.NombreCompleto(u.MunicipioCodigo),
             NombreComercialVisible(u, ahora), FotoVisible(u), confianza, NitRegistrado(u, ahora),

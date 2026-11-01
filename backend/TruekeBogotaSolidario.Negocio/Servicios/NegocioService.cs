@@ -81,7 +81,7 @@ public sealed class NegocioService : INegocioService
         var publicaciones = (await _pubs.ContarVisiblesPorPropietarioAsync([u.Id], ahora)).GetValueOrDefault(u.Id);
         return new NegocioPublicoDto(u.Id, u.NombreComercial, Mapeos.FotoVisible(u), u.Localidad, Divipola.NombreCompleto(u.MunicipioCodigo),
             u.DescripcionNegocio, u.HorarioNegocio, u.NegocioVerificado(ahora), u.MostrarNit ? u.Nit : null,
-            new DateTime(u.FechaRegistro.Year, u.FechaRegistro.Month, 1, 0, 0, 0, DateTimeKind.Utc), // solo mes y año
+            Mapeos.DiaDeRegistro(u),
             u.CalificacionPromedio, u.CalificacionesTotal, publicaciones);
     }
 
