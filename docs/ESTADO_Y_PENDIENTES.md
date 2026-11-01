@@ -672,6 +672,21 @@ páginas estáticas para buscadores (`generar-seo.mjs`) y la pantalla de carga y
 HtmlSanitizer no aplica: la API solo devuelve JSON, Angular escapa todo y el texto ya se valida con `TextoSeguro`; además
 rechazaría textos normales como "3 < 5" y guardaría el contenido en los registros.
 
+## Hecho el 2026-11-01 — captcha con Cloudflare Turnstile, foto de perfil y fecha de registro
+- **Captcha (PR #216):** reCAPTCHA v3 se cambió por **Cloudflare Turnstile**: gratis sin tope de evaluaciones, sin cookies de
+  seguimiento y sin umbral de puntaje. `VerificadorTurnstile` consulta el siteverify de Cloudflare, exige la misma acción y falla
+  cerrado; en el front, widget explícito `interaction-only` (si Cloudflare duda, aparece una casilla en un recuadro flotante).
+  CSP con `challenges.cloudflare.com`. Producción no arranca con las claves de prueba de Turnstile, y solo con ellas se acepta
+  la respuesta sin acción (Cloudflare no la devuelve en modo prueba). Widget "Managed" con el hostname `ingmarting.github.io`;
+  las claves están en Render. Política de privacidad y declaración de accesibilidad: Cloudflare como encargado (sin subir la
+  versión; ver Pendiente).
+- **Foto de perfil (PR #217):** si el detector está activo pero no pudo revisar una foto (el modelo no cargó o no leyó la
+  imagen), ya no se acepta en silencio como "sin revisar": queda en revisión para un moderador. El panel de fotos avisa si el
+  detector no funciona en el servidor (`detectorDisponible`); en producción no aparece el aviso (el detector funciona). En
+  *Mi cuenta*, la foto propia se abre en grande con el mismo visor del perfil público.
+- **Fecha de registro (PR #218):** el perfil público dice "Miembro desde el 15 de octubre de 2026". La API envía el día de
+  registro (fecha de Colombia) a las 12:00 UTC, sin la hora exacta.
+
 ## Hecho el 2026-10-30 — administración más rápida y vertical, Negocios en el menú, precio de destacar
 - **Por qué la administración "no cargaba":** en Angular 22, leer `value()` de un recurso que falló lanza un error. Si una
   petición del panel fallaba (típico en el arranque en frío de Render), la vista se rompía en silencio: tabla vacía, sin
@@ -902,7 +917,7 @@ Se revisó un paquete de documentos con bloques de producto (impacto, fundacione
    del Régimen Tributario Especial. Lo previsto: marca de Régimen Tributario Especial, página "Lo que piden las fundaciones", sugerir
    fundaciones al publicar una donación y progreso de cada necesidad.
 5. ~~**Plan Negocio (Bloque 4)**~~: hecho (ver arriba). Queda cambiar "plan Empresa" por "plan Negocio" en los términos en la
-   próxima versión legal, y decidir el precio de destacar. Lo previsto: el plan Empresa pasa a llamarse Negocio, con vitrina pública, directorio, sello de negocio
+   próxima versión legal (el precio de destacar ya se decidió el 2026-10-30: $5.000). Lo previsto: el plan Empresa pasa a llamarse Negocio, con vitrina pública, directorio, sello de negocio
    verificado, panel de estadísticas de la cuenta y medios de pago visibles. Precio de destacar por decidir.
 6. ~~**Empresas (Bloque 3)**~~: hecho (ver arriba). Queda que el abogado revise los textos legales de la versión
    `2026-10-30` y, como en el paso 3, que un tercero revise la metodología antes de vender informes. Lo previsto: organización
@@ -932,15 +947,17 @@ Los pasos 3 a 7 cambian textos legales: cada uno sube la versión y queda para r
   que hoy supone que el dinero lo recibe una persona natural.
 - **Brevo con un Gmail como remitente:** algunos correos pueden caer en spam. Con dominio propio, autenticarlo en Brevo (DKIM y DMARC) y usar `no-responder@tudominio`.
 - **API despierta y Supabase activo:** monitor de cron-job.org a `/health/ready`; el 2026-10-30 se pidió pasarlo de 10 a 5 min
-  y revisar que no se haya desactivado solo (un usuario nuevo esperó cerca de 1 minuto).
+  y revisar que no se haya desactivado solo (un usuario nuevo esperó cerca de 1 minuto). El 2026-11-01 la API respondió
+  despierta (0,3 s); queda revisar de vez en cuando que cron-job.org no lo haya desactivado tras varios fallos.
+  El workflow de GitHub queda de respaldo: en la práctica corre cada 3 a 5 horas (`docs/DESPLIEGUE.md` §7.2).
 - **Aportes (decidido el 2026-11-01):** Wompi solo para tarjetas (`Donaciones__Url`, cobra 2,65 % + $700 + IVA); lo demás
   (Nequi, Daviplata, cualquier banco) por llave Bre-B, sin comisión (`Donaciones__LlaveBreB`). /apoya muestra la llave
   para copiar con los pasos, y la tarjeta como segunda opción. Pendiente del dueño: crear la llave (mejor la alfanumérica,
   @…, para no publicar el celular ni la cédula) y ponerla en Render.
-  El workflow de GitHub queda de respaldo: en la práctica corre cada 3 a 5 horas (`docs/DESPLIEGUE.md` §7.2).
 - **Dominio propio:**
   - resuelve la cookie de sesión entre sitios distintos (Safari/iPhone);
-  - permite cambiar la cookie a `SameSite=Strict`.
+  - permite cambiar la cookie a `SameSite=Strict`;
+  - al tenerlo, agregarlo en los hostnames del widget de Turnstile (además de Google y Wompi).
 - **Servidor:**
   - hoy la plataforma corre en la fase gratis (front en GitHub Pages, API en Render Free, que se duerme a los 15 minutos);
   - se evalúa un VPS o un plan pago para el tráfico real, y sacar el front de GitHub Pages;
@@ -958,8 +975,8 @@ Los pasos 3 a 7 cambian textos legales: cada uno sube la versión y queda para r
   - el texto final de los términos, la política de datos y la declaración de accesibilidad (versión 2026-10-18), y si la
     política debe nombrar las fotos del chat (privadas, sin metadatos) como dato tratado;
   - si el responsable debe inscribir las bases de datos en el RNBD (hoy no, por ser persona natural);
-  - si nombrar a Groq (asistente) y a Sentry (monitoreo de errores) como encargados exige subir la versión de la política
-    (hoy no se subió).
+  - si nombrar a Groq (asistente), a Sentry (monitoreo de errores) y a Cloudflare (captcha Turnstile, desde el 2026-11-01)
+    como encargados exige subir la versión de la política (hoy no se subió).
 - **Cuando haya contratos:** cobro recurrente con fuentes de pago de Wompi y factura electrónica automática con un proveedor.
 
 **Producto (por decidir):**
