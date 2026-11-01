@@ -36,13 +36,12 @@ import { Logo } from '../../shared/ui/logo';
         }
         <div class="mt-8"><ng-content /></div>
         @if (conCaptcha() && config.captchaClave()) {
-          <!-- reCAPTCHA v3 es invisible; Google permite ocultar su insignia si se muestra este aviso -->
+          <!-- Turnstile casi siempre es invisible: el aviso cuenta quién verifica y enlaza su política -->
           <p class="mt-6 flex items-start gap-1.5 text-xs text-tenue">
             <app-icono nombre="escudo" [tamano]="14" class="mt-px shrink-0 text-bosque-600" />
             <span>
-              Protegido por reCAPTCHA de Google. Se aplican la
-              <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer" class="enlace">Política de privacidad</a> y los
-              <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer" class="enlace">Términos del servicio</a> de Google.
+              Protegido contra robots por Cloudflare Turnstile, sin cookies de seguimiento.
+              <a href="https://www.cloudflare.com/turnstile-privacy-policy/" target="_blank" rel="noopener noreferrer" class="enlace">Política de privacidad de Turnstile</a>.
             </span>
           </p>
         }
@@ -54,7 +53,7 @@ export class MarcoAuth {
   readonly titulo = input.required<string>();
   readonly subtitulo = input('');
   readonly lema = input('Lo que tú ya no usas, alguien cerca de ti lo necesita.');
-  /** El formulario usa reCAPTCHA v3: se muestra el aviso que Google exige. */
+  /** El formulario usa el captcha: se muestra quién verifica y su política de privacidad. */
   readonly conCaptcha = input(false);
   protected readonly config = inject(ConfigService);
   protected readonly beneficios = [

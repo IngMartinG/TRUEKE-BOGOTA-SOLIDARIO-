@@ -60,7 +60,7 @@ Mientras el equipo sea una persona y el tráfico sea de amistades, **las E2E en 
      ```
    - Publicar: `dist/trueke-web/browser`.
    - *Redirects/Rewrites:* `/*` → `/index.html` (rewrite), para que funcionen las rutas de la SPA.
-5. **Google y reCAPTCHA:** agregar el dominio de staging como origen autorizado (OAuth) y como dominio permitido (reCAPTCHA). Sin esto, el login con Google y el captcha fallan solo en staging.
+5. **Google y Turnstile:** agregar el dominio de staging como origen autorizado (OAuth) y como dominio del widget (Turnstile). Sin esto, el login con Google y el captcha fallan solo en staging.
 6. **Rama `staging`:** para probar un PR antes de fusionarlo, `git push origin <rama>:staging --force`. Render despliega solo, y la base se migra sola al arrancar (`Database__Inicializacion=Migrate`).
 7. **Seguridad:** *Actions → OWASP ZAP → Run workflow* con la URL del front de staging. Revisar el issue que abre con los hallazgos.
 

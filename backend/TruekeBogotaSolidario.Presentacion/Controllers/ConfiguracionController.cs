@@ -4,7 +4,7 @@ using TruekeBogotaSolidario.Negocio.Servicios;
 
 namespace TruekeBogotaSolidario.Presentacion.Controllers;
 
-/// <summary>Configuración pública para el front (clave de sitio de reCAPTCHA, Client ID de Google, límites). Sin secretos.</summary>
+/// <summary>Configuración pública para el front (clave de sitio de Turnstile, Client ID de Google, límites). Sin secretos.</summary>
 [ApiController]
 [Authorize]
 [Route("api/v1/configuracion")]

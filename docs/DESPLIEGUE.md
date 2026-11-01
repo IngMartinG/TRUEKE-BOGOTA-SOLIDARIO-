@@ -74,7 +74,7 @@ Las fotos y los documentos de verificación van en **Supabase Storage**, dentro 
 
 ## 4. API en Render
 1. Render → **New** → **Blueprint** → elegir el repositorio `TRUEKE-BOGOTA-SOLIDARIO-`. Render lee [`render.yaml`](../render.yaml) y muestra el servicio `trueke-api`.
-2. Render pide los valores marcados como secretos. Llenarlos con lo de los pasos 2 (Supabase), 3 y 5 (reCAPTCHA, correo, Wompi). `Jwt__Key` y `Seguridad__ClaveCifrado` los genera Render solo. → **Apply**.
+2. Render pide los valores marcados como secretos. Llenarlos con lo de los pasos 2 (Supabase), 3 y 5 (Turnstile, correo, Wompi). `Jwt__Key` y `Seguridad__ClaveCifrado` los genera Render solo. → **Apply**.
 3. No hace falta abrir firewall: Supabase acepta conexiones desde cualquier IP con usuario y clave, siempre cifradas (`SSL Mode=Require`).
 4. Cuando termine, la URL queda como `https://trueke-api.onrender.com` (o parecida). Probar:
    - `https://<api>/health/live` → responde OK (la API está viva).
@@ -86,7 +86,7 @@ Después de esto, **cada merge a `main` se despliega solo** cuando pasan los che
 ## 5. Llaves externas
 | Servicio | Dónde | Variables |
 |---|---|---|
-| reCAPTCHA v3 | [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin) → nuevo sitio → **v3** → dominios `ingmarting.github.io` y `localhost` | `Captcha__ClaveSitio`, `Captcha__ClaveSecreta` |
+| Cloudflare Turnstile | [dash.cloudflare.com](https://dash.cloudflare.com/) → **Turnstile** → *Add widget* → modo **Managed** → dominios `ingmarting.github.io` y `localhost` (sin mover el DNS) | `Captcha__ClaveSitio`, `Captcha__ClaveSecreta` |
 | Correo (Brevo) | Ver §5.1 | `Correo__Brevo__ClaveApi`, `Correo__Remitente` |
 | Wompi (sandbox) | [comercios.wompi.co](https://comercios.wompi.co) → *Desarrolladores* → llaves de **prueba** (`pub_test_…`, `prv_test_…`, integridad, eventos) | `Pagos__Wompi__*` · URL de eventos: `https://<api>/api/v1/pagos/wompi/eventos` |
 | Aportes voluntarios (opcional) | Link de pago de Wompi o enlace de la llave Bre-B/Nequi (https). No da Eco-Puntos y no es deducible de impuestos | `Donaciones__Url` |
@@ -177,7 +177,7 @@ Si se agota el cupo del mes, Sentry descarta los errores nuevos hasta el mes sig
 - Alternativa al monitor principal: [UptimeRobot](https://uptimerobot.com) a la misma URL cada 5 min. `/health/live` no toca la base; `/health/ready` sí (por eso mantiene activa a Supabase).
 
 ## 8. Pasar a pago (producción real)
-1. **Dominio propio** (p. ej. `trueke.co`, ~US$15-30/año en un registrador o en Cloudflare): `trueke.co` → front y `api.trueke.co` → API. Al quedar en el mismo sitio, cambiar `Auth__CookieSameSite` a `Strict`, y `Cors__Origenes__0` / `Urls__Frontend` al dominio nuevo. Agregar el dominio en reCAPTCHA y en Google.
+1. **Dominio propio** (p. ej. `trueke.co`, ~US$15-30/año en un registrador o en Cloudflare): `trueke.co` → front y `api.trueke.co` → API. Al quedar en el mismo sitio, cambiar `Auth__CookieSameSite` a `Strict`, y `Cors__Origenes__0` / `Urls__Frontend` al dominio nuevo. Agregar el dominio en el widget de Turnstile y en Google.
 2. **API sin arranque en frío:** en `render.yaml` cambiar `plan: free` → `plan: starter`, o mover la misma imagen a **Azure App Service B1** (Linux, contenedor) con Key Vault para los secretos. Ver `backend/README.md` §9.
 3. **Base de datos:** Supabase **Pro** (US$25/mes): sin pausa por inactividad, backups diarios y más conexiones. Alternativa: cualquier PostgreSQL administrado (Azure Database for PostgreSQL, Neon, Render Postgres) con la misma cadena de conexión.
 4. **Pagos reales:** cuando Wompi apruebe el comercio, usar las llaves `pub_prod_…` y cambiar `Pagos__Wompi__BaseUrl` a `https://production.wompi.co/v1` **en `render.yaml`** (si se cambia solo en el panel, la sincronización del Blueprint lo devuelve a sandbox). Con eso desaparece sola la franja "AVISO" de pagos de prueba. **Antes**, borrar los datos de prueba (la app promete a los testers que los beneficios de prueba se borran): lo más limpio es una base nueva vacía (`Database__Inicializacion=Migrate` crea las tablas).

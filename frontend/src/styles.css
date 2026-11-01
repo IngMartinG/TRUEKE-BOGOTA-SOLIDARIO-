@@ -193,9 +193,18 @@
   ::selection {
     @apply bg-bosque-200 text-bosque-950;
   }
-  /* Insignia de reCAPTCHA oculta: los formularios muestran el aviso de texto que Google acepta en su lugar (marco-auth) */
-  .grecaptcha-badge {
-    visibility: hidden;
+  /* Recuadro de Turnstile (captcha.service): vacío e invisible salvo cuando Cloudflare pide marcar la casilla */
+  .captcha-turnstile {
+    position: fixed;
+    inset-inline: 0;
+    bottom: max(1rem, env(safe-area-inset-bottom));
+    z-index: 90;
+    display: flex;
+    justify-content: center;
+    pointer-events: none;
+  }
+  .captcha-turnstile > * {
+    pointer-events: auto;
   }
   @media (prefers-reduced-motion: reduce) {
     *,

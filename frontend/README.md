@@ -32,7 +32,7 @@ npm start
 - Los **correos** (verificación, recuperación) se imprimen en la consola de la API: copia el enlace en el navegador.
 - Los **pagos** usan la pasarela simulada: la página del pago muestra los botones "Aprobar / Rechazar".
 - Las **fotos** requieren Supabase Storage: un proyecto de Supabase o el Storage local (`cd backend && docker compose -f docker-compose.storage.yml up -d`; ver `backend/README.md`). Sin él, la interfaz lo indica y permite publicar sin fotos.
-- **Google** y **reCAPTCHA** se activan solos cuando la API publica `googleClientId` / `captchaClaveSitio` en `GET /configuracion`.
+- **Google** y el **captcha (Cloudflare Turnstile)** se activan solos cuando la API publica `googleClientId` / `captchaClaveSitio` en `GET /configuracion`.
 - Para probar la moderación en local, define `Bootstrap__SuperUsuarioCorreo` y `Bootstrap__SuperUsuarioClave` (user-secrets o variables de entorno): la API crea ese SuperUsuario al arrancar si no existe.
 
 ### Scripts
@@ -74,7 +74,7 @@ En GitHub Actions corre en cada PR que toque `frontend/` o `backend/` (`.github/
 ```
 src/app/
 ├── api/            tipos generados (schema.d.ts) + etiquetas de la interfaz (tipos.ts)
-├── core/           sesión, interceptores, configuración, tiempo real, subidas, guardas, terceros (Google, reCAPTCHA)
+├── core/           sesión, interceptores, configuración, tiempo real, subidas, guardas, terceros (Google, Turnstile)
 │   └── api/        un servicio por área: auth, catálogo, intercambios, cuenta, admin
 ├── layout/         encabezado, barra inferior móvil, pie
 ├── shared/         componentes de UI (tarjetas, modal, mapa, estrellas…), pipes, validadores
@@ -122,7 +122,7 @@ La imagen sirve el build con **nginx sin root** (puerto 8080), fallback de SPA, 
 
 1. API con `Urls__Frontend` = URL https del front y, si van en dominios distintos, `Cors__Origenes__0` igual a esa URL.
 2. `CSP_IMG_EXTRA` y `CSP_CONNECT_EXTRA` con el origen del proyecto de Supabase (`https://<proyecto>.supabase.co`); Supabase ya responde con CORS a las subidas firmadas.
-3. Google Client ID y claves de reCAPTCHA v3 cargados en la API (los lee el front desde `/configuracion`); autorizar el dominio del front en ambos paneles.
+3. Google Client ID y claves de Cloudflare Turnstile cargados en la API (los lee el front desde `/configuracion`); autorizar el dominio del front en ambos paneles (en Turnstile, en los dominios del widget).
 4. Wompi en producción: el front redirige al Web Checkout y vuelve a `/pagos/{referencia}`; el beneficio se aplica por el webhook del backend.
 5. Revisar los textos legales (`features/info/privacidad.ts` y `terminos.ts`) con el responsable del tratamiento de datos.
 

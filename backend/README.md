@@ -2,7 +2,7 @@
 
 API REST + tiempo real para la plataforma comunitaria de economía circular de **Colombia** (nació en Bogotá y opera en los 1.122 municipios del país): **Trueke, Compra y Donación**, con moneda interna **Eco-Puntos**.
 
-ASP.NET Core 10 · EF Core 10 · PostgreSQL (Supabase) · SignalR (+ Redis) · Supabase Storage · Wompi · SMTP · Google Identity · reCAPTCHA v3 · TOTP (2FA) · Application Insights · Docker · GitHub Actions · Azure App Service.
+ASP.NET Core 10 · EF Core 10 · PostgreSQL (Supabase) · SignalR (+ Redis) · Supabase Storage · Wompi · SMTP · Google Identity · Cloudflare Turnstile · TOTP (2FA) · Application Insights · Docker · GitHub Actions · Azure App Service.
 La arquitectura sigue el modelo C4 de [`docs/c4`](../docs/c4) y el contrato para el front está en [`docs/openapi.json`](../docs/openapi.json).
 
 ---
@@ -12,7 +12,7 @@ La arquitectura sigue el modelo C4 de [`docs/c4`](../docs/c4) y el contrato para
 ```
 TruekeBogotaSolidario.sln
 ├── TruekeBogotaSolidario.Datos          Entidades, DbContext, repositorios, migraciones, PoliticaEcoPuntos, PasswordHasher
-├── TruekeBogotaSolidario.Negocio        Servicios, DTOs y reglas; integraciones (Wompi, SMTP, Google, reCAPTCHA, Supabase Storage)
+├── TruekeBogotaSolidario.Negocio        Servicios, DTOs y reglas; integraciones (Wompi, SMTP, Google, Turnstile, Supabase Storage)
 ├── TruekeBogotaSolidario.Presentacion   Web API: controllers, JWT + cookie de refresco, SignalR, CORS, rate limiting, ProblemDetails
 └── TruekeBogotaSolidario.Pruebas        xUnit: unitarias, integración (WebApplicationFactory), arquitectura, contrato y PostgreSQL real
 ```
@@ -25,7 +25,7 @@ TruekeBogotaSolidario.sln
 
 | Módulo | Qué hace |
 |---|---|
-| Cuentas | Registro con consentimiento de datos, login, **Google**, **2FA** con app autenticadora, verificación de correo, recuperación de contraseña, refresco de sesión, **reCAPTCHA v3** |
+| Cuentas | Registro con consentimiento de datos, login, **Google**, **2FA** con app autenticadora, verificación de correo, recuperación de contraseña, refresco de sesión, **Cloudflare Turnstile** |
 | Perfil público | `GET /usuarios/{id}/perfil`, `/publicaciones` y `/calificaciones` (sin correo ni nombre completo) |
 | Catálogo | Publicar, **editar**, **hasta 5 fotos (sin GPS ni metadatos)**, **estado del producto** (nuevo, como nuevo, usado, usado con detalles, reparado, para repuestos), búsqueda, filtros (categoría, modo, estado, **departamento/municipio**, localidad, rango de precio, solo verificados), **orden** (recientes/precio), **cercanas** (Haversine), **favoritos**, **vitrina de destacadas** |
 | Escala nacional | Catálogo oficial DANE-DIVIPOLA (33 departamentos, 1.122 municipios) embebido; `GET /ubicaciones/...`; usuarios y publicaciones con municipio |
@@ -71,10 +71,10 @@ Petición normal           ─► Authorization: Bearer <token>
   - **Secreto:** cifrado con AES-256-GCM, con la llave `Seguridad:ClaveCifrado` fuera de la BD.
   - **Códigos:** no se aceptan repetidos, y un código erróneo cuenta como intento fallido (bloqueo tras 5).
   - **Administración:** sus funciones exigen una sesión con `amr=mfa`. Sin ella responden 403 `{ codigo: "2fa_requerido_admin" }`.
-- **reCAPTCHA v3:**
-  - aplica en registro (`registro`), login (`login`) y olvidé mi clave (`olvide_clave`);
-  - el backend verifica el token con Google, la acción y un puntaje ≥ 0,5;
-  - si Google no responde, rechaza la petición (falla cerrada);
+- **Captcha (Cloudflare Turnstile):**
+  - aplica en registro (`registro`), login (`login`), olvidé mi clave (`olvide_clave`) y la PQRS pública (`pqr`);
+  - el backend verifica el token con Cloudflare (siteverify) y que sea de la misma acción; cada token sirve una sola vez;
+  - si Cloudflare no responde, rechaza la petición (falla cerrada);
   - es obligatorio en producción.
 - **Revocación inmediata:** cambiar o restablecer la clave, cerrar sesiones, cambiar el rol, activar o desactivar 2FA, suspender o eliminar la cuenta invalida todos los tokens.
 - **Correo verificado:** sin él solo se puede navegar y editar el perfil.
@@ -153,7 +153,7 @@ dotnet run --project TruekeBogotaSolidario.Presentacion
 
 En **Development**:
 - La base es InMemory; pagos y correo son simulados. Los correos se escriben en la consola, donde se copia el enlace de verificación.
-- Sin reCAPTCHA y sin exigir 2FA a administradores.
+- Sin captcha y sin exigir 2FA a administradores.
 - `Jwt:Key` y `Seguridad:ClaveCifrado` efímeras si no se definen.
 - CORS para `http://localhost:4200` y Swagger en `/swagger`.
 - **Imágenes:**
@@ -164,7 +164,7 @@ En **Development**:
   # llave de demostración de Supabase (SERVICE_KEY en docker-compose.storage.yml; no es un secreto)
   dotnet user-secrets set "Almacenamiento:LlaveServicio" "<SERVICE_KEY>" --project TruekeBogotaSolidario.Presentacion
   ```
-- **Google / reCAPTCHA en dev:** `dotnet user-secrets set "Google:ClientId" "..."`; `Captcha:ClaveSitio` y `Captcha:ClaveSecreta` (las claves de prueba de Google sirven).
+- **Google / captcha en dev:** `dotnet user-secrets set "Google:ClientId" "..."`; `Captcha:ClaveSitio` y `Captcha:ClaveSecreta` (las claves de prueba de Turnstile sirven: sitio `1x00000000000000000000AA` y secreta `1x0000000000000000000000000000000AA` siempre pasan; con `2x…` siempre fallan).
 - **Pruebas contra PostgreSQL real:** con Docker instalado, `dotnet test` también las ejecuta. Sin Docker se marcan como *omitidas*; el CI las exige.
 
 ### Con PostgreSQL en el PC (datos persistentes)
@@ -196,7 +196,7 @@ Todo se configura por variables de entorno (Azure: *App Settings* o referencias 
 | `ConnectionStrings__TruekeDb` | ✅ | PostgreSQL (Supabase, Session pooler; formato en `docs/DESPLIEGUE.md` §2) |
 | `Jwt__Key` | ✅ | ≥ 32 caracteres aleatorios (`openssl rand -base64 48`) |
 | `Seguridad__ClaveCifrado` | ✅ | 32 bytes en base64 (`openssl rand -base64 32`). **No la cambies**: cifra los secretos de 2FA |
-| `Captcha__ClaveSitio`, `Captcha__ClaveSecreta` | ✅ | reCAPTCHA v3 (google.com/recaptcha/admin) |
+| `Captcha__ClaveSitio`, `Captcha__ClaveSecreta` | ✅ | Cloudflare Turnstile (dash.cloudflare.com → Turnstile) |
 | `Pagos__Wompi__LlavePublica`, `__LlavePrivada`, `__SecretoIntegridad`, `__SecretoEventos` | ✅ | Wompi |
 | `Correo__Proveedor`, `Correo__Remitente` | ✅ | `Brevo` (API HTTPS) o `Smtp` |
 | `Correo__Brevo__ClaveApi` | Con Brevo | Clave API de Brevo (`xkeysib-…`) |
@@ -232,7 +232,7 @@ Ninguna llave se escribe en el código ni en `appsettings.json`. En local: `dotn
 | **Wompi** | [comercios.wompi.co](https://comercios.wompi.co) → inicia sesión → **Desarrolladores** (o *Configuración avanzada → Llaves*). Primero usa el modo **Sandbox** (llaves `pub_test_…`, `prv_test_…`) y luego activa **Producción** (`pub_prod_…`, `prv_prod_…`) cuando Wompi apruebe el comercio (piden RUT, cámara de comercio o cédula y cuenta bancaria). | Llave pública → `Pagos__Wompi__LlavePublica` · Llave privada → `Pagos__Wompi__LlavePrivada` · Secreto de **integridad** → `Pagos__Wompi__SecretoIntegridad` · Secreto de **eventos** → `Pagos__Wompi__SecretoEventos` · En sandbox además `Pagos__Wompi__BaseUrl=https://sandbox.wompi.co/v1` |
 | Wompi (webhook) | Misma sección → **URL de eventos** | `https://<tu-api>/api/v1/pagos/wompi/eventos` |
 | **Google (inicio de sesión)** | [console.cloud.google.com](https://console.cloud.google.com) → *APIs y servicios* → *Pantalla de consentimiento OAuth* (tipo Externo, nombre y correo de soporte) → *Credenciales* → *Crear credenciales* → **ID de cliente OAuth** → tipo **Aplicación web** → *Orígenes de JavaScript autorizados*: `http://localhost:4200` y `https://<tu-front>` | ID de cliente (`…apps.googleusercontent.com`) → `Google__ClientId`. **No** se necesita el "secreto de cliente": el backend valida el ID token. |
-| **reCAPTCHA v3** | [google.com/recaptcha/admin](https://www.google.com/recaptcha/admin) → nuevo sitio → **reCAPTCHA v3** → dominios `localhost` y el del front | Clave del sitio → `Captcha__ClaveSitio` · Clave secreta → `Captcha__ClaveSecreta` |
+| **Cloudflare Turnstile** | [dash.cloudflare.com](https://dash.cloudflare.com/) → **Turnstile** → *Add widget* → modo **Managed** → dominios `localhost` y el del front (no hace falta mover el DNS a Cloudflare) | Clave del sitio → `Captcha__ClaveSitio` · Clave secreta → `Captcha__ClaveSecreta` |
 | **PostgreSQL (producción)** | [supabase.com](https://supabase.com) → *New project* (región East US, **Data API desactivada**) → botón **Connect** → **Session pooler** (IPv4). Pasos en `docs/DESPLIEGUE.md` §2. | `ConnectionStrings__TruekeDb=Host=aws-N-<region>.pooler.supabase.com;Port=5432;Database=postgres;Username=postgres.<ref>;Password=…;SSL Mode=Require;Maximum Pool Size=10`. Deja `Database__Inicializacion=Migrate` (aplica las migraciones al arrancar) o `None` + script idempotente en el despliegue si hay varias instancias. |
 | Correo | [Brevo](https://www.brevo.com) (API HTTPS: `Correo__Proveedor=Brevo`, `Correo__Brevo__ClaveApi`; pasos en `docs/DESPLIEGUE.md` §5.1) o cualquier SMTP con TLS (`Correo__Proveedor=Smtp`: `Correo__Smtp__Host`, `__Usuario`, `__Clave`) | `Correo__Remitente` = remitente verificado en Brevo o la cuenta SMTP |
 | Asistente con IA (opcional) | [console.groq.com](https://console.groq.com) → *API Keys* (cuenta gratis; activar *Zero Data Retention* en *Data Controls*). Pasos en `docs/DESPLIEGUE.md` §5.2. | `Asistente__Proveedor=Groq` · `Asistente__Groq__ClaveApi=gsk_…` |
@@ -273,7 +273,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 7. **Externos:**
    - Wompi: webhook `https://<api>/api/v1/pagos/wompi/eventos`;
    - Google Cloud: el front en *Authorized JavaScript origins*;
-   - reCAPTCHA: el dominio del front registrado.
+   - Turnstile: el dominio del front registrado en el widget.
 8. **Endurecimiento de la infraestructura (configuración de Azure y GitHub, no código):**
    - **Entrada única:** Azure Front Door (o Application Gateway) con **WAF** (reglas OWASP + bots) delante del front y la API; en App Service, *Restricciones de acceso* para aceptar solo el tráfico de Front Door (etiqueta de servicio `AzureFrontDoor.Backend` + cabecera `X-Azure-FDID`). Así `Proxy__Confiar=true` es seguro.
    - **Redis** habilitado cuando haya más de una instancia: además del backplane de SignalR, activa el **límite de peticiones compartido** entre instancias.
@@ -294,7 +294,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
   - ante un 401, llamar una vez a `POST /auth/refrescar` con `withCredentials` y la cabecera `X-Trueke-Csrf: 1`, y reintentar;
   - al recargar la página, refrescar;
   - en desarrollo, usar el proxy de Angular hacia la API.
-- **reCAPTCHA:** cargar `https://www.google.com/recaptcha/api.js?render=<captchaClaveSitio>` y enviar `captchaToken = await grecaptcha.execute(clave, { action: 'registro' | 'login' | 'olvide_clave' })` en esos tres formularios.
+- **Captcha (Turnstile):** cargar `https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit`, dibujar el widget con `turnstile.render(contenedor, { sitekey: captchaClaveSitio, action: 'registro' | 'login' | 'olvide_clave' | 'pqr', appearance: 'interaction-only' })` y enviar como `captchaToken` el token que entrega su `callback` (sirve una sola vez).
 - **Login con 2FA:** si la respuesta trae `codigo === "2fa_requerido"`, mostrar el campo y reenviar con `codigoDosFactores`; vale lo mismo para `POST /auth/google`.
 - **Configurar 2FA:** `POST /auth/2fa/configurar` (dibujar el QR de `uriOtpauth`) → `POST /auth/2fa/activar { codigo }`. Mostrar **una sola vez** los `codigosRecuperacion` y usar la `sesion` nueva.
 - **Google:** el `credential` de Google Identity Services se envía a `POST /auth/google { idToken, aceptoPoliticaDatos }`. Responde 201 si creó la cuenta y 200 si ya existía.
@@ -337,7 +337,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
 - **Seguridad del front:**
   - textos de usuarios siempre con interpolación de Angular (nunca `innerHTML`);
   - sin secretos en el código y sin source maps en producción;
-  - CSP que permita solo la API, Google (gsi y recaptcha) y el Storage.
+  - CSP que permita solo la API, Google (gsi), Cloudflare Turnstile (`challenges.cloudflare.com`) y el Storage.
 - **Tipos TypeScript del front:** desde `frontend/`, `npm run api` (openapi-typescript genera `src/app/api/schema.d.ts`). Si cambia la API, primero se regenera el contrato con `ACTUALIZAR_OPENAPI=1 dotnet test --filter OpenApiTests`.
 
 ## 11. Seguridad (resumen)
@@ -348,7 +348,7 @@ dotnet tool run dotnet-ef migrations script --idempotent -p TruekeBogotaSolidari
   - revocación por versión de seguridad;
   - Google validado en el servidor, con vinculación segura;
   - **2FA TOTP** cifrado con AES-GCM, sin repetición de códigos y obligatorio para administrar;
-  - **reCAPTCHA v3** con falla cerrada.
+  - **Cloudflare Turnstile** con falla cerrada.
 - **Autorización:**
   - `FallbackPolicy` exige sesión en todo; lo anónimo es una lista blanca verificada por prueba;
   - una ruta inexistente responde 404 (o 405 con otro verbo) también sin sesión: el contrato ya es público en `docs/openapi.json`;
@@ -387,7 +387,7 @@ Lo que sigue lo ve cualquiera sin cuenta, y es a propósito. Se revisó en la au
 
 - **`config.json` del front** (`apiUrl`): la URL de la API la conoce cualquier navegador que use la app. El front no guarda secretos.
 - **`GET /configuracion`:**
-  - clave **de sitio** de reCAPTCHA, Client ID de Google y clave **pública** VAPID: están hechas para el navegador; sus pares secretos solo viven en el servidor;
+  - clave **de sitio** de Turnstile, Client ID de Google y clave **pública** VAPID: están hechas para el navegador; sus pares secretos solo viven en el servidor;
   - límites de subida, si los pagos son de prueba y las URLs de imágenes/CDN: los usa la interfaz;
   - datos del responsable (`legal`): la ley exige publicarlos (Decreto 1377 de 2013, art. 13; Ley 1480, art. 50);
   - `diasCierreConUnaConfirmacion` y `diasCierreSinConfirmacion` hoy no los usa el front; son reglas de negocio sin riesgo y se mantienen para no cambiar el contrato.
@@ -402,7 +402,7 @@ Lo que sigue lo ve cualquiera sin cuenta, y es a propósito. Se revisó en la au
 
 - **Propagación de la revocación:** entre instancias tarda hasta 30 s (caché local). Una conexión SignalR abierta vive hasta que expira su token (≤ 15 min).
 - **Token en la URL del hub:** para WebSockets va en `?access_token=` (solo se acepta en `/hubs/*`). Desactiva el registro de *query strings* en los logs del proxy.
-- **Enumeración de cuentas:** el registro indica si el correo ya existe (mitigado con rate limiting y reCAPTCHA).
+- **Enumeración de cuentas:** el registro indica si el correo ya existe (mitigado con rate limiting y captcha).
 - **Archivos huérfanos:** las subidas que nunca se usan se borran solas a la hora; las fotos quitadas al editar quedan en el bucket de imágenes.
 - **Correo en memoria:** la cola vive en memoria; un reinicio puede perder un correo en tránsito, y el usuario puede pedir "reenviar".
 - **Reembolsos manuales:** se hacen en el panel de Wompi; la API solo los registra (y revierte el beneficio).

@@ -79,7 +79,7 @@ services:
         sync: false
       - key: Urls__HostsPermitidosDocumentos__0 # <ref>.supabase.co
         sync: false
-      - key: Captcha__ClaveSitio
+      - key: Captcha__ClaveSitio # Cloudflare Turnstile → widget del front (docs/DESPLIEGUE.md)
         sync: false
       - key: Captcha__ClaveSecreta
         sync: false

@@ -41,7 +41,9 @@ if (esProduccion)
     if (string.IsNullOrWhiteSpace(config["Seguridad:ClaveCifrado"]))
         throw new InvalidOperationException("Configura Seguridad:ClaveCifrado (32 bytes en base64: openssl rand -base64 32) para cifrar los secretos de 2FA.");
     if (string.IsNullOrWhiteSpace(config["Captcha:ClaveSecreta"]) || string.IsNullOrWhiteSpace(config["Captcha:ClaveSitio"]))
-        throw new InvalidOperationException("Configura Captcha:ClaveSecreta y Captcha:ClaveSitio (reCAPTCHA v3) para proteger registro, login y recuperación de clave.");
+        throw new InvalidOperationException("Configura Captcha:ClaveSecreta y Captcha:ClaveSitio (Cloudflare Turnstile) para proteger registro, login y recuperación de clave.");
+    if (CaptchaOpciones.EsClaveDePrueba(config["Captcha:ClaveSecreta"]))
+        throw new InvalidOperationException("Captcha:ClaveSecreta es una clave de prueba de Turnstile (deja pasar a cualquiera). Usa la del widget real.");
     if (string.Equals(config["Correo:Proveedor"], "Simulado", StringComparison.OrdinalIgnoreCase))
         throw new InvalidOperationException("Correo:Proveedor=Simulado no está permitido en Producción (configura Correo:Smtp).");
     if (!Uri.TryCreate(config["Urls:Frontend"], UriKind.Absolute, out var front) || front.Scheme != Uri.UriSchemeHttps)

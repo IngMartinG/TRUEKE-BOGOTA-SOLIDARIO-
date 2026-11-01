@@ -159,6 +159,21 @@ public class SeguridadTests : IClassFixture<FabricaApi>
     }
 
     [Fact]
+    public void En_produccion_no_arranca_con_la_clave_de_prueba_de_Turnstile()
+    {
+        using var f = new FabricaEnEntorno("Production",
+            ("Pagos:Proveedor", "Wompi"), ("Pagos:Wompi:LlavePublica", "pub_test_x"), ("Pagos:Wompi:LlavePrivada", "prv_test_x"),
+            ("Pagos:Wompi:SecretoIntegridad", "i"), ("Pagos:Wompi:SecretoEventos", "e"), ("Database:Provider", "PostgreSQL"),
+            ("Almacenamiento:Url", "https://proyecto.supabase.co/storage/v1"), ("Almacenamiento:LlaveServicio", "sb_secret_x"), ("Seguridad:ClaveCifrado", FabricaApi.ClaveCifradoPruebas),
+            ("Captcha:ClaveSecreta", "1x0000000000000000000000000000000AA"), ("Captcha:ClaveSitio", "1x00000000000000000000AA"), ("Correo:Proveedor", "Smtp"),
+            ("Urls:Frontend", "https://front.trueke.test"), ("Urls:Api", "https://api.trueke.test"), ("Facturacion:Modo", "Manual"),
+            ("Legal:ResponsableNombre", "Responsable Prueba"), ("Legal:Domicilio", "Bogotá D.C., Colombia"), ("Legal:CorreoContacto", "contacto@trueke.test"),
+            ("Legal:Telefono", "+57 300 000 0000"));
+        var ex = Assert.ThrowsAny<Exception>(() => f.CreateClient());
+        Assert.Contains("clave de prueba de Turnstile", ex.ToString());
+    }
+
+    [Fact]
     public async Task Cambiar_la_clave_con_la_actual_equivocada_cuenta_para_el_bloqueo()
     {
         var ses = await Api.RegistrarSesionAsync(_fabrica, "adivina");

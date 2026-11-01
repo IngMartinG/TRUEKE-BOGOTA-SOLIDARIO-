@@ -17,7 +17,8 @@ flowchart TB
     SYS["🔄 Trueke Bogotá Solidario<br/>Plataforma de economía circular<br/>(Trueke · Compra · Donación · Eco-Puntos)"]:::system
 
     WOMPI["💳 Wompi<br/>Pagos hacia la plataforma"]:::externo
-    GOOGLE["🔐 Google<br/>Inicio de sesión (OIDC)<br/>y reCAPTCHA v3"]:::externo
+    GOOGLE["🔐 Google<br/>Inicio de sesión (OIDC)"]:::externo
+    CLOUDFLARE["🛡️ Cloudflare Turnstile<br/>Captcha sin cookies de seguimiento"]:::externo
     SMTP["✉️ Correo SMTP<br/>Verificación, avisos, PQR"]:::externo
     DIAN["🧾 Facturación electrónica<br/>(registro manual del CUFE hoy)"]:::externo
     GROQ["🤖 Groq<br/>IA del asistente de ayuda<br/>(opcional, nivel gratis)"]:::externo
@@ -25,7 +26,8 @@ flowchart TB
     U1 -->|"HTTPS"| SYS
     U2 -->|"HTTPS"| SYS
     SYS -->|"Crea pagos · recibe webhook firmado"| WOMPI
-    SYS -->|"Valida ID token y captcha"| GOOGLE
+    SYS -->|"Valida ID token"| GOOGLE
+    SYS -->|"Valida el captcha"| CLOUDFLARE
     SYS -->|"Envía correos"| SMTP
     SYS -.->|"Factura de cada pago aprobado"| DIAN
     SYS -.->|"Pregunta + datos propios mínimos<br/>(sin correos ni ubicación)"| GROQ
@@ -54,10 +56,12 @@ flowchart TB
 
     WOMPI["💳 Wompi"]:::externo
     GOOGLE["🔐 Google"]:::externo
+    CLOUDFLARE["🛡️ Cloudflare Turnstile"]:::externo
     SMTP["✉️ SMTP"]:::externo
     GROQ["🤖 Groq"]:::externo
 
     U -->|"HTTPS"| FE
+    U -.->|"Widget del captcha"| CLOUDFLARE
     U -->|"PUT de fotos con URL firmada"| STORAGE
     FE -->|"REST JSON + JWT · WebSocket"| API
     API --> DB
@@ -65,6 +69,7 @@ flowchart TB
     API -->|"Valida y limpia (sin GPS/EXIF)"| STORAGE
     API --> WOMPI
     API --> GOOGLE
+    API -->|"Valida el captcha"| CLOUDFLARE
     API --> SMTP
     API -.->|"Asistente con IA (opcional)"| GROQ
 
