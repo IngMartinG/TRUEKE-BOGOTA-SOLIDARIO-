@@ -7757,6 +7757,7 @@ export interface components {
             ventasHabilitadas?: boolean;
             donacionUrl?: string | null;
             asistenteIa?: boolean;
+            donacionLlaveBreB?: string | null;
         };
         ConfirmarEntregaRequest: {
             fotoEvidenciaUrl?: string | null;

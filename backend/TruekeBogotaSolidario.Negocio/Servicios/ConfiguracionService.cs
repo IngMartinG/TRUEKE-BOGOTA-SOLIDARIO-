@@ -14,7 +14,8 @@ public sealed record ConfiguracionPublicaDto(string? CaptchaClaveSitio, string? 
     bool SubidaArchivosHabilitada, int MaxImagenesPorPublicacion, long TamanoMaximoArchivoBytes,
     int DiasCierreConUnaConfirmacion, int DiasCierreSinConfirmacion, bool PagosDePrueba,
     string? ImagenesOrigenUrl = null, string? ImagenesCdnUrl = null, string? PushClavePublica = null, LegalPublicoDto? Legal = null,
-    bool VentasHabilitadas = true, string? DonacionUrl = null, bool AsistenteIa = false);
+    bool VentasHabilitadas = true, string? DonacionUrl = null, bool AsistenteIa = false,
+    string? DonacionLlaveBreB = null);
 
 /// <summary>
 /// Datos legales para la política, los términos y el pie de página: versiones vigentes y responsable del tratamiento.
@@ -70,7 +71,8 @@ public sealed class ConfiguracionService : IConfiguracionService
             Vacio(_legal.Telefono)),
         _pagos.VentasHabilitadas,
         Vacio(_donaciones.Url),
-        _modelo.Habilitado);
+        _modelo.Habilitado,
+        Vacio(_donaciones.LlaveBreB));
 
     private static string? Vacio(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
 }

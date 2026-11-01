@@ -3,14 +3,16 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { catchError, of } from 'rxjs';
 import { CatalogoApi } from '../../core/api/catalogo.api';
+import { AvisosService } from '../../core/avisos.service';
 import { ConfigService } from '../../core/config.service';
 import { NumeroPipe } from '../../shared/pipes';
 import { Icono } from '../../shared/ui/icono';
 import { CompartirProyecto } from './compartir-proyecto';
 
 /**
- * Apoya el proyecto: aportes voluntarios por un enlace externo (Donaciones:Url). No es una compra: no da Eco-Puntos ni
- * beneficios, y no hay certificado de donación deducible de impuestos. Solo cifras reales de la comunidad.
+ * Apoya el proyecto: aportes voluntarios con llave Bre-B desde Nequi o cualquier banco (Donaciones:LlaveBreB, sin comisión)
+ * o con tarjeta en un link de pago de Wompi (Donaciones:Url). No es una compra: no da Eco-Puntos ni beneficios, y no hay
+ * certificado de donación deducible de impuestos. Solo cifras reales de la comunidad.
  */
 @Component({
   imports: [RouterLink, Icono, NumeroPipe],
@@ -29,10 +31,10 @@ import { CompartirProyecto } from './compartir-proyecto';
             No cobramos por publicar, intercambiar ni donar, y no vendemos tus datos. Mantener la plataforma en línea sí cuesta.
             Si te ha servido, un aporte del valor que quieras la mantiene viva para tus vecinos.
           </p>
-          @if (url(); as enlace) {
+          @if (activo()) {
             <div class="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3">
-              <a [href]="enlace" target="_blank" rel="noopener noreferrer" class="btn btn-sol btn-lg px-8 text-base">
-                <app-icono nombre="heart" [tamano]="20" [relleno]="true" />Hacer un aporte<span class="sr-only"> (abre otra pestaña)</span>
+              <a routerLink="/apoya" fragment="aportar" class="btn btn-sol btn-lg px-8 text-base">
+                <app-icono nombre="heart" [tamano]="20" [relleno]="true" />Hacer un aporte
               </a>
               <p class="text-sm text-bosque-100/75">Tú eliges el valor. Cada peso cuenta.</p>
             </div>
@@ -64,7 +66,53 @@ import { CompartirProyecto } from './compartir-proyecto';
       </svg>
     </section>
 
-    @if (url(); as enlace) {
+    @if (activo()) {
+      <!-- Cómo aportar: Bre-B primero (llega completo); la tarjeta pasa por Wompi, que cobra comisión -->
+      <section id="aportar" class="contenedor mt-16 scroll-mt-24" aria-labelledby="titulo-aportar">
+        <h2 id="titulo-aportar" class="titulo-seccion">Elige cómo aportar</h2>
+        <div class="mt-6 grid grid-cols-1 gap-6" [class]="llave() && url() ? 'lg:grid-cols-[1.4fr_1fr]' : 'max-w-2xl'">
+          @if (llave(); as k) {
+            <div class="rounded-[2rem] border-2 border-bosque-300 bg-bosque-50 p-6 sm:p-8 dark:border-bosque-700 dark:bg-bosque-950/50">
+              <h3 class="font-display text-2xl font-extrabold">Desde Nequi o tu banco</h3>
+              <p class="mt-2 text-tenue">Con la llave Bre-B tu aporte llega completo: no tiene comisión.</p>
+              <div class="mt-6 flex flex-wrap items-center gap-3 rounded-2xl bg-superficie p-4 ring-1 ring-borde">
+                <p class="w-full min-w-0 sm:w-auto sm:flex-1">
+                  <span class="block text-sm text-tenue">Llave Bre-B</span>
+                  <span class="block font-display text-2xl font-extrabold [overflow-wrap:anywhere] text-bosque-800 sm:text-3xl dark:text-bosque-200">{{ k }}</span>
+                </p>
+                <button type="button" class="btn btn-primario" (click)="copiarLlave(k)">
+                  <app-icono nombre="copiar" [tamano]="18" />Copiar llave
+                </button>
+              </div>
+              <ol class="mt-6 space-y-3">
+                @for (p of pasosBreB; track p; let i = $index) {
+                  <li class="flex gap-3">
+                    <span class="grid size-7 shrink-0 place-items-center rounded-full bg-bosque-700 text-sm font-bold text-white dark:bg-bosque-300 dark:text-bosque-950" aria-hidden="true">{{ i + 1 }}</span>
+                    <span class="pt-0.5">{{ p }}</span>
+                  </li>
+                }
+              </ol>
+            </div>
+          }
+          @if (url(); as enlace) {
+            <div class="flex flex-col rounded-[2rem] border border-borde bg-superficie p-6 sm:p-8">
+              <h3 class="font-display text-2xl font-extrabold">Con tarjeta</h3>
+              <p class="mt-2 text-tenue">
+                Crédito o débito, en la página segura de Wompi.
+                @if (llave()) {
+                  Wompi cobra una comisión por cada pago, así que llega un poco menos de lo que aportas.
+                } @else {
+                  Al terminar, Wompi te trae de vuelta a Trueke.
+                }
+              </p>
+              <a [href]="enlace" target="_blank" rel="noopener noreferrer" class="btn btn-secundario btn-lg mt-6 self-start lg:mt-auto">
+                <app-icono nombre="moneda" [tamano]="18" />Aportar con tarjeta<span class="sr-only"> (abre otra pestaña)</span>
+              </a>
+            </div>
+          }
+        </div>
+      </section>
+
       <!-- Lo que se paga con los aportes -->
       <section class="contenedor mt-16 grid grid-cols-1 gap-10 lg:grid-cols-[1fr_1.3fr] lg:gap-16" aria-labelledby="titulo-uso">
         <div>
@@ -115,7 +163,7 @@ import { CompartirProyecto } from './compartir-proyecto';
           <li class="flex gap-3"><app-icono nombre="heart" [tamano]="20" class="mt-0.5 shrink-0 text-tierra-600 dark:text-tierra-500" /><span>Es voluntario. Usar la plataforma no depende de aportar.</span></li>
           <li class="flex gap-3"><app-icono nombre="moneda" [tamano]="20" class="mt-0.5 shrink-0 text-tierra-600 dark:text-tierra-500" /><span>No es una compra: no da Eco-Puntos, planes ni ventajas dentro de la plataforma.</span></li>
           <li class="flex gap-3"><app-icono nombre="factura" [tamano]="20" class="mt-0.5 shrink-0 text-tierra-600 dark:text-tierra-500" /><span>No expedimos certificado de donación: el aporte no se puede descontar de impuestos.</span></li>
-          <li class="flex gap-3"><app-icono nombre="candado" [tamano]="20" class="mt-0.5 shrink-0 text-tierra-600 dark:text-tierra-500" /><span>El pago se hace en la página segura de Wompi, fuera de Trueke Bogotá Solidario. Nunca vemos los datos de tu tarjeta o cuenta.</span></li>
+          <li class="flex gap-3"><app-icono nombre="candado" [tamano]="20" class="mt-0.5 shrink-0 text-tierra-600 dark:text-tierra-500" /><span>El dinero sale desde tu propia app o desde la página segura de Wompi, fuera de Trueke Bogotá Solidario. Nunca vemos los datos de tu tarjeta o cuenta.</span></li>
         </ul>
       </section>
 
@@ -127,9 +175,9 @@ import { CompartirProyecto } from './compartir-proyecto';
           </svg>
           <div class="relative max-w-xl">
             <h2 class="text-3xl font-extrabold text-bosque-950 sm:text-4xl">Hoy puedes ser quien la mantiene viva</h2>
-            <p class="mt-3 text-bosque-950/80">El valor lo pones tú. Al terminar, Wompi te trae de vuelta a Trueke.</p>
-            <a [href]="enlace" target="_blank" rel="noopener noreferrer" class="btn btn-lg mt-6 bg-bosque-950 px-8 text-white hover:bg-bosque-900">
-              <app-icono nombre="heart" [tamano]="18" [relleno]="true" class="text-sol-300" />Hacer un aporte<span class="sr-only"> (abre otra pestaña)</span>
+            <p class="mt-3 text-bosque-950/80">El valor lo pones tú. Cada peso cuenta.</p>
+            <a routerLink="/apoya" fragment="aportar" class="btn btn-lg mt-6 bg-bosque-950 px-8 text-white hover:bg-bosque-900">
+              <app-icono nombre="heart" [tamano]="18" [relleno]="true" class="text-sol-300" />Hacer un aporte
             </a>
           </div>
         </div>
@@ -156,7 +204,11 @@ import { CompartirProyecto } from './compartir-proyecto';
   `,
 })
 export default class Apoya {
-  protected readonly url = inject(ConfigService).donacionUrl;
+  private readonly config = inject(ConfigService);
+  private readonly avisos = inject(AvisosService);
+  protected readonly url = this.config.donacionUrl;
+  protected readonly llave = this.config.donacionLlaveBreB;
+  protected readonly activo = this.config.aportesActivos;
   private readonly compartirProyecto = inject(CompartirProyecto);
   private readonly datos = toSignal(inject(CatalogoApi).impacto$.pipe(catchError(() => of(null))));
   /** Solo cifras reales y con algo que mostrar (nada de presumir ceros). */
@@ -172,6 +224,21 @@ export default class Apoya {
     { icono: 'correo', titulo: 'Los correos', texto: 'Los avisos de verificación, seguridad y solicitudes que te llegan.' },
     { icono: 'brujula', titulo: 'El dominio', texto: 'La dirección con la que todos encuentran la plataforma.' },
   ];
+
+  protected readonly pasosBreB = [
+    'Abre Nequi, Daviplata o la app de tu banco y elige enviar con llave Bre-B.',
+    'Pega la llave y confirma que sea exactamente la de esta página.',
+    'Escribe el valor que quieras y envía.',
+  ];
+
+  protected async copiarLlave(llave: string): Promise<void> {
+    try {
+      await navigator.clipboard.writeText(llave);
+      this.avisos.exito('Llave copiada', 'Pégala en Nequi o en la app de tu banco.');
+    } catch {
+      this.avisos.info('No pudimos copiarla sola', `Escríbela en tu app: ${llave}`);
+    }
+  }
 
   protected compartir(): void {
     void this.compartirProyecto.compartir('Trueke Bogotá Solidario: intercambia, compra y vende de segunda mano o dona con tus vecinos. Es gratis.');

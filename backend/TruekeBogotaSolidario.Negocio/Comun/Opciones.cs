@@ -86,12 +86,20 @@ public sealed class DonacionesOpciones
 {
     public const string Seccion = "Donaciones";
     /// <summary>
-    /// Enlace externo (https) para aportes voluntarios: link de pago, llave Bre-B, etc. Vacío = el front no muestra
-    /// "Apoya el proyecto". Un aporte no da Eco-Puntos ni beneficios, y no es deducible de impuestos.
+    /// Enlace externo (https) para aportes con tarjeta: link de pago de Wompi. Vacío = no se ofrece la tarjeta.
+    /// Un aporte no da Eco-Puntos ni beneficios, y no es deducible de impuestos.
     /// </summary>
     public string Url { get; set; } = "";
     public bool UrlValida => Url.Length == 0
         || (Uri.TryCreate(Url, UriKind.Absolute, out var u) && u.Scheme == Uri.UriSchemeHttps);
+
+    /// <summary>
+    /// Llave Bre-B para aportes desde Nequi o cualquier banco, sin comisión (se recomienda la alfanumérica, @…, para no
+    /// publicar un celular o una cédula). Vacío = no se ofrece. Sin enlace ni llave, el front no muestra "Apoya el proyecto".
+    /// </summary>
+    public string LlaveBreB { get; set; } = "";
+    public bool LlaveBreBValida => LlaveBreB.Length == 0
+        || (LlaveBreB.Trim().Length is >= 3 and <= 64 && LlaveBreB.Trim().All(c => char.IsAsciiLetterOrDigit(c) || c is '@' or '.' or '_' or '-' or '+'));
 }
 
 public sealed class UrlsOpciones

@@ -105,7 +105,9 @@ services:
         sync: false
       - key: Pagos__Wompi__SecretoEventos
         sync: false
-      - key: Donaciones__Url # opcional: enlace https de aportes voluntarios ("Apoya el proyecto"); vacío = no se muestra
+      - key: Donaciones__Url # opcional: link de pago de Wompi para aportes con tarjeta ("Apoya el proyecto"); vacío = sin tarjeta
+        sync: false
+      - key: Donaciones__LlaveBreB # opcional: llave Bre-B (mejor la alfanumérica, @…) para aportes desde Nequi o bancos, sin comisión
         sync: false
       - key: Sentry__Dsn # opcional: monitoreo de errores (docs/DESPLIEGUE.md §7.1). Vacío = apagado
         sync: false

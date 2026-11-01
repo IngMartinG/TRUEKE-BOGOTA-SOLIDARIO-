@@ -28,8 +28,12 @@ export class ConfigService {
   readonly ventasHabilitadas = computed(() => this._config().ventasHabilitadas !== false);
   /** El asistente de ayuda puede responder con IA (solo para cuentas con correo verificado). */
   readonly asistenteIa = computed(() => this._config().asistenteIa === true);
-  /** Enlace externo para aportes voluntarios ("Apoya el proyecto"); null = no se muestra. */
+  /** Link de pago de Wompi para aportes voluntarios con tarjeta; null = no se ofrece. */
   readonly donacionUrl = computed(() => this._config().donacionUrl ?? null);
+  /** Llave Bre-B para aportes desde Nequi o cualquier banco, sin comisión; null = no se ofrece. */
+  readonly donacionLlaveBreB = computed(() => this._config().donacionLlaveBreB ?? null);
+  /** Hay al menos una forma de aportar: se muestra "Apoya el proyecto". */
+  readonly aportesActivos = computed(() => !!this.donacionUrl() || !!this.donacionLlaveBreB());
   /** Llave pública VAPID para las notificaciones push (null = apagadas en el servidor). */
   readonly pushClavePublica = computed(() => this._config().pushClavePublica ?? null);
   /** Versiones vigentes de la política y los términos, y datos del responsable del tratamiento (null si la API no respondió). */

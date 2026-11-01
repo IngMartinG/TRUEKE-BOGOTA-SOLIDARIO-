@@ -8944,6 +8944,10 @@
           },
           "asistenteIa": {
             "type": "boolean"
+          },
+          "donacionLlaveBreB": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

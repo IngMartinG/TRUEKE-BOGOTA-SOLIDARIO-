@@ -296,7 +296,7 @@ import { impactoVisible, ResumenImpacto } from '../../shared/ui/resumen-impacto'
     </section>
 
     <!-- ============ APOYA EL PROYECTO ============ -->
-    @if (config.donacionUrl()) {
+    @if (config.aportesActivos()) {
       <section class="contenedor mt-20" aria-labelledby="titulo-apoya">
         <div class="relative isolate overflow-hidden rounded-[2rem] bg-bosque-950 p-8 text-white sm:p-12 dark:ring-1 dark:ring-white/10">
           <div class="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_85%_50%,#7a2e1d_0%,transparent_50%)] opacity-70"></div>

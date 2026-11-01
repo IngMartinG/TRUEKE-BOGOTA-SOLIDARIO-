@@ -15,10 +15,11 @@ namespace TruekeBogotaSolidario.Pruebas.Unitarias;
 /// </summary>
 public class VentasPausadasTests
 {
-    private static EntornoNegocio SinVentas(string? donacionUrl = null) => new(extra: new Dictionary<string, string?>
+    private static EntornoNegocio SinVentas(string? donacionUrl = null, string? llaveBreB = null) => new(extra: new Dictionary<string, string?>
     {
         ["Pagos:VentasHabilitadas"] = "false",
         ["Donaciones:Url"] = donacionUrl,
+        ["Donaciones:LlaveBreB"] = llaveBreB,
     });
 
     private static async Task<(Guid Ana, Guid PubId)> PreparadoAsync(EntornoNegocio e, int puntosExtra = 0)
@@ -103,17 +104,19 @@ public class VentasPausadasTests
     [Fact]
     public async Task La_configuracion_publica_avisa_al_front()
     {
-        using (var e = SinVentas("https://pagos.ejemplo.co/aporte"))
+        using (var e = SinVentas("https://pagos.ejemplo.co/aporte", " @truekebogota "))
         {
             var c = await e.EnScopeAsync<IConfiguracionService, ConfiguracionPublicaDto>(s => Task.FromResult(s.ObtenerPublica()));
             Assert.False(c.VentasHabilitadas);
             Assert.Equal("https://pagos.ejemplo.co/aporte", c.DonacionUrl);
+            Assert.Equal("@truekebogota", c.DonacionLlaveBreB);
         }
         using (var e = new EntornoNegocio())
         {
             var c = await e.EnScopeAsync<IConfiguracionService, ConfiguracionPublicaDto>(s => Task.FromResult(s.ObtenerPublica()));
             Assert.True(c.VentasHabilitadas);
             Assert.Null(c.DonacionUrl);
+            Assert.Null(c.DonacionLlaveBreB);
         }
     }
 
@@ -123,6 +126,20 @@ public class VentasPausadasTests
         Assert.ThrowsAny<Exception>(() =>
         {
             using var e = SinVentas("http://pagos.ejemplo.co/aporte");
+            using var scope = e.Proveedor.CreateScope();
+            scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<DonacionesOpciones>>().Value.ToString();
+        });
+    }
+
+    [Theory]
+    [InlineData("@a")]
+    [InlineData("@trueke bogota")]
+    [InlineData("<script>")]
+    public void Una_llave_bre_b_invalida_no_deja_arrancar(string llave)
+    {
+        Assert.ThrowsAny<Exception>(() =>
+        {
+            using var e = SinVentas(llaveBreB: llave);
             using var scope = e.Proveedor.CreateScope();
             scope.ServiceProvider.GetRequiredService<Microsoft.Extensions.Options.IOptions<DonacionesOpciones>>().Value.ToString();
         });

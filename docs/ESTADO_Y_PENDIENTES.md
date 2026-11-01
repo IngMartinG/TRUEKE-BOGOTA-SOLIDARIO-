@@ -933,9 +933,10 @@ Los pasos 3 a 7 cambian textos legales: cada uno sube la versión y queda para r
 - **Brevo con un Gmail como remitente:** algunos correos pueden caer en spam. Con dominio propio, autenticarlo en Brevo (DKIM y DMARC) y usar `no-responder@tudominio`.
 - **API despierta y Supabase activo:** monitor de cron-job.org a `/health/ready`; el 2026-10-30 se pidió pasarlo de 10 a 5 min
   y revisar que no se haya desactivado solo (un usuario nuevo esperó cerca de 1 minuto).
-- **Aportes (por decidir el dueño):** con Wompi (2,65 % + $700 + IVA por transacción) los aportes pequeños pierden casi la
-  mitad. Opciones: llave Bre-B / QR de Nequi o Bancolombia (gratis para recibir como persona natural), o subir el aporte
-  mínimo sugerido.
+- **Aportes (decidido el 2026-11-01):** Wompi solo para tarjetas (`Donaciones__Url`, cobra 2,65 % + $700 + IVA); lo demás
+  (Nequi, Daviplata, cualquier banco) por llave Bre-B, sin comisión (`Donaciones__LlaveBreB`). /apoya muestra la llave
+  para copiar con los pasos, y la tarjeta como segunda opción. Pendiente del dueño: crear la llave (mejor la alfanumérica,
+  @…, para no publicar el celular ni la cédula) y ponerla en Render.
   El workflow de GitHub queda de respaldo: en la práctica corre cada 3 a 5 horas (`docs/DESPLIEGUE.md` §7.2).
 - **Dominio propio:**
   - resuelve la cookie de sesión entre sitios distintos (Safari/iPhone);
