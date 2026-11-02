@@ -62,6 +62,7 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.EstadoVerificacion).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.DocumentoVerificacionUrl).HasMaxLength(500);
             e.Property(x => x.FotoUrl).HasMaxLength(500);
+            e.Property(x => x.FotoPublicaUrl).HasMaxLength(500);
             e.Property(x => x.EstadoFoto).HasConversion<string>().HasMaxLength(20);
             e.Property(x => x.MotivoRechazoFoto).HasMaxLength(300);
             e.HasIndex(x => x.EstadoFoto);

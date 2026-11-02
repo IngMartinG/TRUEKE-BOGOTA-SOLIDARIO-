@@ -53,18 +53,14 @@ import { VisorImagenes } from '../../shared/ui/visor-imagenes';
             <div class="my-2 flex items-start gap-2 rounded-xl bg-tierra-50 p-3 text-left text-sm dark:bg-tierra-700/15" role="alert">
               <app-icono nombre="alerta" [tamano]="18" class="mt-0.5 shrink-0 text-tierra-600 dark:text-tierra-500" />
               <span>
-                <strong>Cambia tu foto:</strong> {{ u.motivoRechazoFoto }}
-                @if (u.fotoValida) {
-                  Tienes hasta el {{ u.plazoCambioFotoUtc | fecha }}; después no podrás publicar, solicitar ni chatear hasta cambiarla.
-                } @else {
-                  Venció el plazo: sube una foto donde se vea tu cara para volver a publicar, solicitar y chatear.
-                }
+                <strong>Cambia tu foto para continuar:</strong> {{ u.motivoRechazoFoto }}
+                Sube una foto tuya donde se vea tu cara; mientras tanto nadie más ve la foto rechazada.
               </span>
             </div>
           } @else if (u.fotoUrl && u.estadoFoto === 'EnRevision') {
             <p class="my-2 flex items-start gap-2 rounded-xl bg-cielo-50 p-3 text-left text-sm dark:bg-cielo-700/20" role="status">
               <app-icono nombre="info" [tamano]="18" class="mt-0.5 shrink-0 text-cielo-600" />
-              <span>Un moderador está revisando que en tu foto se vea tu cara. Mientras tanto puedes usar tu cuenta normalmente.</span>
+              <span>Un moderador está revisando que en tu foto se vea tu cara. Mientras tanto puedes usar tu cuenta normalmente, pero los demás verán tu foto anterior (o tus iniciales) hasta que la apruebe.</span>
             </p>
           }
           <p class="text-sm text-tenue">Es obligatoria para publicar, solicitar, chatear y pagar, y debe ser <strong>una foto tuya donde se vea tu cara</strong>, de frente y sin gafas oscuras: no sirven logos, dibujos, mascotas ni paisajes. Así la comunidad sabe con quién se encuentra. Un programa en nuestro propio servidor comprueba que haya una cara (no reconoce quién eres), y le quitamos la ubicación y los datos ocultos antes de publicarla. Es un dato sensible: <a routerLink="/privacidad" fragment="seccion-4" class="enlace">cómo lo tratamos</a>.</p>

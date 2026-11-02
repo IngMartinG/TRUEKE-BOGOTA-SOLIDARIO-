@@ -26,7 +26,8 @@ public interface IFotoPerfilService
 /// Foto de perfil: misma ruta que las fotos de publicaciones (subida directa con URL firmada, validación de que el archivo es
 /// del usuario y copia limpia sin GPS ni metadatos). La foto anterior se borra del almacenamiento.
 /// Además debe mostrar el rostro de la persona: el detector local la aprueba, la rechaza en el momento (sin rostro) o la deja
-/// en revisión para un moderador.
+/// en revisión para un moderador. Mientras está en revisión solo la ve la persona: los demás siguen viendo la última aprobada
+/// (que se conserva hasta entonces) o las iniciales.
 /// </summary>
 public sealed class FotoPerfilService : IFotoPerfilService
 {
@@ -68,7 +69,7 @@ public sealed class FotoPerfilService : IFotoPerfilService
             limpia = await _almacen.ValidarArchivoPropioAsync(url, actorId, TipoArchivoDto.Imagen);
             if (await _revisor.RevisarAsync(limpia) is not { } revisada)
             {
-                if (limpia != u.FotoUrl) await _almacen.EliminarImagenPropiaAsync(limpia, actorId); // no se conserva
+                if (limpia != u.FotoUrl && limpia != u.FotoPublicaUrl) await _almacen.EliminarImagenPropiaAsync(limpia, actorId); // no se conserva
                 throw new ReglaDeNegocioException(ReglaFotoPerfil.MensajeSinRostro);
             }
             estado = revisada;
@@ -87,9 +88,9 @@ public sealed class FotoPerfilService : IFotoPerfilService
         }
         var avisosPuntos = new AvisosEcoPuntos();
         avisosPuntos.Observar(u);
-        var anterior = u.CambiarFoto(limpia, estado, Ahora); // puede completar el perfil (Eco-Puntos una sola vez)
+        var sinUso = u.CambiarFoto(limpia, estado, Ahora); // puede completar el perfil (Eco-Puntos una sola vez)
         await _uow.GuardarCambiosAsync();
-        if (anterior is not null && anterior != limpia) await _almacen.EliminarImagenPropiaAsync(anterior, actorId);
+        foreach (var f in sinUso) await _almacen.EliminarImagenPropiaAsync(f, actorId);
         await avisosPuntos.EnviarAsync(_notificador);
         return Mapeos.AUsuarioDto(u, Ahora);
     }
@@ -97,9 +98,9 @@ public sealed class FotoPerfilService : IFotoPerfilService
     public async Task<UsuarioDto> QuitarAsync(Guid actorId)
     {
         var u = await CargarAsync(actorId);
-        var anterior = u.QuitarFoto();
+        var sinUso = u.QuitarFoto();
         await _uow.GuardarCambiosAsync();
-        if (anterior is not null) await _almacen.EliminarImagenPropiaAsync(anterior, actorId);
+        foreach (var f in sinUso) await _almacen.EliminarImagenPropiaAsync(f, actorId);
         return Mapeos.AUsuarioDto(u, Ahora);
     }
 
@@ -149,9 +150,10 @@ public sealed class FotoPerfilService : IFotoPerfilService
         if (actorId == usuarioId) throw new ReglaDeNegocioException("Otro moderador debe revisar tu foto.");
         var u = await _usuarios.ObtenerPorIdAsync(usuarioId) ?? throw new NoEncontradoException("Usuario no encontrado.");
         var estabaRechazada = u.EstadoFoto == EstadoFotoPerfil.Rechazada;
-        u.AprobarFoto(Ahora);
+        var sinUso = u.AprobarFoto(Ahora); // pasa a ser la que ven los demás
         _auditoria.Agregar(new AuditoriaEvento(actorId, "FOTO_PERFIL_APROBADA", "Usuario", usuarioId, null, Ahora));
         await _uow.GuardarCambiosAsync();
+        foreach (var f in sinUso) await _almacen.EliminarImagenPropiaAsync(f, usuarioId);
         _log.LogInformation("Foto de perfil de {UsuarioId} aprobada por {ActorId}", usuarioId, actorId);
         await _notificador.NotificarAsync(usuarioId, TiposNotificacion.FotoPerfilAprobada,
             estabaRechazada ? "Revisamos de nuevo tu foto de perfil y quedó aprobada." : "Tu foto de perfil quedó aprobada.");

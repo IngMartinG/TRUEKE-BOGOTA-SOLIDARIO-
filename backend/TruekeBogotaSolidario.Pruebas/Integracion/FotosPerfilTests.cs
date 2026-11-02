@@ -56,6 +56,20 @@ public sealed class FotosPerfilTests : IClassFixture<FabricaApi>, IDisposable
 
     private async Task<HttpClient> ModeradorAsync() => Api.ConToken(_f, await Api.LoginAsync(_f, FabricaApi.CorreoSuper, FabricaApi.ClaveSuper));
 
+    /// <summary>La foto que ven los demás: un anónimo en el perfil y otro usuario en la publicación. Deben coincidir.</summary>
+    private async Task<string?> FotoQueVenLosDemasAsync(Guid usuarioId, Guid publicacionId)
+    {
+        var anonimo = (await _f.CreateClient().GetFromJsonAsync<JsonElement>($"/api/v1/usuarios/{usuarioId}/perfil")).GetProperty("fotoUrl").GetString();
+        var otro = await Api.RegistrarAsync(_f, "miron");
+        var enPublicacion = (await otro.GetFromJsonAsync<JsonElement>($"/api/v1/publicaciones/{publicacionId}"))
+            .GetProperty("propietario").GetProperty("fotoUrl").GetString();
+        Assert.Equal(anonimo, enPublicacion);
+        return anonimo;
+    }
+
+    private static async Task<string?> FotoPropiaAsync(HttpClient c)
+        => (await c.GetFromJsonAsync<JsonElement>("/api/v1/usuarios/yo")).GetProperty("fotoUrl").GetString();
+
     private async Task<string[]> TiposAvisosAsync(HttpClient c)
         => (await c.GetFromJsonAsync<JsonElement>("/api/v1/notificaciones")).GetProperty("items").EnumerateArray().Select(n => n.GetProperty("tipo").GetString()!).ToArray();
 
@@ -107,6 +121,50 @@ public sealed class FotosPerfilTests : IClassFixture<FabricaApi>, IDisposable
     }
 
     [Fact]
+    public async Task Mientras_una_foto_esta_en_revision_los_demas_ven_la_ultima_aprobada_y_al_aprobarla_la_nueva()
+    {
+        var ses = await Api.RegistrarSesionAsync(_f, "cambiaFoto");
+        var c = Api.ConToken(_f, ses.Token);
+        await SubirFotoAsync(c);
+        var aprobada = await FotoPropiaAsync(c);
+        var pub = (await (await PublicarAsync(c)).Content.ReadFromJsonAsync<IdDto>())!.Id;
+        Assert.Equal(aprobada, await FotoQueVenLosDemasAsync(ses.Usuario.Id, pub));
+
+        _fabrica.Detector.Resultado = DetectorRostrosFalso.Dudosa;
+        var yo = await (await SubirFotoAsync(c)).Content.ReadFromJsonAsync<JsonElement>();
+        var pendiente = yo.GetProperty("fotoUrl").GetString();
+
+        Assert.Equal("EnRevision", yo.GetProperty("estadoFoto").GetString());
+        Assert.NotEqual(aprobada, pendiente); // la persona ve la suya, con el aviso de revisión
+        Assert.Equal(aprobada, await FotoQueVenLosDemasAsync(ses.Usuario.Id, pub)); // los demás, la anterior
+        Assert.Contains(aprobada!, _almacen.Urls()); // la anterior se conserva mientras tanto
+
+        var mod = await ModeradorAsync();
+        Assert.Equal(HttpStatusCode.NoContent, (await mod.PostAsync($"/api/v1/admin/fotos/{ses.Usuario.Id}/aprobar", null)).StatusCode);
+
+        Assert.Equal(pendiente, await FotoQueVenLosDemasAsync(ses.Usuario.Id, pub));
+        Assert.DoesNotContain(aprobada!, _almacen.Urls()); // ya nadie la usa
+    }
+
+    [Fact]
+    public async Task Sin_una_foto_aprobada_antes_los_demas_ven_las_iniciales_mientras_se_revisa()
+    {
+        var ses = await Api.RegistrarSesionAsync(_f, "primeraFoto");
+        var c = Api.ConToken(_f, ses.Token);
+        var pub = (await (await PublicarAsync(c)).Content.ReadFromJsonAsync<IdDto>())!.Id;
+        await c.DeleteAsync("/api/v1/usuarios/yo/foto");
+        _fabrica.Detector.Resultado = DetectorRostrosFalso.Dudosa;
+
+        await SubirFotoAsync(c);
+
+        Assert.NotNull(await FotoPropiaAsync(c));
+        Assert.Null(await FotoQueVenLosDemasAsync(ses.Usuario.Id, pub));
+        var mod = await ModeradorAsync();
+        Assert.Equal(HttpStatusCode.NoContent, (await mod.PostAsync($"/api/v1/admin/fotos/{ses.Usuario.Id}/aprobar", null)).StatusCode);
+        Assert.Equal(await FotoPropiaAsync(c), await FotoQueVenLosDemasAsync(ses.Usuario.Id, pub));
+    }
+
+    [Fact]
     public async Task Si_el_detector_no_puede_revisarla_la_foto_no_pasa_en_silencio_sino_a_un_moderador()
     {
         var ses = await Api.RegistrarSesionAsync(_f, "sinDetector");
@@ -120,6 +178,26 @@ public sealed class FotosPerfilTests : IClassFixture<FabricaApi>, IDisposable
         var cola = await (await ModeradorAsync()).GetFromJsonAsync<FotosEnRevisionDto>("/api/v1/admin/fotos");
         Assert.Contains(cola!.Items, i => i.UsuarioId == ses.Usuario.Id);
         Assert.False(cola.DetectorDisponible); // el panel avisa que el detector no funciona en este servidor
+    }
+
+    [Fact]
+    public async Task Un_moderador_puede_rechazar_desde_usuarios_una_foto_ya_aprobada_que_no_es_real()
+    {
+        var ses = await Api.RegistrarSesionAsync(_f, "imagenInternet");
+        var c = Api.ConToken(_f, ses.Token);
+        await SubirFotoAsync(c); // el detector la dio por buena
+        var mod = await ModeradorAsync();
+        var fila = (await mod.GetFromJsonAsync<JsonElement>($"/api/v1/admin/usuarios?texto={Uri.EscapeDataString(ses.Usuario.Correo)}"))
+            .GetProperty("items").EnumerateArray().Single();
+        Assert.Equal(await FotoPropiaAsync(c), fila.GetProperty("fotoUrl").GetString());
+        Assert.Equal("Aprobada", fila.GetProperty("estadoFoto").GetString());
+
+        Assert.Equal(HttpStatusCode.NoContent,
+            (await mod.PostAsJsonAsync($"/api/v1/admin/fotos/{ses.Usuario.Id}/rechazar", new { motivo = "Es una imagen de internet." })).StatusCode);
+
+        Assert.Equal("Rechazada", (await c.GetFromJsonAsync<JsonElement>("/api/v1/usuarios/yo")).GetProperty("estadoFoto").GetString());
+        var perfil = await _f.CreateClient().GetFromJsonAsync<JsonElement>($"/api/v1/usuarios/{ses.Usuario.Id}/perfil");
+        Assert.Null(perfil.GetProperty("fotoUrl").GetString());
     }
 
     [Fact]
@@ -142,6 +220,9 @@ public sealed class FotosPerfilTests : IClassFixture<FabricaApi>, IDisposable
         var yo = await c.GetFromJsonAsync<JsonElement>("/api/v1/usuarios/yo");
         Assert.Equal("Rechazada", yo.GetProperty("estadoFoto").GetString());
         Assert.Equal("La foto es un paisaje.", yo.GetProperty("motivoRechazoFoto").GetString());
+        Assert.NotNull(yo.GetProperty("fotoUrl").GetString()); // la persona la sigue viendo para saber cuál cambiar
+        var perfil = await _f.CreateClient().GetFromJsonAsync<JsonElement>($"/api/v1/usuarios/{ses.Usuario.Id}/perfil");
+        Assert.Null(perfil.GetProperty("fotoUrl").GetString()); // los demás no
         Assert.NotEqual(JsonValueKind.Null, yo.GetProperty("plazoCambioFotoUtc").ValueKind);
         Assert.Contains("FotoPerfilRechazada", await TiposAvisosAsync(c));
         Assert.Contains(_fabrica.Correos.Para(ses.Usuario.Correo), m => m.Asunto == "Cambia tu foto de perfil");
@@ -189,6 +270,8 @@ public sealed class FotosPerfilTests : IClassFixture<FabricaApi>, IDisposable
         Assert.Equal(EstadoFotoPerfil.Aprobada, (await bd.Usuarios.FindAsync(conCara.Usuario.Id))!.EstadoFoto);
         var rechazada = (await bd.Usuarios.FindAsync(sinCara.Usuario.Id))!;
         Assert.Equal(EstadoFotoPerfil.Rechazada, rechazada.EstadoFoto);
+        Assert.Null(rechazada.FotoPublicaUrl);
+        Assert.Equal(urlCara, (await bd.Usuarios.FindAsync(conCara.Usuario.Id))!.FotoPublicaUrl);
         Assert.Equal(_reloj.GetUtcNow().UtcDateTime.AddDays(7), rechazada.PlazoCambioFotoUtc);
         // La que no se pudo leer queda sin revisar (se reintenta otro día) y no bloquea a nadie
         var perdida = (await bd.Usuarios.FindAsync(sinArchivo.Usuario.Id))!;
@@ -216,6 +299,8 @@ public sealed class FotosPerfilTests : IClassFixture<FabricaApi>, IDisposable
 
         var yo = await Api.ConToken(_f, denunciado.Token).GetFromJsonAsync<JsonElement>("/api/v1/usuarios/yo");
         Assert.Equal("Rechazada", yo.GetProperty("estadoFoto").GetString());
+        var perfil = await _f.CreateClient().GetFromJsonAsync<JsonElement>($"/api/v1/usuarios/{denunciado.Usuario.Id}/perfil");
+        Assert.Null(perfil.GetProperty("fotoUrl").GetString()); // la foto denunciada deja de verse
         Assert.Contains("FotoPerfilRechazada", await TiposAvisosAsync(Api.ConToken(_f, denunciado.Token)));
     }
 

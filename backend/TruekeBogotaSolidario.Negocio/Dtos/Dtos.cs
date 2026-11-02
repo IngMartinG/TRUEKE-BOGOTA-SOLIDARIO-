@@ -833,10 +833,14 @@ public sealed record ConversacionDto(Guid Id, Guid SolicitudId, Guid Publicacion
 /// </summary>
 public sealed record SubidaArchivoDto(string UrlSubida, string UrlArchivo, string Metodo, IReadOnlyDictionary<string, string> Cabeceras, DateTime ExpiraUtc);
 
-/// <summary>Vista de administración (incluye el correo: solo la reciben moderadores).</summary>
+/// <summary>
+/// Vista de administración (incluye el correo: solo la reciben moderadores). FotoUrl es la foto actual aunque esté en revisión
+/// o rechazada, para que un moderador pueda rechazar una que no muestre a la persona.
+/// </summary>
 public sealed record UsuarioAdminDto(Guid Id, string NombreCompleto, string Correo, string Localidad, string Rol, DateTime FechaRegistro,
     bool CorreoVerificado, string EstadoVerificacion, bool Suspendido, DateTime? SuspendidoHasta, string? MotivoSuspension,
-    bool DosFactoresActivo, decimal Reputacion, decimal? CalificacionPromedio, int TotalCalificaciones, DateTime? MenorDetectadoUtc = null);
+    bool DosFactoresActivo, decimal Reputacion, decimal? CalificacionPromedio, int TotalCalificaciones, DateTime? MenorDetectadoUtc = null,
+    string? FotoUrl = null, string? EstadoFoto = null);
 
 public sealed record PagoAdminDto(string Referencia, Guid UsuarioId, string Concepto, int MontoCop, int PuntosCanjeados, string Estado,
     DateTime FechaUtc, DateTime? FechaResolucionUtc, string? ProveedorTransaccionId, string? NotaInterna);

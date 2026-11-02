@@ -41,7 +41,7 @@ const TAMANO = 20;
             <tr class="align-top">
               <td class="px-4 py-3">
                 <a [routerLink]="['/usuarios', u.id]" class="flex items-center gap-3">
-                  <app-avatar [nombre]="u.nombreCompleto" [tamano]="36" />
+                  <app-avatar [nombre]="u.nombreCompleto" [foto]="u.fotoUrl" [tamano]="36" />
                   <span class="min-w-0">
                     <span class="block font-semibold">{{ u.nombreCompleto }}</span>
                     <span class="block text-xs text-tenue">{{ u.correo }} · {{ u.localidad }}</span>
@@ -77,6 +77,9 @@ const TAMANO = 20;
                   <span class="insignia mt-1 bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100">Revisión de edad</span>
                   <p class="mt-1 text-xs text-tenue">Declaró una fecha de menor el {{ u.menorDetectadoUtc | fecha }}</p>
                 }
+                @if (u.estadoFoto && u.estadoFoto !== 'Aprobada') {
+                  <p class="mt-1 text-xs text-tenue">{{ estadoFoto[u.estadoFoto] ?? u.estadoFoto }}</p>
+                }
                 <p class="mt-1 text-xs text-tenue">{{ u.correoVerificado ? 'Correo verificado' : 'Correo sin verificar' }} · {{ verificacion[u.estadoVerificacion ?? ''] ?? u.estadoVerificacion }}</p>
               </td>
               <td class="px-4 py-3">
@@ -89,6 +92,9 @@ const TAMANO = 20;
                 @if (u.id !== sesion.usuario()?.id) {
                   @if (u.menorDetectadoUtc) {
                     <button type="button" class="btn btn-secundario btn-sm mb-2" (click)="abrirDescartar(u)">Fue un error</button>
+                  }
+                  @if (u.fotoUrl && u.estadoFoto !== 'Rechazada') {
+                    <button type="button" class="btn btn-secundario btn-sm mb-2" (click)="abrirRechazarFoto(u)"><app-icono nombre="camara" [tamano]="14" />Rechazar foto</button>
                   }
                   @if (u.suspendido) {
                     <button type="button" class="btn btn-secundario btn-sm" (click)="reactivar(u)">Reactivar</button>
@@ -157,6 +163,26 @@ const TAMANO = 20;
       </div>
     </app-modal>
 
+    <app-modal [(abierto)]="rechazarFotoAbierto" titulo="Rechazar la foto de perfil" [subtitulo]="seleccionado()?.nombreCompleto ?? ''">
+      <form id="form-rechazar-foto" (ngSubmit)="rechazarFoto()" class="space-y-4">
+        @if (seleccionado()?.fotoUrl; as foto) {
+          <img [src]="foto" alt="Foto de perfil actual" class="mx-auto size-32 rounded-full object-cover" />
+        }
+        <p class="text-sm text-tenue">
+          Para fotos que no muestran la cara de la persona (logos, dibujos, paisajes, imágenes de internet). Deja de verse para los
+          demás, la persona recibe un aviso con el motivo y, al volver a entrar, debe cambiarla para continuar.
+        </p>
+        <div class="campo">
+          <label for="motivo-foto" class="etiqueta">Motivo (lo verá la persona)</label>
+          <textarea id="motivo-foto" name="motivo" class="entrada" maxlength="300" required [(ngModel)]="motivo"></textarea>
+        </div>
+      </form>
+      <div pie class="flex justify-end gap-2 border-t border-borde p-4">
+        <button type="button" class="btn btn-fantasma" (click)="rechazarFotoAbierto.set(false)">Cancelar</button>
+        <button type="submit" form="form-rechazar-foto" class="btn btn-peligro" [disabled]="motivo().trim().length < 3">Rechazar foto</button>
+      </div>
+    </app-modal>
+
     <app-modal [(abierto)]="descartarAbierto" titulo="Descartar la revisión de edad" [subtitulo]="seleccionado()?.nombreCompleto ?? ''">
       <form id="form-descartar" (ngSubmit)="descartar()" class="space-y-4">
         <p class="text-sm text-tenue">
@@ -187,6 +213,11 @@ export default class Usuarios {
     Aprobada: 'Identidad verificada',
     Rechazada: 'Verificación rechazada',
   };
+  protected readonly estadoFoto: Record<string, string> = {
+    SinRevisar: 'Foto sin revisar',
+    EnRevision: 'Foto en revisión',
+    Rechazada: 'Foto rechazada',
+  };
   protected readonly textoEntrada = signal('');
   private readonly texto = signal('');
   protected readonly soloSuspendidos = signal(false);
@@ -202,6 +233,7 @@ export default class Usuarios {
 
   protected readonly suspenderAbierto = signal(false);
   protected readonly descartarAbierto = signal(false);
+  protected readonly rechazarFotoAbierto = signal(false);
   protected readonly eliminarAbierto = signal(false);
   protected readonly confirmacion = signal('');
   protected readonly seleccionado = signal<UsuarioAdminDto | null>(null);
@@ -252,6 +284,19 @@ export default class Usuarios {
     if (!u?.id) return;
     await this.correr(() => firstValueFrom(this.api.descartarMenor(u.id!, this.motivo().trim())), 'Revisión de edad descartada');
     this.descartarAbierto.set(false);
+  }
+
+  protected abrirRechazarFoto(u: UsuarioAdminDto): void {
+    this.seleccionado.set(u);
+    this.motivo.set('Tu foto de perfil no es una foto tuya donde se vea tu cara.');
+    this.rechazarFotoAbierto.set(true);
+  }
+
+  protected async rechazarFoto(): Promise<void> {
+    const u = this.seleccionado();
+    if (!u?.id) return;
+    await this.correr(() => firstValueFrom(this.api.rechazarFoto(u.id!, this.motivo().trim())), 'Foto rechazada');
+    this.rechazarFotoAbierto.set(false);
   }
 
   protected reactivar(u: UsuarioAdminDto): Promise<void> {

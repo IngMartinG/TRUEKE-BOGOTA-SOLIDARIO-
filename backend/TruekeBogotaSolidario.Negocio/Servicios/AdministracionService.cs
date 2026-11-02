@@ -91,7 +91,7 @@ public sealed class AdministracionService : IAdministracionService
         => new(u.Id, u.NombreCompleto, u.Correo, u.Localidad, u.Rol.ToString(), u.FechaRegistro, u.CorreoVerificado,
             u.EstadoVerificacion.ToString(), u.SuspensionVigente(ahora), u.SuspensionVigente(ahora) ? u.SuspendidoHasta : null,
             u.SuspensionVigente(ahora) ? u.MotivoSuspension : null, u.DosFactoresActivo, u.Reputacion, u.CalificacionPromedio, u.CalificacionesTotal,
-            u.MenorDetectadoUtc);
+            u.MenorDetectadoUtc, u.FotoUrl, u.FotoUrl is null ? null : u.EstadoFoto.ToString());
 
     private static PagoAdminDto APagoAdmin(Pago p)
         => new(p.Referencia, p.UsuarioId, p.Concepto.ToString(), p.MontoCop, p.PuntosCanjeados, p.Estado.ToString(), p.FechaUtc,

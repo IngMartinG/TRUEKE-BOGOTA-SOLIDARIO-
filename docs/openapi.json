@@ -14036,6 +14036,14 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "fotoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "estadoFoto": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false

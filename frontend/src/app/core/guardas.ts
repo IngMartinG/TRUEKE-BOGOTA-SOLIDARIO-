@@ -54,6 +54,22 @@ export const exigirMayoriaEdad: CanActivateFn = (_ruta, estado) => {
   return inject(Router).createUrlTree(['/completar-perfil'], { queryParams: { volver: estado.url } });
 };
 
+/** Páginas que una cuenta con la foto rechazada sí puede abrir: cambiarla, lo legal, la ayuda y sus datos. */
+const LIBRES_CON_FOTO_RECHAZADA = [...LIBRES_SIN_FECHA, '/cuenta/perfil'];
+
+/**
+ * Se aplica a TODAS las rutas: si un moderador (o la revisión de las fotos anteriores a la regla) rechazó la foto de perfil
+ * porque no muestra la cara de la persona, al volver a entrar debe cambiarla para continuar. Se lleva al perfil y, al
+ * subir la nueva, se vuelve a la página pedida.
+ */
+export const exigirFotoReal: CanActivateFn = (_ruta, estado) => {
+  const sesion = inject(SesionService);
+  if (!sesion.autenticado() || !sesion.correoVerificado() || !sesion.fotoRechazada()) return true;
+  const ruta = estado.url.split(/[?#]/)[0] ?? '';
+  if (LIBRES_CON_FOTO_RECHAZADA.some((r) => ruta === r || ruta.startsWith(`${r}/`))) return true;
+  return inject(Router).createUrlTree(['/cuenta/perfil'], { fragment: 'foto', queryParams: { volver: estado.url } });
+};
+
 /** Panel de moderación. La API además exige sesión con 2FA (responde 403 "2fa_requerido_admin"). */
 export const exigirModerador: CanActivateFn = (_ruta, estado) => {
   const sesion = inject(SesionService);
