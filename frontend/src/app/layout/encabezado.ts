@@ -36,7 +36,7 @@ import { Logo } from '../shared/ui/logo';
               >{{ e.texto }}</a
             >
           }
-          @if (config.donacionUrl()) {
+          @if (config.aportesActivos()) {
             <a
               routerLink="/apoya"
               routerLinkActive="bg-tierra-100 dark:bg-tierra-700/30"
@@ -66,7 +66,7 @@ import { Logo } from '../shared/ui/logo';
             <app-icono [nombre]="tema.oscuroActivo() ? 'sol' : 'luna'" />
           </button>
 
-          @if (config.donacionUrl()) {
+          @if (config.aportesActivos()) {
             <!-- Celular y tablet: la barra inferior no tiene espacio; el corazón queda a la vista arriba -->
             <a routerLink="/apoya" class="btn-icono text-tierra-600 lg:hidden dark:text-tierra-500" aria-label="Apoya el proyecto">
               <app-icono nombre="heart" [relleno]="true" />
@@ -141,7 +141,7 @@ import { Logo } from '../shared/ui/logo';
               <app-icono [nombre]="item.icono" [tamano]="18" class="text-tenue" />{{ item.texto }}
             </a>
           }
-          @if (config.donacionUrl()) {
+          @if (config.aportesActivos()) {
             <a cdkMenuItem routerLink="/apoya" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold text-tierra-600 hover:bg-superficie-2 focus:bg-superficie-2 focus-visible:-outline-offset-2 dark:text-tierra-500">
               <app-icono nombre="heart" [tamano]="18" [relleno]="true" />Apoya el proyecto
             </a>

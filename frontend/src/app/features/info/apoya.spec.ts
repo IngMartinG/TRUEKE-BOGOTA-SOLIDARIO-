@@ -5,11 +5,11 @@ import { CatalogoApi } from '../../core/api/catalogo.api';
 import { ConfigService } from '../../core/config.service';
 import Apoya from './apoya';
 
-function montar(url: string | null, impacto: object | null = null) {
+function montar(url: string | null, impacto: object | null = null, llave: string | null = null) {
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
-      { provide: ConfigService, useValue: { donacionUrl: () => url } },
+      { provide: ConfigService, useValue: { donacionUrl: () => url, donacionLlaveBreB: () => llave, aportesActivos: () => !!url || !!llave } },
       { provide: CatalogoApi, useValue: { impacto$: of(impacto) } },
     ],
   });
@@ -39,7 +39,22 @@ describe('Apoya el proyecto', () => {
     expect(el.textContent).toContain('42');
   });
 
-  it('sin enlace dice que por ahora no se reciben aportes', () => {
+  it('con llave Bre-B la muestra para copiarla, sin comisión, y la tarjeta avisa la suya', () => {
+    const el = montar('https://pagos.ejemplo.co/aporte', null, '@truekebogota');
+    expect(el.textContent).toContain('@truekebogota');
+    expect(el.textContent).toContain('no tiene comisión');
+    expect(el.textContent).toContain('Wompi cobra una comisión');
+    expect(Array.from(el.querySelectorAll('button')).some((b) => b.textContent?.includes('Copiar llave'))).toBe(true);
+  });
+
+  it('solo con llave Bre-B no ofrece tarjeta', () => {
+    const el = montar(null, null, '@truekebogota');
+    expect(el.textContent).toContain('@truekebogota');
+    expect(el.querySelector('a[target="_blank"]')).toBeNull();
+    expect(el.textContent).not.toContain('no estamos recibiendo aportes');
+  });
+
+  it('sin enlace ni llave dice que por ahora no se reciben aportes', () => {
     const el = montar(null);
     expect(el.querySelector('a[target="_blank"]')).toBeNull();
     expect(el.textContent).toContain('no estamos recibiendo aportes');

@@ -30,7 +30,9 @@ public static class NegocioServiceCollectionExtensions
             .Validate(o => o.CorreoContactoValido, "Legal:CorreoContacto no es un correo válido.").ValidateOnStart();
         services.AddOptions<PagosOpciones>().Bind(config.GetSection(PagosOpciones.Seccion)).ValidateDataAnnotations().ValidateOnStart();
         services.AddOptions<DonacionesOpciones>().Bind(config.GetSection(DonacionesOpciones.Seccion))
-            .Validate(o => o.UrlValida, "Donaciones:Url debe ser una URL https.").ValidateOnStart();
+            .Validate(o => o.UrlValida, "Donaciones:Url debe ser una URL https.")
+            .Validate(o => o.LlaveBreBValida, "Donaciones:LlaveBreB debe tener de 3 a 64 caracteres: letras, números, @ . _ - +.")
+            .ValidateOnStart();
         services.AddOptions<FacturacionOpciones>().Bind(config.GetSection(FacturacionOpciones.Seccion)).ValidateDataAnnotations()
             .Validate(o => o.EsSimulado || string.Equals(o.Modo, "Manual", StringComparison.OrdinalIgnoreCase),
                 "Facturacion:Modo debe ser 'Manual' o 'Simulado'.")
