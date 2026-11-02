@@ -1,5 +1,5 @@
 import { Routes } from '@angular/router';
-import { exigirCorreoVerificado, exigirCuentaCompleta, exigirMayoriaEdad, exigirModerador, exigirSesion, soloInvitado } from './core/guardas';
+import { exigirCorreoVerificado, exigirCuentaCompleta, exigirFotoReal, exigirMayoriaEdad, exigirModerador, exigirSesion, soloInvitado } from './core/guardas';
 
 const paginas: Routes = [
   { path: '', title: '', loadComponent: () => import('./features/inicio/inicio') },
@@ -139,4 +139,4 @@ const paginas: Routes = [
 ];
 
 /** Toda página pasa por la mayoría de edad: una cuenta sin fecha de nacimiento solo puede registrarla (y lo legal y su ayuda). */
-export const routes: Routes = [{ path: '', canActivateChild: [exigirMayoriaEdad], children: paginas }];
+export const routes: Routes = [{ path: '', canActivateChild: [exigirMayoriaEdad, exigirFotoReal], children: paginas }];

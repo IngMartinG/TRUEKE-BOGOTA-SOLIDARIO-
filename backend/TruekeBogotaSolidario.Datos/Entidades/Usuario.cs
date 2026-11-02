@@ -137,9 +137,14 @@ public class Usuario
     // Verificación de identidad
     public EstadoVerificacion EstadoVerificacion { get; private set; }
     public string? DocumentoVerificacionUrl { get; private set; }
-    /// <summary>Foto de perfil pública (copia limpia, sin GPS ni metadatos). null = se muestran las iniciales.</summary>
+    /// <summary>Foto de perfil actual (copia limpia, sin GPS ni metadatos), con su estado de revisión. Solo la ve la persona y los moderadores.</summary>
     public string? FotoUrl { get; private set; }
     public EstadoFotoPerfil EstadoFoto { get; private set; }
+    /// <summary>
+    /// La foto que ven los demás: la actual si está aprobada (o es anterior a la regla y aún no se revisa); si la actual está en
+    /// revisión o rechazada, la última que pasó la revisión. null = se muestran las iniciales.
+    /// </summary>
+    public string? FotoPublicaUrl { get; private set; }
     /// <summary>Por qué se rechazó la foto (lo ve la persona).</summary>
     public string? MotivoRechazoFoto { get; private set; }
     /// <summary>Hasta cuándo puede seguir usando la cuenta con la foto rechazada; después cuenta como si no tuviera foto.</summary>
@@ -281,73 +286,96 @@ public class Usuario
 
     /// <summary>
     /// La URL ya debe venir validada (archivo propio y limpio) y, si se pudo, revisada por el detector de rostros: una foto sin
-    /// rostro nunca llega aquí. Devuelve la foto anterior para borrarla.
+    /// rostro nunca llega aquí. Una foto en revisión no reemplaza la pública hasta que un moderador la apruebe.
+    /// Devuelve las fotos que ya nadie usa, para borrarlas.
     /// </summary>
-    public string? CambiarFoto(string url, EstadoFotoPerfil estado = EstadoFotoPerfil.SinRevisar, DateTime? ahoraUtc = null)
+    public IReadOnlyList<string> CambiarFoto(string url, EstadoFotoPerfil estado = EstadoFotoPerfil.SinRevisar, DateTime? ahoraUtc = null)
     {
         if (string.IsNullOrWhiteSpace(url) || url.Length > 500) throw new ReglaDeNegocioException("La foto no es válida.");
         if (estado == EstadoFotoPerfil.Rechazada) throw new ReglaDeNegocioException("La foto no es válida.");
-        var anterior = FotoUrl;
+        var (anterior, publicaAnterior) = (FotoUrl, FotoPublicaUrl);
         FotoUrl = url;
         EstadoFoto = estado;
+        if (EsPublicable(estado)) FotoPublicaUrl = url;
         FotoRevisadaUtc = estado == EstadoFotoPerfil.SinRevisar ? null : ahoraUtc;
         MotivoRechazoFoto = null;
         PlazoCambioFotoUtc = null;
         EvaluarPerfilCompleto();
-        return anterior;
+        return FotosSinUso(anterior, publicaAnterior);
     }
 
-    public string? QuitarFoto()
+    public IReadOnlyList<string> QuitarFoto()
     {
-        var anterior = FotoUrl;
+        var (anterior, publicaAnterior) = (FotoUrl, FotoPublicaUrl);
         FotoUrl = null;
+        FotoPublicaUrl = null;
         EstadoFoto = EstadoFotoPerfil.SinRevisar;
         FotoRevisadaUtc = null;
         MotivoRechazoFoto = null;
         PlazoCambioFotoUtc = null;
-        return anterior;
+        return FotosSinUso(anterior, publicaAnterior);
     }
+
+    /// <summary>Aprobada o anterior a la regla (aún sin revisar): se puede mostrar a los demás.</summary>
+    private static bool EsPublicable(EstadoFotoPerfil estado) => estado is EstadoFotoPerfil.Aprobada or EstadoFotoPerfil.SinRevisar;
+
+    private List<string> FotosSinUso(params string?[] antes)
+        => antes.OfType<string>().Where(f => f != FotoUrl && f != FotoPublicaUrl).Distinct(StringComparer.Ordinal).ToList();
 
     /// <summary>
     /// Tiene una foto que sirve para actuar: una rechazada vale solo hasta su plazo (para no cortar de golpe intercambios en
-    /// curso); después cuenta como si no tuviera foto.
+    /// curso); después cuenta como si no tuviera foto. Una foto en revisión sí sirve (la persona no espera al moderador), aunque
+    /// los demás no la vean todavía.
     /// </summary>
     public bool TieneFotoValida(DateTime ahoraUtc)
         => FotoUrl is not null && !(EstadoFoto == EstadoFotoPerfil.Rechazada && PlazoCambioFotoUtc is { } plazo && plazo <= ahoraUtc);
 
     /// <summary>
     /// Resultado de la revisión automática de una foto ya guardada (las anteriores a la regla). SinRevisar = no se pudo leer:
-    /// queda la fecha del intento para reintentar más tarde sin repetirla en cada lote.
+    /// queda la fecha del intento para reintentar más tarde sin repetirla en cada lote. En revisión deja de verse hasta que
+    /// un moderador la apruebe.
     /// </summary>
     public void RegistrarRevisionFoto(EstadoFotoPerfil estado, DateTime ahoraUtc)
     {
         if (FotoUrl is null || EstadoFoto != EstadoFotoPerfil.SinRevisar) return;
         if (estado == EstadoFotoPerfil.Rechazada) throw new ReglaDeNegocioException("Para rechazar una foto usa RechazarFoto.");
         EstadoFoto = estado;
+        if (!EsPublicable(estado) && FotoPublicaUrl == FotoUrl) FotoPublicaUrl = null;
         FotoRevisadaUtc = ahoraUtc;
     }
 
-    public void AprobarFoto(DateTime ahoraUtc)
+    /// <summary>La foto actual pasa a ser la pública. Devuelve la pública anterior para borrarla.</summary>
+    public IReadOnlyList<string> AprobarFoto(DateTime ahoraUtc)
     {
         if (FotoUrl is null) throw new ReglaDeNegocioException("Esta cuenta no tiene foto de perfil.");
+        var publicaAnterior = FotoPublicaUrl;
         EstadoFoto = EstadoFotoPerfil.Aprobada;
+        FotoPublicaUrl = FotoUrl;
         FotoRevisadaUtc = ahoraUtc;
         MotivoRechazoFoto = null;
         PlazoCambioFotoUtc = null;
+        return FotosSinUso(publicaAnterior);
     }
 
-    /// <summary>La foto no muestra a la persona: debe cambiarla antes de <paramref name="plazoUtc"/>. Rechazar de nuevo no amplía el plazo.</summary>
-    public void RechazarFoto(string motivo, DateTime ahoraUtc, DateTime plazoUtc)
+    /// <summary>
+    /// La foto no muestra a la persona: debe cambiarla antes de <paramref name="plazoUtc"/>. Rechazar de nuevo no amplía el plazo.
+    /// La rechazada deja de verse; si era una foto nueva en revisión, los demás siguen viendo la última aprobada, salvo con
+    /// <paramref name="quitarPublica"/> (una denuncia de la foto que ven los demás). Devuelve las fotos que ya nadie usa.
+    /// </summary>
+    public IReadOnlyList<string> RechazarFoto(string motivo, DateTime ahoraUtc, DateTime plazoUtc, bool quitarPublica = false)
     {
         if (FotoUrl is null) throw new ReglaDeNegocioException("Esta cuenta no tiene foto de perfil.");
         if (string.IsNullOrWhiteSpace(motivo)) throw new ReglaDeNegocioException("Indica el motivo del rechazo (lo verá la persona).");
         var motivoLimpio = motivo.Trim();
         if (motivoLimpio.Length > 300) throw new ReglaDeNegocioException("El motivo admite máximo 300 caracteres.");
         if (EstadoFoto == EstadoFotoPerfil.Rechazada && PlazoCambioFotoUtc is { } vigente) plazoUtc = vigente < plazoUtc ? vigente : plazoUtc;
+        var publicaAnterior = FotoPublicaUrl;
         EstadoFoto = EstadoFotoPerfil.Rechazada;
+        if (quitarPublica || FotoPublicaUrl == FotoUrl) FotoPublicaUrl = null;
         MotivoRechazoFoto = motivoLimpio;
         FotoRevisadaUtc = ahoraUtc;
         PlazoCambioFotoUtc = plazoUtc;
+        return FotosSinUso(publicaAnterior);
     }
 
     /// <summary>
@@ -672,6 +700,7 @@ public class Usuario
         DocumentoVerificacionUrl = null;
         MotivoRechazoVerificacion = null;
         FotoUrl = null;
+        FotoPublicaUrl = null;
         EstadoFoto = EstadoFotoPerfil.SinRevisar;
         MotivoRechazoFoto = null;
         PlazoCambioFotoUtc = null;

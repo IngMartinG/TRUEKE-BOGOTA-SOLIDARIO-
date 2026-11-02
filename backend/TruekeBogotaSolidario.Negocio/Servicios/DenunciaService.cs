@@ -269,6 +269,7 @@ public sealed class DenunciaService : IDenunciaService
 
         var ahora = Ahora;
         string? fotoRechazada = null;
+        IReadOnlyList<string> fotosSinUso = [];
         if (accion == AccionDenunciaDto.OcultarContenido)
         {
             switch (d.Tipo)
@@ -307,9 +308,10 @@ public sealed class DenunciaService : IDenunciaService
                     .Any(x => x.Motivo == MotivoDenuncia.FotoPerfilNoValida):
                 {
                     // "Ocultar" a una persona denunciada por su foto = rechazar la foto, con el plazo de siempre para cambiarla.
+                    // Se denunció la que ven los demás: deja de verse aunque haya otra nueva en revisión.
                     var u = await _usuarios.ObtenerPorIdAsync(d.ObjetivoId) ?? throw new NoEncontradoException("El usuario ya no existe.");
                     if (u.FotoUrl is null) throw new ReglaDeNegocioException("Esa persona ya no tiene foto de perfil: descarta la denuncia.");
-                    u.RechazarFoto(nota!, ahora, ahora.AddDays(_fotos.DiasPlazoCambio));
+                    fotosSinUso = u.RechazarFoto(nota!, ahora, ahora.AddDays(_fotos.DiasPlazoCambio), quitarPublica: true);
                     fotoRechazada = u.MotivoRechazoFoto;
                     break;
                 }
@@ -329,6 +331,7 @@ public sealed class DenunciaService : IDenunciaService
         var recompensados = procedente ? await RecompensarDenunciantesAsync(grupo, moderadorId, ahora, avisosPuntos) : [];
         await _uow.GuardarCambiosAsync(); // con RowVersion: dos resoluciones a la vez no suman puntos dos veces (la segunda → 409)
         _log.LogInformation("Denuncias sobre {Tipo} {ObjetivoId} resueltas ({Accion}) por {ModeradorId}", d.Tipo, d.ObjetivoId, accion, moderadorId);
+        foreach (var f in fotosSinUso) await _almacen.EliminarImagenPropiaAsync(f, d.ObjetivoId);
 
         foreach (var denunciante in grupo.Select(x => x.DenuncianteId).Distinct())
             await _notificador.NotificarAsync(denunciante, TiposNotificacion.DenunciaRevisada,

@@ -672,6 +672,22 @@ páginas estáticas para buscadores (`generar-seo.mjs`) y la pantalla de carga y
 HtmlSanitizer no aplica: la API solo devuelve JSON, Angular escapa todo y el texto ya se valida con `TextoSeguro`; además
 rechazaría textos normales como "3 < 5" y guardaría el contenido en los registros.
 
+## Hecho el 2026-11-01 — la foto de perfil en revisión o rechazada no la ven los demás
+- **Foto pública aparte (migración `FotoPublica`):** `Usuario.FotoPublicaUrl` es la foto que ven los demás (perfil,
+  publicaciones, comentarios, chat, calificaciones, fundaciones, negocios y empresas, todo por `Mapeos.FotoVisible`). Una foto
+  nueva en revisión no la reemplaza: los demás siguen viendo la última aprobada (que se conserva en el almacenamiento hasta
+  entonces) o las iniciales; al aprobarla pasa a ser la pública y la anterior se borra. Una foto rechazada deja de verse (si
+  era una nueva en revisión, queda la anterior aprobada; una denuncia "la foto no es de una persona" quita también la pública).
+  La persona sigue viendo su foto actual en *Mi cuenta* con el aviso de revisión o de rechazo. La migración copia como pública
+  la foto aprobada o aún sin revisar (anterior a la regla); las que esperan a un moderador o fueron rechazadas dejan de verse.
+- **Cuenta completa:** una foto en revisión sí cuenta para `Guardas.ExigirCuentaCompleta` (la persona no espera al moderador);
+  una rechazada cuenta solo hasta su plazo (`TieneFotoValida`). Sin cambios.
+- **Foto rechazada = cambiarla para continuar:** en el front, la guarda global `exigirFotoReal` lleva a *Mi cuenta* (con
+  `?volver=`) a quien tenga la foto rechazada; solo deja abrir lo legal, la ayuda, la privacidad de la cuenta y el propio perfil.
+- **Rechazar una foto ya aprobada:** en *Administración → Usuarios* se ve la foto actual y su estado, con el botón
+  **Rechazar foto** (motivo editable; la persona recibe el aviso y el correo de siempre). Sirve para fotos que el detector dio
+  por buenas pero no muestran a la persona (imágenes de internet, dibujos con cara).
+
 ## Hecho el 2026-11-01 — captcha con Cloudflare Turnstile, foto de perfil y fecha de registro
 - **Captcha (PR #216):** reCAPTCHA v3 se cambió por **Cloudflare Turnstile**: gratis sin tope de evaluaciones, sin cookies de
   seguimiento y sin umbral de puntaje. `VerificadorTurnstile` consulta el siteverify de Cloudflare, exige la misma acción y falla

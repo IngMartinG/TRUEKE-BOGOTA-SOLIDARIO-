@@ -135,6 +135,65 @@ public class EstadoFotoUsuarioTests
         Assert.False(u.TieneFotoValida(Ahora));
     }
 
+    private const string Vieja = "https://almacen.test/imagenes/ana.jpg";
+    private const string Nueva = "https://almacen.test/imagenes/ana-2.jpg";
+
+    [Fact]
+    public void Una_foto_en_revision_no_reemplaza_la_publica_hasta_aprobarla()
+    {
+        var u = ConFoto();
+        Assert.Empty(u.CambiarFoto(Nueva, EstadoFotoPerfil.EnRevision, Ahora)); // la vieja se conserva: sigue siendo la pública
+        Assert.Equal(Nueva, u.FotoUrl);
+        Assert.Equal(Vieja, u.FotoPublicaUrl);
+
+        Assert.Equal([Vieja], u.AprobarFoto(Ahora));
+        Assert.Equal(Nueva, u.FotoPublicaUrl);
+    }
+
+    [Fact]
+    public void Otra_foto_en_revision_descarta_la_pendiente_y_conserva_la_publica()
+    {
+        var u = ConFoto();
+        u.CambiarFoto(Nueva, EstadoFotoPerfil.EnRevision, Ahora);
+        Assert.Equal([Nueva], u.CambiarFoto("https://almacen.test/imagenes/ana-3.jpg", EstadoFotoPerfil.EnRevision, Ahora));
+        Assert.Equal(Vieja, u.FotoPublicaUrl);
+    }
+
+    [Fact]
+    public void Rechazar_la_nueva_deja_la_anterior_aprobada_y_una_denuncia_quita_la_publica()
+    {
+        var u = ConFoto();
+        u.CambiarFoto(Nueva, EstadoFotoPerfil.EnRevision, Ahora);
+        Assert.Empty(u.RechazarFoto("No se ve tu cara.", Ahora, Ahora.AddDays(7)));
+        Assert.Equal(Vieja, u.FotoPublicaUrl);
+
+        Assert.Equal([Vieja], u.RechazarFoto("Es una caricatura.", Ahora, Ahora.AddDays(7), quitarPublica: true));
+        Assert.Null(u.FotoPublicaUrl);
+        Assert.Equal(Nueva, u.FotoUrl); // la persona sigue viendo cuál debe cambiar
+    }
+
+    [Fact]
+    public void Rechazar_la_foto_publica_la_oculta_y_quitar_la_foto_devuelve_ambas()
+    {
+        var u = ConFoto();
+        u.RechazarFoto("No se ve tu cara.", Ahora, Ahora.AddDays(7));
+        Assert.Null(u.FotoPublicaUrl);
+
+        var otra = ConFoto();
+        otra.CambiarFoto(Nueva, EstadoFotoPerfil.EnRevision, Ahora);
+        Assert.Equal([Nueva, Vieja], otra.QuitarFoto());
+        Assert.Null(otra.FotoPublicaUrl);
+    }
+
+    [Fact]
+    public void Una_foto_sin_revisar_que_pasa_a_un_moderador_deja_de_verse()
+    {
+        var u = ConFoto(EstadoFotoPerfil.SinRevisar);
+        Assert.Equal(Vieja, u.FotoPublicaUrl); // anterior a la regla: se ve mientras se revisa
+        u.RegistrarRevisionFoto(EstadoFotoPerfil.EnRevision, Ahora);
+        Assert.Null(u.FotoPublicaUrl);
+    }
+
     [Fact]
     public void Una_foto_no_se_guarda_ya_rechazada_ni_se_rechaza_sin_motivo()
     {

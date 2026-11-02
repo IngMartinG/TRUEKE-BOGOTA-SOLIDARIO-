@@ -1,11 +1,11 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRouteSnapshot, provideRouter, Router, RouterStateSnapshot, UrlTree } from '@angular/router';
-import { exigirCorreoVerificado, exigirCuentaCompleta, exigirMayoriaEdad, exigirModerador } from './guardas';
+import { exigirCorreoVerificado, exigirCuentaCompleta, exigirFotoReal, exigirMayoriaEdad, exigirModerador } from './guardas';
 import { SesionService } from './sesion.service';
 
 function ejecutar(
   guarda: typeof exigirCorreoVerificado,
-  sesion: { autenticado: boolean; verificado: boolean; moderador?: boolean; foto?: boolean; mayor?: boolean; sinNombre?: boolean; sinLocalidad?: boolean; legalViejo?: boolean },
+  sesion: { autenticado: boolean; verificado: boolean; moderador?: boolean; foto?: boolean; mayor?: boolean; sinNombre?: boolean; sinLocalidad?: boolean; legalViejo?: boolean; fotoRechazada?: boolean },
   url = '/cuenta/perfil',
 ) {
   TestBed.resetTestingModule(); // varias llamadas en la misma prueba
@@ -24,6 +24,7 @@ function ejecutar(
           usuario: () => (sesion.autenticado ? {} : null),
           mayoriaEdadConfirmada: () => sesion.mayor ?? true,
           legalPendiente: () => sesion.legalViejo ?? false,
+          fotoRechazada: () => sesion.fotoRechazada ?? false,
         },
       },
     ],
@@ -101,5 +102,24 @@ describe('exigirMayoriaEdad (cuentas sin fecha de nacimiento)', () => {
   it('sin sesión o con la fecha registrada no hace nada', () => {
     expect(ejecutar(exigirMayoriaEdad, { autenticado: false, verificado: false, mayor: false }, '/publicar')).toBe(true);
     expect(ejecutar(exigirMayoriaEdad, { autenticado: true, verificado: true, mayor: true }, '/publicar')).toBe(true);
+  });
+});
+
+describe('exigirFotoReal (foto de perfil rechazada)', () => {
+  it('al volver a entrar lleva a cambiar la foto y vuelve luego a la página pedida', () => {
+    expect(ejecutar(exigirFotoReal, { autenticado: true, verificado: true, fotoRechazada: true }, '/explorar')).toBe(
+      '/cuenta/perfil?volver=%2Fexplorar#foto',
+    );
+  });
+
+  it('deja abrir el perfil para cambiarla, lo legal y la ayuda', () => {
+    for (const url of ['/cuenta/perfil', '/privacidad', '/ayuda', '/cuenta/privacidad'])
+      expect(ejecutar(exigirFotoReal, { autenticado: true, verificado: true, fotoRechazada: true }, url)).toBe(true);
+  });
+
+  it('sin sesión, sin correo verificado o con una foto que no está rechazada no hace nada', () => {
+    expect(ejecutar(exigirFotoReal, { autenticado: false, verificado: false, fotoRechazada: true }, '/explorar')).toBe(true);
+    expect(ejecutar(exigirFotoReal, { autenticado: true, verificado: false, fotoRechazada: true }, '/explorar')).toBe(true);
+    expect(ejecutar(exigirFotoReal, { autenticado: true, verificado: true }, '/explorar')).toBe(true);
   });
 });

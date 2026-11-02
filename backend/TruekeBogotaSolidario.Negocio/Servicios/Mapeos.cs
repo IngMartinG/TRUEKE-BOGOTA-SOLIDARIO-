@@ -61,8 +61,8 @@ internal static class Mapeos
         return new DateTime(bogota.Year, bogota.Month, bogota.Day, 12, 0, 0, DateTimeKind.Utc);
     }
 
-    /// <summary>Cuentas eliminadas o suspendidas no muestran foto.</summary>
-    public static string? FotoVisible(Usuario u) => u.EstaEliminado || u.EstaSuspendido ? null : u.FotoUrl;
+    /// <summary>Lo que ven los demás: nunca una foto en revisión o rechazada. Cuentas eliminadas o suspendidas no muestran foto.</summary>
+    public static string? FotoVisible(Usuario u) => u.EstaEliminado || u.EstaSuspendido ? null : u.FotoPublicaUrl;
 
     public static PerfilUsuarioDto APerfilUsuario(Usuario u, int publicacionesActivas, SenalesConfianzaDto confianza, DateTime ahora)
         => new(u.Id, NombrePublico(u.NombreCompleto), u.Localidad, u.Reputacion, u.EsVerificado, TipoCuentaEfectivo(u, ahora),

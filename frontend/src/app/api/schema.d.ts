@@ -9437,6 +9437,8 @@ export interface components {
             totalCalificaciones?: number;
             /** Format: date-time */
             menorDetectadoUtc?: string | null;
+            fotoUrl?: string | null;
+            estadoFoto?: string | null;
         };
         UsuarioAdminDtoPaginaDto: {
             items?: components["schemas"]["UsuarioAdminDto"][];

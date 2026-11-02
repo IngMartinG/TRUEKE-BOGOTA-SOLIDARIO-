@@ -344,6 +344,7 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
         ALTER TABLE "Usuarios" ADD "NitRechazadoUtc" timestamp with time zone;
         ALTER TABLE "Usuarios" ADD "ResumenSemanal" boolean NOT NULL DEFAULT FALSE;
         ALTER TABLE "Usuarios" ADD "ResumenSemanalEnviadoUtc" timestamp with time zone;
+        ALTER TABLE "Usuarios" ADD "FotoPublicaUrl" character varying(500);
         ALTER TABLE "Publicaciones" ADD "DisponibilidadPedidaUtc" timestamp with time zone;
         ALTER TABLE "Publicaciones" ADD "DisponibilidadConfirmadaUtc" timestamp with time zone;
         ALTER TABLE "Publicaciones" ADD "EstadoModeracion" character varying(20) NOT NULL DEFAULT 'Aprobada';
@@ -359,7 +360,7 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
     private const string QuitarColumnasPosteriores = """
         ALTER TABLE "Usuarios" DROP COLUMN "EstadoFoto", DROP COLUMN "FotoRevisadaUtc", DROP COLUMN "MotivoRechazoFoto",
             DROP COLUMN "PlazoCambioFotoUtc", DROP COLUMN "DescripcionNegocio", DROP COLUMN "HorarioNegocio",
-            DROP COLUMN "NitVerificadoUtc", DROP COLUMN "NitRechazadoUtc", DROP COLUMN "ResumenSemanal", DROP COLUMN "ResumenSemanalEnviadoUtc";
+            DROP COLUMN "NitVerificadoUtc", DROP COLUMN "NitRechazadoUtc", DROP COLUMN "ResumenSemanal", DROP COLUMN "ResumenSemanalEnviadoUtc", DROP COLUMN "FotoPublicaUrl";
         ALTER TABLE "Publicaciones" DROP COLUMN "EstadoModeracion", DROP COLUMN "PuntajeRiesgo", DROP COLUMN "MotivosRiesgo",
             DROP COLUMN "MotivoRechazo", DROP COLUMN "EnRevisionDesdeUtc", DROP COLUMN "PesoEstimadoKg", DROP COLUMN "Material",
             DROP COLUMN "NecesidadFundacionId", DROP COLUMN "CampanaId", DROP COLUMN "DisponibilidadPedidaUtc",
@@ -392,6 +393,7 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
                 ALTER TABLE "Usuarios" ADD "NitRechazadoUtc" timestamp with time zone;
                 ALTER TABLE "Usuarios" ADD "ResumenSemanal" boolean NOT NULL DEFAULT FALSE;
                 ALTER TABLE "Usuarios" ADD "ResumenSemanalEnviadoUtc" timestamp with time zone;
+                ALTER TABLE "Usuarios" ADD "FotoPublicaUrl" character varying(500);
                 """);
             var ropa = await db.Categorias.FirstAsync(c => c.Id == 1);
             var ahora = DateTime.UtcNow;
@@ -421,7 +423,7 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
                 ALTER TABLE "Publicaciones" DROP COLUMN "PesoEstimadoKg", DROP COLUMN "Material", DROP COLUMN "NecesidadFundacionId",
                     DROP COLUMN "CampanaId", DROP COLUMN "DisponibilidadPedidaUtc", DROP COLUMN "DisponibilidadConfirmadaUtc";
                 ALTER TABLE "Usuarios" DROP COLUMN "DescripcionNegocio", DROP COLUMN "HorarioNegocio", DROP COLUMN "NitVerificadoUtc",
-                    DROP COLUMN "NitRechazadoUtc", DROP COLUMN "ResumenSemanal", DROP COLUMN "ResumenSemanalEnviadoUtc";
+                    DROP COLUMN "NitRechazadoUtc", DROP COLUMN "ResumenSemanal", DROP COLUMN "ResumenSemanalEnviadoUtc", DROP COLUMN "FotoPublicaUrl";
                 """);
         }
 
