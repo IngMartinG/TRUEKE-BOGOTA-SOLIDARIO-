@@ -83,25 +83,25 @@ import { InsigniaModo } from './insignia-modo';
             <app-icono nombre="verificado" [tamano]="12" />Identidad verificada
           </p>
         }
-        <div class="mt-auto flex items-end justify-between gap-2 pt-2">
-          <div class="min-w-0">
-            @if (p.modo === 'Compra' && p.precioReferenciaCop) {
-              <p class="font-display text-lg font-extrabold text-cielo-700 dark:text-cielo-100">{{ p.precioReferenciaCop | cop }}</p>
-            } @else if (p.modo === 'Donacion') {
-              <p class="font-display text-lg font-extrabold text-tierra-600 dark:text-tierra-500">Gratis</p>
-            } @else {
-              <p class="font-display text-sm font-bold text-bosque-700 dark:text-bosque-300">
-                Para trueke@if (p.precioReferenciaCop) {<span class="font-medium text-tenue"> · ref. {{ p.precioReferenciaCop | cop }}</span>}
-              </p>
-            }
-            <p class="mt-0.5 flex items-center gap-1 truncate text-xs text-tenue">
-              <app-icono nombre="pin" [tamano]="12" />{{ p.localidad }}@if (ciudad()) {<span>· {{ ciudad() }}</span>}
-              @if (distanciaKm() !== null) {
-                · {{ distanciaKm()! < 1 ? '< 1' : distanciaKm()!.toFixed(1) }} km
-              }
+        <!-- El precio va en su propia línea: en celular, con dos tarjetas por fila, la fecha al lado lo dejaba sin espacio -->
+        <div class="mt-auto pt-2">
+          @if (p.modo === 'Compra' && p.precioReferenciaCop) {
+            <p class="font-display text-lg font-extrabold whitespace-nowrap text-cielo-700 dark:text-cielo-100">{{ p.precioReferenciaCop | cop }}</p>
+          } @else if (p.modo === 'Donacion') {
+            <p class="font-display text-lg font-extrabold text-tierra-600 dark:text-tierra-500">Gratis</p>
+          } @else {
+            <p class="font-display text-sm font-bold text-bosque-700 dark:text-bosque-300">
+              <span class="whitespace-nowrap">Para trueke</span>@if (p.precioReferenciaCop) {<span class="font-medium whitespace-nowrap text-tenue"> · ref. {{ p.precioReferenciaCop | cop }}</span>}
             </p>
+          }
+          <!-- Si la ubicación y la fecha no caben en una línea, la fecha baja a la siguiente -->
+          <div class="mt-0.5 flex flex-wrap items-center justify-between gap-x-2 gap-y-0.5 text-xs text-tenue">
+            <p class="flex min-w-0 items-center gap-1">
+              <app-icono nombre="pin" [tamano]="12" class="shrink-0" />
+              <span class="truncate">{{ p.localidad }}@if (ciudad()) { · {{ ciudad() }}}@if (distanciaKm() !== null) { · {{ distanciaKm()! < 1 ? '< 1' : distanciaKm()!.toFixed(1) }} km}</span>
+            </p>
+            <span class="shrink-0">{{ p.fechaPublicacion | hace }}</span>
           </div>
-          <span class="shrink-0 text-xs text-tenue">{{ p.fechaPublicacion | hace }}</span>
         </div>
       </div>
     </article>
