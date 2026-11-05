@@ -21,7 +21,8 @@ import { GoogleService } from '../../core/terceros/google.service';
         <span class="h-px flex-1 bg-borde"></span>o<span class="h-px flex-1 bg-borde"></span>
       </div>
       <div class="flex justify-center" [class.pointer-events-none]="deshabilitado()" [class.opacity-50]="deshabilitado()">
-        <div #contenedor class="flex min-h-11 w-full justify-center"></div>
+        <!-- color-scheme claro: el marco de Google es claro y, si no coincide con el modo oscuro de la página, el navegador le pinta un fondo opaco alrededor del botón -->
+        <div #contenedor class="flex min-h-11 w-full justify-center [color-scheme:light]"></div>
       </div>
     }
   `,

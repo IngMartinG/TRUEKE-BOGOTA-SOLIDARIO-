@@ -23,8 +23,9 @@ import { Logo } from '../shared/ui/logo';
         como corazón con su nombre para el lector de pantalla.
       -->
       <div class="contenedor flex h-16 items-center gap-2 sm:gap-3 xl:gap-6">
-        <a routerLink="/" class="shrink-0 rounded-full" aria-label="Trueke Bogotá Solidario, inicio">
-          <app-logo [tamano]="38" claseTexto="max-[359px]:hidden lg:max-xl:hidden" />
+        <!-- min-w-0: si falta espacio el logo se achica en vez de empujar la página hacia el lado -->
+        <a routerLink="/" class="flex min-w-0 rounded-full" aria-label="Trueke Bogotá Solidario, inicio">
+          <app-logo [tamano]="38" class="min-w-0" claseTexto="min-w-0 max-[359px]:hidden lg:max-xl:hidden" />
         </a>
 
         <nav class="hidden items-center gap-1 whitespace-nowrap lg:flex" aria-label="Principal">
@@ -56,10 +57,10 @@ import { Logo } from '../shared/ui/logo';
         />
 
         <div class="ml-auto flex shrink-0 items-center gap-1 sm:gap-2">
+          <!-- En celular no cabe junto al corazón y "Crear cuenta": ahí se sigue el tema del teléfono y, con sesión, se cambia desde el menú de la cuenta -->
           <button
             type="button"
-            class="btn-icono sm:inline-flex"
-            [class.hidden]="sesion.autenticado()"
+            class="btn-icono hidden sm:inline-flex"
             (click)="tema.alternar()"
             [attr.aria-label]="tema.oscuroActivo() ? 'Activar modo claro' : 'Activar modo oscuro'"
           >
