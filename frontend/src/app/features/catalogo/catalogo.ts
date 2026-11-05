@@ -64,7 +64,7 @@ const TAMANO = 12;
             claseEntrada="entrada rounded-full py-3 pl-12 text-base shadow-suave"
             (buscar)="aplicar({ texto: $event || null })"
           />
-          <div class="flex gap-2 overflow-x-auto pb-1 lg:pb-0" role="group" aria-label="Filtrar por modo">
+          <div class="flex gap-2 relative overflow-x-auto pb-1 lg:pb-0" role="group" aria-label="Filtrar por modo">
             <button type="button" class="btn shrink-0" [class]="!filtros().modo ? 'btn-primario' : 'btn-secundario'" [attr.aria-pressed]="!filtros().modo" (click)="aplicar({ modo: null })">
               Todos
             </button>

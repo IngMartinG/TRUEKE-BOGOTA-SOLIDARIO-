@@ -68,6 +68,18 @@ import { impactoVisible, ResumenImpacto } from '../../shared/ui/resumen-impacto'
             </a>
           </div>
 
+          <!-- Celular y tableta: las mismas tres tarjetas en fila (en PC se muestran flotando a la derecha) -->
+          <ul class="mt-10 grid grid-cols-3 gap-3 sm:gap-4 lg:hidden" aria-hidden="true">
+            @for (m of tarjetasHero; track m.modo) {
+              <li class="min-w-0 rounded-2xl bg-white p-1.5 text-bosque-950 shadow-xl sm:rounded-3xl sm:p-2.5" [style.rotate]="m.giroMovil">
+                <img [src]="m.foto" alt="" width="480" height="300" loading="lazy" decoding="async"
+                  class="aspect-[4/3] w-full rounded-xl object-cover sm:aspect-[8/5] sm:rounded-2xl" [class]="m.fondo" />
+                <p class="mt-1.5 line-clamp-2 px-0.5 font-display text-xs leading-tight font-bold sm:mt-2 sm:text-sm">{{ m.titulo }}</p>
+                <span class="mt-1 mb-0.5 ml-0.5 hidden sm:inline-flex" [class]="m.insignia">{{ info[m.modo].etiqueta }}</span>
+              </li>
+            }
+          </ul>
+
           <!-- Solo cifras reales: el total aparece cuando ya cargó y hay publicaciones (un "0" mientras carga resta confianza) -->
           <dl class="mt-12 flex max-w-lg flex-wrap gap-x-10 gap-y-6 border-t border-white/10 pt-8">
             @if (totalPublicaciones() > 0) {
@@ -100,15 +112,13 @@ import { impactoVisible, ResumenImpacto } from '../../shared/ui/resumen-impacto'
               [style.rotate]="m.giro"
               [style.animationDelay]="i * 1.3 + 's'"
             >
-              <div class="grid h-36 place-items-center rounded-2xl" [class]="m.fondo">
-                <app-icono [nombre]="m.icono" [tamano]="56" [grosor]="1.3" />
-              </div>
+              <img [src]="m.foto" alt="" width="480" height="300" loading="lazy" decoding="async" class="h-36 w-full rounded-2xl object-cover" [class]="m.fondo" />
               <div class="mt-3 flex items-center justify-between px-1">
                 <div>
                   <p class="font-display text-sm font-bold">{{ m.titulo }}</p>
                   <p class="text-xs text-bosque-900/60">{{ m.lugar }}</p>
                 </div>
-                <span [class]="info[m.modo].clase">{{ info[m.modo].etiqueta }}</span>
+                <span [class]="m.insignia">{{ info[m.modo].etiqueta }}</span>
               </div>
             </div>
           }
@@ -410,9 +420,11 @@ export default class Inicio {
   };
 
   protected readonly tarjetasHero = [
-    { modo: 'Trueke' as const, titulo: 'Bicicleta urbana', lugar: 'Chapinero', icono: 'repeat', top: '0', left: '10%', giro: '-6deg', fondo: 'bg-bosque-100 text-bosque-700' },
-    { modo: 'Donacion' as const, titulo: 'Libros escolares', lugar: 'Kennedy', icono: 'paquete', top: '33%', left: '42%', giro: '5deg', fondo: 'bg-tierra-100 text-tierra-700' },
-    { modo: 'Compra' as const, titulo: 'Silla de escritorio', lugar: 'Suba', icono: 'inicio', top: '58%', left: '0', giro: '-3deg', fondo: 'bg-cielo-100 text-cielo-700' },
+    // Fotos de Unsplash (licencia libre), recortadas a 480×300 en WebP. El fondo de color se ve mientras cargan.
+    // La tarjeta es blanca también en modo oscuro, por eso la insignia usa siempre los colores claros.
+    { modo: 'Trueke' as const, titulo: 'Bicicleta urbana', lugar: 'Chapinero', foto: 'inicio/bicicleta.webp', top: '0', left: '10%', giro: '-6deg', giroMovil: '-2deg', fondo: 'bg-bosque-100', insignia: 'insignia bg-bosque-100 text-bosque-800' },
+    { modo: 'Donacion' as const, titulo: 'Libros escolares', lugar: 'Kennedy', foto: 'inicio/libros.webp', top: '33%', left: '42%', giro: '5deg', giroMovil: '2deg', fondo: 'bg-tierra-100', insignia: 'insignia bg-tierra-100 text-tierra-700' },
+    { modo: 'Compra' as const, titulo: 'Silla de escritorio', lugar: 'Suba', foto: 'inicio/silla.webp', top: '58%', left: '0', giro: '-3deg', giroMovil: '-1deg', fondo: 'bg-cielo-100', insignia: 'insignia bg-cielo-100 text-cielo-700' },
   ];
 
   protected readonly pasos = [

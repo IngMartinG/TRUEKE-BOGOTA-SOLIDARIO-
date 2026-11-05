@@ -29,7 +29,7 @@ const TAMANO = 20;
       </select>
     </div>
 
-    <div class="tarjeta mt-6 overflow-x-auto">
+    <div class="tarjeta mt-6 relative overflow-x-auto">
       <table class="w-full min-w-[46rem] text-left text-sm">
         <thead class="border-b border-borde text-xs text-tenue uppercase">
           <tr><th class="px-4 py-3">Referencia</th><th class="px-4 py-3">Concepto</th><th class="px-4 py-3">Monto</th><th class="px-4 py-3">Estado</th><th class="px-4 py-3">Fecha</th><th class="px-4 py-3"></th></tr>

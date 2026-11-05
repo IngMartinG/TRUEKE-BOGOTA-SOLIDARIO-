@@ -44,7 +44,7 @@ const TAMANO = 20;
       </div>
     </div>
 
-    <div class="tarjeta mt-6 overflow-x-auto">
+    <div class="tarjeta mt-6 relative overflow-x-auto">
       <table class="w-full min-w-[54rem] text-left text-sm">
         <thead class="border-b border-borde text-xs text-tenue uppercase">
           <tr><th class="px-4 py-3">Fecha</th><th class="px-4 py-3">Comprador</th><th class="px-4 py-3">Concepto</th><th class="px-4 py-3">Base</th><th class="px-4 py-3">IVA</th><th class="px-4 py-3">Total</th><th class="px-4 py-3"></th></tr>

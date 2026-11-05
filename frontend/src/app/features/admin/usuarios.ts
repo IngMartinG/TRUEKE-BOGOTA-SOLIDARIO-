@@ -31,7 +31,7 @@ const TAMANO = 20;
       </form>
     </div>
 
-    <div class="tarjeta mt-6 overflow-x-auto">
+    <div class="tarjeta mt-6 relative overflow-x-auto">
       <table class="w-full min-w-[48rem] text-left text-sm">
         <thead class="border-b border-borde text-xs text-tenue uppercase">
           <tr><th class="px-4 py-3">Usuario</th><th class="px-4 py-3">Rol</th><th class="px-4 py-3">Estado</th><th class="px-4 py-3">Reputación</th><th class="px-4 py-3 text-right">Acciones</th></tr>

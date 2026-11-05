@@ -116,7 +116,7 @@ interface Fila {
 
       <section class="mt-16" aria-labelledby="titulo-comparar">
         <h2 id="titulo-comparar" class="titulo-seccion">Compara los planes</h2>
-        <div class="mt-6 overflow-x-auto rounded-tarjeta border border-borde">
+        <div class="mt-6 relative overflow-x-auto rounded-tarjeta border border-borde">
           <table class="w-full min-w-[36rem] text-left text-sm">
             <caption class="sr-only">Qué incluye cada plan</caption>
             <thead class="bg-superficie-2">

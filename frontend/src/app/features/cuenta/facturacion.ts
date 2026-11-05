@@ -73,7 +73,7 @@ import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
             <li class="tarjeta p-6 text-center text-sm text-tenue">Cargando…</li>
           }
         </ul>
-        <div class="tarjeta mt-3 hidden overflow-x-auto sm:block" tabindex="0" role="region" aria-label="Tus facturas">
+        <div class="tarjeta mt-3 hidden relative overflow-x-auto sm:block" tabindex="0" role="region" aria-label="Tus facturas">
           <table class="w-full min-w-[40rem] text-left text-sm">
             <thead class="border-b border-borde text-xs text-tenue uppercase">
               <tr><th class="px-4 py-3">Fecha</th><th class="px-4 py-3">Concepto</th><th class="px-4 py-3">Total</th><th class="px-4 py-3">IVA incluido</th><th class="px-4 py-3">Estado</th></tr>
