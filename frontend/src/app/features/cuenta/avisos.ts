@@ -70,7 +70,7 @@ type Clave = keyof Required<PreferenciasAvisosDto>;
           @if (push.estado() === 'activo' || push.estado() === 'inactivo') {
             <label class="mt-1 shrink-0 cursor-pointer">
               <input type="checkbox" role="switch" class="peer sr-only" [checked]="push.estado() === 'activo'" [disabled]="push.ocupado()"
-                (change)="cambiarPush($any($event.target).checked)" aria-label="Notificaciones en este dispositivo" />
+                (change)="cambiarPush($any($event.target))" aria-label="Notificaciones en este dispositivo" />
               <span class="relative block h-6 w-11 rounded-full bg-borde transition peer-checked:bg-bosque-600 peer-focus-visible:ring-2 peer-focus-visible:ring-bosque-400 peer-disabled:opacity-60
                 after:absolute after:top-0.5 after:left-0.5 after:size-5 after:rounded-full after:bg-white after:shadow after:transition peer-checked:after:translate-x-5" aria-hidden="true"></span>
             </label>
@@ -140,14 +140,21 @@ export default class Avisos {
     });
   }
 
-  protected async cambiarPush(activar: boolean): Promise<void> {
+  protected async cambiarPush(interruptor: HTMLInputElement): Promise<void> {
+    const activar = interruptor.checked;
+    let quedoActivo = !activar;
     try {
       if (activar) await this.push.activar();
       else await this.push.desactivar();
-      if (this.push.estado() === 'activo') this.avisos.exito('Notificaciones activadas en este dispositivo');
-      else if (!activar) this.avisos.exito('Notificaciones desactivadas en este dispositivo');
+      quedoActivo = activar;
+      this.avisos.exito(activar ? 'Notificaciones activadas en este dispositivo' : 'Notificaciones desactivadas en este dispositivo');
     } catch {
-      if (this.push.estado() !== 'bloqueado') this.avisos.error('No se pudieron activar las notificaciones', 'Inténtalo de nuevo en unos minutos.');
+      if (this.push.estado() !== 'bloqueado') {
+        this.avisos.error(activar ? 'No se pudieron activar las notificaciones' : 'No se pudieron desactivar las notificaciones', 'Inténtalo de nuevo en unos minutos.');
+      }
+    } finally {
+      // Si falló (o la persona no dio el permiso), el interruptor vuelve a como estaba: nunca se ve encendido sin estarlo
+      interruptor.checked = quedoActivo;
     }
   }
 

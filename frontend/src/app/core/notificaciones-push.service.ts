@@ -64,7 +64,13 @@ export class NotificacionesPushService {
     this.ocupado.set(true);
     try {
       const s = await this.swPush.requestSubscription({ serverPublicKey: clave });
-      await firstValueFrom(this.api.registrarPush(aSolicitud(s)));
+      try {
+        await firstValueFrom(this.api.registrarPush(aSolicitud(s)));
+      } catch (e) {
+        // Si el servidor no la guardó, este dispositivo no recibiría nada: se deshace para no mostrarla como activa
+        await this.swPush.unsubscribe().catch(() => undefined);
+        throw e;
+      }
     } finally {
       this.permiso.set(Notification.permission);
       this.ocupado.set(false);
