@@ -31,7 +31,7 @@ test('vender por primera vez: la publicación en Compra y venta pide el registro
     await page.getByRole('button', { name: 'Continuar' }).click();
 
     await expect(page.getByRole('heading', { name: 'Agrega fotos' })).toBeVisible();
-    await page.locator('input[type=file]').setInputFiles({ name: 'lampara.png', mimeType: 'image/png', buffer: fotoPng(800, 600) });
+    await page.locator('input[type=file]:not([capture])').setInputFiles({ name: 'lampara.png', mimeType: 'image/png', buffer: fotoPng(800, 600) });
     await expect(page.getByText('Portada', { exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Continuar' }).click();
 

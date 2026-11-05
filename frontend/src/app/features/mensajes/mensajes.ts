@@ -272,6 +272,12 @@ const TAMANO = 40;
                   <input #selectorFoto type="file" accept="image/jpeg,image/png,image/webp" class="sr-only" tabindex="-1" aria-hidden="true" (change)="elegirFoto($event)" />
                   <button type="button" class="btn-icono size-11 shrink-0" (click)="selectorFoto.click()" [disabled]="enviando()"
                     aria-label="Enviar una foto" title="Enviar una foto">
+                    <app-icono nombre="imagen" [tamano]="20" />
+                  </button>
+                  <!-- En celular y tableta: abre la cámara directamente (en PC "capture" se ignora, por eso no se muestra) -->
+                  <input #selectorCamara type="file" accept="image/jpeg,image/png,image/webp" capture="environment" class="sr-only" tabindex="-1" aria-hidden="true" (change)="elegirFoto($event)" />
+                  <button type="button" class="btn-icono hidden size-11 shrink-0 pointer-coarse:inline-flex" (click)="selectorCamara.click()" [disabled]="enviando()"
+                    aria-label="Tomar una foto" title="Tomar una foto">
                     <app-icono nombre="camara" [tamano]="20" />
                   </button>
                 }

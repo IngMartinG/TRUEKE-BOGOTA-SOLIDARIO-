@@ -112,6 +112,12 @@ const TIPOS_SOLICITUD = /^(Solicitud|Entrega|Intercambio|Calificacion)/;
             <input type="file" class="sr-only" accept="image/jpeg,image/png,image/webp" aria-labelledby="evidencia-etiqueta"
               aria-describedby="evidencia-ayuda" (change)="subirEvidencia($event)" />
           </label>
+          <!-- En celular y tableta: abre la cámara directamente (en PC "capture" se ignora, por eso no se muestra) -->
+          <label class="btn btn-secundario btn-sm hidden cursor-pointer pointer-coarse:inline-flex" [class.pointer-events-none]="subiendoEvidencia()" [class.opacity-60]="subiendoEvidencia()">
+            <app-icono nombre="camara" [tamano]="16" />Tomar la foto con la cámara
+            <input type="file" class="sr-only" accept="image/jpeg,image/png,image/webp" capture="environment"
+              aria-describedby="evidencia-ayuda" (change)="subirEvidencia($event)" />
+          </label>
           <p id="evidencia-ayuda" class="ayuda">Solo la ven ustedes dos y el equipo de moderación. Le quitamos la ubicación y los datos de la cámara.</p>
           @if (errorEvidencia()) {
             <p class="text-sm text-tierra-700 dark:text-tierra-400" role="alert">{{ errorEvidencia() }}</p>

@@ -66,8 +66,13 @@ import { VisorImagenes } from '../../shared/ui/visor-imagenes';
           <p class="text-sm text-tenue">Es obligatoria para publicar, solicitar, chatear y pagar, y debe ser <strong>una foto tuya donde se vea tu cara</strong>, de frente y sin gafas oscuras: no sirven logos, dibujos, mascotas ni paisajes. Así la comunidad sabe con quién se encuentra. Un programa en nuestro propio servidor comprueba que haya una cara (no reconoce quién eres), y le quitamos la ubicación y los datos ocultos antes de publicarla. Es un dato sensible: <a routerLink="/privacidad" fragment="seccion-4" class="enlace">cómo lo tratamos</a>.</p>
           <div class="mt-3 flex flex-wrap justify-center gap-2 sm:justify-start">
             <label class="btn btn-primario btn-sm cursor-pointer" [class.pointer-events-none]="subiendoFoto()" [class.opacity-60]="subiendoFoto()">
-              <app-icono nombre="camara" [tamano]="16" />{{ u.fotoUrl ? 'Cambiar foto' : 'Subir foto' }}
+              <app-icono nombre="imagen" [tamano]="16" />{{ u.fotoUrl ? 'Cambiar foto' : 'Subir foto' }}
               <input type="file" class="sr-only" accept="image/jpeg,image/png,image/webp" (change)="elegirFoto($event)" [disabled]="subiendoFoto()" />
+            </label>
+            <!-- En celular y tableta: abre la cámara frontal para la selfie (en PC "capture" se ignora, por eso no se muestra) -->
+            <label class="btn btn-secundario btn-sm hidden cursor-pointer pointer-coarse:inline-flex" [class.pointer-events-none]="subiendoFoto()" [class.opacity-60]="subiendoFoto()">
+              <app-icono nombre="camara" [tamano]="16" />Tomarme una foto
+              <input type="file" class="sr-only" accept="image/jpeg,image/png,image/webp" capture="user" (change)="elegirFoto($event)" [disabled]="subiendoFoto()" />
             </label>
             @if (u.fotoUrl) {
               <button type="button" class="btn btn-fantasma btn-sm" (click)="quitarFoto()" [disabled]="subiendoFoto()">Quitar foto</button>
