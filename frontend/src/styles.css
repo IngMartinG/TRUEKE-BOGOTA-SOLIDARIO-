@@ -175,8 +175,6 @@
   }
   body {
     @apply min-h-dvh bg-fondo;
-    /* Una palabra o enlace muy largo (títulos, comentarios, mensajes) se parte antes que ensanchar la página en el celular */
-    overflow-wrap: break-word;
   }
   h1,
   h2,
