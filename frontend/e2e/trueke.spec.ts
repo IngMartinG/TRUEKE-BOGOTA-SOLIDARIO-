@@ -228,7 +228,7 @@ test('venta que acepta trueke: se publica con la casilla, se negocia entre preci
     await ana.page.getByLabel('Descripción').fill('Guitarra acústica con estuche.');
     await ana.page.getByLabel('Precio de venta').fill('300000');
     await ana.page.getByRole('button', { name: 'Continuar' }).click();
-    await ana.page.locator('input[type=file]').setInputFiles({ name: 'guitarra.png', mimeType: 'image/png', buffer: fotoPng(800, 600) });
+    await ana.page.locator('input[type=file]:not([capture])').setInputFiles({ name: 'guitarra.png', mimeType: 'image/png', buffer: fotoPng(800, 600) });
     await expect(ana.page.getByText('Portada', { exact: true })).toBeVisible();
     await ana.page.getByRole('button', { name: 'Continuar' }).click();
     await ana.page.getByLabel('Localidad').selectOption('Chapinero');

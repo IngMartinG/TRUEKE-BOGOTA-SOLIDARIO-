@@ -31,10 +31,10 @@ test('cuenta nueva: registro, correo de verificación, foto obligatoria y primer
     await expect(page).toHaveURL(/\/cuenta\/perfil\?volver=%2Fpublicar#foto/);
     await expect(page.getByRole('button', { name: 'Subir foto' })).toBeVisible(); // la pantalla terminó de cargar
     // Una imagen sin cara se rechaza al subirla
-    await page.locator('input[type=file]').first().setInputFiles({ name: 'paisaje.png', mimeType: 'image/png', buffer: fotoPng(500, 500, [200, 120, 60]) });
+    await page.locator('input[type=file]:not([capture])').first().setInputFiles({ name: 'paisaje.png', mimeType: 'image/png', buffer: fotoPng(500, 500, [200, 120, 60]) });
     await expect(page.getByText(/No encontramos un rostro/)).toBeVisible();
     await expect(page).toHaveURL(/\/cuenta\/perfil/);
-    await page.locator('input[type=file]').first().setInputFiles({ name: 'yo.jpg', mimeType: 'image/jpeg', buffer: fotoRostro() });
+    await page.locator('input[type=file]:not([capture])').first().setInputFiles({ name: 'yo.jpg', mimeType: 'image/jpeg', buffer: fotoRostro() });
     await expect(page.getByText('¡Foto lista!')).toBeVisible();
     await expect(page).toHaveURL(/\/publicar$/);
   });
@@ -52,7 +52,7 @@ test('cuenta nueva: registro, correo de verificación, foto obligatoria y primer
     await page.getByRole('button', { name: 'Continuar' }).click();
 
     await expect(page.getByRole('heading', { name: 'Agrega fotos' })).toBeVisible();
-    await page.locator('input[type=file]').setInputFiles({ name: 'mesa.png', mimeType: 'image/png', buffer: fotoPng(800, 600) });
+    await page.locator('input[type=file]:not([capture])').setInputFiles({ name: 'mesa.png', mimeType: 'image/png', buffer: fotoPng(800, 600) });
     await expect(page.getByText('Portada', { exact: true })).toBeVisible(); // "Continuar" espera a que termine la subida
     await page.getByRole('button', { name: 'Continuar' }).click();
 
