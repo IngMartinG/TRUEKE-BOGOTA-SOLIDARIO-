@@ -32,7 +32,7 @@ const siguienteVersion = (v: string) => {
     </p>
 
     @if (datos(); as d) {
-      <div class="mt-6 overflow-x-auto rounded-tarjeta border border-borde">
+      <div class="mt-6 relative overflow-x-auto rounded-tarjeta border border-borde">
         <table class="w-full text-left text-sm">
           <caption class="sr-only">Factores por material</caption>
           <thead class="bg-superficie-2">

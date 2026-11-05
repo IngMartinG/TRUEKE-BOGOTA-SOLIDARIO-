@@ -38,7 +38,7 @@ type Decision = 'rechazar' | 'retirar';
           }
         </p>
       </div>
-      <div class="pestanas max-w-full overflow-x-auto" role="group" aria-label="Mostrar">
+      <div class="pestanas max-w-full relative overflow-x-auto" role="group" aria-label="Mostrar">
         @for (e of estados; track e.valor) {
           <button type="button" class="pestana" [class.pestana-activa]="estado() === e.valor"
             [attr.aria-pressed]="estado() === e.valor" (click)="estado.set(e.valor); abierta.set(null)">{{ e.texto }}</button>

@@ -167,7 +167,7 @@ const METODOLOGIA = 'https://github.com/IngMartinG/TRUEKE-BOGOTA-SOLIDARIO-/blob
               vida: preferimos quedarnos cortos que exagerar.
             </p>
             <div class="mt-5 grid gap-5 md:grid-cols-2">
-              <div class="overflow-x-auto rounded-tarjeta border border-borde">
+              <div class="relative overflow-x-auto rounded-tarjeta border border-borde">
                 <table class="w-full text-left text-sm">
                   <caption class="px-4 pt-3 text-left text-xs font-semibold text-tenue">CO₂ evitado por kilo de cada material</caption>
                   <thead class="bg-superficie-2">
@@ -183,7 +183,7 @@ const METODOLOGIA = 'https://github.com/IngMartinG/TRUEKE-BOGOTA-SOLIDARIO-/blob
                   </tbody>
                 </table>
               </div>
-              <div class="overflow-x-auto rounded-tarjeta border border-borde">
+              <div class="relative overflow-x-auto rounded-tarjeta border border-borde">
                 <table class="w-full text-left text-sm">
                   <caption class="px-4 pt-3 text-left text-xs font-semibold text-tenue">Si no se declara el peso: objeto típico de cada categoría</caption>
                   <thead class="bg-superficie-2">

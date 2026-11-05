@@ -322,7 +322,7 @@ import { Volver } from '../../shared/ui/volver';
               }
             </div>
             @if (imagenes().length > 1) {
-              <div class="mt-3 flex gap-2 overflow-x-auto pb-1">
+              <div class="mt-3 flex gap-2 relative overflow-x-auto pb-1">
                 @for (img of imagenes(); track img; let i = $index) {
                   <button type="button" class="size-20 shrink-0 overflow-hidden rounded-xl border-2 transition"
                     [class]="i === indice() ? 'border-bosque-500' : 'border-transparent opacity-70 hover:opacity-100'"

@@ -57,7 +57,7 @@ import { Icono } from './icono';
         </div>
 
         @if (imagenes().length > 1) {
-          <nav class="flex justify-center gap-2 overflow-x-auto px-4 py-3" aria-label="Miniaturas">
+          <nav class="flex justify-center gap-2 relative overflow-x-auto px-4 py-3" aria-label="Miniaturas">
             @for (img of imagenes(); track img; let i = $index) {
               <button type="button" class="size-14 shrink-0 overflow-hidden rounded-lg border-2 transition"
                 [class]="i === indice() ? 'border-white' : 'border-transparent opacity-60 hover:opacity-100'"
