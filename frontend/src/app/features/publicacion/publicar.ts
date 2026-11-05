@@ -331,10 +331,18 @@ const sinTildes = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLo
                     (dragleave)="arrastrando.set(false)"
                     (drop)="soltar($event)"
                   >
-                    <span class="grid size-14 place-items-center rounded-2xl bg-bosque-100 text-bosque-700 dark:bg-bosque-900 dark:text-bosque-200"><app-icono nombre="camara" [tamano]="28" /></span>
-                    <span class="mt-3 font-semibold">Arrastra tus fotos aquí o <span class="text-bosque-700 underline dark:text-bosque-300">elígelas</span></span>
+                    <span class="grid size-14 place-items-center rounded-2xl bg-bosque-100 text-bosque-700 dark:bg-bosque-900 dark:text-bosque-200"><app-icono nombre="imagen" [tamano]="28" /></span>
+                    <span class="mt-3 font-semibold pointer-coarse:hidden">Arrastra tus fotos aquí o <span class="text-bosque-700 underline dark:text-bosque-300">elígelas</span></span>
+                    <span class="mt-3 hidden font-semibold pointer-coarse:inline">Elige fotos de tu <span class="text-bosque-700 underline dark:text-bosque-300">galería</span></span>
                     <span class="mt-1 text-xs text-tenue">JPG, PNG o WebP · las reducimos automáticamente</span>
                     <input type="file" class="sr-only" accept="image/jpeg,image/png,image/webp" multiple (change)="elegir($event)" [disabled]="fotos().length >= config.maxImagenes()" />
+                  </label>
+                  <!-- En celular y tableta: abre la cámara directamente (en PC "capture" se ignora, por eso no se muestra) -->
+                  <label class="btn btn-secundario mt-3 hidden w-full cursor-pointer pointer-coarse:inline-flex"
+                    [class.pointer-events-none]="fotos().length >= config.maxImagenes()"
+                    [class.opacity-50]="fotos().length >= config.maxImagenes()">
+                    <app-icono nombre="camara" [tamano]="18" />Tomar foto con la cámara
+                    <input type="file" class="sr-only" accept="image/jpeg,image/png,image/webp" capture="environment" (change)="elegir($event)" [disabled]="fotos().length >= config.maxImagenes()" />
                   </label>
                 }
 
