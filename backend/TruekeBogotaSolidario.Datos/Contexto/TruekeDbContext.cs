@@ -273,6 +273,10 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.Texto).HasMaxLength(Mensaje.LongitudMaxima).IsRequired();
             e.Property(x => x.FotoUrl).HasMaxLength(Mensaje.LongitudMaximaFoto);
             e.Property(x => x.MotivoOcultamiento).HasMaxLength(300);
+            e.Property(x => x.MotivoRevision).HasMaxLength(Mensaje.LongitudMaximaMotivoRevision);
+            e.Ignore(x => x.MarcaPendiente);
+            // Solo los marcados sin revisar: la fila del panel no recorre todo el chat.
+            e.HasIndex(x => x.MarcadoUtc).HasFilter("\"MarcadoUtc\" IS NOT NULL AND \"MarcaRevisadaUtc\" IS NULL");
             e.HasOne(x => x.Conversacion).WithMany().HasForeignKey(x => x.ConversacionId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne<Usuario>().WithMany().HasForeignKey(x => x.AutorId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.RespuestaA).WithMany().HasForeignKey(x => x.RespuestaAId).OnDelete(DeleteBehavior.Restrict);

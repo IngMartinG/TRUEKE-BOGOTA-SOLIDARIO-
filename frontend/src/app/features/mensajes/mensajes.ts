@@ -190,6 +190,14 @@ const TAMANO = 40;
                       @if (m.texto) {
                         <p class="break-words whitespace-pre-line">{{ m.texto }}</p>
                       }
+                      @if (m.avisoSeguridad) {
+                        <!-- El filtro del chat lo marcó (contacto por fuera, enlaces o un posible artículo prohibido) -->
+                        <p class="mt-1.5 flex items-start gap-1.5 rounded-lg px-2 py-1.5 text-xs"
+                          [class]="m.esMio ? 'bg-white/15 text-white' : 'bg-sol-100 text-sol-700 dark:bg-sol-500/20 dark:text-sol-100'">
+                          <app-icono nombre="escudo" [tamano]="14" class="mt-px shrink-0" />
+                          <span>{{ m.esMio ? 'Por tu seguridad, coordina la entrega por este chat y evita compartir datos personales.' : 'Por tu seguridad, coordina la entrega por este chat y nunca pagues por adelantado.' }}</span>
+                        </p>
+                      }
                     }
                     <p class="mt-0.5 flex items-center justify-end gap-1 text-[11px]" [class]="m.esMio ? 'text-white/85' : 'text-tenue'">
                       {{ m.fechaUtc | hora }}

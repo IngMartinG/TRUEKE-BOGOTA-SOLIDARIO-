@@ -52,6 +52,8 @@ import { ErrorCarga } from '../../shared/ui/error-carga';
             </div>
             @if (enlace(d); as ruta) {
               <a [routerLink]="ruta" target="_blank" class="btn btn-secundario btn-sm"><app-icono nombre="externo" [tamano]="14" />Ver contenido</a>
+            } @else if (d.tipo === 'Mensaje' && d.objetivoExiste) {
+              <a routerLink="/admin/chat" [queryParams]="{ mensaje: d.objetivoId }" class="btn btn-secundario btn-sm"><app-icono nombre="mensaje" [tamano]="14" />Ver la conversación</a>
             }
           </div>
           @if (d.vistaPrevia) {

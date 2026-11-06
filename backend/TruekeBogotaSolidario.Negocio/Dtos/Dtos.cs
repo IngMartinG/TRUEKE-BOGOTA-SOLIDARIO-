@@ -813,7 +813,8 @@ public sealed record ComentarioDto(Guid Id, Guid PublicacionId, PerfilPublicoDto
 /// ya no existe (p. ej. su autor eliminó la cuenta): el front muestra "Foto no disponible".
 /// </summary>
 public sealed record MensajeChatDto(Guid Id, Guid ConversacionId, bool EsMio, string Texto, DateTime FechaUtc, bool Leido, bool Oculto,
-    MensajeCitadoDto? RespuestaA = null, EstadoMensajeDto Estado = EstadoMensajeDto.Enviado, bool TieneFoto = false, string? FotoUrl = null);
+    MensajeCitadoDto? RespuestaA = null, EstadoMensajeDto Estado = EstadoMensajeDto.Enviado, bool TieneFoto = false, string? FotoUrl = null,
+    bool AvisoSeguridad = false);
 
 /// <summary>✓ enviado · ✓✓ entregado (llegó al dispositivo) · ✓✓ de color leído.</summary>
 [System.Text.Json.Serialization.JsonConverter(typeof(System.Text.Json.Serialization.JsonStringEnumConverter<EstadoMensajeDto>))]
@@ -949,16 +950,16 @@ public sealed record PublicacionesEnRevisionDto(IReadOnlyList<PublicacionEnRevis
 /// las revisa solo el SuperUsuario: para un Administrador van en 0.
 /// </summary>
 public sealed record PendientesModeracionDto(int Publicaciones, int Denuncias, int Apelaciones, int Fotos, int Verificaciones,
-    int Negocios, int Pqr, int Pagos, int Facturas, int Menores, int Fundaciones, int Empresas)
+    int Negocios, int Pqr, int Pagos, int Facturas, int Menores, int Fundaciones, int Empresas, int MensajesMarcados)
 {
     public int Total => Publicaciones + Denuncias + Apelaciones + Fotos + Verificaciones + Negocios + Pqr + Pagos + Facturas + Menores
-        + Fundaciones + Empresas;
+        + Fundaciones + Empresas + MensajesMarcados;
 
     internal static PendientesModeracionDto Desde(Datos.Repositorios.ConteoPendientesModeracion c, bool esSuperUsuario)
         => new(c.Publicaciones, c.Denuncias, c.Apelaciones, c.Fotos, c.Verificaciones, c.Negocios, c.Pqr, c.Pagos, c.Facturas, c.Menores,
-            esSuperUsuario ? c.Fundaciones : 0, esSuperUsuario ? c.Empresas : 0);
+            esSuperUsuario ? c.Fundaciones : 0, esSuperUsuario ? c.Empresas : 0, c.MensajesMarcados);
 
-    internal string Firma() => $"{Publicaciones}|{Denuncias}|{Apelaciones}|{Fotos}|{Verificaciones}|{Negocios}|{Pqr}|{Pagos}|{Facturas}|{Menores}|{Fundaciones}|{Empresas}";
+    internal string Firma() => $"{Publicaciones}|{Denuncias}|{Apelaciones}|{Fotos}|{Verificaciones}|{Negocios}|{Pqr}|{Pagos}|{Facturas}|{Menores}|{Fundaciones}|{Empresas}|{MensajesMarcados}";
 
     /// <summary>Una línea por categoría con pendientes (para el correo resumen).</summary>
     internal IEnumerable<string> Lineas()
@@ -977,9 +978,30 @@ public sealed record PendientesModeracionDto(int Publicaciones, int Denuncias, i
             (Menores, "1 cuenta con posible menor de edad", "cuentas con posible menor de edad"),
             (Fundaciones, "1 fundación por verificar", "fundaciones por verificar"),
             (Empresas, "1 empresa por verificar", "empresas por verificar"),
+            (MensajesMarcados, "1 mensaje del chat marcado por el filtro", "mensajes del chat marcados por el filtro"),
         ];
         return filas.Where(f => f.N > 0).Select(f => f.N == 1 ? $"• {f.Uno}" : $"• {f.N} {f.Varios}");
     }
+}
+
+/// <summary>Mensaje del chat que el filtro automático marcó y nadie ha revisado.</summary>
+public sealed record MensajeMarcadoDto(Guid MensajeId, Guid ConversacionId, Guid AutorId, string Autor, string Texto, bool TieneFoto,
+    string Motivo, DateTime MarcadoUtc);
+public sealed record ParticipanteChatDto(Guid Id, string NombreCompleto);
+/// <summary>Un mensaje del contexto. El moderador ve también el texto de los ocultos (con <c>Oculto</c> en true).</summary>
+public sealed record MensajeContextoDto(Guid Id, Guid AutorId, string Texto, string? FotoUrl, DateTime FechaUtc, bool Oculto,
+    string? MotivoRevision, bool EsElRevisado);
+/// <summary>Los mensajes de alrededor de uno marcado o denunciado: solo se entregan para ese mensaje y quedan en la auditoría.</summary>
+public sealed record ContextoChatDto(Guid MensajeId, Guid ConversacionId, string? Publicacion, IReadOnlyList<ParticipanteChatDto> Participantes,
+    IReadOnlyList<MensajeContextoDto> Mensajes, bool MarcaPendiente, int Denuncias);
+
+public enum AccionMensajeMarcadoDto { Descartar = 1, Ocultar = 2 }
+
+public sealed class ResolverMensajeMarcadoRequest
+{
+    /// <summary>Descartar: la marca no era un problema. Ocultar: el mensaje deja de verse en el chat y su autor recibe un aviso.</summary>
+    [EnumDataType(typeof(AccionMensajeMarcadoDto))] public AccionMensajeMarcadoDto Accion { get; init; }
+    [StringLength(300, MinimumLength = 3)] public string? Nota { get; init; }
 }
 
 public sealed class AprobarPublicacionesRequest

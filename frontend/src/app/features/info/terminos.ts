@@ -125,6 +125,7 @@ export default class Terminos {
         titulo: 'Conducta, moderación y debido proceso',
         parrafos: [
           'Trata a los demás con respeto, cumple lo que acuerdas y usa el chat interno para coordinar: no compartas datos personales ni pidas pagos por fuera de lo acordado. Te recomendamos hacer las entregas en lugares públicos y seguros.',
+          'Para proteger a la comunidad, cada mensaje del chat pasa por una revisión automática, sin que nadie lo lea: no se envían los mensajes que ofrecen armas, explosivos, drogas o medicamentos controlados, y los que comparten teléfonos, correos, enlaces o invitan a seguir por fuera de la plataforma se envían con un aviso de seguridad y quedan marcados. El equipo de moderación solo puede leer un mensaje marcado o denunciado, junto con los mensajes de alrededor para entender el contexto, y cada lectura queda registrada.',
           'Cualquier persona puede denunciar una publicación, un comentario, un mensaje o una cuenta. El equipo de moderación revisa la denuncia y puede ocultar el contenido o suspender la cuenta. A la persona denunciada se le avisa la decisión sin revelar quién la denunció, y puede apelar dentro de los 15 días siguientes; la apelación la resuelve un moderador distinto.',
           'Las infracciones graves (estafa, suplantación, contenido ilegal) o repetidas pueden llevar a la suspensión definitiva de la cuenta.',
         ],

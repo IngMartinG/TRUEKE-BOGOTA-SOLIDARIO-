@@ -97,17 +97,17 @@ public static partial class EvaluadorRiesgo
     }
 
     [GeneratedRegex(@"[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}", RegexOptions.CultureInvariant)]
-    private static partial Regex Correo();
+    internal static partial Regex Correo();
 
     [GeneratedRegex(@"https?://|www\.|\b(?:wa\.me|t\.me|bit\.ly|linktr\.ee)\b|\b[a-z0-9-]{2,}\.(?:com|co|net|org|me|io|store|shop)\b",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
-    private static partial Regex Enlace();
+    internal static partial Regex Enlace();
 
     /// <summary>Celular colombiano (3xx xxx xxxx, con o sin +57) o fijo (60x xxx xxxx). Un precio como 1.500.000 no coincide.</summary>
     [GeneratedRegex(@"(?<!\d)(?:\+?\s*57[\s.-]*)?(?:3\d{2}|60\d)[\s.-]*\d{3}[\s.-]*\d{2}[\s.-]*\d{2}(?!\d)", RegexOptions.CultureInvariant)]
-    private static partial Regex Telefono();
+    internal static partial Regex Telefono();
 
     /// <summary>Medios de pago como Nequi no cuentan: una venta se paga por fuera de la plataforma.</summary>
     [GeneratedRegex(@" (?:whatsapp|wasap|wsp|whasap|telegram|instagram) ", RegexOptions.CultureInvariant)]
-    private static partial Regex FueraDePlataforma();
+    internal static partial Regex FueraDePlataforma();
 }

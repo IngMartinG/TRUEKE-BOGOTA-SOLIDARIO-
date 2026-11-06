@@ -419,6 +419,126 @@
         }
       }
     },
+    "/api/v1/admin/chat/marcados": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MensajeMarcadoDto"
+                  }
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MensajeMarcadoDto"
+                  }
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/MensajeMarcadoDto"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/chat/mensajes/{mensajeId}/contexto": {
+      "get": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "mensajeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextoChatDto"
+                }
+              },
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextoChatDto"
+                }
+              },
+              "text/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ContextoChatDto"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/chat/mensajes/{mensajeId}/resolver": {
+      "post": {
+        "tags": [
+          "Administracion"
+        ],
+        "parameters": [
+          {
+            "name": "mensajeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolverMensajeMarcadoRequest"
+              }
+            },
+            "text/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolverMensajeMarcadoRequest"
+              }
+            },
+            "application/*\u002Bjson": {
+              "schema": {
+                "$ref": "#/components/schemas/ResolverMensajeMarcadoRequest"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "OK"
+          }
+        }
+      }
+    },
     "/api/v1/admin/negocios": {
       "get": {
         "tags": [
@@ -8156,6 +8276,13 @@
         ],
         "type": "string"
       },
+      "AccionMensajeMarcadoDto": {
+        "enum": [
+          "Descartar",
+          "Ocultar"
+        ],
+        "type": "string"
+      },
       "AceptarLegalRequest": {
         "type": "object",
         "properties": {
@@ -8993,6 +9120,43 @@
             "maxLength": 2048,
             "type": "string",
             "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ContextoChatDto": {
+        "type": "object",
+        "properties": {
+          "mensajeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "conversacionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "publicacion": {
+            "type": "string",
+            "nullable": true
+          },
+          "participantes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ParticipanteChatDto"
+            }
+          },
+          "mensajes": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MensajeContextoDto"
+            }
+          },
+          "marcaPendiente": {
+            "type": "boolean"
+          },
+          "denuncias": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false
@@ -11582,6 +11746,9 @@
           "fotoUrl": {
             "type": "string",
             "nullable": true
+          },
+          "avisoSeguridad": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -11605,6 +11772,41 @@
         },
         "additionalProperties": false
       },
+      "MensajeContextoDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "autorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "fotoUrl": {
+            "type": "string",
+            "nullable": true
+          },
+          "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "oculto": {
+            "type": "boolean"
+          },
+          "motivoRevision": {
+            "type": "string",
+            "nullable": true
+          },
+          "esElRevisado": {
+            "type": "boolean"
+          }
+        },
+        "additionalProperties": false
+      },
       "MensajeExportDto": {
         "type": "object",
         "properties": {
@@ -11620,6 +11822,40 @@
             "type": "string"
           },
           "fechaUtc": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "additionalProperties": false
+      },
+      "MensajeMarcadoDto": {
+        "type": "object",
+        "properties": {
+          "mensajeId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "conversacionId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "autorId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "autor": {
+            "type": "string"
+          },
+          "texto": {
+            "type": "string"
+          },
+          "tieneFoto": {
+            "type": "boolean"
+          },
+          "motivo": {
+            "type": "string"
+          },
+          "marcadoUtc": {
             "type": "string",
             "format": "date-time"
           }
@@ -12384,6 +12620,19 @@
         },
         "additionalProperties": false
       },
+      "ParticipanteChatDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "nombreCompleto": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": false
+      },
       "PendientesModeracionDto": {
         "type": "object",
         "properties": {
@@ -12432,6 +12681,10 @@
             "format": "int32"
           },
           "empresas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "mensajesMarcados": {
             "type": "integer",
             "format": "int32"
           },
@@ -13501,6 +13754,21 @@
         "properties": {
           "accion": {
             "$ref": "#/components/schemas/AccionDenunciaDto"
+          },
+          "nota": {
+            "maxLength": 300,
+            "minLength": 3,
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "additionalProperties": false
+      },
+      "ResolverMensajeMarcadoRequest": {
+        "type": "object",
+        "properties": {
+          "accion": {
+            "$ref": "#/components/schemas/AccionMensajeMarcadoDto"
           },
           "nota": {
             "maxLength": 300,

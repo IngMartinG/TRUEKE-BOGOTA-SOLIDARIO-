@@ -87,6 +87,32 @@ public class Mensaje
     public bool EstaOculto { get; private set; }
     public string? MotivoOcultamiento { get; private set; }
 
+    public const int LongitudMaximaMotivoRevision = 200;
+    /// <summary>
+    /// El filtro automático lo marcó (datos de contacto, invitación a salir de la plataforma o un posible artículo
+    /// prohibido): se envió igual, pero un moderador puede leerlo junto con los mensajes de alrededor.
+    /// </summary>
+    public DateTime? MarcadoUtc { get; private set; }
+    public string? MotivoRevision { get; private set; }
+    /// <summary>Un moderador ya revisó la marca (la descartó u ocultó el mensaje).</summary>
+    public DateTime? MarcaRevisadaUtc { get; private set; }
+    public bool MarcaPendiente => MarcadoUtc is not null && MarcaRevisadaUtc is null && !EstaOculto;
+
+    public void MarcarParaRevision(string motivo, DateTime ahoraUtc)
+    {
+        if (string.IsNullOrWhiteSpace(motivo)) throw new ReglaDeNegocioException("Debes indicar por qué se marca el mensaje.");
+        var m = motivo.Trim();
+        MotivoRevision = m.Length > LongitudMaximaMotivoRevision ? m[..LongitudMaximaMotivoRevision] : m;
+        MarcadoUtc = ahoraUtc;
+        MarcaRevisadaUtc = null;
+    }
+
+    public void RegistrarRevisionMarca(DateTime ahoraUtc)
+    {
+        if (MarcadoUtc is null) throw new ReglaDeNegocioException("El mensaje no está marcado para revisión.");
+        MarcaRevisadaUtc ??= ahoraUtc;
+    }
+
     public void MarcarEntregado(DateTime ahoraUtc) => EntregadoUtc ??= ahoraUtc;
 
     public void MarcarLeido(DateTime ahoraUtc)

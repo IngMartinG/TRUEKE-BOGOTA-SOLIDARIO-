@@ -10,6 +10,9 @@ import type {
   PublicacionesEnRevisionDto,
   ApelacionAdminDto,
   DenunciaAgrupadaDto,
+  AccionMensajeMarcadoDto,
+  ContextoChatDto,
+  MensajeMarcadoDto,
   EstadoApelacionDto,
   EstadoDenunciaDto,
   CorregirCompradorFacturaRequest,
@@ -55,6 +58,12 @@ export class AdminApi {
     this.api.get<DenunciaAgrupadaDto[]>('/admin/denuncias', { params: { estado } });
   resolverDenuncia = (id: string, accion: AccionDenunciaDto, nota: string | null) =>
     this.api.post<void>(`/admin/denuncias/${seg(id)}/resolver`, { accion, nota });
+  /** Mensajes del chat que el filtro marcó y nadie revisó. */
+  mensajesMarcados = () => this.api.get<MensajeMarcadoDto[]>('/admin/chat/marcados');
+  /** Solo para un mensaje marcado o denunciado; la lectura queda en la auditoría. */
+  contextoChat = (mensajeId: string) => this.api.get<ContextoChatDto>(`/admin/chat/mensajes/${seg(mensajeId)}/contexto`);
+  resolverMensajeMarcado = (mensajeId: string, accion: AccionMensajeMarcadoDto, nota: string | null) =>
+    this.api.post<void>(`/admin/chat/mensajes/${seg(mensajeId)}/resolver`, { accion, nota });
   apelaciones = (estado: EstadoApelacionDto) =>
     this.api.get<ApelacionAdminDto[]>('/admin/apelaciones', { params: { estado } });
   resolverApelacion = (id: string, aceptar: boolean, nota: string) =>

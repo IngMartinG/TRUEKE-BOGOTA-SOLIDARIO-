@@ -962,6 +962,28 @@ public sealed class ConversacionRepository : IConversacionRepository
 
     public void Agregar(Conversacion conversacion) => _db.Conversaciones.Add(conversacion);
     public void AgregarMensaje(Mensaje mensaje) => _db.Mensajes.Add(mensaje);
+
+    public Task<bool> ExisteMarcadoDesdeAsync(Guid conversacionId, DateTime desdeUtc)
+        => _db.Mensajes.AnyAsync(m => m.ConversacionId == conversacionId && m.MarcadoUtc != null && m.MarcadoUtc >= desdeUtc);
+
+    internal static IQueryable<Mensaje> MarcadosPendientes(TruekeDbContext db)
+        => db.Mensajes.Where(m => m.MarcadoUtc != null && m.MarcaRevisadaUtc == null && !m.EstaOculto);
+
+    public async Task<IReadOnlyList<Mensaje>> ListarMarcadosPendientesAsync(int maximo)
+        => await MarcadosPendientes(_db).AsNoTracking().Include(m => m.Conversacion)
+            .OrderBy(m => m.MarcadoUtc).ThenBy(m => m.Id).Take(Math.Clamp(maximo, 1, 200)).ToListAsync();
+
+    public async Task<IReadOnlyList<Mensaje>> ContextoAsync(Mensaje mensaje, int cuantos)
+    {
+        var antes = await _db.Mensajes.AsNoTracking()
+            .Where(m => m.ConversacionId == mensaje.ConversacionId && (m.FechaUtc < mensaje.FechaUtc || (m.FechaUtc == mensaje.FechaUtc && m.Id != mensaje.Id)))
+            .OrderByDescending(m => m.FechaUtc).Take(cuantos).ToListAsync();
+        var despues = await _db.Mensajes.AsNoTracking()
+            .Where(m => m.ConversacionId == mensaje.ConversacionId && m.FechaUtc > mensaje.FechaUtc)
+            .OrderBy(m => m.FechaUtc).Take(cuantos).ToListAsync();
+        var propio = await _db.Mensajes.AsNoTracking().FirstAsync(m => m.Id == mensaje.Id);
+        return antes.Append(propio).Concat(despues).OrderBy(m => m.FechaUtc).ThenBy(m => m.Id).ToList();
+    }
 }
 
 public sealed class BloqueoRepository : IBloqueoRepository
@@ -996,6 +1018,9 @@ public sealed class DenunciaRepository : IDenunciaRepository
 
     public Task<bool> ExisteAsync(Guid denuncianteId, TipoObjetoDenuncia tipo, Guid objetivoId)
         => _db.Denuncias.AnyAsync(d => d.DenuncianteId == denuncianteId && d.Tipo == tipo && d.ObjetivoId == objetivoId);
+
+    public Task<int> ContarSobreObjetivoAsync(TipoObjetoDenuncia tipo, Guid objetivoId)
+        => _db.Denuncias.CountAsync(d => d.Tipo == tipo && d.ObjetivoId == objetivoId);
 
     public Task<int> ContarDelDenuncianteDesdeAsync(Guid denuncianteId, DateTime desdeUtc)
         => _db.Denuncias.CountAsync(d => d.DenuncianteId == denuncianteId && d.FechaUtc >= desdeUtc);
@@ -1370,7 +1395,8 @@ public sealed class PendientesModeracionRepository : IPendientesModeracionReposi
         Facturas: await _db.Facturas.CountAsync(f => f.Estado == EstadoFactura.Pendiente),
         Menores: await _db.Usuarios.CountAsync(u => u.MenorDetectadoUtc != null && !u.EstaEliminado),
         Fundaciones: await _db.Fundaciones.CountAsync(f => f.Estado == EstadoFundacion.Pendiente),
-        Empresas: await _db.Empresas.CountAsync(e => e.Estado == EstadoEmpresa.Pendiente));
+        Empresas: await _db.Empresas.CountAsync(e => e.Estado == EstadoEmpresa.Pendiente),
+        MensajesMarcados: await ConversacionRepository.MarcadosPendientes(_db).CountAsync());
 }
 
 public sealed class AuditoriaRepository : IAuditoriaRepository
