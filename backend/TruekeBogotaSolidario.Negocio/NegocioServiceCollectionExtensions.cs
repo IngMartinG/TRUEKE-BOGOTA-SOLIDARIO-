@@ -183,6 +183,7 @@ public static class NegocioServiceCollectionExtensions
         services.AddScoped<IPqrService, PqrService>();
         services.AddScoped<IOferenteService, OferenteService>();
         services.AddScoped<IAvisosModeracion, AvisosModeracion>();
+        services.AddScoped<IModeracionChatService, ModeracionChatService>();
         services.AddSingleton<EstadoResumenModeracion>();
         services.AddHostedService<ResumenModeracionHostedService>();
         services.AddSingleton<ResumenPqrPublicas>();

@@ -101,6 +101,24 @@ public sealed class AdministracionController : ControllerBase
         return NoContent();
     }
 
+    // ---- Chat: solo lo que el filtro marcó o alguien denunció (cada lectura del contexto queda en la auditoría)
+    [HttpGet("chat/marcados"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<IReadOnlyList<MensajeMarcadoDto>>> MensajesMarcados([FromServices] IModeracionChatService chat)
+        => Ok(await chat.ListarMarcadosAsync(User.IdActual()));
+
+    /// <summary>Hasta 10 mensajes antes y después. 404 si el mensaje no está marcado ni denunciado.</summary>
+    [HttpGet("chat/mensajes/{mensajeId:guid}/contexto"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<ContextoChatDto>> ContextoChat(Guid mensajeId, [FromServices] IModeracionChatService chat)
+        => Ok(await chat.ContextoAsync(User.IdActual(), mensajeId));
+
+    [HttpPost("chat/mensajes/{mensajeId:guid}/resolver"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<IActionResult> ResolverMensajeMarcado(Guid mensajeId, [FromBody] ResolverMensajeMarcadoRequest r,
+        [FromServices] IModeracionChatService chat)
+    {
+        await chat.ResolverAsync(User.IdActual(), mensajeId, r.Accion, r.Nota);
+        return NoContent();
+    }
+
     // ---- Negocios: el sello "Negocio verificado" (NIT revisado contra el RUES)
     [HttpGet("negocios"), Authorize(Policy = Politicas.Moderador)]
     public async Task<ActionResult<IReadOnlyList<NegocioPorVerificarDto>>> NegociosPorVerificar([FromServices] INegocioService negocios)

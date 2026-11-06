@@ -16,6 +16,7 @@ export default [
       { path: 'apelaciones', title: 'Moderación · Apelaciones', loadComponent: () => import('./apelaciones') },
       { path: 'usuarios', title: 'Moderación · Usuarios', loadComponent: () => import('./usuarios') },
       { path: 'publicaciones', title: 'Moderación · Publicaciones en revisión', loadComponent: () => import('./publicaciones-pendientes') },
+      { path: 'chat', title: 'Moderación · Chat', loadComponent: () => import('./chat') },
       { path: 'fotos', title: 'Moderación · Fotos de perfil', loadComponent: () => import('./fotos') },
       { path: 'negocios', title: 'Moderación · Negocios', loadComponent: () => import('./negocios') },
       { path: 'empresas', title: 'Administración · Empresas e informes', loadComponent: () => import('./empresas') },

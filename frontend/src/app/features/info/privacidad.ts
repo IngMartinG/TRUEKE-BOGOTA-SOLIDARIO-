@@ -72,6 +72,7 @@ export default class Privacidad {
           'Otorgar Eco-Puntos y reputación, y prevenir el fraude, la suplantación y el abuso (por ejemplo, cuentas duplicadas).',
           'Procesar los pagos de los servicios opcionales y emitir las facturas electrónicas.',
           'Atender peticiones, quejas, reclamos y solicitudes de retracto, y aplicar la moderación con debido proceso.',
+          'Revisar automáticamente el texto de los mensajes del chat (sin que una persona lo lea) para frenar la venta de artículos prohibidos y advertir cuando se comparten datos de contacto. El equipo de moderación solo lee un mensaje marcado o denunciado y los mensajes de alrededor, y cada lectura queda registrada.',
           'Llevar el registro de quienes venden que exige el Estatuto del Consumidor a un portal de contacto (Ley 1480, art. 53), y entregarlo solo a quien te compró y presenta un reclamo por PQRS, o a la autoridad que lo pida. Cada consulta del equipo queda registrada.',
           'Verificar que una cuenta representa a una fundación o entidad sin ánimo de lucro existente antes de mostrar la insignia «Fundación verificada» y su página pública, para que la comunidad sepa a quién dona.',
           'Cumplir obligaciones legales, contables y tributarias, y responder a requerimientos de autoridades competentes.',

@@ -464,6 +464,123 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/chat/marcados": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path?: never;
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["MensajeMarcadoDto"][];
+                        "application/json": components["schemas"]["MensajeMarcadoDto"][];
+                        "text/json": components["schemas"]["MensajeMarcadoDto"][];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/chat/mensajes/{mensajeId}/contexto": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    mensajeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: never;
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content: {
+                        "text/plain": components["schemas"]["ContextoChatDto"];
+                        "application/json": components["schemas"]["ContextoChatDto"];
+                        "text/json": components["schemas"]["ContextoChatDto"];
+                    };
+                };
+            };
+        };
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/chat/mensajes/{mensajeId}/resolver": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: {
+            parameters: {
+                query?: never;
+                header?: never;
+                path: {
+                    mensajeId: string;
+                };
+                cookie?: never;
+            };
+            requestBody?: {
+                content: {
+                    "application/json": components["schemas"]["ResolverMensajeMarcadoRequest"];
+                    "text/json": components["schemas"]["ResolverMensajeMarcadoRequest"];
+                    "application/*+json": components["schemas"]["ResolverMensajeMarcadoRequest"];
+                };
+            };
+            responses: {
+                /** @description OK */
+                200: {
+                    headers: {
+                        [name: string]: unknown;
+                    };
+                    content?: never;
+                };
+            };
+        };
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/negocios": {
         parameters: {
             query?: never;
@@ -7500,6 +7617,8 @@ export interface components {
     schemas: {
         /** @enum {string} */
         AccionDenunciaDto: "Descartar" | "OcultarContenido" | "MarcarRevisada";
+        /** @enum {string} */
+        AccionMensajeMarcadoDto: "Descartar" | "Ocultar";
         AceptarLegalRequest: {
             aceptoPoliticaDatos?: boolean;
             aceptoTerminos?: boolean;
@@ -7767,6 +7886,18 @@ export interface components {
             /** Format: email */
             correo: string;
             captchaToken?: string | null;
+        };
+        ContextoChatDto: {
+            /** Format: uuid */
+            mensajeId?: string;
+            /** Format: uuid */
+            conversacionId?: string;
+            publicacion?: string | null;
+            participantes?: components["schemas"]["ParticipanteChatDto"][];
+            mensajes?: components["schemas"]["MensajeContextoDto"][];
+            marcaPendiente?: boolean;
+            /** Format: int32 */
+            denuncias?: number;
         };
         ContraofertaRequest: {
             publicacionesOfrecidasIds?: string[] | null;
@@ -8599,6 +8730,7 @@ export interface components {
             estado?: components["schemas"]["EstadoMensajeDto"];
             tieneFoto?: boolean;
             fotoUrl?: string | null;
+            avisoSeguridad?: boolean;
         };
         MensajeCitadoDto: {
             /** Format: uuid */
@@ -8606,6 +8738,19 @@ export interface components {
             esMio?: boolean;
             texto?: string;
             oculto?: boolean;
+        };
+        MensajeContextoDto: {
+            /** Format: uuid */
+            id?: string;
+            /** Format: uuid */
+            autorId?: string;
+            texto?: string;
+            fotoUrl?: string | null;
+            /** Format: date-time */
+            fechaUtc?: string;
+            oculto?: boolean;
+            motivoRevision?: string | null;
+            esElRevisado?: boolean;
         };
         MensajeExportDto: {
             /** Format: uuid */
@@ -8615,6 +8760,20 @@ export interface components {
             texto?: string;
             /** Format: date-time */
             fechaUtc?: string;
+        };
+        MensajeMarcadoDto: {
+            /** Format: uuid */
+            mensajeId?: string;
+            /** Format: uuid */
+            conversacionId?: string;
+            /** Format: uuid */
+            autorId?: string;
+            autor?: string;
+            texto?: string;
+            tieneFoto?: boolean;
+            motivo?: string;
+            /** Format: date-time */
+            marcadoUtc?: string;
         };
         MetaComunitariaDto: {
             /** Format: uuid */
@@ -8886,6 +9045,11 @@ export interface components {
             /** Format: int32 */
             bono?: number;
         };
+        ParticipanteChatDto: {
+            /** Format: uuid */
+            id?: string;
+            nombreCompleto?: string;
+        };
         PendientesModeracionDto: {
             /** Format: int32 */
             publicaciones?: number;
@@ -8911,6 +9075,8 @@ export interface components {
             fundaciones?: number;
             /** Format: int32 */
             empresas?: number;
+            /** Format: int32 */
+            mensajesMarcados?: number;
             /** Format: int32 */
             readonly total?: number;
         };
@@ -9290,6 +9456,10 @@ export interface components {
             accion?: components["schemas"]["AccionDenunciaDto"];
             nota?: string | null;
         };
+        ResolverMensajeMarcadoRequest: {
+            accion?: components["schemas"]["AccionMensajeMarcadoDto"];
+            nota?: string | null;
+        };
         ResponderPqrRequest: {
             respuesta: string;
         };
@@ -9554,6 +9724,7 @@ export interface components {
     pathItems: never;
 }
 export type AccionDenunciaDto = components['schemas']['AccionDenunciaDto'];
+export type AccionMensajeMarcadoDto = components['schemas']['AccionMensajeMarcadoDto'];
 export type AceptarLegalRequest = components['schemas']['AceptarLegalRequest'];
 export type ActivacionDosFactoresDto = components['schemas']['ActivacionDosFactoresDto'];
 export type ActualizarFactorImpactoRequest = components['schemas']['ActualizarFactorImpactoRequest'];
@@ -9591,6 +9762,7 @@ export type ConfiguracionPublicaDto = components['schemas']['ConfiguracionPublic
 export type ConfirmarEntregaRequest = components['schemas']['ConfirmarEntregaRequest'];
 export type ConfirmarIdentidadRequest = components['schemas']['ConfirmarIdentidadRequest'];
 export type ConsultarPqrRequest = components['schemas']['ConsultarPqrRequest'];
+export type ContextoChatDto = components['schemas']['ContextoChatDto'];
 export type ContraofertaRequest = components['schemas']['ContraofertaRequest'];
 export type ConversacionDto = components['schemas']['ConversacionDto'];
 export type CorregirCompradorFacturaRequest = components['schemas']['CorregirCompradorFacturaRequest'];
@@ -9671,7 +9843,9 @@ export type LogroDto = components['schemas']['LogroDto'];
 export type MaterialDto = components['schemas']['MaterialDto'];
 export type MensajeChatDto = components['schemas']['MensajeChatDto'];
 export type MensajeCitadoDto = components['schemas']['MensajeCitadoDto'];
+export type MensajeContextoDto = components['schemas']['MensajeContextoDto'];
 export type MensajeExportDto = components['schemas']['MensajeExportDto'];
+export type MensajeMarcadoDto = components['schemas']['MensajeMarcadoDto'];
 export type MetaComunitariaDto = components['schemas']['MetaComunitariaDto'];
 export type MiEmpresaDto = components['schemas']['MiEmpresaDto'];
 export type MiFundacionDto = components['schemas']['MiFundacionDto'];
@@ -9699,6 +9873,7 @@ export type PagoAdminDtoPaginaDto = components['schemas']['PagoAdminDtoPaginaDto
 export type PagoEstadoDto = components['schemas']['PagoEstadoDto'];
 export type PagoIniciadoDto = components['schemas']['PagoIniciadoDto'];
 export type PaqueteRecargaDto = components['schemas']['PaqueteRecargaDto'];
+export type ParticipanteChatDto = components['schemas']['ParticipanteChatDto'];
 export type PendientesModeracionDto = components['schemas']['PendientesModeracionDto'];
 export type PerfilEmpresaRequest = components['schemas']['PerfilEmpresaRequest'];
 export type PerfilPublicoDto = components['schemas']['PerfilPublicoDto'];
@@ -9725,6 +9900,7 @@ export type RegimenFundacionRequest = components['schemas']['RegimenFundacionReq
 export type RegistroRequest = components['schemas']['RegistroRequest'];
 export type ResolverApelacionRequest = components['schemas']['ResolverApelacionRequest'];
 export type ResolverDenunciaRequest = components['schemas']['ResolverDenunciaRequest'];
+export type ResolverMensajeMarcadoRequest = components['schemas']['ResolverMensajeMarcadoRequest'];
 export type ResponderPqrRequest = components['schemas']['ResponderPqrRequest'];
 export type RespuestaAsistenteDto = components['schemas']['RespuestaAsistenteDto'];
 export type RestablecerClaveRequest = components['schemas']['RestablecerClaveRequest'];

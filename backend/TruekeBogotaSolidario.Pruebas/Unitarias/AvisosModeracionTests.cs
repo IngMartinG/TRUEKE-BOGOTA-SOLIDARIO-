@@ -99,7 +99,7 @@ public class AvisosModeracionTests
     [Fact]
     public void Para_un_Administrador_fundaciones_y_empresas_van_en_cero()
     {
-        var c = new Datos.Repositorios.ConteoPendientesModeracion(1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 3, 4);
+        var c = new Datos.Repositorios.ConteoPendientesModeracion(1, 2, 0, 0, 0, 0, 0, 0, 0, 0, 3, 4, 0);
         Assert.Equal(10, PendientesModeracionDto.Desde(c, esSuperUsuario: true).Total);
         var admin = PendientesModeracionDto.Desde(c, esSuperUsuario: false);
         Assert.Equal((0, 0, 3), (admin.Fundaciones, admin.Empresas, admin.Total));

@@ -34,6 +34,8 @@ function destino(n: NotificacionDto): { icono: string; color: string; ruta: unkn
   };
   const m = moderacion[t];
   if (m) return { icono: m.icono, color: m.color, ruta: [m.ruta] };
+  if (t === 'MensajeMarcado')
+    return { icono: 'mensaje', color: 'bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100', ruta: ['/admin/chat'], ...(n.recursoId ? { query: { mensaje: n.recursoId } } : {}) };
   if (t === 'AlertaPagoEnRevision') return { icono: 'alerta', color: 'bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100', ruta: ['/admin/pagos'] };
   if (t === 'PqrNueva') return { icono: 'soporte', color: 'bg-agua-100 text-agua-700 dark:bg-agua-700/30 dark:text-agua-100', ruta: ['/admin/pqr'] };
   if (t === 'MenorDetectado') return { icono: 'alerta', color: 'bg-tierra-100 text-tierra-700 dark:bg-tierra-700/30 dark:text-tierra-100', ruta: ['/admin/usuarios'], query: { menor: '1' } };

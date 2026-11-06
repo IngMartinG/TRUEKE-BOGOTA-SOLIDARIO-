@@ -923,6 +923,19 @@ tenía una foto sin rostro recibe un aviso y 7 días para cambiarla.
   escribe a cada moderador que no está en línea, solo si hay pendientes y cambiaron desde el último correo. Solo números y
   un enlace a `/admin`.
 
+## Hecho el 2026-11-06 — moderación del chat sin leer conversaciones
+- **Filtro automático** (`FiltroChat`, reutiliza las expresiones de `EvaluadorRiesgo`): no se envían los mensajes con
+  artículos claramente ilícitos (armas de fuego, municiones, explosivos, drogas, medicamentos controlados); los que comparten
+  teléfono, correo, enlace o invitan a WhatsApp/Telegram, o mencionan algo dudoso ("cachorros", "réplica"), se envían
+  **marcados** (`Mensaje.MarcadoUtc`, migración `MensajesMarcados`) y ambas partes ven un aviso de seguridad.
+  Lista adicional en `Moderacion:ArticulosRestringidos`. El mensaje de la solicitud inicial no pasa por el filtro.
+- **Revisión con contexto:** pestaña Chat del panel. `GET /admin/chat/marcados`, `GET /admin/chat/mensajes/{id}/contexto`
+  (10 antes y 10 después; 404 si el mensaje no está marcado ni denunciado; cada lectura queda en la auditoría como
+  `CHAT_CONTEXTO_VISTO`) y `POST .../resolver` (Descartar u Ocultar; al ocultar se avisa al autor con `MensajeOcultado`).
+  Las denuncias de mensajes enlazan a esa vista. Aviso `MensajeMarcado` a moderación: uno por conversación al día.
+- Términos y política de datos explican el filtro. **Pendiente del dueño:** decidir si este cambio sube la versión de los
+  términos (obligaría a todos a aceptarlos de nuevo).
+
 ## Revisión de un plan externo de producto (2026-10-29)
 Se revisó un paquete de documentos con bloques de producto (impacto, fundaciones, empresas, monetización, retención) y roles.
 - **Adoptado como documentación:** `docs/METODOLOGIA-IMPACTO.md` (versión 1.0.0, la vigente, y lo previsto para la 2.0.0),

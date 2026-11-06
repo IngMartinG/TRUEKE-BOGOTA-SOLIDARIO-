@@ -7,6 +7,7 @@ using TruekeBogotaSolidario.Negocio.Archivos;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Push;
 using TruekeBogotaSolidario.Negocio.Dtos;
+using TruekeBogotaSolidario.Negocio.Moderacion;
 
 namespace TruekeBogotaSolidario.Negocio.Servicios;
 
@@ -50,13 +51,17 @@ public sealed class ChatService : IChatService
     private readonly ILogger<ChatService> _log;
     private readonly IAlmacenArchivos _almacen;
     private readonly UrlsOpciones _urls;
+    private readonly ModeracionOpciones _moderacion;
+    private readonly IAvisosModeracion _avisosModeracion;
 
     public ChatService(IConversacionRepository conversaciones, IUsuarioRepository usuarios, IUnidadDeTrabajo uow,
         IEmisorTiempoReal emisor, IPresencia presencia, IBloqueoRepository bloqueos, IAvisosCorreo avisosCorreo, IAvisosPush avisosPush, TimeProvider reloj,
-        ILogger<ChatService> log, IAlmacenArchivos almacen, IOptions<UrlsOpciones> urls)
+        ILogger<ChatService> log, IAlmacenArchivos almacen, IOptions<UrlsOpciones> urls, IOptions<ModeracionOpciones> moderacion,
+        IAvisosModeracion avisosModeracion)
     {
         _conversaciones = conversaciones; _usuarios = usuarios; _uow = uow; _emisor = emisor; _presencia = presencia; _bloqueos = bloqueos;
         _avisosCorreo = avisosCorreo; _avisosPush = avisosPush; _reloj = reloj; _log = log; _almacen = almacen; _urls = urls.Value;
+        _moderacion = moderacion.Value; _avisosModeracion = avisosModeracion;
     }
 
     /// <summary>El tiempo real es un extra: si falla, la operación ya quedó guardada y se verá al recargar.</summary>
@@ -89,7 +94,8 @@ public sealed class ChatService : IChatService
                 : null,
             m.LeidoUtc is not null ? EstadoMensajeDto.Leido : m.EntregadoUtc is not null ? EstadoMensajeDto.Entregado : EstadoMensajeDto.Enviado,
             TieneFoto: m.FotoUrl is not null && !m.EstaOculto,
-            FotoUrl: !m.EstaOculto && m.FotoUrl is { } f && fotosFirmadas?.TryGetValue(f, out var firmada) == true ? firmada : null);
+            FotoUrl: !m.EstaOculto && m.FotoUrl is { } f && fotosFirmadas?.TryGetValue(f, out var firmada) == true ? firmada : null,
+            AvisoSeguridad: m.MarcadoUtc is not null && !m.EstaOculto);
 
     /// <summary>Texto recortado para citas y la bandeja; una foto sin pie se resume como "📷 Foto".</summary>
     private static string Resumen(Mensaje m, int largo)
@@ -174,10 +180,25 @@ public sealed class ChatService : IChatService
             else ValidadorUrls.ExigirHostPermitido(fotoUrl, _urls.HostsPermitidosImagenes, "La foto");
         }
 
+        // Revisión automática del texto (nadie lo lee): lo ilícito no se envía; el contacto por fuera se envía marcado.
+        var filtro = FiltroChat.Evaluar(texto, _moderacion);
+        if (filtro.Decision == DecisionFiltroChat.Bloquear)
+        {
+            _log.LogInformation("Mensaje bloqueado por el filtro del chat en {ConversacionId}: {Motivo}", c.Id, filtro.Motivo);
+            throw new ReglaDeNegocioException(FiltroChat.MensajeBloqueo);
+        }
+
         var m = new Mensaje(c.Id, actorId, texto, ahora, citado, fotoUrl);
+        // Un aviso a moderación por conversación al día: una charla con varios teléfonos no llena la campana.
+        var avisarMarca = filtro.Decision == DecisionFiltroChat.Marcar && !await _conversaciones.ExisteMarcadoDesdeAsync(c.Id, ahora.AddDays(-1));
+        if (filtro.Decision == DecisionFiltroChat.Marcar) m.MarcarParaRevision(filtro.Motivo!, ahora);
         _conversaciones.AgregarMensaje(m);
         c.RegistrarMensaje(ahora);
         await _uow.GuardarCambiosAsync();
+        if (avisarMarca)
+            await _avisosModeracion.PendienteAsync(TiposNotificacion.MensajeMarcado,
+                "El filtro del chat marcó un mensaje: revísalo en Chat.", m.Id, excluir: actorId);
+        else if (filtro.Decision == DecisionFiltroChat.Marcar) await _avisosModeracion.ActualizarContadoresAsync();
 
         var fotos = await FirmarFotosAsync([m]);
         try

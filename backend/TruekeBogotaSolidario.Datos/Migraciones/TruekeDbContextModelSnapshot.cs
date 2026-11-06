@@ -1046,9 +1046,19 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<DateTime?>("LeidoUtc")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<DateTime?>("MarcaRevisadaUtc")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("MarcadoUtc")
+                        .HasColumnType("timestamp with time zone");
+
                     b.Property<string>("MotivoOcultamiento")
                         .HasMaxLength(300)
                         .HasColumnType("character varying(300)");
+
+                    b.Property<string>("MotivoRevision")
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
 
                     b.Property<Guid?>("RespuestaAId")
                         .HasColumnType("uuid");
@@ -1059,6 +1069,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .HasColumnType("character varying(1000)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("MarcadoUtc")
+                        .HasFilter("\"MarcadoUtc\" IS NOT NULL AND \"MarcaRevisadaUtc\" IS NULL");
 
                     b.HasIndex("RespuestaAId");
 

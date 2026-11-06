@@ -260,7 +260,7 @@ public interface IPagoRepository
 
 /// <summary>Lo que espera a un moderador, por categoría (insignias del panel, avisos y correo resumen).</summary>
 public sealed record ConteoPendientesModeracion(int Publicaciones, int Denuncias, int Apelaciones, int Fotos, int Verificaciones,
-    int Negocios, int Pqr, int Pagos, int Facturas, int Menores, int Fundaciones, int Empresas);
+    int Negocios, int Pqr, int Pagos, int Facturas, int Menores, int Fundaciones, int Empresas, int MensajesMarcados);
 
 public interface IPendientesModeracionRepository
 {
@@ -376,6 +376,12 @@ public interface IConversacionRepository
     Task<int> ContarMensajesDelAutorDesdeAsync(Guid autorId, DateTime desdeUtc);
     Task<int> ContarFotosDelAutorDesdeAsync(Guid autorId, DateTime desdeUtc);
     Task<IReadOnlyList<Mensaje>> ListarMensajesDelAutorAsync(Guid autorId, int maximo);
+    /// <summary>¿Ya hay un mensaje marcado en la conversación desde esa fecha? (para no repetir el aviso a moderación).</summary>
+    Task<bool> ExisteMarcadoDesdeAsync(Guid conversacionId, DateTime desdeUtc);
+    /// <summary>Marcados sin revisar (ni ocultos), los más antiguos primero. Incluye la Conversacion (sin tracking).</summary>
+    Task<IReadOnlyList<Mensaje>> ListarMarcadosPendientesAsync(int maximo);
+    /// <summary>Hasta <paramref name="cuantos"/> mensajes antes y después del indicado (incluido), en orden cronológico (sin tracking).</summary>
+    Task<IReadOnlyList<Mensaje>> ContextoAsync(Mensaje mensaje, int cuantos);
     void Agregar(Conversacion conversacion);
     void AgregarMensaje(Mensaje mensaje);
 }
@@ -397,6 +403,8 @@ public interface IDenunciaRepository
 {
     Task<Denuncia?> ObtenerAsync(Guid id);
     Task<bool> ExisteAsync(Guid denuncianteId, TipoObjetoDenuncia tipo, Guid objetivoId);
+    /// <summary>Denuncias sobre el contenido, en cualquier estado.</summary>
+    Task<int> ContarSobreObjetivoAsync(TipoObjetoDenuncia tipo, Guid objetivoId);
     Task<int> ContarDelDenuncianteDesdeAsync(Guid denuncianteId, DateTime desdeUtc);
     /// <summary>Más antiguas primero (cola de moderación).</summary>
     Task<IReadOnlyList<Denuncia>> ListarPorEstadoAsync(EstadoDenuncia estado, int maximo);

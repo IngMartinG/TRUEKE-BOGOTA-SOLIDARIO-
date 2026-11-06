@@ -106,6 +106,8 @@ public static class TiposNotificacion
     public const string VerificacionPorRevisar = "VerificacionPorRevisar";
     /// <summary>Un negocio registró o cambió su NIT (RecursoId = UsuarioId).</summary>
     public const string NegocioPorVerificar = "NegocioPorVerificar";
+    /// <summary>El filtro del chat marcó un mensaje (RecursoId = MensajeId): uno por conversación al día como mucho.</summary>
+    public const string MensajeMarcado = "MensajeMarcado";
 }
 
 /// <summary>Carga mínima: el front pide el detalle al API (con su JWT) si lo necesita. Nunca datos de terceros.</summary>
