@@ -58,8 +58,10 @@ public sealed class UsuarioRepository : IUsuarioRepository
         => _db.Usuarios.CountAsync(u => u.InvitadoPorId == invitadorId && u.RecompensaInvitacionUtc != null
             && (desdeUtc == null || u.RecompensaInvitacionUtc >= desdeUtc));
 
-    private IQueryable<Usuario> NegociosVigentes(DateTime ahoraUtc)
-        => _db.Usuarios.AsNoTracking().Where(u => u.TipoCuenta == TipoCuenta.Empresa && u.FechaVencimientoSuscripcion > ahoraUtc
+    private IQueryable<Usuario> NegociosVigentes(DateTime ahoraUtc) => NegociosVigentes(_db, ahoraUtc);
+
+    internal static IQueryable<Usuario> NegociosVigentes(TruekeDbContext db, DateTime ahoraUtc)
+        => db.Usuarios.AsNoTracking().Where(u => u.TipoCuenta == TipoCuenta.Empresa && u.FechaVencimientoSuscripcion > ahoraUtc
             && u.NombreComercial != null && !u.EstaEliminado && !(u.EstaSuspendido && (u.SuspendidoHasta == null || u.SuspendidoHasta > ahoraUtc)));
 
     public async Task<IReadOnlyList<Usuario>> ListarNegociosAsync(DateTime ahoraUtc, int maximo)
@@ -67,8 +69,10 @@ public sealed class UsuarioRepository : IUsuarioRepository
             .Take(Math.Clamp(maximo, 1, 500)).ToListAsync();
 
     public async Task<IReadOnlyList<Usuario>> ListarNegociosPorVerificarAsync(DateTime ahoraUtc, int maximo)
-        => await NegociosVigentes(ahoraUtc).Where(u => u.Nit != null && u.NitVerificadoUtc == null && u.NitRechazadoUtc == null)
-            .OrderBy(u => u.FechaRegistro).Take(Math.Clamp(maximo, 1, 200)).ToListAsync();
+        => await NegociosPorVerificar(_db, ahoraUtc).OrderBy(u => u.FechaRegistro).Take(Math.Clamp(maximo, 1, 200)).ToListAsync();
+
+    internal static IQueryable<Usuario> NegociosPorVerificar(TruekeDbContext db, DateTime ahoraUtc)
+        => NegociosVigentes(db, ahoraUtc).Where(u => u.Nit != null && u.NitVerificadoUtc == null && u.NitRechazadoUtc == null);
 
     public async Task<IReadOnlyList<Guid>> ListarIdsModeradoresAsync()
         => await _db.Usuarios.AsNoTracking()
@@ -333,8 +337,10 @@ public sealed class PublicacionRepository : IPublicacionRepository
         => _db.Publicaciones.CountAsync(p => p.PropietarioId == propietarioId && p.EstadoModeracion == EstadoModeracion.Aprobada);
 
     /// <summary>Las que esperan revisión con su dueño activo: primero las de más riesgo y, a igual riesgo, las que llevan más tiempo.</summary>
-    private IQueryable<Publicacion> PendientesDeModeracion()
-        => _db.Publicaciones.Where(p => p.EstadoModeracion == EstadoModeracion.Pendiente && !p.EstaOculta
+    private IQueryable<Publicacion> PendientesDeModeracion() => PendientesDeModeracion(_db);
+
+    internal static IQueryable<Publicacion> PendientesDeModeracion(TruekeDbContext db)
+        => db.Publicaciones.Where(p => p.EstadoModeracion == EstadoModeracion.Pendiente && !p.EstaOculta
             && (p.Estado == EstadoPublicacionEnum.Disponible || p.Estado == EstadoPublicacionEnum.EnNegociacion)
             && !p.Propietario!.EstaEliminado);
 
@@ -1344,6 +1350,27 @@ public sealed class ComentarioRepository : IComentarioRepository
         => await _db.Comentarios.Where(c => c.AutorId == autorId).OrderByDescending(c => c.FechaUtc).Take(maximo).ToListAsync();
 
     public void Agregar(Comentario comentario) => _db.Comentarios.Add(comentario);
+}
+
+public sealed class PendientesModeracionRepository : IPendientesModeracionRepository
+{
+    private readonly TruekeDbContext _db;
+    public PendientesModeracionRepository(TruekeDbContext db) => _db = db;
+
+    // Un mismo DbContext no admite consultas en paralelo: van una tras otra (son conteos con índice o tablas pequeñas).
+    public async Task<ConteoPendientesModeracion> ContarAsync(DateTime ahoraUtc) => new(
+        Publicaciones: await PublicacionRepository.PendientesDeModeracion(_db).CountAsync(),
+        Denuncias: await _db.Denuncias.Where(d => d.Estado == EstadoDenuncia.Pendiente).Select(d => new { d.Tipo, d.ObjetivoId }).Distinct().CountAsync(),
+        Apelaciones: await _db.Apelaciones.CountAsync(a => a.Estado == EstadoApelacion.Pendiente),
+        Fotos: await _db.Usuarios.CountAsync(u => u.EstadoFoto == EstadoFotoPerfil.EnRevision && u.FotoUrl != null && !u.EstaEliminado),
+        Verificaciones: await _db.Usuarios.CountAsync(u => u.EstadoVerificacion == EstadoVerificacion.Pendiente),
+        Negocios: await UsuarioRepository.NegociosPorVerificar(_db, ahoraUtc).CountAsync(),
+        Pqr: await _db.Pqrs.CountAsync(p => p.Estado == EstadoPqr.Abierta || p.Estado == EstadoPqr.EnTramite),
+        Pagos: await _db.Pagos.CountAsync(p => p.Estado == EstadoPago.RequiereRevision),
+        Facturas: await _db.Facturas.CountAsync(f => f.Estado == EstadoFactura.Pendiente),
+        Menores: await _db.Usuarios.CountAsync(u => u.MenorDetectadoUtc != null && !u.EstaEliminado),
+        Fundaciones: await _db.Fundaciones.CountAsync(f => f.Estado == EstadoFundacion.Pendiente),
+        Empresas: await _db.Empresas.CountAsync(e => e.Estado == EstadoEmpresa.Pendiente));
 }
 
 public sealed class AuditoriaRepository : IAuditoriaRepository

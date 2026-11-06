@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { rxResource, toSignal } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
-import { AdminApi } from '../../core/api/admin.api';
+import type { PendientesModeracionDto } from '../../api/tipos';
 import { SesionService } from '../../core/sesion.service';
 import { TiempoRealService } from '../../core/tiempo-real.service';
 import { Icono } from '../../shared/ui/icono';
@@ -12,6 +12,22 @@ interface Enlace {
   texto: string;
   icono: string;
 }
+
+/** Qué contador del panel corresponde a cada sección (Usuarios: las cuentas con posible menor de edad). */
+const PENDIENTES_POR_RUTA: Partial<Record<string, keyof Omit<PendientesModeracionDto, 'total'>>> = {
+  publicaciones: 'publicaciones',
+  denuncias: 'denuncias',
+  apelaciones: 'apelaciones',
+  fotos: 'fotos',
+  usuarios: 'menores',
+  verificaciones: 'verificaciones',
+  pqr: 'pqr',
+  negocios: 'negocios',
+  empresas: 'empresas',
+  fundaciones: 'fundaciones',
+  pagos: 'pagos',
+  facturas: 'facturas',
+};
 
 /**
  * Secciones agrupadas por tema: barra lateral fija en PC y, en celular y tablet, un selector nativo con los mismos grupos
@@ -47,7 +63,7 @@ interface Enlace {
             <optgroup [label]="g.titulo">
               @for (e of g.enlaces; track e.ruta) {
                 <option [value]="e.ruta" [selected]="e.ruta === actual()">
-                  {{ e.texto }}{{ e.ruta === 'publicaciones' && pendientes() ? ' (' + pendientes() + ' por revisar)' : '' }}
+                  {{ e.texto }}{{ pendientes(e.ruta) ? ' (' + pendientes(e.ruta) + ' por revisar)' : '' }}
                 </option>
               }
             </optgroup>
@@ -71,8 +87,10 @@ interface Enlace {
                     >
                       <app-icono [nombre]="e.icono" [tamano]="18" class="shrink-0" />
                       <span class="min-w-0 flex-1 truncate">{{ e.texto }}</span>
-                      @if (e.ruta === 'publicaciones' && pendientes()) {
-                        <span class="rounded-full bg-sol-400 px-1.5 text-xs font-bold text-bosque-900 tabular-nums" [attr.aria-label]="pendientes() + ' por revisar'">{{ pendientes() }}</span>
+                      @if (pendientes(e.ruta); as n) {
+                        <span class="rounded-full bg-sol-400 px-1.5 text-xs font-bold text-bosque-900 tabular-nums">
+                          {{ n > 99 ? '99+' : n }}<span class="sr-only"> por revisar</span>
+                        </span>
                       }
                     </a>
                   </li>
@@ -89,15 +107,27 @@ interface Enlace {
 })
 export default class Panel {
   protected readonly sesion = inject(SesionService);
-  private readonly admin = inject(AdminApi);
   private readonly router = inject(Router);
   private readonly ruta = inject(ActivatedRoute);
-  private readonly cola = rxResource({ stream: () => this.admin.colaModeracion() });
   private readonly tiempoReal = inject(TiempoRealService);
-  /** Lo que espera revisión: llega en vivo; mientras no cambie, el valor con que se abrió el panel (0 si no cargó). */
-  protected readonly pendientes = computed(
-    () => this.tiempoReal.colaModeracion() ?? (this.cola.hasValue() ? this.cola.value().publicaciones : undefined) ?? 0,
-  );
+
+  constructor() {
+    // Lo que espera revisión llega en vivo; además se vuelve a contar al entrar y al cambiar de sección (lo que uno
+    // mismo acaba de resolver baja enseguida).
+    void this.tiempoReal.sincronizarModeracion(true);
+    this.router.events
+      .pipe(
+        filter((e) => e instanceof NavigationEnd),
+        takeUntilDestroyed(),
+      )
+      .subscribe(() => void this.tiempoReal.sincronizarModeracion(true));
+  }
+
+  /** Cuántos esperan en esa sección (0 si no tiene contador o aún no se conoce). */
+  protected pendientes(ruta: string): number {
+    const clave = PENDIENTES_POR_RUTA[ruta];
+    return (clave && this.tiempoReal.pendientesModeracion()?.[clave]) || 0;
+  }
 
   /** La sección abierta (el primer segmento después de /admin), para el selector del celular. */
   protected readonly actual = toSignal(

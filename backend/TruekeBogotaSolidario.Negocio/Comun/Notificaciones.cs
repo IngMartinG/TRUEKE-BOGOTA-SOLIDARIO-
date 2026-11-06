@@ -96,6 +96,16 @@ public static class TiposNotificacion
     public const string FundacionPorRevisar = "FundacionPorRevisar";
     /// <summary>Una empresa pidió su verificación (RecursoId = EmpresaId): la revisa un SuperUsuario.</summary>
     public const string EmpresaPorRevisar = "EmpresaPorRevisar";
+    /// <summary>Primera denuncia pendiente sobre un contenido o una cuenta (RecursoId = DenunciaId): las siguientes no repiten el aviso.</summary>
+    public const string DenunciaNueva = "DenunciaNueva";
+    /// <summary>Una publicación de riesgo espera aprobación (RecursoId = PublicacionId).</summary>
+    public const string PublicacionPorRevisar = "PublicacionPorRevisar";
+    /// <summary>El detector no pudo confirmar el rostro de una foto de perfil (RecursoId = UsuarioId, o sin recurso si son varias).</summary>
+    public const string FotoPorRevisar = "FotoPorRevisar";
+    /// <summary>Una cuenta pagó su verificación de identidad (RecursoId = UsuarioId).</summary>
+    public const string VerificacionPorRevisar = "VerificacionPorRevisar";
+    /// <summary>Un negocio registró o cambió su NIT (RecursoId = UsuarioId).</summary>
+    public const string NegocioPorVerificar = "NegocioPorVerificar";
 }
 
 /// <summary>Carga mínima: el front pide el detalle al API (con su JWT) si lo necesita. Nunca datos de terceros.</summary>
@@ -124,7 +134,7 @@ public interface IEmisorTiempoReal
     Task EscribiendoAsync(Guid usuarioId, EscribiendoDto escribiendo);
     Task PresenciaAsync(IReadOnlyCollection<Guid> usuarioIds, PresenciaDto presencia);
     /// <summary>A los moderadores: cambió lo que espera revisión (contador del panel).</summary>
-    Task ColaModeracionAsync(IReadOnlyCollection<Guid> moderadorIds, ColaModeracionDto cola);
+    Task ColaModeracionAsync(IReadOnlyCollection<Guid> moderadorIds, PendientesModeracionDto pendientes);
 }
 
 public sealed class EmisorTiempoRealNulo : IEmisorTiempoReal
@@ -134,7 +144,7 @@ public sealed class EmisorTiempoRealNulo : IEmisorTiempoReal
     public Task EstadoMensajesAsync(Guid usuarioId, EstadoMensajesDto estado) => Task.CompletedTask;
     public Task EscribiendoAsync(Guid usuarioId, EscribiendoDto escribiendo) => Task.CompletedTask;
     public Task PresenciaAsync(IReadOnlyCollection<Guid> usuarioIds, PresenciaDto presencia) => Task.CompletedTask;
-    public Task ColaModeracionAsync(IReadOnlyCollection<Guid> moderadorIds, ColaModeracionDto cola) => Task.CompletedTask;
+    public Task ColaModeracionAsync(IReadOnlyCollection<Guid> moderadorIds, PendientesModeracionDto pendientes) => Task.CompletedTask;
 }
 
 public sealed class NotificadorPersistente : INotificador

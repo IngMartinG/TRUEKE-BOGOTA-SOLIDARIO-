@@ -20,6 +20,8 @@ public sealed class ModeracionOpciones
     [Range(2, 50)] public int DenunciantesParaRevisar { get; set; } = 3;
     /// <summary>Palabras o frases que se suman a la lista base (<see cref="EvaluadorRiesgo.ArticulosRestringidosBase"/>).</summary>
     public List<string> ArticulosRestringidos { get; set; } = [];
+    /// <summary>Cada cuántas horas llega a los moderadores el correo con lo que espera revisión (0 = apagado).</summary>
+    [Range(0, 72)] public int ResumenCorreoHoras { get; set; } = 4;
 }
 
 /// <summary>Lo que se sabe de quien publica (lo arma el servicio con datos de la base).</summary>

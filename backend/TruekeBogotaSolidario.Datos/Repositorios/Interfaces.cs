@@ -258,6 +258,16 @@ public interface IPagoRepository
     void Agregar(Pago pago);
 }
 
+/// <summary>Lo que espera a un moderador, por categoría (insignias del panel, avisos y correo resumen).</summary>
+public sealed record ConteoPendientesModeracion(int Publicaciones, int Denuncias, int Apelaciones, int Fotos, int Verificaciones,
+    int Negocios, int Pqr, int Pagos, int Facturas, int Menores, int Fundaciones, int Empresas);
+
+public interface IPendientesModeracionRepository
+{
+    /// <summary>Cuenta con los mismos filtros que las filas del panel (las denuncias, agrupadas por contenido denunciado).</summary>
+    Task<ConteoPendientesModeracion> ContarAsync(DateTime ahoraUtc);
+}
+
 public sealed record ResumenIngresos(int Anio, int Mes, ConceptoPago Concepto, EstadoPago Estado, int Cantidad, long TotalCop);
 
 public interface IFacturaRepository

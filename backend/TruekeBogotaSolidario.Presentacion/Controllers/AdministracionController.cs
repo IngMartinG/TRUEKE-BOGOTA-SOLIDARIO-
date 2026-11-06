@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Dtos;
 using TruekeBogotaSolidario.Negocio.Moderacion;
 using TruekeBogotaSolidario.Negocio.Servicios;
@@ -80,9 +81,10 @@ public sealed class AdministracionController : ControllerBase
     public async Task<ActionResult<PublicacionesEnRevisionDto>> PublicacionesEnRevision([FromServices] IModeracionPublicacionesService moderacion)
         => Ok(await moderacion.ListarAsync(User.IdActual()));
 
-    [HttpGet("moderacion/cola"), Authorize(Policy = Politicas.Moderador)]
-    public async Task<ActionResult<ColaModeracionDto>> ColaModeracion([FromServices] IModeracionPublicacionesService moderacion)
-        => Ok(await moderacion.ContarAsync(User.IdActual()));
+    /// <summary>Cuánto espera revisión en cada pestaña del panel (fundaciones y empresas solo cuentan para el SuperUsuario).</summary>
+    [HttpGet("pendientes"), Authorize(Policy = Politicas.Moderador)]
+    public async Task<ActionResult<PendientesModeracionDto>> Pendientes([FromServices] IAvisosModeracion avisos)
+        => Ok(await avisos.ContarAsync(User.IdActual()));
 
     /// <summary>Aprueba varias a la vez (hasta 50). Las que otro moderador ya resolvió se ignoran.</summary>
     [HttpPost("moderacion/publicaciones/aprobar"), Authorize(Policy = Politicas.Moderador)]

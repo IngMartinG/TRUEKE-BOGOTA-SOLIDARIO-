@@ -72,6 +72,7 @@ public sealed class ResumenPqrPublicasHostedService : BackgroundService
             var notificador = sp.GetRequiredService<INotificador>();
             foreach (var moderador in await sp.GetRequiredService<IUsuarioRepository>().ListarIdsModeradoresAsync())
                 await notificador.NotificarAsync(moderador, TiposNotificacion.PqrNueva, ResumenPqrPublicas.Mensaje(cantidad));
+            await sp.GetRequiredService<IAvisosModeracion>().ActualizarContadoresAsync();
             return cantidad;
         }
         catch (Exception ex)

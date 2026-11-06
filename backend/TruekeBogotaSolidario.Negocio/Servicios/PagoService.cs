@@ -37,6 +37,7 @@ public sealed class PagoService : IPagoService
     private readonly UrlsOpciones _urls;
     private readonly TimeProvider _reloj;
     private readonly INotificador _notificador;
+    private readonly IAvisosModeracion _avisosModeracion;
     private readonly IAlmacenArchivos _almacen;
     private readonly IFacturaRepository _facturas;
     private readonly FacturacionOpciones _facturacion;
@@ -44,11 +45,11 @@ public sealed class PagoService : IPagoService
 
     public PagoService(IPagoRepository pagos, IUsuarioRepository usuarios, IPublicacionRepository pubs, IUnidadDeTrabajo uow,
         IProveedorPagos proveedor, IOptions<PagosOpciones> opciones, IOptions<UrlsOpciones> urls, TimeProvider reloj,
-        INotificador notificador, IAlmacenArchivos almacen, IFacturaRepository facturas, IOptions<FacturacionOpciones> facturacion,
+        INotificador notificador, IAvisosModeracion avisosModeracion, IAlmacenArchivos almacen, IFacturaRepository facturas, IOptions<FacturacionOpciones> facturacion,
         ILogger<PagoService> log)
     {
         _pagos = pagos; _usuarios = usuarios; _pubs = pubs; _uow = uow; _proveedor = proveedor;
-        _opciones = opciones.Value; _urls = urls.Value; _reloj = reloj; _notificador = notificador; _almacen = almacen;
+        _opciones = opciones.Value; _urls = urls.Value; _reloj = reloj; _notificador = notificador; _avisosModeracion = avisosModeracion; _almacen = almacen;
         _facturas = facturas; _facturacion = facturacion.Value; _log = log;
     }
 
@@ -70,10 +71,15 @@ public sealed class PagoService : IPagoService
 
         // Dinero cobrado sin beneficio aplicado: el equipo debe reembolsar o aplicar a mano. Se avisa a los moderadores.
         if (pago.Estado == EstadoPago.RequiereRevision)
-            foreach (var moderador in await _usuarios.ListarIdsModeradoresAsync())
-                await _notificador.NotificarAsync(moderador, TiposNotificacion.AlertaPagoEnRevision,
-                    $"Pago {pago.Referencia} de {pago.MontoCop:N0} COP requiere revisión: {pago.NotaInterna}");
+            await _avisosModeracion.PendienteAsync(TiposNotificacion.AlertaPagoEnRevision,
+                $"Pago {pago.Referencia} de {pago.MontoCop:N0} COP requiere revisión: {pago.NotaInterna}");
+        else if (pago.Estado == EstadoPago.Aprobado && pago.Concepto == ConceptoPago.Verificar)
+            await AvisarVerificacionAsync(pago.UsuarioId);
     }
+
+    private Task AvisarVerificacionAsync(Guid usuarioId)
+        => _avisosModeracion.PendienteAsync(TiposNotificacion.VerificacionPorRevisar,
+            "Una cuenta pagó su verificación de identidad: revisa el documento en Verificaciones.", usuarioId, excluir: usuarioId);
 
     private decimal IvaIncluido(int totalCop)
     {
@@ -221,6 +227,7 @@ public sealed class PagoService : IPagoService
         }
         await _uow.GuardarCambiosAsync();
         _log.LogInformation("{Concepto} pagado con {Puntos} Eco-Puntos ({Referencia})", concepto, c.PuntosACanjear, referencia);
+        if (concepto == ConceptoPago.Verificar) await AvisarVerificacionAsync(u.Id);
         return new PagoIniciadoDto(referencia, concepto.ToString(), 0, 0, Moneda, "EcoPuntos", null, null, ADto(c, u.SaldoEcoPuntos), ahora,
             AplicadoConPuntos: true);
     }

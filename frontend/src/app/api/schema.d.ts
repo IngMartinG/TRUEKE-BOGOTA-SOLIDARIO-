@@ -343,7 +343,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v1/admin/moderacion/cola": {
+    "/api/v1/admin/pendientes": {
         parameters: {
             query?: never;
             header?: never;
@@ -365,9 +365,9 @@ export interface paths {
                         [name: string]: unknown;
                     };
                     content: {
-                        "text/plain": components["schemas"]["ColaModeracionDto"];
-                        "application/json": components["schemas"]["ColaModeracionDto"];
-                        "text/json": components["schemas"]["ColaModeracionDto"];
+                        "text/plain": components["schemas"]["PendientesModeracionDto"];
+                        "application/json": components["schemas"]["PendientesModeracionDto"];
+                        "text/json": components["schemas"]["PendientesModeracionDto"];
                     };
                 };
             };
@@ -7692,10 +7692,6 @@ export interface components {
             tuPublicacionId?: string | null;
             tuPublicacionTitulo?: string | null;
         };
-        ColaModeracionDto: {
-            /** Format: int32 */
-            publicaciones?: number;
-        };
         ComentarioDto: {
             /** Format: uuid */
             id?: string;
@@ -8890,6 +8886,34 @@ export interface components {
             /** Format: int32 */
             bono?: number;
         };
+        PendientesModeracionDto: {
+            /** Format: int32 */
+            publicaciones?: number;
+            /** Format: int32 */
+            denuncias?: number;
+            /** Format: int32 */
+            apelaciones?: number;
+            /** Format: int32 */
+            fotos?: number;
+            /** Format: int32 */
+            verificaciones?: number;
+            /** Format: int32 */
+            negocios?: number;
+            /** Format: int32 */
+            pqr?: number;
+            /** Format: int32 */
+            pagos?: number;
+            /** Format: int32 */
+            facturas?: number;
+            /** Format: int32 */
+            menores?: number;
+            /** Format: int32 */
+            fundaciones?: number;
+            /** Format: int32 */
+            empresas?: number;
+            /** Format: int32 */
+            readonly total?: number;
+        };
         PerfilEmpresaRequest: {
             nombreComercial: string;
             nit: string;
@@ -9557,7 +9581,6 @@ export type CategoriaDto = components['schemas']['CategoriaDto'];
 export type CodigoDosFactoresRequest = components['schemas']['CodigoDosFactoresRequest'];
 export type CodigosRecuperacionDto = components['schemas']['CodigosRecuperacionDto'];
 export type CoincidenciaDeseoDto = components['schemas']['CoincidenciaDeseoDto'];
-export type ColaModeracionDto = components['schemas']['ColaModeracionDto'];
 export type ComentarioDto = components['schemas']['ComentarioDto'];
 export type ComentarioDtoPaginaDto = components['schemas']['ComentarioDtoPaginaDto'];
 export type ComentarioExportDto = components['schemas']['ComentarioExportDto'];
@@ -9676,6 +9699,7 @@ export type PagoAdminDtoPaginaDto = components['schemas']['PagoAdminDtoPaginaDto
 export type PagoEstadoDto = components['schemas']['PagoEstadoDto'];
 export type PagoIniciadoDto = components['schemas']['PagoIniciadoDto'];
 export type PaqueteRecargaDto = components['schemas']['PaqueteRecargaDto'];
+export type PendientesModeracionDto = components['schemas']['PendientesModeracionDto'];
 export type PerfilEmpresaRequest = components['schemas']['PerfilEmpresaRequest'];
 export type PerfilPublicoDto = components['schemas']['PerfilPublicoDto'];
 export type PerfilUsuarioDto = components['schemas']['PerfilUsuarioDto'];

@@ -70,7 +70,10 @@ public sealed class ModeracionPublicacionesTests : IClassFixture<ModeracionPubli
         Assert.NotNull(item);
         Assert.Contains(item!.Value.GetProperty("motivos").EnumerateArray(), m => m.GetString()!.Contains("primeras 3"));
         Assert.Equal("Kennedy", item.Value.GetProperty("localidad").GetString());
-        Assert.True((await mod.GetFromJsonAsync<JsonElement>("/api/v1/admin/moderacion/cola")).GetProperty("publicaciones").GetInt32() >= 1);
+        var pendientes = await mod.GetFromJsonAsync<JsonElement>("/api/v1/admin/pendientes");
+        Assert.True(pendientes.GetProperty("publicaciones").GetInt32() >= 1);
+        Assert.True(pendientes.GetProperty("total").GetInt32() >= 1);
+        Assert.Equal(HttpStatusCode.Forbidden, (await otro.GetAsync("/api/v1/admin/pendientes")).StatusCode);
 
         var r = await mod.PostAsJsonAsync("/api/v1/admin/moderacion/publicaciones/aprobar", new { ids = new[] { id, Guid.NewGuid() } });
         Assert.Equal(1, await r.Content.ReadFromJsonAsync<int>()); // el id inexistente se ignora

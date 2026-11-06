@@ -52,6 +52,7 @@ public static class DatosServiceCollectionExtensions
         services.AddScoped<IFacturaRepository, FacturaRepository>();
         services.AddScoped<IPqrRepository, PqrRepository>();
         services.AddScoped<IEstadisticaRepository, EstadisticaRepository>();
+        services.AddScoped<IPendientesModeracionRepository, PendientesModeracionRepository>();
         return services;
     }
 }

@@ -1,4 +1,4 @@
-# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-10-30)
+# Estado del proyecto — Trueke Bogotá Solidario (actualizado el 2026-11-06)
 
 ## Hecho — backend completo para conectar el front
 **Base:**
@@ -908,6 +908,20 @@ tenía una foto sin rostro recibe un aviso y 7 días para cambiarla.
 - Pruebas: `FotoPerfilRealTests` (regla, rasgos, el modelo real con un retrato de dominio público de la NASA y con el logo, y
   los estados de la entidad), `FotosPerfilTests` (subida sin rostro, dudosa y aprobada por un moderador, rechazo con plazo y
   bloqueo al vencer, revisión de las fotos anteriores, denuncia por foto) y `fotos.spec.ts` (atajos de la cola).
+
+## Hecho el 2026-11-06 — todo lo pendiente le llega a la moderación
+- **Avisos:** `IAvisosModeracion` (Negocio/Comun) centraliza los avisos a moderadores (campana, tiempo real y push). Ahora avisan
+  también la primera denuncia de cada contenido (las siguientes del mismo contenido no repiten), la publicación que queda
+  por aprobar, la foto de perfil que el detector dejó en duda (un aviso por lote en la revisión de fotos anteriores), la
+  verificación de identidad pagada y el NIT de un negocio por verificar. Fundaciones y empresas siguen yendo solo al SuperUsuario.
+  Quien origina el pendiente nunca se avisa a sí mismo. El aviso no lleva el contenido denunciado ni quién denunció.
+- **Insignias del panel:** `GET /admin/pendientes` cuenta cada pestaña con los mismos filtros de sus filas (denuncias agrupadas
+  por contenido). El evento `colaModeracion` del hub envía ese objeto completo y un filtro de MVC lo reemite tras cualquier
+  POST/PUT/PATCH/DELETE correcto en `/api/v1/admin/...`, así lo que un colega resuelve baja en vivo para todos. El
+  encabezado muestra un punto en el avatar y el número junto a "Moderación" (fuera del panel solo con 2FA activo).
+- **Correo resumen:** `ResumenModeracionHostedService` cada `Moderacion:ResumenCorreoHoras` (4 por defecto; 0 lo apaga)
+  escribe a cada moderador que no está en línea, solo si hay pendientes y cambiaron desde el último correo. Solo números y
+  un enlace a `/admin`.
 
 ## Revisión de un plan externo de producto (2026-10-29)
 Se revisó un paquete de documentos con bloques de producto (impacto, fundaciones, empresas, monetización, retención) y roles.
