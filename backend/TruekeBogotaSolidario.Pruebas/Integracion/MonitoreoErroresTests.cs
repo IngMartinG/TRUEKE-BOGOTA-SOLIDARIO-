@@ -49,6 +49,17 @@ public class MonitoreoErroresTests : IClassFixture<FabricaApi>
         return Assert.Single(t.Envios);
     }
 
+    /// <summary>
+    /// El SDK de Sentry es global al proceso: mientras corren otras pruebas pueden llegar sobres ajenos (sesiones u otros
+    /// errores). Se espera el que trae <paramref name="marca"/>; los demás también se revisan, pero no se cuentan.
+    /// </summary>
+    private static async Task<(string Envio, IReadOnlyList<string> Todos)> EsperarEnvioConAsync(TransporteCapturado t, string marca)
+    {
+        for (var i = 0; i < 50 && !t.Envios.Any(e => e.Contains(marca, StringComparison.Ordinal)); i++) await Task.Delay(100);
+        var todos = t.Envios.ToList();
+        return (Assert.Single(todos, e => e.Contains(marca, StringComparison.Ordinal)), todos);
+    }
+
     [Fact]
     public async Task Un_500_llega_a_Sentry_sin_datos_personales_ni_tokens()
     {
@@ -69,12 +80,12 @@ public class MonitoreoErroresTests : IClassFixture<FabricaApi>
 
         Assert.Equal(HttpStatusCode.InternalServerError, (await cliente.SendAsync(peticion)).StatusCode);
 
-        var envio = await EsperarEnvioAsync(transporte);
-        Assert.Contains("InvalidOperationException", envio);
+        var (envio, todos) = await EsperarEnvioConAsync(transporte, "InvalidOperationException");
         Assert.Contains("/api/v1/eco-puntos/politica", envio);
         Assert.Contains("[correo]", envio);
         foreach (var secreto in new[] { "persona.real@correo.co", "TOKEN_SECRETO", "COOKIE_SECRETA", "JWT_SECRETO", "access_token" })
-            Assert.DoesNotContain(secreto, envio);
+        foreach (var e in todos)
+            Assert.DoesNotContain(secreto, e);
     }
 
     [Fact]
