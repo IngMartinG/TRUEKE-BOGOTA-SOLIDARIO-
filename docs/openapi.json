@@ -297,7 +297,7 @@
         }
       }
     },
-    "/api/v1/admin/moderacion/cola": {
+    "/api/v1/admin/pendientes": {
       "get": {
         "tags": [
           "Administracion"
@@ -308,17 +308,17 @@
             "content": {
               "text/plain": {
                 "schema": {
-                  "$ref": "#/components/schemas/ColaModeracionDto"
+                  "$ref": "#/components/schemas/PendientesModeracionDto"
                 }
               },
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ColaModeracionDto"
+                  "$ref": "#/components/schemas/PendientesModeracionDto"
                 }
               },
               "text/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ColaModeracionDto"
+                  "$ref": "#/components/schemas/PendientesModeracionDto"
                 }
               }
             }
@@ -8757,16 +8757,6 @@
         },
         "additionalProperties": false
       },
-      "ColaModeracionDto": {
-        "type": "object",
-        "properties": {
-          "publicaciones": {
-            "type": "integer",
-            "format": "int32"
-          }
-        },
-        "additionalProperties": false
-      },
       "ComentarioDto": {
         "type": "object",
         "properties": {
@@ -12390,6 +12380,65 @@
           "bono": {
             "type": "integer",
             "format": "int32"
+          }
+        },
+        "additionalProperties": false
+      },
+      "PendientesModeracionDto": {
+        "type": "object",
+        "properties": {
+          "publicaciones": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "denuncias": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "apelaciones": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fotos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "verificaciones": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "negocios": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pqr": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "pagos": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "facturas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "menores": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "fundaciones": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "empresas": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "total": {
+            "type": "integer",
+            "format": "int32",
+            "readOnly": true
           }
         },
         "additionalProperties": false

@@ -71,16 +71,17 @@ public sealed class EmpresaService : IEmpresaService
     private readonly IUnidadDeTrabajo _uow;
     private readonly IAlmacenArchivos _almacen;
     private readonly INotificador _notificador;
+    private readonly IAvisosModeracion _avisosModeracion;
     private readonly UrlsOpciones _urls;
     private readonly TimeProvider _reloj;
     private readonly ILogger<EmpresaService> _log;
 
     public EmpresaService(IEmpresaRepository empresas, IUsuarioRepository usuarios, ICategoriaRepository categorias, IImpactoRepository impacto,
-        IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, IAlmacenArchivos almacen, INotificador notificador, IOptions<UrlsOpciones> urls,
+        IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, IAlmacenArchivos almacen, INotificador notificador, IAvisosModeracion avisosModeracion, IOptions<UrlsOpciones> urls,
         TimeProvider reloj, ILogger<EmpresaService> log)
     {
         _empresas = empresas; _usuarios = usuarios; _categorias = categorias; _impacto = impacto; _auditoria = auditoria; _uow = uow;
-        _almacen = almacen; _notificador = notificador; _urls = urls.Value; _reloj = reloj; _log = log;
+        _almacen = almacen; _notificador = notificador; _avisosModeracion = avisosModeracion; _urls = urls.Value; _reloj = reloj; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
@@ -124,9 +125,8 @@ public sealed class EmpresaService : IEmpresaService
         await _uow.GuardarCambiosAsync();
         _log.LogInformation("Solicitud de empresa {EmpresaId} de {UsuarioId}", empresa.Id, actorId);
 
-        foreach (var super in await _usuarios.ListarIdsSuperUsuariosAsync())
-            if (super != actorId)
-                await _notificador.NotificarAsync(super, TiposNotificacion.EmpresaPorRevisar, $"La empresa \"{empresa.RazonSocial}\" pidió su verificación.", empresa.Id);
+        await _avisosModeracion.PendienteAsync(TiposNotificacion.EmpresaPorRevisar, $"La empresa \"{empresa.RazonSocial}\" pidió su verificación.",
+            empresa.Id, soloSuperUsuarios: true, excluir: actorId);
         return (await MiaAsync(actorId))!;
     }
 

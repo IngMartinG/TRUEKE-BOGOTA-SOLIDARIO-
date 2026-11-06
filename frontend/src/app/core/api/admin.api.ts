@@ -1,12 +1,12 @@
 import { inject, Injectable } from '@angular/core';
 import type {
   AccionDenunciaDto,
-  ColaModeracionDto,
   ActualizarFactorImpactoRequest,
   FactorImpactoDto,
   GuardarMetaComunitariaRequest,
   MaterialDto,
   MetaComunitariaDto,
+  PendientesModeracionDto,
   PublicacionesEnRevisionDto,
   ApelacionAdminDto,
   DenunciaAgrupadaDto,
@@ -78,7 +78,8 @@ export class AdminApi {
   /** Solo SuperUsuario: crea la meta mensual de una localidad o cambia la que tiene. */
   guardarMetaComunitaria = (r: GuardarMetaComunitariaRequest) => this.api.put<MetaComunitariaDto>('/admin/impacto/metas', r);
   quitarMetaComunitaria = (id: string) => this.api.delete<void>(`/admin/impacto/metas/${seg(id)}`);
-  colaModeracion = () => this.api.get<ColaModeracionDto>('/admin/moderacion/cola');
+  /** Cuánto espera revisión en cada pestaña del panel (fundaciones y empresas solo cuentan para el SuperUsuario). */
+  pendientes = () => this.api.get<PendientesModeracionDto>('/admin/pendientes');
   /** Devuelve cuántas se aprobaron (las que otro moderador ya resolvió se ignoran). */
   aprobarPublicaciones = (ids: readonly string[]) => this.api.post<number>('/admin/moderacion/publicaciones/aprobar', { ids });
   rechazarPublicacion = (id: string, motivo: string) =>

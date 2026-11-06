@@ -39,6 +39,7 @@ public sealed class DenunciaService : IDenunciaService
     private readonly IAuditoriaRepository _auditoria;
     private readonly IUnidadDeTrabajo _uow;
     private readonly INotificador _notificador;
+    private readonly IAvisosModeracion _avisosModeracion;
     private readonly TimeProvider _reloj;
     private readonly ICalificacionRepository _calificacionesRepo;
     private readonly IDeseoRepository _deseos;
@@ -47,7 +48,7 @@ public sealed class DenunciaService : IDenunciaService
     private readonly IModeracionPublicacionesService _moderacion;
 
     public DenunciaService(IDenunciaRepository denuncias, IUsuarioRepository usuarios, IPublicacionRepository pubs, IComentarioRepository comentarios,
-        IConversacionRepository conversaciones, IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, INotificador notificador,
+        IConversacionRepository conversaciones, IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, INotificador notificador, IAvisosModeracion avisosModeracion,
         TimeProvider reloj, ICalificacionRepository calificacionesRepo, ILogger<DenunciaService> log, IDeseoRepository deseos,
         IMovimientoEcoPuntosRepository movimientos, IAlmacenArchivos almacen, IOptions<FotosPerfilOpciones> fotos,
         IModeracionPublicacionesService moderacion)
@@ -59,7 +60,7 @@ public sealed class DenunciaService : IDenunciaService
         _movimientos = movimientos;
         _calificacionesRepo = calificacionesRepo;
         _denuncias = denuncias; _usuarios = usuarios; _pubs = pubs; _comentarios = comentarios; _conversaciones = conversaciones;
-        _auditoria = auditoria; _uow = uow; _notificador = notificador; _reloj = reloj; _log = log;
+        _auditoria = auditoria; _uow = uow; _notificador = notificador; _avisosModeracion = avisosModeracion; _reloj = reloj; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
@@ -169,20 +170,36 @@ public sealed class DenunciaService : IDenunciaService
             throw new ReglaDeNegocioException($"Puedes enviar como máximo {MaxDenunciasPorDia} denuncias por día.");
 
         var d = new Denuncia(actorId, tipo, r.ObjetivoId, (MotivoDenuncia)(int)r.Motivo, r.Detalle, Ahora, denunciado);
+        var previas = await _denuncias.PendientesDelObjetivoAsync(tipo, r.ObjetivoId);
         _denuncias.Agregar(d);
         // Varias personas distintas denunciando lo mismo: sale del catálogo hasta que un moderador la revise.
         var aRevision = false;
         if (tipo == TipoObjetoDenuncia.Publicacion && await _pubs.ObtenerPorIdAsync(r.ObjetivoId) is { } pub)
         {
-            var denunciantes = (await _denuncias.PendientesDelObjetivoAsync(tipo, r.ObjetivoId)).Select(x => x.DenuncianteId)
-                .Append(actorId).Distinct().Count();
+            var denunciantes = previas.Select(x => x.DenuncianteId).Append(actorId).Distinct().Count();
             aRevision = _moderacion.RevisarPorDenuncias(pub, denunciantes);
         }
         await _uow.GuardarCambiosAsync(); // índice único: dos envíos simultáneos → 409
         _log.LogInformation("Denuncia {DenunciaId} sobre {Tipo} {ObjetivoId}", d.Id, tipo, r.ObjetivoId);
-        if (aRevision) await _moderacion.AvisarColaAsync();
+        // Un aviso por contenido denunciado (la fila del panel los agrupa): cinco denuncias de lo mismo no son cinco avisos.
+        // El aviso no lleva el contenido ni quién denunció: el moderador lo ve en el panel.
+        if (previas.Count == 0)
+            await _avisosModeracion.PendienteAsync(TiposNotificacion.DenunciaNueva,
+                $"Nueva denuncia sobre {QueSeDenuncio(tipo)}: revísala en Denuncias.", d.Id, excluir: actorId);
+        else if (aRevision) await _moderacion.AvisarColaAsync();
         return new DenunciaCreadaDto(d.Id, d.Estado.ToString(), d.FechaUtc);
     }
+
+    private static string QueSeDenuncio(TipoObjetoDenuncia tipo) => tipo switch
+    {
+        TipoObjetoDenuncia.Publicacion => "una publicación",
+        TipoObjetoDenuncia.Comentario => "un comentario",
+        TipoObjetoDenuncia.Mensaje => "un mensaje del chat",
+        TipoObjetoDenuncia.Usuario => "una cuenta",
+        TipoObjetoDenuncia.Calificacion => "una calificación",
+        TipoObjetoDenuncia.Deseo => "un deseo",
+        _ => "un contenido"
+    };
 
     private async Task<Usuario> ExigirModeradorAsync(Guid actorId)
     {
@@ -404,9 +421,8 @@ public sealed class DenunciaService : IDenunciaService
         await _uow.GuardarCambiosAsync(); // índice único por resolución: dos envíos simultáneos → 409
         _log.LogInformation("Apelación {ApelacionId} sobre la resolución {ResolucionId}", a.Id, resolucionId);
 
-        foreach (var moderador in await _usuarios.ListarIdsModeradoresAsync())
-            await _notificador.NotificarAsync(moderador, TiposNotificacion.ApelacionNueva,
-                "Una persona denunciada envió su versión y pide revisar la decisión.", a.Id);
+        await _avisosModeracion.PendienteAsync(TiposNotificacion.ApelacionNueva,
+            "Una persona denunciada envió su versión y pide revisar la decisión.", a.Id, excluir: actorId);
         return AApelacionDto(a);
     }
 

@@ -137,9 +137,9 @@ public sealed class EmisorSignalR : IEmisorTiempoReal
     public Task PresenciaAsync(IReadOnlyCollection<Guid> usuarioIds, PresenciaDto presencia)
         => _hub.Clients.Users(usuarioIds.Select(u => u.ToString()).ToList()).SendAsync(NotificacionesHub.EventoPresencia, presencia);
 
-    public Task ColaModeracionAsync(IReadOnlyCollection<Guid> moderadorIds, ColaModeracionDto cola)
+    public Task ColaModeracionAsync(IReadOnlyCollection<Guid> moderadorIds, PendientesModeracionDto pendientes)
         => moderadorIds.Count == 0 ? Task.CompletedTask
-            : _hub.Clients.Users(moderadorIds.Select(u => u.ToString()).ToList()).SendAsync(NotificacionesHub.EventoColaModeracion, cola);
+            : _hub.Clients.Users(moderadorIds.Select(u => u.ToString()).ToList()).SendAsync(NotificacionesHub.EventoColaModeracion, pendientes);
 }
 
 /// <summary>

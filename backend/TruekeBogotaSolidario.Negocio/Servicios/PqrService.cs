@@ -30,6 +30,7 @@ public sealed class PqrService : IPqrService
     private readonly IUsuarioRepository _usuarios;
     private readonly IUnidadDeTrabajo _uow;
     private readonly INotificador _notificador;
+    private readonly IAvisosModeracion _avisosModeracion;
     private readonly ICorreoSaliente _correo;
     private readonly LegalOpciones _legal;
     private readonly IVerificadorCaptcha _captcha;
@@ -37,11 +38,11 @@ public sealed class PqrService : IPqrService
     private readonly TimeProvider _reloj;
     private readonly ILogger<PqrService> _log;
 
-    public PqrService(IPqrRepository pqrs, IPagoRepository pagos, IUsuarioRepository usuarios, IUnidadDeTrabajo uow, INotificador notificador,
+    public PqrService(IPqrRepository pqrs, IPagoRepository pagos, IUsuarioRepository usuarios, IUnidadDeTrabajo uow, INotificador notificador, IAvisosModeracion avisosModeracion,
         ICorreoSaliente correo, IOptions<LegalOpciones> legal, IVerificadorCaptcha captcha, ResumenPqrPublicas resumenPublicas, TimeProvider reloj,
         ILogger<PqrService> log)
     {
-        _pqrs = pqrs; _pagos = pagos; _usuarios = usuarios; _uow = uow; _notificador = notificador; _correo = correo;
+        _pqrs = pqrs; _pagos = pagos; _usuarios = usuarios; _uow = uow; _notificador = notificador; _avisosModeracion = avisosModeracion; _correo = correo;
         _legal = legal.Value; _captcha = captcha; _resumenPublicas = resumenPublicas; _reloj = reloj; _log = log;
     }
 
@@ -126,8 +127,7 @@ public sealed class PqrService : IPqrService
             _resumenPublicas.Registrar();
             return;
         }
-        foreach (var moderador in await _usuarios.ListarIdsModeradoresAsync())
-            await _notificador.NotificarAsync(moderador, TiposNotificacion.PqrNueva, $"Nueva {Etiqueta(pqr.Tipo).ToLowerInvariant()} {pqr.Radicado}: {pqr.Asunto}", pqr.Id);
+        await _avisosModeracion.PendienteAsync(TiposNotificacion.PqrNueva, $"Nueva {Etiqueta(pqr.Tipo).ToLowerInvariant()} {pqr.Radicado}: {pqr.Asunto}", pqr.Id);
     }
 
     public async Task<IReadOnlyList<PqrDto>> ListarMiasAsync(Guid actorId)

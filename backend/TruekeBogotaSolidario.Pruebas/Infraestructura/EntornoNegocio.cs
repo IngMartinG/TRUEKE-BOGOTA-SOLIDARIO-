@@ -20,7 +20,8 @@ public sealed class EntornoNegocio : IDisposable
     public const int SaldoAlRegistrarse = Datos.Common.PoliticaEcoPuntos.PuntosBienvenida + Datos.Common.PoliticaEcoPuntos.PuntosPerfilCompleto;
     private readonly ServiceProvider _sp;
 
-    public EntornoNegocio(IProveedorPagos? proveedor = null, TimeProvider? reloj = null, IReadOnlyDictionary<string, string?>? extra = null)
+    public EntornoNegocio(IProveedorPagos? proveedor = null, TimeProvider? reloj = null, IReadOnlyDictionary<string, string?>? extra = null,
+        Action<IServiceCollection>? configurar = null)
     {
         var valores = new Dictionary<string, string?>
         {
@@ -47,6 +48,7 @@ public sealed class EntornoNegocio : IDisposable
         if (reloj is not null) services.AddSingleton(reloj); // AddNegocio usa TryAdd: respeta este reloj
         services.AddNegocio(config);
         if (proveedor is not null) services.Replace(ServiceDescriptor.Singleton(proveedor));
+        configurar?.Invoke(services);
         _sp = services.BuildServiceProvider(new ServiceProviderOptions { ValidateScopes = true, ValidateOnBuild = true });
         NegocioServiceCollectionExtensions.InicializarBaseDatosAsync(_sp, new ConfigurationBuilder()
             .AddInMemoryCollection(new Dictionary<string, string?> { ["Database:Inicializacion"] = "EnsureCreated" }).Build()).GetAwaiter().GetResult();

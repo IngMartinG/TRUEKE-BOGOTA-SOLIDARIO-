@@ -56,9 +56,9 @@ public sealed class AuthService : IAuthService
         ISesionService sesiones, IOptions<SeguridadOpciones> seg, IOptions<LegalOpciones> legal, CorreosCuenta correos,
         ICorreoSaliente salida, IValidadorGoogle google, IVerificadorCaptcha captcha, VerificadorDosFactores dosFactores,
         TimeProvider reloj, ILogger<AuthService> log, IImportadorFotoPerfil importadorFoto, ISuscripcionPushRepository suscripcionesPush,
-        ConfirmadorIdentidad confirmador, IPublicacionRepository publicaciones, INotificador notificador)
+        ConfirmadorIdentidad confirmador, IPublicacionRepository publicaciones, INotificador notificador, IAvisosModeracion avisosModeracion)
     {
-        _confirmador = confirmador; _publicaciones = publicaciones; _notificador = notificador;
+        _confirmador = confirmador; _publicaciones = publicaciones; _notificador = notificador; _avisosModeracion = avisosModeracion;
         _usuarios = usuarios; _refrescos = refrescos; _uow = uow; _emisor = emisor; _sesiones = sesiones; _seg = seg.Value;
         _legal = legal.Value; _correos = correos; _salida = salida; _google = google; _captcha = captcha; _dosFactores = dosFactores;
         _reloj = reloj; _log = log; _importadorFoto = importadorFoto; _suscripcionesPush = suscripcionesPush;
@@ -68,6 +68,7 @@ public sealed class AuthService : IAuthService
     private readonly ISuscripcionPushRepository _suscripcionesPush;
     private readonly IPublicacionRepository _publicaciones;
     private readonly INotificador _notificador;
+    private readonly IAvisosModeracion _avisosModeracion;
 
     /// <summary>Motivo con que se ocultan las publicaciones de una cuenta en revisión por mayoría de edad.</summary>
     public const string MotivoOcultamientoMenor = "Cuenta en revisión por mayoría de edad.";
@@ -343,9 +344,8 @@ public sealed class AuthService : IAuthService
         await _uow.GuardarCambiosAsync();
         _sesiones.Invalidar(u.Id);
         _log.LogWarning("Cuenta {UsuarioId} en revisión: declaró una fecha de menor de edad", u.Id);
-        foreach (var moderador in await _usuarios.ListarIdsModeradoresAsync())
-            await _notificador.NotificarAsync(moderador, TiposNotificacion.MenorDetectado,
-                "Una cuenta declaró una fecha de menor de edad: revísala en Usuarios.", u.Id);
+        await _avisosModeracion.PendienteAsync(TiposNotificacion.MenorDetectado,
+            "Una cuenta declaró una fecha de menor de edad: revísala en Usuarios.", u.Id, excluir: u.Id);
     }
 
     public async Task<UsuarioDto> AceptarLegalAsync(Guid actorId, AceptarLegalRequest r)
@@ -361,8 +361,14 @@ public sealed class AuthService : IAuthService
     public async Task<UsuarioDto> ActualizarPerfilEmpresaAsync(Guid actorId, PerfilEmpresaRequest r)
     {
         var u = await CargarAsync(actorId);
+        var antes = (u.Nit, u.NombreComercial, u.NitVerificadoUtc, u.NitRechazadoUtc);
         u.ActualizarPerfilEmpresa(r.NombreComercial, r.Nit, r.MostrarNit, Ahora, r.Descripcion, r.Horario);
         await _uow.GuardarCambiosAsync();
+        // Un NIT nuevo (o el mismo con otro nombre) vuelve a la fila del panel: se avisa solo si cambió algo que revisar.
+        var porVerificar = u.Nit is not null && u.NitVerificadoUtc is null && u.NitRechazadoUtc is null;
+        if (porVerificar && antes != (u.Nit, u.NombreComercial, u.NitVerificadoUtc, u.NitRechazadoUtc))
+            await _avisosModeracion.PendienteAsync(TiposNotificacion.NegocioPorVerificar,
+                $"El negocio \"{u.NombreComercial}\" registró su NIT: verifícalo en Negocios.", u.Id, excluir: u.Id);
         return Mapeos.AUsuarioDto(u, Ahora);
     }
 

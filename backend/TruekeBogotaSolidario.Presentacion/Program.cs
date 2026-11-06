@@ -108,7 +108,11 @@ builder.Services.Replace(ServiceDescriptor.Singleton<IEmisorTiempoReal, EmisorSi
 
 // ---------- MVC / JSON ----------
 // Contrato con Angular: camelCase, enums como texto, fechas UTC ISO-8601 con "Z", errores ProblemDetails.
-builder.Services.AddControllers(MensajesValidacionEspanol.Configurar)
+builder.Services.AddControllers(o =>
+    {
+        MensajesValidacionEspanol.Configurar(o);
+        o.Filters.Add<TruekeBogotaSolidario.Presentacion.TiempoReal.PendientesModeracionFiltro>();
+    })
     .AddJsonOptions(o =>
     {
         o.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));

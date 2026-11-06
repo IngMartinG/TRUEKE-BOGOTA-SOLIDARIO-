@@ -66,19 +66,20 @@ public sealed class FundacionService : IFundacionService
     private readonly IUnidadDeTrabajo _uow;
     private readonly IAlmacenArchivos _almacen;
     private readonly INotificador _notificador;
+    private readonly IAvisosModeracion _avisosModeracion;
     private readonly IMemoryCache _cache;
     private readonly UrlsOpciones _urls;
     private readonly TimeProvider _reloj;
     private readonly ILogger<FundacionService> _log;
 
     public FundacionService(IFundacionRepository fundaciones, IUsuarioRepository usuarios, ICategoriaRepository categorias,
-        IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, IAlmacenArchivos almacen, INotificador notificador, IMemoryCache cache,
+        IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, IAlmacenArchivos almacen, INotificador notificador, IAvisosModeracion avisosModeracion, IMemoryCache cache,
         IOptions<UrlsOpciones> urls, TimeProvider reloj, ILogger<FundacionService> log, IBloqueoRepository bloqueos,
         INotificacionRepository notificaciones)
     {
         _bloqueos = bloqueos; _notificaciones = notificaciones;
         _fundaciones = fundaciones; _usuarios = usuarios; _categorias = categorias; _auditoria = auditoria; _uow = uow;
-        _almacen = almacen; _notificador = notificador; _cache = cache; _urls = urls.Value; _reloj = reloj; _log = log;
+        _almacen = almacen; _notificador = notificador; _avisosModeracion = avisosModeracion; _cache = cache; _urls = urls.Value; _reloj = reloj; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
@@ -116,9 +117,8 @@ public sealed class FundacionService : IFundacionService
         await _uow.GuardarCambiosAsync();
         _log.LogInformation("Solicitud de fundación de {UsuarioId}", actorId);
 
-        foreach (var super in await _usuarios.ListarIdsSuperUsuariosAsync())
-            if (super != actorId)
-                await _notificador.NotificarAsync(super, TiposNotificacion.FundacionPorRevisar, $"La fundación \"{f.RazonSocial}\" pidió su verificación.", actorId);
+        await _avisosModeracion.PendienteAsync(TiposNotificacion.FundacionPorRevisar, $"La fundación \"{f.RazonSocial}\" pidió su verificación.",
+            actorId, soloSuperUsuarios: true, excluir: actorId);
         return await AMiaAsync(f);
     }
 

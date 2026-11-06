@@ -1,5 +1,5 @@
 import { CdkMenu, CdkMenuItem, CdkMenuTrigger } from '@angular/cdk/menu';
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { ConfigService } from '../core/config.service';
 import { SesionService } from '../core/sesion.service';
@@ -105,10 +105,13 @@ import { Logo } from '../shared/ui/logo';
           @if (sesion.autenticado()) {
             <button
               type="button"
-              class="flex items-center gap-2 rounded-full border border-borde bg-superficie py-1 pr-3 pl-1 transition hover:border-bosque-300"
+              class="relative flex items-center gap-2 rounded-full border border-borde bg-superficie py-1 pr-3 pl-1 transition hover:border-bosque-300"
               [cdkMenuTriggerFor]="menuUsuario"
-              aria-label="Menú de tu cuenta"
+              [attr.aria-label]="pendientesModeracion() ? 'Menú de tu cuenta, hay ' + pendientesModeracion() + ' pendientes de moderación' : 'Menú de tu cuenta'"
             >
+              @if (pendientesModeracion()) {
+                <span class="absolute top-0.5 left-7 size-2.5 rounded-full bg-sol-400 ring-2 ring-superficie" aria-hidden="true"></span>
+              }
               <app-avatar [nombre]="sesion.usuario()?.nombreCompleto" [foto]="sesion.usuario()?.fotoUrl" [tamano]="32" [verificado]="!!sesion.usuario()?.verificado" />
               <span class="hidden items-center gap-1 text-sm font-bold text-sol-600 lg:flex dark:text-sol-300">
                 <app-icono nombre="moneda" [tamano]="16" />{{ sesion.usuario()?.saldoEcoPuntos | numero }}
@@ -154,7 +157,10 @@ import { Logo } from '../shared/ui/logo';
         }
         @if (sesion.esModerador() && sesion.correoVerificado()) {
           <a cdkMenuItem routerLink="/admin" class="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-agua-700 hover:bg-superficie-2 focus:bg-superficie-2 focus-visible:-outline-offset-2 dark:text-agua-100">
-            <app-icono nombre="escudo" [tamano]="18" />Moderación
+            <app-icono nombre="escudo" [tamano]="18" /><span class="flex-1">Moderación</span>
+            @if (pendientesModeracion(); as n) {
+              <span class="rounded-full bg-sol-400 px-1.5 text-xs font-bold text-bosque-900 tabular-nums">{{ n > 99 ? '99+' : n }}<span class="sr-only"> pendientes</span></span>
+            }
           </a>
         }
         <button cdkMenuItem type="button" (click)="tema.alternar()" class="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium hover:bg-superficie-2 focus:bg-superficie-2 focus-visible:-outline-offset-2 sm:hidden">
@@ -173,6 +179,8 @@ export class Encabezado {
   protected readonly sesion = inject(SesionService);
   protected readonly tema = inject(TemaService);
   protected readonly tiempoReal = inject(TiempoRealService);
+  /** Total que espera a la moderación (0 para quien no modera): punto en el avatar y número en el menú. */
+  protected readonly pendientesModeracion = computed(() => (this.sesion.esModerador() ? (this.tiempoReal.pendientesModeracion()?.total ?? 0) : 0));
   protected readonly config = inject(ConfigService);
   private readonly router = inject(Router);
   protected readonly texto = signal('');

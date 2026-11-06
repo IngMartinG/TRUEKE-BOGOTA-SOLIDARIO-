@@ -44,14 +44,15 @@ public sealed class FotoPerfilService : IFotoPerfilService
     private readonly FotosPerfilOpciones _opciones;
     private readonly TimeProvider _reloj;
     private readonly INotificador _notificador;
+    private readonly IAvisosModeracion _avisosModeracion;
     private readonly ILogger<FotoPerfilService> _log;
 
     public FotoPerfilService(IUsuarioRepository usuarios, IUnidadDeTrabajo uow, IAlmacenArchivos almacen, IRevisorFotoPerfil revisor,
         IDetectorRostros detector, IAuditoriaRepository auditoria, IOptions<UrlsOpciones> urls, IOptions<FotosPerfilOpciones> opciones, TimeProvider reloj,
-        INotificador notificador, ILogger<FotoPerfilService> log)
+        INotificador notificador, IAvisosModeracion avisosModeracion, ILogger<FotoPerfilService> log)
     {
         _usuarios = usuarios; _uow = uow; _almacen = almacen; _revisor = revisor; _detector = detector; _auditoria = auditoria; _urls = urls.Value;
-        _opciones = opciones.Value; _reloj = reloj; _notificador = notificador; _log = log;
+        _opciones = opciones.Value; _reloj = reloj; _notificador = notificador; _avisosModeracion = avisosModeracion; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
@@ -92,6 +93,8 @@ public sealed class FotoPerfilService : IFotoPerfilService
         await _uow.GuardarCambiosAsync();
         foreach (var f in sinUso) await _almacen.EliminarImagenPropiaAsync(f, actorId);
         await avisosPuntos.EnviarAsync(_notificador);
+        if (estado == EstadoFotoPerfil.EnRevision)
+            await _avisosModeracion.PendienteAsync(TiposNotificacion.FotoPorRevisar, MensajeFotosPorRevisar(1), actorId, excluir: actorId);
         return Mapeos.AUsuarioDto(u, Ahora);
     }
 
@@ -110,11 +113,16 @@ public sealed class FotoPerfilService : IFotoPerfilService
         // Las que no se pudieron leer se reintentan al día siguiente, no en cada lote.
         var pendientes = await _usuarios.ListarPorEstadoFotoAsync(EstadoFotoPerfil.SinRevisar, lote, ahora.AddDays(-1));
         var rechazadas = new List<Guid>();
+        var enRevision = 0;
         foreach (var u in pendientes)
         {
             ct.ThrowIfCancellationRequested();
             var resultado = await _revisor.RevisarAsync(u.FotoUrl!, ct);
-            if (resultado is { } estado) u.RegistrarRevisionFoto(estado, ahora);
+            if (resultado is { } estado)
+            {
+                u.RegistrarRevisionFoto(estado, ahora);
+                if (estado == EstadoFotoPerfil.EnRevision) enRevision++;
+            }
             else
             {
                 u.RechazarFoto(MotivoAutomatico, ahora, ahora.AddDays(_opciones.DiasPlazoCambio));
@@ -124,8 +132,14 @@ public sealed class FotoPerfilService : IFotoPerfilService
         await _uow.GuardarCambiosAsync();
         foreach (var id in rechazadas)
             await _notificador.NotificarAsync(id, TiposNotificacion.FotoPerfilRechazada, MensajeRechazo(_opciones.DiasPlazoCambio, MotivoAutomatico));
+        // Un solo aviso por lote: revisar las fotos de antes no debe llenar la campana de los moderadores.
+        if (enRevision > 0) await _avisosModeracion.PendienteAsync(TiposNotificacion.FotoPorRevisar, MensajeFotosPorRevisar(enRevision));
         return pendientes.Count;
     }
+
+    public static string MensajeFotosPorRevisar(int cantidad) => cantidad == 1
+        ? "Una foto de perfil espera revisión: el detector no pudo confirmar el rostro."
+        : $"{cantidad} fotos de perfil esperan revisión: el detector no pudo confirmar el rostro.";
 
     // ---------------- Moderación ----------------
 

@@ -22,7 +22,6 @@ public interface IModeracionPublicacionesService
     bool RevisarPorDenuncias(Publicacion p, int denunciantes);
     Task AvisarColaAsync();
     Task<PublicacionesEnRevisionDto> ListarAsync(Guid actorId);
-    Task<ColaModeracionDto> ContarAsync(Guid actorId);
     /// <summary>Aprueba en lote; las que ya no esperan revisión se ignoran. Devuelve cuántas se aprobaron.</summary>
     Task<int> AprobarAsync(Guid actorId, IReadOnlyCollection<Guid> ids);
     Task RechazarAsync(Guid actorId, Guid id, string motivo);
@@ -39,17 +38,17 @@ public sealed class ModeracionPublicacionesService : IModeracionPublicacionesSer
     private readonly IAuditoriaRepository _auditoria;
     private readonly IUnidadDeTrabajo _uow;
     private readonly INotificador _notificador;
-    private readonly IEmisorTiempoReal _emisor;
+    private readonly IAvisosModeracion _avisosModeracion;
     private readonly ModeracionOpciones _opciones;
     private readonly TimeProvider _reloj;
     private readonly ILogger<ModeracionPublicacionesService> _log;
 
     public ModeracionPublicacionesService(IPublicacionRepository pubs, IUsuarioRepository usuarios, IDenunciaRepository denuncias,
-        IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, INotificador notificador, IEmisorTiempoReal emisor,
+        IAuditoriaRepository auditoria, IUnidadDeTrabajo uow, INotificador notificador, IAvisosModeracion avisosModeracion,
         IOptions<ModeracionOpciones> opciones, TimeProvider reloj, ILogger<ModeracionPublicacionesService> log)
     {
         _pubs = pubs; _usuarios = usuarios; _denuncias = denuncias; _auditoria = auditoria; _uow = uow; _notificador = notificador;
-        _emisor = emisor; _opciones = opciones.Value; _reloj = reloj; _log = log;
+        _avisosModeracion = avisosModeracion; _opciones = opciones.Value; _reloj = reloj; _log = log;
     }
 
     private DateTime Ahora => _reloj.GetUtcNow().UtcDateTime;
@@ -75,7 +74,8 @@ public sealed class ModeracionPublicacionesService : IModeracionPublicacionesSer
     {
         await _notificador.NotificarAsync(p.PropietarioId, TiposNotificacion.PublicacionEnRevision,
             $"\"{p.Titulo}\" quedó en revisión: un moderador la revisa antes de mostrarla en el catálogo (suele tardar pocas horas).", p.Id);
-        await AvisarColaAsync();
+        await _avisosModeracion.PendienteAsync(TiposNotificacion.PublicacionPorRevisar,
+            "Una publicación espera aprobación antes de entrar al catálogo: revísala en Publicaciones.", p.Id);
     }
 
     public bool RevisarPorDenuncias(Publicacion p, int denunciantes)
@@ -85,19 +85,8 @@ public sealed class ModeracionPublicacionesService : IModeracionPublicacionesSer
         return true;
     }
 
-    /// <summary>El contador del panel se actualiza en vivo; si falla, la fila se ve igual al recargar.</summary>
-    public async Task AvisarColaAsync()
-    {
-        try
-        {
-            var cola = new ColaModeracionDto(await _pubs.ContarPendientesModeracionAsync());
-            await _emisor.ColaModeracionAsync(await _usuarios.ListarIdsModeradoresAsync(), cola);
-        }
-        catch (Exception ex)
-        {
-            _log.LogWarning(ex, "No se pudo actualizar el contador de moderación");
-        }
-    }
+    /// <summary>Las insignias del panel se actualizan en vivo; si falla, la fila se ve igual al recargar.</summary>
+    public Task AvisarColaAsync() => _avisosModeracion.ActualizarContadoresAsync();
 
     private async Task ExigirModeradorAsync(Guid actorId)
     {
@@ -117,12 +106,6 @@ public sealed class ModeracionPublicacionesService : IModeracionPublicacionesSer
                 p.PuntajeRiesgo, p.MotivosRiesgo?.Split("; ") ?? [], p.EnRevisionDesdeUtc ?? p.FechaPublicacion))
             .ToList();
         return new PublicacionesEnRevisionDto(items, await _pubs.ContarPendientesModeracionAsync());
-    }
-
-    public async Task<ColaModeracionDto> ContarAsync(Guid actorId)
-    {
-        await ExigirModeradorAsync(actorId);
-        return new ColaModeracionDto(await _pubs.ContarPendientesModeracionAsync());
     }
 
     public async Task<int> AprobarAsync(Guid actorId, IReadOnlyCollection<Guid> ids)

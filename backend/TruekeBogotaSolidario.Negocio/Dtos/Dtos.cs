@@ -944,8 +944,43 @@ public sealed record PublicacionEnRevisionDto(Guid Id, string Titulo, string Des
     IReadOnlyList<string> Imagenes, AutorEnRevisionDto Autor, int PuntajeRiesgo, IReadOnlyList<string> Motivos, DateTime DesdeUtc);
 /// <summary>La fila (hasta 100: primero las de más riesgo y luego las más antiguas) y su total.</summary>
 public sealed record PublicacionesEnRevisionDto(IReadOnlyList<PublicacionEnRevisionDto> Items, int Total);
-/// <summary>Cuántas cosas esperan a un moderador (para el contador del panel).</summary>
-public sealed record ColaModeracionDto(int Publicaciones);
+/// <summary>
+/// Cuántas cosas esperan a un moderador, por pestaña del panel (insignias y correo resumen). Fundaciones y empresas
+/// las revisa solo el SuperUsuario: para un Administrador van en 0.
+/// </summary>
+public sealed record PendientesModeracionDto(int Publicaciones, int Denuncias, int Apelaciones, int Fotos, int Verificaciones,
+    int Negocios, int Pqr, int Pagos, int Facturas, int Menores, int Fundaciones, int Empresas)
+{
+    public int Total => Publicaciones + Denuncias + Apelaciones + Fotos + Verificaciones + Negocios + Pqr + Pagos + Facturas + Menores
+        + Fundaciones + Empresas;
+
+    internal static PendientesModeracionDto Desde(Datos.Repositorios.ConteoPendientesModeracion c, bool esSuperUsuario)
+        => new(c.Publicaciones, c.Denuncias, c.Apelaciones, c.Fotos, c.Verificaciones, c.Negocios, c.Pqr, c.Pagos, c.Facturas, c.Menores,
+            esSuperUsuario ? c.Fundaciones : 0, esSuperUsuario ? c.Empresas : 0);
+
+    internal string Firma() => $"{Publicaciones}|{Denuncias}|{Apelaciones}|{Fotos}|{Verificaciones}|{Negocios}|{Pqr}|{Pagos}|{Facturas}|{Menores}|{Fundaciones}|{Empresas}";
+
+    /// <summary>Una línea por categoría con pendientes (para el correo resumen).</summary>
+    internal IEnumerable<string> Lineas()
+    {
+        (int N, string Uno, string Varios)[] filas =
+        [
+            (Publicaciones, "1 publicación por aprobar", "publicaciones por aprobar"),
+            (Denuncias, "1 contenido denunciado", "contenidos denunciados"),
+            (Apelaciones, "1 apelación de una decisión", "apelaciones de decisiones"),
+            (Fotos, "1 foto de perfil por revisar", "fotos de perfil por revisar"),
+            (Verificaciones, "1 verificación de identidad", "verificaciones de identidad"),
+            (Negocios, "1 NIT de negocio por verificar", "NIT de negocios por verificar"),
+            (Pqr, "1 PQRS abierta", "PQRS abiertas"),
+            (Pagos, "1 pago que requiere revisión", "pagos que requieren revisión"),
+            (Facturas, "1 factura por emitir", "facturas por emitir"),
+            (Menores, "1 cuenta con posible menor de edad", "cuentas con posible menor de edad"),
+            (Fundaciones, "1 fundación por verificar", "fundaciones por verificar"),
+            (Empresas, "1 empresa por verificar", "empresas por verificar"),
+        ];
+        return filas.Where(f => f.N > 0).Select(f => f.N == 1 ? $"• {f.Uno}" : $"• {f.N} {f.Varios}");
+    }
+}
 
 public sealed class AprobarPublicacionesRequest
 {
