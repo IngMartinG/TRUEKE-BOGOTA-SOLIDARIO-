@@ -76,7 +76,7 @@ services:
       retries: 30
 
   storage:
-    image: supabase/storage-api:v1.84.36@sha256:da5e5e14e48002ff7ec8f38e3ca2186edc9dc1940c45b6b17b649fca87cd3f8e
+    image: supabase/storage-api:v1.89.12@sha256:8526956cb462e9f7d392e9848ec77133b2769982ed614e9753cc687e8e4339a6
     environment:
       AUTH_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
       PGRST_JWT_SECRET: super-secret-jwt-token-with-at-least-32-characters-long
