@@ -34,9 +34,9 @@
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="10.0.14" />
     <!-- Detector de rostros de la foto de perfil (modelo local en Archivos/Modelos; ninguna foto sale del servidor). -->
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.31.1" />
-    <PackageReference Include="SkiaSharp" Version="4.154.0" />
+    <PackageReference Include="SkiaSharp" Version="4.155.0" />
     <!-- Binarios nativos de Skia para Linux (Docker / Render) sin depender de fontconfig ni otras librerías del sistema. -->
-    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.154.0" />
+    <PackageReference Include="SkiaSharp.NativeAssets.Linux.NoDependencies" Version="4.155.0" />
   </ItemGroup>
 
   <ItemGroup>
