@@ -41,6 +41,7 @@ import { ConfigService } from '../../core/config.service';
 import { erroresDeCampos, mensajeDe } from '../../core/http/problema';
 import { SesionService } from '../../core/sesion.service';
 import { SubidasService } from '../../core/subidas.service';
+import { esArticuloDeHigiene, MENSAJE_HIGIENE } from '../../shared/higiene';
 import { comprimirImagen, urlPublica } from '../../shared/imagenes';
 import { CopPipe, HacePipe } from '../../shared/pipes';
 import { aplicarErroresServidor, ErrorCampo } from '../../shared/ui/error-campo';
@@ -217,6 +218,9 @@ const sinTildes = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLo
                     }
                   </div>
                   <app-error-campo [control]="form.controls.condicion" etiqueta="El estado del producto" idError="condicion-error" />
+                  @if (higieneSinNuevo()) {
+                    <p class="mt-2 rounded-xl bg-tierra-50 p-3 text-sm text-tierra-700 dark:bg-tierra-700/20 dark:text-tierra-100" role="alert" data-aviso-higiene>{{ mensajeHigiene }}</p>
+                  }
                 </fieldset>
 
                 @if (condicionActual() === 'Nuevo') {
@@ -658,6 +662,12 @@ export default class Publicar {
     !this.id() && this.modoActual() === 'Donacion' ? (this.necesidadDeRuta() ?? this.necesidadElegida()) : null);
   private readonly fundaciones = toSignal(this.fundacionesApi.listado$.pipe(catchError(() => of([]))), { initialValue: [] });
   private readonly tituloActual = toSignal(this.form.controls.titulo.valueChanges.pipe(debounceTime(300)), { initialValue: '' });
+  protected readonly mensajeHigiene = MENSAJE_HIGIENE;
+  /** Ropa interior, medias o trajes de baño con un estado que no es «Nuevo»: el servidor no lo acepta, así que se avisa antes. */
+  protected readonly higieneSinNuevo = computed(() => {
+    const estado = this.condicionActual();
+    return !!estado && estado !== 'Nuevo' && esArticuloDeHigiene(this.tituloActual());
+  });
   /**
    * Necesidades abiertas que se parecen a lo que se dona: misma categoría o palabras del título en común (las urgentes pesan
    * un poco más). Solo al crear una donación y sin una necesidad elegida de antes.
@@ -974,7 +984,7 @@ export default class Publicar {
     };
     switch (paso) {
       case 1:
-        return marcar(c.titulo, c.categoriaId, c.condicion, c.origenNuevo, c.detalleCondicion, c.descripcion, c.precioReferenciaCop);
+        return marcar(c.titulo, c.categoriaId, c.condicion, c.origenNuevo, c.detalleCondicion, c.descripcion, c.precioReferenciaCop) && !this.higieneSinNuevo();
       case 3:
         return marcar(c.municipioCodigo, c.localidad);
       default:

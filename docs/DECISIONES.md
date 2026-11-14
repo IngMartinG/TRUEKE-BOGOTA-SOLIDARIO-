@@ -101,6 +101,12 @@ suma impacto, Eco-Puntos ni reputación: quien confirmó tiene el incentivo de p
 - Siguen en el plan: artículos de higiene solo nuevos y trueke con complemento en dinero (que reemplazará la decisión del
   2026-10-24 de no mezclar objetos y dinero).
 
+## D-020 — Ropa interior, medias y trajes de baño solo nuevos (2026-11-14)
+Por higiene, esos artículos solo se publican con estado «Nuevo»: si el título los nombra y el estado es otro, la API responde 400 con
+el motivo y el formulario avisa antes de enviar. Si solo aparecen en la descripción, la publicación espera a un moderador (no se
+bloquea: "no incluye medias" es legítimo). La lista está en `ArticulosDeHigiene`; el front tiene una copia solo para avisar. Lo
+que ya estaba publicado y no cumple salió del catálogo hacia revisión (no se borró) y a su dueño se le avisó.
+
 ## Pendientes de decidir
 - Precio de "Destacar": 5.000 COP por 7 días desde el 2026-10-30 (antes 6.000). Revisar con datos reales cuando se encienda el cobro.
 - Punto físico o 100 % digital.

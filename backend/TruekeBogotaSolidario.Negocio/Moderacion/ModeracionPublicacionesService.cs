@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
@@ -63,7 +63,7 @@ public sealed class ModeracionPublicacionesService : IModeracionPublicacionesSer
         var contexto = new ContextoRiesgo(duenio.FechaRegistro, duenio.EsVerificado, duenio.EstadoFoto,
             esNueva ? await _pubs.ContarAprobadasDePropietarioAsync(duenio.Id) : int.MaxValue,
             await _denuncias.ContarConfirmadasContraAsync(duenio.Id, ahora.AddMonths(-MesesDenunciasConfirmadas)), esNueva);
-        var r = EvaluadorRiesgo.Evaluar(p.Titulo, p.Descripcion, p.DetalleCondicion, contexto, _opciones, ahora);
+        var r = EvaluadorRiesgo.Evaluar(p.Titulo, p.Descripcion, p.DetalleCondicion, contexto, _opciones, ahora, p.Condicion);
         if (!r.RequiereRevision && !reenviada && p.EstadoModeracion != EstadoModeracion.Pendiente) return false;
         var motivos = reenviada ? r.Motivos.Prepend("Corregida tras un rechazo") : r.Motivos;
         p.EnviarARevision(r.Puntaje, motivos, ahora);

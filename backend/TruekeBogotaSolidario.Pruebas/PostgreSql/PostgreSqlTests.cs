@@ -369,6 +369,44 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
         """;
 
     [SkippableFact]
+    public async Task La_migracion_de_higiene_manda_a_revision_solo_lo_usado_de_ropa_interior_medias_y_trajes_de_bano()
+    {
+        Skip.IfNot(_sql.Disponible, _sql.MotivoNoDisponible);
+        var cadena = _sql.NuevaBase();
+        await using (var db = Contexto(cadena)) await db.GetService<IMigrator>().MigrateAsync("20261114214756_ImpactoSinMercanciaNueva");
+
+        var duenio = new Datos.Entidades.Usuario("Dueña Prueba", "Suba", $"duenia{Guid.NewGuid():N}@t.co", "Clave12345");
+        Guid medias, calzon, bici, mediasNuevas, calzado;
+        await using (var db = Contexto(cadena))
+        {
+            var ropa = await db.Categorias.FirstAsync(c => c.Id == 1);
+            Datos.Entidades.Publicacion Pub(string titulo)
+                => new(duenio.Id, new Datos.Entidades.DatosPublicacion(titulo, "Buen estado, en Bogotá", ropa, Datos.Entidades.ModoTransaccion.Trueke,
+                    Datos.Entidades.CondicionProducto.Nuevo, null, Divipola.CodigoBogota, "Suba", null, null, null, null));
+            var pMedias = Pub("Medias deportivas"); var pCalzon = Pub("Calzones de algodón"); var pBici = Pub("Bicicleta de ruta");
+            var pNuevas = Pub("Medias nuevas de lana"); var pCalzado = Pub("Calzado deportivo");
+            db.Usuarios.Add(duenio);
+            db.Publicaciones.AddRange(pMedias, pCalzon, pBici, pNuevas, pCalzado);
+            await db.SaveChangesAsync();
+            (medias, calzon, bici, mediasNuevas, calzado) = (pMedias.Id, pCalzon.Id, pBici.Id, pNuevas.Id, pCalzado.Id);
+            // Antes de la regla se podían publicar usadas: se simula dejándolas "Usado" directamente en la base.
+            await db.Database.ExecuteSqlRawAsync("""UPDATE "Publicaciones" SET "Condicion" = 'Usado' WHERE "Id" <> {0}""", mediasNuevas);
+        }
+
+        await using (var db = Contexto(cadena)) await db.Database.MigrateAsync();
+
+        await using var lectura = Contexto(cadena);
+        async Task<Datos.Entidades.EstadoModeracion> EstadoDe(Guid id) => (await lectura.Publicaciones.AsNoTracking().FirstAsync(p => p.Id == id)).EstadoModeracion;
+        Assert.Equal(Datos.Entidades.EstadoModeracion.Pendiente, await EstadoDe(medias));
+        Assert.Equal(Datos.Entidades.EstadoModeracion.Pendiente, await EstadoDe(calzon));
+        Assert.Equal(Datos.Entidades.EstadoModeracion.Aprobada, await EstadoDe(bici));          // no es de higiene
+        Assert.Equal(Datos.Entidades.EstadoModeracion.Aprobada, await EstadoDe(mediasNuevas));  // es nueva
+        Assert.Equal(Datos.Entidades.EstadoModeracion.Aprobada, await EstadoDe(calzado));       // "calzado" no es "calzón"
+        var avisos = await lectura.Notificaciones.AsNoTracking().Where(n => n.UsuarioId == duenio.Id && n.Tipo == "PublicacionEnRevision").ToListAsync();
+        Assert.Equal(2, avisos.Count);
+    }
+
+    [SkippableFact]
     public async Task La_migracion_de_impacto_registra_solo_los_intercambios_que_ambas_partes_confirmaron()
     {
         Skip.IfNot(_sql.Disponible, _sql.MotivoNoDisponible);
