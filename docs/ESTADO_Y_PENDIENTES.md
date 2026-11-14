@@ -942,6 +942,23 @@ tenía una foto sin rostro recibe un aviso y 7 días para cambiarla.
 - Términos y política de datos explican el filtro. **Pendiente del dueño:** decidir si este cambio sube la versión de los
   términos (obligaría a todos a aceptarlos de nuevo).
 
+## Hecho el 2026-11-14 — mercancía nueva distinta de la segunda mano (PR 1 de 4)
+Decisiones del dueño: quien publica algo "Nuevo" dice si es mercancía para vender o algo sin usar que ya tenía; un negocio con
+el plan vigente que publica algo nuevo siempre vende mercancía; la mercancía nueva no es segunda mano y más adelante no sumará
+kilos ni dará los Eco-Puntos de una compra (PR 2). Plan completo: mercancía nueva, impacto 2.1.0 con 1 Eco-Punto por venta de
+mercancía, ropa interior/medias/trajes de baño solo nuevos, y trueke con complemento en dinero.
+- **Modelo:** `Publicacion.EsMercanciaNueva` (solo vale con condición Nuevo; migración `MercanciaNueva`, que marca como mercancía
+  lo "Nuevo" que ya tenían publicado los negocios con plan vigente). `CrearPublicacionRequest.EsMercanciaNueva`; el servidor
+  fuerza true a un negocio con plan vigente y false si la condición no es Nuevo.
+- **API:** `PublicacionDto.EsMercanciaNueva` (también en los objetos ofrecidos y en la cola de moderación) y filtro `origen`
+  (`SegundaMano` o `MercanciaNueva`) en `GET /publicaciones` y `/publicaciones/cercanas`. Las búsquedas guardadas todavía no
+  guardan el origen.
+- **Front:** al elegir Nuevo en Publicar se pregunta el origen (a un negocio se le explica que sale como «Producto nuevo»); la
+  tarjeta y el detalle muestran «Producto nuevo» o «Nuevo sin usar» con una frase clara (`infoOrigen` en `api/tipos.ts`); el
+  catálogo tiene el filtro «Segunda mano o nuevo».
+- Pruebas: `MercanciaNuevaTests`, `publicar.spec.ts` y las columnas nuevas en `PostgreSqlTests`. Sin verificar en pantalla: la
+  vista previa del navegador no pudo abrir el front.
+
 ## Revisión de un plan externo de producto (2026-10-29)
 Se revisó un paquete de documentos con bloques de producto (impacto, fundaciones, empresas, monetización, retención) y roles.
 - **Adoptado como documentación:** `docs/METODOLOGIA-IMPACTO.md` (versión 1.0.0, la vigente, y lo previsto para la 2.0.0),

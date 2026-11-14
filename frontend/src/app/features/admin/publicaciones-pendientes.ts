@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal } 
 import { rxResource } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { firstValueFrom } from 'rxjs';
-import { infoCondicion, type PublicacionEnRevisionDto } from '../../api/tipos';
+import { infoOrigen, type PublicacionEnRevisionDto } from '../../api/tipos';
 import { AdminApi } from '../../core/api/admin.api';
 import { AvisosService } from '../../core/avisos.service';
 import { TiempoRealService } from '../../core/tiempo-real.service';
@@ -241,7 +241,7 @@ export default class PublicacionesPendientes {
     });
   }
 
-  protected condicion = (p: PublicacionEnRevisionDto) => infoCondicion(p.condicion).etiqueta;
+  protected condicion = (p: PublicacionEnRevisionDto) => infoOrigen(p).etiqueta;
 
   protected nivel(p: PublicacionEnRevisionDto): { texto: string; clase: string } {
     return (p.puntajeRiesgo ?? 0) >= 100

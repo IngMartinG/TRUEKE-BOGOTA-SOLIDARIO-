@@ -9,6 +9,8 @@ public class FiltroPublicaciones
     public int? CategoriaId { get; set; }
     public ModoTransaccion? Modo { get; set; }
     public CondicionProducto? Condicion { get; set; }
+    /// <summary>true = solo mercancía nueva; false = solo segunda mano (todo lo demás); null = todo.</summary>
+    public bool? EsMercanciaNueva { get; set; }
     public string? DepartamentoCodigo { get; set; }
     public string? MunicipioCodigo { get; set; }
     public string? Localidad { get; set; }

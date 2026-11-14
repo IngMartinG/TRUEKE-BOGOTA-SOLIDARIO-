@@ -185,6 +185,7 @@ public sealed class PublicacionRepository : IPublicacionRepository
         if (f.CategoriaId.HasValue) q = q.Where(p => p.CategoriaId == f.CategoriaId.Value);
         if (f.Modo.HasValue) q = ConModo(q, f.Modo.Value);
         if (f.Condicion.HasValue) q = q.Where(p => p.Condicion == f.Condicion.Value);
+        if (f.EsMercanciaNueva.HasValue) { var mercancia = f.EsMercanciaNueva.Value; q = q.Where(p => p.EsMercanciaNueva == mercancia); }
         if (!string.IsNullOrWhiteSpace(f.DepartamentoCodigo)) { var dep = f.DepartamentoCodigo.Trim(); q = q.Where(p => p.DepartamentoCodigo == dep); }
         if (!string.IsNullOrWhiteSpace(f.MunicipioCodigo)) { var mpio = f.MunicipioCodigo.Trim(); q = q.Where(p => p.MunicipioCodigo == mpio); }
         if (!string.IsNullOrWhiteSpace(f.Localidad)) { var loc = f.Localidad.Trim(); q = q.Where(p => p.Localidad == loc); }

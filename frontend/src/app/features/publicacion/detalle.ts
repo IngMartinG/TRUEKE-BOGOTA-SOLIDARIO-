@@ -6,7 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { Title } from '@angular/platform-browser';
 import { Router, RouterLink } from '@angular/router';
 import { catchError, firstValueFrom, map, of } from 'rxjs';
-import { ETIQUETA_ESTADO_PUBLICACION, infoCondicion, INFO_MODO, nombrePlan, type ModoDto, type PublicacionDto } from '../../api/tipos';
+import { ETIQUETA_ESTADO_PUBLICACION, infoCondicion, infoOrigen, INFO_MODO, nombrePlan, type ModoDto, type PublicacionDto } from '../../api/tipos';
 import { AdminApi } from '../../core/api/admin.api';
 import { CatalogoApi } from '../../core/api/catalogo.api';
 import { CuentaApi } from '../../core/api/cuenta.api';
@@ -120,7 +120,7 @@ import { Volver } from '../../shared/ui/volver';
                 <span class="insignia-neutra" [class.!bg-bosque-100]="p.estado === 'Disponible'" [class.!text-bosque-800]="p.estado === 'Disponible'">
                   {{ etiquetaEstado[p.estado ?? ''] ?? p.estado }}
                 </span>
-                <span [class]="condicion().clase"><app-icono nombre="etiqueta" [tamano]="12" />{{ condicion().etiqueta }}</span>
+                <span [class]="origen().clase"><app-icono nombre="etiqueta" [tamano]="12" />{{ origen().tipo === 'segundaMano' ? 'Segunda mano · ' + origen().etiqueta : origen().etiqueta }}</span>
               </div>
               <h1 class="mt-4 text-2xl leading-tight font-extrabold break-words sm:text-3xl">{{ p.titulo }}</h1>
 
@@ -154,7 +154,12 @@ import { Volver } from '../../shared/ui/volver';
                 </div>
                 <div class="col-span-2 rounded-xl bg-superficie-2 p-3">
                   <dt class="flex items-center gap-1 text-xs text-tenue"><app-icono nombre="etiqueta" [tamano]="12" />Estado del producto</dt>
-                  <dd class="mt-0.5 font-semibold">{{ condicion().etiqueta }} <span class="font-normal text-tenue">· {{ condicion().descripcion }}</span></dd>
+                  @if (origen().tipo === 'segundaMano') {
+                    <dd class="mt-0.5 font-semibold">{{ condicion().etiqueta }} <span class="font-normal text-tenue">· {{ condicion().descripcion }}</span></dd>
+                  } @else {
+                    <dd class="mt-0.5 font-semibold">{{ origen().etiqueta }}</dd>
+                    <dd class="mt-0.5 text-tenue">{{ origen().frase }}</dd>
+                  }
                   @if (p.detalleCondicion) {
                     <dd class="mt-1 whitespace-pre-line text-tenue">{{ p.detalleCondicion }}</dd>
                   }
@@ -512,6 +517,7 @@ export default class Detalle {
   protected readonly infoModo = computed(() => INFO_MODO[(this.p()?.modo as ModoDto) ?? 'Trueke'] ?? INFO_MODO.Trueke);
   protected readonly favorita = computed(() => this.favoritos.esFavorita(this.p()?.id, this.p()?.esFavorita));
   protected readonly condicion = computed(() => infoCondicion(this.p()?.condicion));
+  protected readonly origen = computed(() => infoOrigen(this.p()));
   private readonly politica = toSignal(this.cuentaApi.politica$.pipe(catchError(() => of(null))), { initialValue: null });
   protected readonly puntosImpulsar = computed(() => this.politica()?.puntosImpulsar ?? 20);
   protected readonly puedeImpulsar = computed(() => {
@@ -551,7 +557,7 @@ export default class Detalle {
     const p = this.p();
     return p?.modo === 'Trueke' || (p?.modo === 'Compra' && !!p.aceptaTrueke && this.forma() === 'trueke');
   });
-  protected readonly condicionDe = (c: string | null | undefined) => infoCondicion(c).etiqueta;
+  protected readonly condicionDe = (o: { condicion?: string | null; esMercanciaNueva?: boolean | null }) => infoOrigen(o).etiqueta;
   protected readonly motivoCancelar = signal('');
   protected readonly motivoOcultar = signal('');
   protected readonly errorSolicitud = signal<string | null>(null);

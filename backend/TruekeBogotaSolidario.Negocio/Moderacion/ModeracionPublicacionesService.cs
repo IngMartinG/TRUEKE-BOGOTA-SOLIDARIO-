@@ -103,7 +103,7 @@ public sealed class ModeracionPublicacionesService : IModeracionPublicacionesSer
                 Divipola.NombreCompleto(p.MunicipioCodigo), p.Imagenes.OrderBy(i => i.Orden).Select(i => i.Url).ToList(),
                 new AutorEnRevisionDto(p.PropietarioId, p.Propietario!.NombreCompleto, p.Propietario.FotoUrl, p.Propietario.FechaRegistro,
                     p.Propietario.EsVerificado),
-                p.PuntajeRiesgo, p.MotivosRiesgo?.Split("; ") ?? [], p.EnRevisionDesdeUtc ?? p.FechaPublicacion))
+                p.PuntajeRiesgo, p.MotivosRiesgo?.Split("; ") ?? [], p.EnRevisionDesdeUtc ?? p.FechaPublicacion, p.EsMercanciaNueva))
             .ToList();
         return new PublicacionesEnRevisionDto(items, await _pubs.ContarPendientesModeracionAsync());
     }

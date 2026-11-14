@@ -15,7 +15,7 @@ public class ImagenPublicacion
 public sealed record DatosPublicacion(string Titulo, string Descripcion, Categoria Categoria, ModoTransaccion Modo,
     CondicionProducto Condicion, string? DetalleCondicion, string MunicipioCodigo, string Localidad,
     decimal? PrecioReferenciaCop, double? Latitud, double? Longitud, IReadOnlyList<string>? Imagenes, bool AceptaTrueke = false,
-    decimal? PesoEstimadoKg = null, MaterialObjeto? Material = null);
+    decimal? PesoEstimadoKg = null, MaterialObjeto? Material = null, bool EsMercanciaNueva = false);
 
 public class Publicacion
 {
@@ -52,6 +52,11 @@ public class Publicacion
     public ModoTransaccion Modo { get; private set; }
     public CondicionProducto Condicion { get; private set; }
     public string? DetalleCondicion { get; private set; }
+    /// <summary>
+    /// Producto nuevo que se ofrece como mercancía (de tienda o para revender), no algo sin usar que la persona ya tenía.
+    /// Solo puede ser true con <see cref="CondicionProducto.Nuevo"/>: no es segunda mano.
+    /// </summary>
+    public bool EsMercanciaNueva { get; private set; }
     public decimal? PrecioReferenciaCop { get; private set; }
     /// <summary>Venta que también acepta trueke: quien la pide puede pagar el precio u ofrecer objetos suyos (solo en Compra).</summary>
     public bool AceptaTrueke { get; private set; }
@@ -198,6 +203,7 @@ public class Publicacion
         Modo = d.Modo;
         Condicion = d.Condicion;
         DetalleCondicion = detalle;
+        EsMercanciaNueva = d.Condicion == CondicionProducto.Nuevo && d.EsMercanciaNueva; // solo lo nuevo puede ser mercancía
         MunicipioCodigo = municipio.Codigo;
         DepartamentoCodigo = municipio.DepartamentoCodigo;
         Localidad = localidad;

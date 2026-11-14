@@ -22,7 +22,7 @@ interface Interno {
   publicar(): Promise<void>;
 }
 
-async function montar(entradas: Record<string, string>) {
+async function montar(entradas: Record<string, string>, usuario: object = {}, formulario: object = { origenNuevo: 'sinUsar' }) {
   const crear = vi.fn((_: CrearPublicacionRequest) => of({ id: 'p1' }));
   const avisos = { exito: vi.fn(), error: vi.fn(), info: vi.fn() };
   TestBed.configureTestingModule({
@@ -35,7 +35,7 @@ async function montar(entradas: Record<string, string>) {
       { provide: AvisosService, useValue: avisos },
       { provide: SubidasService, useValue: {} },
       { provide: ConfigService, useValue: { maxImagenes: signal(5), tamanoMaximo: signal(5 * 1024 * 1024) } },
-      { provide: SesionService, useValue: { usuario: signal({ id: 'u1', municipioCodigo: '11001', localidad: 'Bosa' }) } },
+      { provide: SesionService, useValue: { usuario: signal({ id: 'u1', municipioCodigo: '11001', localidad: 'Bosa', ...usuario }) } },
     ],
   });
   localStorage.clear();
@@ -46,8 +46,39 @@ async function montar(entradas: Record<string, string>) {
   fixture.detectChanges();
   const c = fixture.componentInstance as unknown as Interno;
   c.form.patchValue({ condicion: 'Nuevo', descripcion: 'Veinte cuadernos sin usar' });
+  fixture.detectChanges(); // el origen se pide al elegir "Nuevo"
+  c.form.patchValue(formulario);
   return { fixture, c, crear, avisos, el: fixture.nativeElement as HTMLElement };
 }
+
+describe('Origen de lo nuevo', () => {
+  const entradas = { modo: 'Trueke', titulo: 'Medias nuevas', categoria: '1' };
+
+  it('una persona que dice que lo tenía sin usar no lo publica como mercancía', async () => {
+    const { c, crear } = await montar(entradas, {}, { origenNuevo: 'sinUsar' });
+    await c.publicar();
+    expect(crear.mock.calls[0]![0].esMercanciaNueva).toBe(false);
+  });
+
+  it('mercancía nueva para vender se envía como mercancía', async () => {
+    const { c, crear } = await montar(entradas, {}, { origenNuevo: 'mercancia' });
+    await c.publicar();
+    expect(crear.mock.calls[0]![0].esMercanciaNueva).toBe(true);
+  });
+
+  it('un negocio con el plan vigente publica lo nuevo como mercancía sin elegir', async () => {
+    const vence = new Date(Date.now() + 86_400_000).toISOString();
+    const { c, crear } = await montar(entradas, { tipoCuenta: 'Empresa', planVigenteHasta: vence }, {});
+    await c.publicar();
+    expect(crear.mock.calls[0]![0].esMercanciaNueva).toBe(true);
+  });
+
+  it('lo usado nunca se envía como mercancía', async () => {
+    const { c, crear } = await montar(entradas, {}, { condicion: 'Usado', origenNuevo: 'mercancia' });
+    await c.publicar();
+    expect(crear.mock.calls[0]![0].esMercanciaNueva).toBe(false);
+  });
+});
 
 describe('Publicar desde «Tengo esto»', () => {
   const desdeFundacion = { modo: 'Donacion', titulo: 'Cuadernos cuadriculados', categoria: '1', necesidad: NECESIDAD };

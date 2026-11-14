@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { infoCondicion, type PublicacionDto } from '../../api/tipos';
+import { infoOrigen, type PublicacionDto } from '../../api/tipos';
 import { FavoritosService } from '../../core/favoritos.service';
 import { CopPipe, HacePipe } from '../pipes';
 import { Icono } from './icono';
@@ -29,6 +29,9 @@ import { InsigniaModo } from './insignia-modo';
         />
         <div class="insignias-tarjeta absolute right-12 flex flex-wrap items-start gap-1.5 pointer-coarse:right-14">
           <app-insignia-modo [modo]="p.modo" class="shadow-sm" />
+          @if (origen().tipo === 'mercancia') {
+            <span class="insignia-agua shadow-sm"><app-icono nombre="etiqueta" [tamano]="12" />Producto nuevo</span>
+          }
           @if (p.aceptaTrueke) {
             <span class="insignia-trueke shadow-sm"><app-icono nombre="repeat" [tamano]="12" [grosor]="2.5" />Acepta trueke</span>
           }
@@ -61,7 +64,7 @@ import { InsigniaModo } from './insignia-modo';
       <div class="flex flex-1 flex-col gap-2 p-4">
         <p class="flex items-center justify-between gap-2 text-xs font-medium text-tenue">
           <span class="truncate">{{ p.categoria?.nombre }}</span>
-          <span class="shrink-0 rounded-full bg-superficie-2 px-2 py-0.5 text-xs font-semibold">{{ condicion().etiqueta }}</span>
+          <span class="shrink-0 rounded-full bg-superficie-2 px-2 py-0.5 text-xs font-semibold">{{ origen().etiqueta }}</span>
         </p>
         <h3 class="line-clamp-2 font-display text-base leading-snug font-bold group-hover:text-bosque-700 dark:group-hover:text-bosque-300">
           {{ p.titulo }}
@@ -114,7 +117,7 @@ export class TarjetaPublicacion {
   protected readonly favorita = computed(() =>
     this.favoritos.esFavorita(this.publicacion().id, this.publicacion().esFavorita),
   );
-  protected readonly condicion = computed(() => infoCondicion(this.publicacion().condicion));
+  protected readonly origen = computed(() => infoOrigen(this.publicacion()));
   /** "Medellín, Antioquia" → "Medellín"; "Bogotá, D.C." → "Bogotá". */
   protected readonly ciudad = computed(() => (this.publicacion().municipio ?? '').split(',')[0]?.trim() ?? '');
 }

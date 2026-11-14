@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, u
 import { rxResource, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, firstValueFrom, of } from 'rxjs';
-import { ETIQUETA_ESTADO_PUBLICACION, infoCondicion, type PublicacionDto } from '../../api/tipos';
+import { ETIQUETA_ESTADO_PUBLICACION, infoOrigen, type PublicacionDto } from '../../api/tipos';
 import { CatalogoApi } from '../../core/api/catalogo.api';
 import { CuentaApi } from '../../core/api/cuenta.api';
 import { AvisosService } from '../../core/avisos.service';
@@ -207,7 +207,7 @@ export default class MisPublicaciones {
   }
 
   protected condicion(p: PublicacionDto): string {
-    return infoCondicion(p.condicion).etiqueta;
+    return infoOrigen(p).etiqueta;
   }
 
   protected puedeImpulsar(p: PublicacionDto): boolean {

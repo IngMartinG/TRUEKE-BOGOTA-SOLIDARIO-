@@ -15,6 +15,7 @@ import type {
   GuardarBusquedaRequest,
   ModoDto,
   ObjetoTipicoDto,
+  OrigenDto,
   PeriodoImpactoDto,
   OrdenPublicacionesDto,
   PublicacionCercanaDto,
@@ -28,6 +29,8 @@ export interface FiltrosCatalogo {
   categoriaId?: number | null;
   modo?: ModoDto | null;
   condicion?: CondicionDto | null;
+  /** Solo segunda mano o solo productos nuevos (sin él, todo). */
+  origen?: OrigenDto | null;
   departamentoCodigo?: string | null;
   municipioCodigo?: string | null;
   localidad?: string | null;
@@ -53,9 +56,9 @@ export class CatalogoApi {
       params: { ...f, soloVerificados: f.soloVerificados || undefined },
     });
   cercanas = (lat: number, lon: number, radioKm = 5, modo?: ModoDto | null, categoriaId?: number | null, condicion?: CondicionDto | null,
-    soloVerificados = false) =>
+    soloVerificados = false, origen?: OrigenDto | null) =>
     this.api.get<PublicacionCercanaDto[]>('/publicaciones/cercanas', {
-      params: { lat, lon, radioKm, modo, categoriaId, condicion, soloVerificados: soloVerificados || undefined, max: 50 },
+      params: { lat, lon, radioKm, modo, categoriaId, condicion, origen, soloVerificados: soloVerificados || undefined, max: 50 },
     });
   /** Público: totales de intercambios completados (el backend los guarda 10 min); una petición por sesión. */
   impacto$ = this.api.get<ImpactoDto>('/impacto', { silencioso: true }).pipe(shareReplay(1));

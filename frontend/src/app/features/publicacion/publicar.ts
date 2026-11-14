@@ -219,6 +219,38 @@ const sinTildes = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLo
                   <app-error-campo [control]="form.controls.condicion" etiqueta="El estado del producto" idError="condicion-error" />
                 </fieldset>
 
+                @if (condicionActual() === 'Nuevo') {
+                  <fieldset class="animate-aparecer" aria-describedby="origen-ayuda origen-error">
+                    <legend class="etiqueta mb-1">¿Es mercancía nueva o algo que ya tenías?</legend>
+                    @if (esNegocio()) {
+                      <p id="origen-ayuda" class="rounded-2xl border-2 border-agua-100 bg-agua-100/40 p-3 text-sm dark:border-agua-700/40 dark:bg-agua-700/10">
+                        <strong>Se publica como «Producto nuevo».</strong> Con el plan Negocio, lo nuevo siempre es mercancía: se ve claro que no es de segunda mano y no suma al impacto ambiental.
+                      </p>
+                    } @else {
+                      <p id="origen-ayuda" class="ayuda mb-2">Así quien lo vea sabrá que no es de segunda mano. La mercancía nueva no suma kilos al impacto ambiental.</p>
+                      <div class="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                        @for (o of origenesNuevo; track o.valor) {
+                          <label class="flex cursor-pointer items-start gap-3 rounded-2xl border-2 p-3 transition"
+                            [class]="origenActual() === o.valor ? 'border-bosque-500 bg-bosque-50 dark:bg-bosque-900/50' : 'border-borde hover:border-bosque-200'">
+                            <input type="radio" class="sr-only" formControlName="origenNuevo" [value]="o.valor" />
+                            <span class="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full border-2 transition"
+                              [class]="origenActual() === o.valor ? 'border-bosque-600 bg-bosque-600 text-white' : 'border-borde'">
+                              @if (origenActual() === o.valor) {
+                                <app-icono nombre="check" [tamano]="12" [grosor]="3" />
+                              }
+                            </span>
+                            <span>
+                              <span class="block text-sm font-semibold">{{ o.etiqueta }}</span>
+                              <span class="block text-xs text-tenue">{{ o.descripcion }}</span>
+                            </span>
+                          </label>
+                        }
+                      </div>
+                      <app-error-campo [control]="form.controls.origenNuevo" etiqueta="El origen del producto" idError="origen-error" />
+                    }
+                  </fieldset>
+                }
+
                 @if (requiereDetalle()) {
                   <div class="campo animate-aparecer">
                     <label class="etiqueta" for="detalle-condicion">
@@ -600,6 +632,8 @@ export default class Publicar {
     categoriaId: this.fb.control<number | null>(null, Validators.required),
     condicion: this.fb.control<CondicionDto | null>(null, Validators.required),
     detalleCondicion: ['', [Validators.maxLength(300), textoSeguro(true)]],
+    /** Solo con estado Nuevo: mercancía para la venta o algo sin usar que ya tenía (un negocio siempre vende mercancía). */
+    origenNuevo: this.fb.control<'mercancia' | 'sinUsar' | null>(null),
     descripcion: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(2000), textoSeguro(true)]],
     precioReferenciaCop: this.fb.control<number | null>(null, [Validators.min(0), Validators.max(1_000_000_000)]),
     aceptaTrueke: [false],
@@ -658,7 +692,25 @@ export default class Publicar {
   });
   protected readonly condicionActual = toSignal(this.form.controls.condicion.valueChanges, { initialValue: null });
   protected readonly requiereDetalle = computed(() => infoCondicion(this.condicionActual()).requiereDetalle && !!this.condicionActual());
-  protected readonly etiquetaCondicion = computed(() => (this.condicionActual() ? infoCondicion(this.condicionActual()).etiqueta : ''));
+  protected readonly origenActual = toSignal(this.form.controls.origenNuevo.valueChanges, { initialValue: this.form.controls.origenNuevo.value });
+  protected readonly origenesNuevo = [
+    { valor: 'mercancia' as const, etiqueta: 'Mercancía nueva para vender', descripcion: 'De tienda o para revender. Se muestra como «Producto nuevo».' },
+    { valor: 'sinUsar' as const, etiqueta: 'Lo tenía sin usar', descripcion: 'Un regalo o compra que nunca estrenaste. Cuenta como reutilización.' },
+  ];
+  /** Con el plan Negocio vigente, lo nuevo siempre es mercancía (el servidor lo aplica igual). */
+  protected readonly esNegocio = computed(() => {
+    const u = this.sesion.usuario();
+    return u?.tipoCuenta === 'Empresa' && !!u.planVigenteHasta && new Date(u.planVigenteHasta).getTime() > Date.now();
+  });
+  private esMercancia(): boolean {
+    return this.condicionActual() === 'Nuevo' && (this.esNegocio() || this.origenActual() === 'mercancia');
+  }
+  protected readonly etiquetaCondicion = computed(() => {
+    const c = this.condicionActual();
+    if (!c) return '';
+    if (c === 'Nuevo') return this.esNegocio() || this.origenActual() === 'mercancia' ? 'Producto nuevo (mercancía)' : 'Nuevo sin usar';
+    return infoCondicion(c).etiqueta;
+  });
   private readonly municipioActual = toSignal(this.form.controls.municipioCodigo.valueChanges, { initialValue: this.form.controls.municipioCodigo.value });
   /** Último municipio visto: si cambia por elección del usuario se limpia la localidad (no al cargar una edición). */
   private municipioPrevio = this.form.controls.municipioCodigo.value;
@@ -713,6 +765,17 @@ export default class Publicar {
       untracked(() => {
         const c = this.form.controls.detalleCondicion;
         c.setValidators(requiere ? [Validators.required, Validators.minLength(5), Validators.maxLength(300), textoSeguro(true)] : [Validators.maxLength(300), textoSeguro(true)]);
+        c.updateValueAndValidity();
+      });
+    });
+
+    // El origen se pide solo con estado Nuevo y a quien no tiene plan Negocio (regla del backend).
+    effect(() => {
+      const pide = this.condicionActual() === 'Nuevo' && !this.esNegocio();
+      untracked(() => {
+        const c = this.form.controls.origenNuevo;
+        c.setValidators(pide ? [Validators.required] : []);
+        if (!pide) c.setValue(null, { emitEvent: false });
         c.updateValueAndValidity();
       });
     });
@@ -856,6 +919,7 @@ export default class Publicar {
         categoriaId: p.categoria?.id ?? null,
         condicion: (p.condicion as CondicionDto) ?? null,
         detalleCondicion: p.detalleCondicion ?? '',
+        origenNuevo: p.condicion === 'Nuevo' ? (p.esMercanciaNueva ? 'mercancia' : 'sinUsar') : null,
         descripcion: p.descripcion ?? '',
         precioReferenciaCop: p.precioReferenciaCop ?? null,
         aceptaTrueke: p.aceptaTrueke ?? false,
@@ -910,7 +974,7 @@ export default class Publicar {
     };
     switch (paso) {
       case 1:
-        return marcar(c.titulo, c.categoriaId, c.condicion, c.detalleCondicion, c.descripcion, c.precioReferenciaCop);
+        return marcar(c.titulo, c.categoriaId, c.condicion, c.origenNuevo, c.detalleCondicion, c.descripcion, c.precioReferenciaCop);
       case 3:
         return marcar(c.municipioCodigo, c.localidad);
       default:
@@ -988,6 +1052,7 @@ export default class Publicar {
       modo: v.modo,
       condicion: v.condicion!,
       detalleCondicion: this.requiereDetalle() || v.detalleCondicion.trim() ? v.detalleCondicion.trim() || null : null,
+      esMercanciaNueva: this.esMercancia(),
       municipioCodigo: v.municipioCodigo,
       localidad: v.localidad.trim(),
       precioReferenciaCop: v.modo === 'Donacion' ? null : v.precioReferenciaCop || null,

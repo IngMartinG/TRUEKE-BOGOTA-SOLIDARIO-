@@ -5756,6 +5756,7 @@ export interface paths {
                     CategoriaId?: number;
                     Modo?: components["schemas"]["ModoDto"];
                     Condicion?: components["schemas"]["CondicionDto"];
+                    Origen?: components["schemas"]["OrigenDto"];
                     DepartamentoCodigo?: string;
                     MunicipioCodigo?: string;
                     Localidad?: string;
@@ -5878,6 +5879,7 @@ export interface paths {
                     CategoriaId?: number;
                     Modo?: components["schemas"]["ModoDto"];
                     Condicion?: components["schemas"]["CondicionDto"];
+                    Origen?: components["schemas"]["OrigenDto"];
                     SoloVerificados?: boolean;
                     Max?: number;
                 };
@@ -7987,6 +7989,7 @@ export interface components {
             modo?: components["schemas"]["ModoDto"];
             condicion: components["schemas"]["CondicionDto"];
             detalleCondicion?: string | null;
+            esMercanciaNueva?: boolean;
             municipioCodigo?: string | null;
             localidad: string;
             /** Format: double */
@@ -8984,6 +8987,8 @@ export interface components {
         };
         /** @enum {string} */
         OrdenPublicacionesDto: "Recientes" | "PrecioAsc" | "PrecioDesc";
+        /** @enum {string} */
+        OrigenDto: "SegundaMano" | "MercanciaNueva";
         PagoAdminDto: {
             referencia?: string;
             /** Format: uuid */
@@ -9373,6 +9378,7 @@ export interface components {
             campanaId?: string | null;
             /** Format: date-time */
             disponibilidadPedidaUtc?: string | null;
+            esMercanciaNueva?: boolean;
         };
         PublicacionDtoPaginaDto: {
             items?: components["schemas"]["PublicacionDto"][];
@@ -9404,6 +9410,7 @@ export interface components {
             motivos?: string[];
             /** Format: date-time */
             desdeUtc?: string;
+            esMercanciaNueva?: boolean;
         };
         PublicacionResumenDto: {
             /** Format: uuid */
@@ -9412,6 +9419,7 @@ export interface components {
             foto?: string | null;
             condicion?: string;
             estado?: string;
+            esMercanciaNueva?: boolean;
         };
         PublicacionesEnRevisionDto: {
             items?: components["schemas"]["PublicacionEnRevisionDto"][];
@@ -9868,6 +9876,7 @@ export type NotificacionDtoPaginaDto = components['schemas']['NotificacionDtoPag
 export type ObjetoTipicoDto = components['schemas']['ObjetoTipicoDto'];
 export type OlvideClaveRequest = components['schemas']['OlvideClaveRequest'];
 export type OrdenPublicacionesDto = components['schemas']['OrdenPublicacionesDto'];
+export type OrigenDto = components['schemas']['OrigenDto'];
 export type PagoAdminDto = components['schemas']['PagoAdminDto'];
 export type PagoAdminDtoPaginaDto = components['schemas']['PagoAdminDtoPaginaDto'];
 export type PagoEstadoDto = components['schemas']['PagoEstadoDto'];

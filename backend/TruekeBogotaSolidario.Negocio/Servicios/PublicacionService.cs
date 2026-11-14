@@ -117,13 +117,22 @@ public sealed class PublicacionService : IPublicacionService
             ? await _favoritos.FiltrarFavoritasAsync(actorId.Value, pubs.Select(p => p.Id).ToList())
             : new HashSet<Guid>();
 
-    private static DatosPublicacion Datos(CrearPublicacionRequest r, Categoria categoria, Usuario actor, IReadOnlyList<string> imagenes)
+    private static DatosPublicacion Datos(CrearPublicacionRequest r, Categoria categoria, Usuario actor, IReadOnlyList<string> imagenes, DateTime ahora)
     {
         if (r.Condicion is null) throw new ReglaDeNegocioException("Indica el estado del producto (nuevo, usado, reparado…).");
+        // Un negocio que publica algo nuevo vende mercancía: no depende de lo que marque (decisión del dueño, 2026-11-14).
+        var mercancia = r.EsMercanciaNueva || actor.EmpresaVigente(ahora);
         return new DatosPublicacion(r.Titulo, r.Descripcion, categoria, (ModoTransaccion)(int)r.Modo, (CondicionProducto)(int)r.Condicion.Value,
             r.DetalleCondicion, r.MunicipioCodigo ?? actor.MunicipioCodigo, r.Localidad, r.PrecioReferenciaCop, r.Latitud, r.Longitud, imagenes,
-            r.AceptaTrueke, r.PesoEstimadoKg, r.Material.HasValue ? (MaterialObjeto)(int)r.Material.Value : null);
+            r.AceptaTrueke, r.PesoEstimadoKg, r.Material.HasValue ? (MaterialObjeto)(int)r.Material.Value : null, mercancia);
     }
+
+    private static bool? MercanciaDe(OrigenDto? origen) => origen switch
+    {
+        OrigenDto.MercanciaNueva => true,
+        OrigenDto.SegundaMano => false,
+        _ => null
+    };
 
     /// <summary>
     /// Estatuto del Consumidor (Ley 1480, art. 53): toda venta exige el registro de oferentes (documento, dirección de
@@ -157,7 +166,7 @@ public sealed class PublicacionService : IPublicacionService
         var categoria = await _categorias.ObtenerPorIdAsync(r.CategoriaId) ?? throw new ReglaDeNegocioException("La categoría no existe.");
         var imagenes = await ValidarImagenesAsync(actorId, r.Imagenes ?? new List<string>(), Array.Empty<string>());
 
-        var pub = new Publicacion(actorId, Datos(r, categoria, actor, imagenes));
+        var pub = new Publicacion(actorId, Datos(r, categoria, actor, imagenes, ahora));
         // "Tengo esto": la donación queda ligada a la necesidad y, al entregársela a la fundación, suma a su progreso.
         if (r.Modo == ModoDto.Donacion && r.ParaNecesidadId is { } paraNecesidad && await _fundaciones.NecesidadAbiertaAsync(paraNecesidad))
             pub.DestinarANecesidad(paraNecesidad);
@@ -198,7 +207,7 @@ public sealed class PublicacionService : IPublicacionService
         // las fotos que ya tenía no se revalidan; las nuevas se limpian
         var imagenes = await ValidarImagenesAsync(actorId, r.Imagenes ?? new List<string>(), p.Imagenes.Select(i => i.Url));
         var antes = p.EstadoModeracion;
-        p.Editar(Datos(r, categoria, actor, imagenes), ahora);
+        p.Editar(Datos(r, categoria, actor, imagenes, ahora), ahora);
         // La campaña que ya tenía se conserva aunque haya terminado; cambiarla exige una activa de su empresa.
         if (r.CampanaId is { } campana && campana != p.CampanaId) await _empresas.ExigirCampanaParaPublicarAsync(actorId, campana);
         p.LigarACampana(r.CampanaId);
@@ -221,6 +230,7 @@ public sealed class PublicacionService : IPublicacionService
             CategoriaId = f.CategoriaId,
             Modo = f.Modo.HasValue ? (ModoTransaccion)(int)f.Modo.Value : null,
             Condicion = f.Condicion.HasValue ? (CondicionProducto)(int)f.Condicion.Value : null,
+            EsMercanciaNueva = MercanciaDe(f.Origen),
             DepartamentoCodigo = f.DepartamentoCodigo,
             MunicipioCodigo = f.MunicipioCodigo,
             Localidad = f.Localidad,
@@ -312,6 +322,8 @@ public sealed class PublicacionService : IPublicacionService
             r.CategoriaId, modo, MaxCandidatosCercanas, ahora));
         if (r.Condicion.HasValue)
             candidatos = candidatos.Where(p => p.Condicion == (CondicionProducto)(int)r.Condicion.Value).ToList();
+        if (MercanciaDe(r.Origen) is { } mercancia)
+            candidatos = candidatos.Where(p => p.EsMercanciaNueva == mercancia).ToList();
         if (r.SoloVerificados)
             candidatos = candidatos.Where(p => p.Propietario!.EstadoVerificacion == EstadoVerificacion.Aprobada).ToList();
 
