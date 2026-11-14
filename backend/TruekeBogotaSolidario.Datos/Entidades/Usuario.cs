@@ -867,7 +867,9 @@ public class Usuario
     }
 
     /// <summary>El contador siempre sube; los puntos y la reputación solo si <paramref name="otorgarPuntos"/> (tope anti-farmeo).</summary>
-    public void RegistrarTransaccionCompletada(ModoTransaccion modo, bool otorgarPuntos = true, Guid? solicitudId = null, string? detalle = null)
+    /// <param name="ventaMercanciaNueva">Compra de mercancía nueva: da <see cref="PoliticaEcoPuntos.PuntosVentaMercanciaNueva"/> en lugar de los de una compra.</param>
+    public void RegistrarTransaccionCompletada(ModoTransaccion modo, bool otorgarPuntos = true, Guid? solicitudId = null, string? detalle = null,
+        bool ventaMercanciaNueva = false)
     {
         switch (modo)
         {
@@ -877,7 +879,8 @@ public class Usuario
             default: throw new ReglaDeNegocioException("Modo de transacción no válido.");
         }
         if (!otorgarPuntos) return;
-        AcreditarEcoPuntos(PoliticaEcoPuntos.PuntosPorModo(modo), ConceptoEcoPuntos.Intercambio, solicitudId, detalle);
+        var puntos = ventaMercanciaNueva && modo == ModoTransaccion.Compra ? PoliticaEcoPuntos.PuntosVentaMercanciaNueva : PoliticaEcoPuntos.PuntosPorModo(modo);
+        AcreditarEcoPuntos(puntos, ConceptoEcoPuntos.Intercambio, solicitudId, detalle);
         Reputacion = Math.Min(PoliticaEcoPuntos.ReputacionMaxima, Reputacion + PoliticaEcoPuntos.ReputacionPorModo(modo));
     }
 

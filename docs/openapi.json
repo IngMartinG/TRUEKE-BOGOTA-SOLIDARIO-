@@ -13153,6 +13153,10 @@
           "diasCicloDenuncias": {
             "type": "integer",
             "format": "int32"
+          },
+          "puntosVentaMercanciaNueva": {
+            "type": "integer",
+            "format": "int32"
           }
         },
         "additionalProperties": false

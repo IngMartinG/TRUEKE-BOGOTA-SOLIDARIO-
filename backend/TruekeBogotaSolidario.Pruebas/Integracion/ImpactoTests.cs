@@ -63,7 +63,7 @@ public class ImpactoTests : IClassFixture<FabricaApi>
         Assert.True(d.GetProperty("compras").GetInt32() >= 1);
         Assert.True(d.GetProperty("personasQueIntercambiaron").GetInt32() >= 3);
         Assert.True(d.GetProperty("esteMes").GetInt32() >= 3);
-        Assert.Equal("2.0.0", d.GetProperty("versionMetodologia").GetString());
+        Assert.Equal("2.1.0", d.GetProperty("versionMetodologia").GetString());
         // Las publicaciones de prueba son de Chapinero (Bogotá): con 3 intercambios ya aparece la localidad
         var chapinero = d.GetProperty("localidadesMasActivas").EnumerateArray().FirstOrDefault(l => l.GetProperty("localidad").GetString() == "Chapinero");
         Assert.Equal(JsonValueKind.Object, chapinero.ValueKind);
@@ -117,10 +117,10 @@ public class ImpactoTests : IClassFixture<FabricaApi>
 
         var super = Api.ConToken(_fabrica, await Api.LoginAsync(_fabrica, FabricaApi.CorreoSuper, FabricaApi.ClaveSuper));
         Assert.Equal(HttpStatusCode.BadRequest, (await super.PutAsJsonAsync("/api/v1/admin/impacto/factores/Madera",
-            new { kgCo2PorKg = 2m, fuente = "Estudio nuevo", version = "2.0.0" })).StatusCode); // la versión debe cambiar
+            new { kgCo2PorKg = 2m, fuente = "Estudio nuevo", version = "2.1.0" })).StatusCode); // la versión debe cambiar
         Assert.Equal(HttpStatusCode.Forbidden, (await hugo.PutAsJsonAsync("/api/v1/admin/impacto/factores/Madera",
-            new { kgCo2PorKg = 2m, fuente = "Estudio nuevo", version = "2.1.0" })).StatusCode);
-        var r = await super.PutAsJsonAsync("/api/v1/admin/impacto/factores/Madera", new { kgCo2PorKg = 2m, fuente = "Estudio nuevo", version = "2.1.0" });
+            new { kgCo2PorKg = 2m, fuente = "Estudio nuevo", version = "2.2.0" })).StatusCode);
+        var r = await super.PutAsJsonAsync("/api/v1/admin/impacto/factores/Madera", new { kgCo2PorKg = 2m, fuente = "Estudio nuevo", version = "2.2.0" });
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
 
         Assert.Equal(14.4m, (await ImpactoDeAsync(hugo)).GetProperty("kgCo2Evitado").GetDecimal()); // lo registrado no cambia
@@ -128,7 +128,7 @@ public class ImpactoTests : IClassFixture<FabricaApi>
         await CompletarAsync(ines, hugo, otra);
         Assert.Equal(34.4m, (await ImpactoDeAsync(hugo)).GetProperty("kgCo2Evitado").GetDecimal()); // + 10 kg × 2
         var d = await _fabrica.CreateClient().GetFromJsonAsync<JsonElement>("/api/v1/impacto");
-        Assert.Equal("2.1.0", d.GetProperty("versionMetodologia").GetString());
+        Assert.Equal("2.2.0", d.GetProperty("versionMetodologia").GetString());
     }
 
     [Fact]

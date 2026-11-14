@@ -12,7 +12,7 @@ Vocabulario del dominio. Entre paréntesis, el nombre en el código cuando es di
 - **Condición** — estado del objeto: nuevo, como nuevo, usado, usado con detalles, reparado o para repuestos.
 - **Mercancía nueva** — producto nuevo que se ofrece para la venta (de tienda o para revender), no algo que la persona ya
   tenía (`Publicacion.EsMercanciaNueva`, solo con condición Nuevo). No es segunda mano: se muestra como «Producto nuevo» y se
-  filtra por origen. Un negocio con el plan vigente que publica algo nuevo siempre vende mercancía. Lo "nuevo sin usar" que
+  filtra por origen; una venta de mercancía da 1 Eco-Punto y no suma impacto. Un negocio con el plan vigente que publica algo nuevo siempre vende mercancía. Lo "nuevo sin usar" que
   alguien ya tenía cuenta como segunda mano.
 - **Solicitud** — interés de una persona en una publicación. Estados: pendiente, aceptada, rechazada, cancelada,
   completada o no concretada.

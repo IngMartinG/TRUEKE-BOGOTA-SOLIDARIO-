@@ -959,6 +959,19 @@ mercancía, ropa interior/medias/trajes de baño solo nuevos, y trueke con compl
 - Pruebas: `MercanciaNuevaTests`, `publicar.spec.ts` y las columnas nuevas en `PostgreSqlTests`. Sin verificar en pantalla: la
   vista previa del navegador no pudo abrir el front.
 
+## Hecho el 2026-11-14 — impacto 2.1.0 y Eco-Puntos de la mercancía nueva (PR 2 de 4)
+Decisión del dueño: una venta de mercancía nueva da 1 Eco-Punto (no 5), no cuenta para "Segunda mano" y no suma kilos (D-019).
+- **Impacto:** `ImpactoAmbiental.Registros` omite los objetos con `EsMercanciaNueva` (por objeto: en un trueke el otro sí suma).
+  Metodología 2.1.0 en `docs/METODOLOGIA-IMPACTO.md`. La migración `ImpactoSinMercanciaNueva` sube a 2.1.0 solo los factores que
+  siguen en 2.0.0 (uno que el SuperUsuario ya cambió no se toca); los registros viejos conservan su versión.
+- **Puntos y logros:** `PoliticaEcoPuntos.PuntosVentaMercanciaNueva` (1, publicado en `GET /eco-puntos/politica`),
+  `Transaccion.VentaMercanciaNueva` (la compra de mercancía; `ContarConPuntosPorModoAsync` no la cuenta, así que no avanza
+  "Segunda mano"). La reputación y el contador de compras suben igual.
+- **Front:** la página de Eco-Puntos, el detalle de una venta de mercancía, "Cómo calculamos" en `/impacto` y el asistente lo
+  explican.
+- Pruebas: `MercanciaNuevaTests` (1 punto en la venta de mercancía, 5 en una usada, lo nuevo sin usar sí suma, logros),
+  `ImpactoAmbientalTests`, y las que cambian un factor ahora usan 2.2.0.
+
 ## Revisión de un plan externo de producto (2026-10-29)
 Se revisó un paquete de documentos con bloques de producto (impacto, fundaciones, empresas, monetización, retención) y roles.
 - **Adoptado como documentación:** `docs/METODOLOGIA-IMPACTO.md` (versión 1.0.0, la vigente, y lo previsto para la 2.0.0),

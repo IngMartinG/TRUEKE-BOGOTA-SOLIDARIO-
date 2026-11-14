@@ -163,7 +163,8 @@ const METODOLOGIA = 'https://github.com/IngMartinG/TRUEKE-BOGOTA-SOLIDARIO-/blob
             <p class="mt-3 max-w-prose text-tenue">
               Solo cuenta lo que las dos personas confirmaron que se entregó. Cada objeto suma su peso (el que declaró quien lo publicó o,
               si no lo declaró, el típico de su categoría) y el CO₂ que no se emitió al no fabricar uno nuevo: kilos × el factor de su
-              material. En un trueke con objetos cuenta cada objeto que cambió de manos. Son factores a la baja, de estudios de ciclo de
+              material. En un trueke con objetos cuenta cada objeto que cambió de manos. Un producto nuevo que se vende como mercancía
+              no se reutiliza, así que no suma kilos ni CO₂. Son factores a la baja, de estudios de ciclo de
               vida: preferimos quedarnos cortos que exagerar.
             </p>
             <div class="mt-5 grid gap-5 md:grid-cols-2">

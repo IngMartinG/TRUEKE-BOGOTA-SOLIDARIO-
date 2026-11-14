@@ -129,6 +129,11 @@ interface Servicio {
           </div>
         }
       </div>
+      @if (politica()?.puntosVentaMercanciaNueva; as puntosMercancia) {
+        <p class="mt-3 max-w-prose text-sm text-tenue">
+          Comprar o vender un producto nuevo (que no es de segunda mano) suma {{ puntosMercancia }} {{ puntosMercancia === 1 ? 'Eco-Punto' : 'Eco-Puntos' }}, porque no se reutiliza nada.
+        </p>
+      }
       @if (otrasFormas().length) {
         <h3 class="mt-8 font-display text-lg font-bold">Más formas de ganar</h3>
         <ul class="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

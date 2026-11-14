@@ -90,6 +90,17 @@ El impacto se registra por objeto entregado (con su peso y material, o los típi
 con el factor y la versión con que se calculó. Un intercambio que se cierra solo porque una parte no confirmó a tiempo no
 suma impacto, Eco-Puntos ni reputación: quien confirmó tiene el incentivo de pedirle a la otra parte que confirme.
 
+## D-019 — La mercancía nueva no es segunda mano (2026-11-14)
+- Quien publica algo "Nuevo" dice si es mercancía para vender o algo sin usar que ya tenía; con el plan Negocio vigente, lo nuevo
+  es siempre mercancía. Se muestra como «Producto nuevo» y se puede filtrar aparte, para que nadie piense que la plataforma vende
+  segunda mano donde no lo es.
+- Una compra o venta de mercancía nueva da **1 Eco-Punto** a cada parte (no 5), no cuenta para el logro "Segunda mano" y no suma
+  kilos ni CO₂ (metodología 2.1.0). La calificación y la reputación son las de cualquier compra. Un trueke que incluye mercancía
+  sigue dando los puntos de un trueke; solo el objeto que es mercancía no suma kilos. Una donación de mercancía nueva da los
+  puntos de una donación.
+- Siguen en el plan: artículos de higiene solo nuevos y trueke con complemento en dinero (que reemplazará la decisión del
+  2026-10-24 de no mezclar objetos y dinero).
+
 ## Pendientes de decidir
 - Precio de "Destacar": 5.000 COP por 7 días desde el 2026-10-30 (antes 6.000). Revisar con datos reales cuando se encienda el cobro.
 - Punto físico o 100 % digital.

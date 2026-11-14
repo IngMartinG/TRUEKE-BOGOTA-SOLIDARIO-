@@ -1,6 +1,6 @@
 # Metodología de cálculo de impacto
 
-**Versión vigente: 2.0.0** (la que usa hoy `GET /api/v1/impacto`). Todo informe o cifra pública cita la versión con la que
+**Versión vigente: 2.1.0** (la que usa hoy `GET /api/v1/impacto`). Todo informe o cifra pública cita la versión con la que
 se calculó; cada registro guarda la suya.
 
 ## Principios
@@ -14,7 +14,19 @@ se calculó; cada registro guarda la suya.
 5. **Auditable.** La tabla de factores se publica junto con las cifras (`factores` y `pesosPorCategoria` en la respuesta y
    la sección "Cómo lo calculamos" de `/impacto`).
 
-## Versión 2.0.0 — por peso y material (vigente desde el 2026-10-29)
+## Versión 2.1.0 — la mercancía nueva no cuenta (vigente desde el 2026-11-14)
+Mismos factores y misma fórmula que la 2.0.0, con una regla más: **un producto nuevo que se ofrece como mercancía
+(`Publicacion.EsMercanciaNueva`) no es reutilización y no suma kilos ni CO₂.**
+- Lo que cuenta como mercancía: lo publicado con estado "Nuevo" cuando quien publica dice que es mercancía para vender, y todo
+  lo "Nuevo" de una cuenta con el plan Negocio vigente. Lo "nuevo sin usar" que alguien ya tenía (un regalo que nunca estrenó)
+  sí se reutiliza y sí cuenta.
+- Se decide por objeto: en un trueke de mercancía por algo de segunda mano, solo el segundo suma. Una venta de mercancía no
+  deja registro de impacto.
+- **Lo ya contado no se reescribe:** los registros anteriores conservan su versión 2.0.0 (incluidos los de mercancía que ya
+  hubieran sumado antes de esta regla). La versión de los factores vigentes pasó a 2.1.0.
+- Esta regla también saca esas ventas de los logros por modo ("Segunda mano") y de los Eco-Puntos de una compra (ver D-019).
+
+## Versión 2.0.0 — por peso y material (vigente desde el 2026-10-29 hasta el 2026-11-14)
 - Cuenta **cada objeto entregado**: lo publicado y, en un trueke con objetos, también lo que se ofreció a cambio.
 - **Kilos:** el peso que declaró quien publicó (opcional, entre 0,05 y 500 kg; al publicar se puede elegir un objeto típico
   que lo llena) o, si no lo declaró, el típico de su categoría. El registro dice cuál fue (`Declarado` o
@@ -90,6 +102,7 @@ la validación de un tercero (universidad o verificadora).
 
 ## Historial
 - **1.0.0** (2026-10-24) — Inicial: un objeto por intercambio completado, factores por categoría.
+- **2.1.0** (2026-11-14) — La mercancía nueva no suma kilos ni CO₂ (los factores no cambian).
 - **2.0.0** (2026-10-29) — Peso y material por objeto, factores por material en la base de datos, registro inmutable por
   objeto (también los ofrecidos en un trueke), filtros en `/impacto`, y el cierre automático con una sola confirmación deja
   de contar.
