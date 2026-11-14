@@ -58,7 +58,7 @@ public class Mensaje
         if (texto.Length > LongitudMaxima || (texto.Length == 0 && fotoUrl is null))
             throw new ReglaDeNegocioException($"El mensaje debe tener entre 1 y {LongitudMaxima} caracteres.");
         if (!TextoSeguro.EsSeguro(texto, multilinea: true))
-            throw new ReglaDeNegocioException("El mensaje contiene caracteres no permitidos.");
+            throw new ReglaDeNegocioException("El mensaje contiene caracteres no permitidos o etiquetas HTML.");
         if (respuestaA is not null && respuestaA.ConversacionId != conversacionId)
             throw new ReglaDeNegocioException("Solo puedes responder mensajes de esta conversación.");
         Id = Guid.NewGuid();

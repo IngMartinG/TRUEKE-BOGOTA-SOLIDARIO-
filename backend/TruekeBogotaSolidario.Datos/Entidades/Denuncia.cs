@@ -20,7 +20,7 @@ public class Denuncia
         detalle = string.IsNullOrWhiteSpace(detalle) ? null : detalle.Trim();
         if (detalle is { Length: > 500 }) throw new ReglaDeNegocioException("El detalle admite como máximo 500 caracteres.");
         if (detalle is not null && !TextoSeguro.EsSeguro(detalle, multilinea: true))
-            throw new ReglaDeNegocioException("El detalle contiene caracteres no permitidos.");
+            throw new ReglaDeNegocioException("El detalle contiene caracteres no permitidos o etiquetas HTML.");
         if (motivo == MotivoDenuncia.Otro && detalle is null) throw new ReglaDeNegocioException("Describe el motivo de la denuncia.");
         if (motivo == MotivoDenuncia.FotoPerfilNoValida && tipo != TipoObjetoDenuncia.Usuario)
             throw new ReglaDeNegocioException("Ese motivo solo aplica al denunciar a una persona por su foto de perfil.");

@@ -21,7 +21,7 @@ public class Calificacion
         comentario = string.IsNullOrWhiteSpace(comentario) ? null : comentario.Trim();
         if (comentario is { Length: > 300 }) throw new ReglaDeNegocioException("El comentario admite como máximo 300 caracteres.");
         if (comentario is not null && !TextoSeguro.EsSeguro(comentario, multilinea: true))
-            throw new ReglaDeNegocioException("El comentario contiene caracteres no permitidos.");
+            throw new ReglaDeNegocioException("El comentario contiene caracteres no permitidos o etiquetas HTML.");
         Id = Guid.NewGuid();
         SolicitudId = solicitudId;
         AutorId = autorId;

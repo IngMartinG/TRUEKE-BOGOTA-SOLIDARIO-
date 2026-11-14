@@ -21,6 +21,7 @@ public class Publicacion
 {
     public const int MaxImagenes = 5;
     public const int LongitudMaximaDetalleCondicion = 300;
+    public const int LongitudMinimaDescripcion = 10;
     public const decimal PesoMinimoKg = 0.05m;
     public const decimal PesoMaximoKg = 500m;
 
@@ -165,9 +166,9 @@ public class Publicacion
         var localidad = (d.Localidad ?? "").Trim();
         var detalle = string.IsNullOrWhiteSpace(d.DetalleCondicion) ? null : d.DetalleCondicion.Trim();
         if (titulo.Length is < 3 or > 120) throw new ReglaDeNegocioException("El título debe tener entre 3 y 120 caracteres.");
-        if (descripcion.Length is < 1 or > 2000) throw new ReglaDeNegocioException("La descripción es obligatoria (máximo 2000 caracteres).");
+        if (descripcion.Length is < LongitudMinimaDescripcion or > 2000) throw new ReglaDeNegocioException($"La descripción debe tener entre {LongitudMinimaDescripcion} y 2000 caracteres.");
         if (localidad.Length is < 2 or > 60) throw new ReglaDeNegocioException("La localidad, barrio o sector debe tener entre 2 y 60 caracteres.");
-        if (!TextoSeguro.EsSeguro(titulo) || !TextoSeguro.EsSeguro(localidad) || !TextoSeguro.EsSeguro(descripcion, multilinea: true)) throw new ReglaDeNegocioException("Los datos contienen caracteres no permitidos.");
+        if (!TextoSeguro.EsSeguro(titulo) || !TextoSeguro.EsSeguro(localidad) || !TextoSeguro.EsSeguro(descripcion, multilinea: true)) throw new ReglaDeNegocioException("Los datos contienen caracteres no permitidos o etiquetas HTML.");
         if (!Enum.IsDefined(d.Modo)) throw new ReglaDeNegocioException("Modo de transacción no válido.");
         if (!Enum.IsDefined(d.Condicion)) throw new ReglaDeNegocioException("Indica el estado del producto (nuevo, usado, reparado…).");
         if (CondicionRequiereDetalle(d.Condicion) && (detalle is null || detalle.Length < 5))
@@ -175,7 +176,7 @@ public class Publicacion
         if (detalle is { Length: > LongitudMaximaDetalleCondicion })
             throw new ReglaDeNegocioException($"La descripción del estado admite como máximo {LongitudMaximaDetalleCondicion} caracteres.");
         if (detalle is not null && !TextoSeguro.EsSeguro(detalle, multilinea: true))
-            throw new ReglaDeNegocioException("Los datos contienen caracteres no permitidos.");
+            throw new ReglaDeNegocioException("Los datos contienen caracteres no permitidos o etiquetas HTML.");
         var municipio = Divipola.Exigir(d.MunicipioCodigo);
         if (d.Modo == ModoTransaccion.Compra && (d.PrecioReferenciaCop is null or <= 0))
             throw new ReglaDeNegocioException("Una publicación en modo Compra y venta requiere un precio de referencia mayor a cero.");

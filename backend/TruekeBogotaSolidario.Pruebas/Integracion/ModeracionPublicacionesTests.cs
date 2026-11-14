@@ -106,7 +106,7 @@ public sealed class ModeracionPublicacionesTests : IClassFixture<ModeracionPubli
         Assert.Null(await EnFilaAsync(mod, id));
 
         var editar = await duenio.PutAsJsonAsync($"/api/v1/publicaciones/{id}",
-            new { titulo = "Casa para perro", descripcion = "De madera", categoriaId = 4, modo = "Trueke", condicion = "Usado", localidad = "Kennedy" });
+            new { titulo = "Casa para perro", descripcion = "Hecha de madera", categoriaId = 4, modo = "Trueke", condicion = "Usado", localidad = "Kennedy" });
         Assert.Equal(HttpStatusCode.OK, editar.StatusCode);
         Assert.Equal("Pendiente", (await editar.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("moderacion").GetString());
         var otraVez = (await EnFilaAsync(mod, id))!.Value;

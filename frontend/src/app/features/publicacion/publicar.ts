@@ -52,6 +52,7 @@ import { Mapa } from '../../shared/ui/mapa';
 import { SelectorMunicipio } from '../../shared/ui/selector-municipio';
 import { Volver } from '../../shared/ui/volver';
 import { desplazamiento } from '../../shared/movimiento';
+import { textoSeguro } from '../../shared/validadores';
 
 /** Lo que se guarda del formulario de publicar para retomarlo después (en este navegador). */
 interface Borrador {
@@ -595,11 +596,11 @@ export default class Publicar {
 
   protected readonly form = this.fb.group({
     modo: this.fb.control<ModoDto>('Trueke'),
-    titulo: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120)]],
+    titulo: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(120), textoSeguro()]],
     categoriaId: this.fb.control<number | null>(null, Validators.required),
     condicion: this.fb.control<CondicionDto | null>(null, Validators.required),
-    detalleCondicion: ['', [Validators.maxLength(300)]],
-    descripcion: ['', [Validators.required, Validators.maxLength(2000)]],
+    detalleCondicion: ['', [Validators.maxLength(300), textoSeguro(true)]],
+    descripcion: ['', [Validators.required, Validators.minLength(10), Validators.maxLength(2000), textoSeguro(true)]],
     precioReferenciaCop: this.fb.control<number | null>(null, [Validators.min(0), Validators.max(1_000_000_000)]),
     aceptaTrueke: [false],
     pesoEstimadoKg: this.fb.control<number | null>(null, [Validators.min(0.05), Validators.max(500)]),
@@ -711,7 +712,7 @@ export default class Publicar {
       const requiere = this.requiereDetalle();
       untracked(() => {
         const c = this.form.controls.detalleCondicion;
-        c.setValidators(requiere ? [Validators.required, Validators.minLength(5), Validators.maxLength(300)] : [Validators.maxLength(300)]);
+        c.setValidators(requiere ? [Validators.required, Validators.minLength(5), Validators.maxLength(300), textoSeguro(true)] : [Validators.maxLength(300), textoSeguro(true)]);
         c.updateValueAndValidity();
       });
     });

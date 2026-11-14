@@ -42,6 +42,7 @@ npm start
 | `npm start` | Servidor de desarrollo con proxy a la API |
 | `npm run build` | Build de producción en `dist/trueke-web/browser` |
 | `npm run lint` | ESLint (TypeScript + plantillas + accesibilidad) |
+| `npm run lint:fix` | Lo mismo, corrigiendo solo lo que ESLint puede arreglar |
 | `npm run test:ci` | Pruebas unitarias (Vitest) una sola vez |
 | `npm run api` | Regenera `src/app/api/schema.d.ts` desde `docs/openapi.json` |
 | `npm run verificar` | Lint + pruebas + build (lo mismo que el CI) |

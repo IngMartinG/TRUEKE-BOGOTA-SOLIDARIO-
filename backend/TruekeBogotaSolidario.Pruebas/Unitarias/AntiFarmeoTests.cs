@@ -152,7 +152,7 @@ public class AntiFarmeoTests
         using var e = new EntornoNegocio();
         var ana = (await RegistrarAsync(e, "ana")).Usuario.Id;
         var pub = await e.EnScopeAsync<IPublicacionService, PublicacionDto>(s => s.CrearAsync(ana, new CrearPublicacionRequest
-        { Titulo = "Silla", Descripcion = "De madera", CategoriaId = 4, Modo = ModoDto.Donacion, Condicion = CondicionDto.Usado, Localidad = "Kennedy" }));
+        { Titulo = "Silla", Descripcion = "Mesa de madera", CategoriaId = 4, Modo = ModoDto.Donacion, Condicion = CondicionDto.Usado, Localidad = "Kennedy" }));
         await Assert.ThrowsAsync<ReglaDeNegocioException>(() =>
             e.EnScopeAsync<ISolicitudService, SolicitudDto>(s => s.CrearAsync(ana, new CrearSolicitudRequest { PublicacionId = pub.Id, Mensaje = "yo" })));
     }

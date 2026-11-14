@@ -28,7 +28,7 @@ public class CuentaTests : IClassFixture<FabricaApi>
         var (correo, c) = await RegistrarSinVerificarAsync();
         Assert.False((await c.GetFromJsonAsync<System.Text.Json.JsonElement>("/api/v1/usuarios/yo")).GetProperty("correoVerificado").GetBoolean());
 
-        var bloqueada = await c.PostAsJsonAsync("/api/v1/publicaciones", new { titulo = "Silla", descripcion = "x", categoriaId = 1, modo = "Donacion", condicion = "Usado", localidad = "Suba" });
+        var bloqueada = await c.PostAsJsonAsync("/api/v1/publicaciones", new { titulo = "Silla", descripcion = "Descripción de prueba", categoriaId = 1, modo = "Donacion", condicion = "Usado", localidad = "Suba" });
         Assert.Equal(HttpStatusCode.Forbidden, bloqueada.StatusCode);
 
         await Api.VerificarCorreoAsync(_fabrica, correo);
@@ -36,7 +36,7 @@ public class CuentaTests : IClassFixture<FabricaApi>
         Assert.True(yo.GetProperty("correoVerificado").GetBoolean());
 
         // con el correo verificado aún falta la foto de perfil: el error trae un código estable para que el front la pida
-        var sinFoto = await c.PostAsJsonAsync("/api/v1/publicaciones", new { titulo = "Silla", descripcion = "x", categoriaId = 1, modo = "Donacion", condicion = "Usado", localidad = "Suba" });
+        var sinFoto = await c.PostAsJsonAsync("/api/v1/publicaciones", new { titulo = "Silla", descripcion = "Descripción de prueba", categoriaId = 1, modo = "Donacion", condicion = "Usado", localidad = "Suba" });
         Assert.Equal(HttpStatusCode.Forbidden, sinFoto.StatusCode);
         Assert.Equal("foto_requerida", (await sinFoto.Content.ReadFromJsonAsync<System.Text.Json.JsonElement>()).GetProperty("codigo").GetString());
 

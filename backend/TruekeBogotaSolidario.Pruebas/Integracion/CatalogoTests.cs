@@ -12,7 +12,7 @@ public class CatalogoTests : IClassFixture<FabricaApi>
     public CatalogoTests(FabricaApi fabrica) => _fabrica = fabrica;
 
     private static object Cuerpo(string titulo = "Mesa de noche", string modo = "Trueke", decimal? precio = null, string[]? imagenes = null)
-        => new { titulo, descripcion = "Madera", categoriaId = 4, modo, condicion = "Usado", localidad = "Kennedy", precioReferenciaCop = precio, imagenes };
+        => new { titulo, descripcion = "Hecha en madera", categoriaId = 4, modo, condicion = "Usado", localidad = "Kennedy", precioReferenciaCop = precio, imagenes };
 
     private static async Task<Guid> CrearAsync(HttpClient c, object cuerpo)
     {
@@ -130,7 +130,7 @@ public class CatalogoTests : IClassFixture<FabricaApi>
             modo = "Trueke", condicion = "Usado", localidad = "Suba" });
         var enDescripcion = await CrearAsync(c, new { titulo = $"Trípode {marca}", descripcion = "Ideal para una cámara", categoriaId = 5,
             modo = "Trueke", condicion = "Usado", localidad = "Suba" });
-        await CrearAsync(c, new { titulo = $"Zapatos de cuero {marca}", descripcion = "Talla 40", categoriaId = 1,
+        await CrearAsync(c, new { titulo = $"Zapatos de cuero {marca}", descripcion = "Talla 40, poco uso", categoriaId = 1,
             modo = "Trueke", condicion = "Usado", localidad = "Suba" });
 
         async Task<Guid[]> Buscar(string texto)

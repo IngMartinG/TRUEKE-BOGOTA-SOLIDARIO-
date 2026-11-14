@@ -182,12 +182,19 @@ export function filtrarNumerico(evento: Event, control: AbstractControl): void {
 /** Caracteres invisibles de engaño (inversión de sentido, ancho cero…). El ZWJ (U+200D) se permite: lo usan los emojis. */
 const RE_INVISIBLES = /[\u{202A}-\u{202E}\u{2066}-\u{2069}\u{200B}\u{FEFF}\u{2060}\u{180E}]/u;
 
-/** Textos libres (igual que TextoSeguro.cs): sin caracteres de control (salvo saltos de línea si es multilínea) ni invisibles. */
+/** Lo que tiene forma de etiqueta HTML: "<" seguido de una letra, "/", "!" o "?". Un "<" suelto ("precio < 50", "<3") es válido. */
+const RE_ETIQUETA = /<[A-Za-z/!?]/;
+
+/**
+ * Textos libres (igual que TextoSeguro.cs): sin caracteres de control (salvo saltos de línea si es multilínea), sin
+ * invisibles y sin etiquetas HTML.
+ */
 export function textoSeguro(multilinea = false): ValidatorFn {
   return (c: AbstractControl): ValidationErrors | null => {
     const v = String(c.value ?? '');
     const sinSaltos = multilinea ? v.replace(/[\r\n]/g, '') : v;
     // eslint-disable-next-line no-control-regex
-    return RE_INVISIBLES.test(v) || /[\u0000-\u001F\u007F-\u009F]/u.test(sinSaltos) ? { textoInvisible: true } : null;
+    if (RE_INVISIBLES.test(v) || /[\u0000-\u001F\u007F-\u009F]/u.test(sinSaltos)) return { textoInvisible: true };
+    return RE_ETIQUETA.test(v) ? { etiquetaHtml: true } : null;
   };
 }

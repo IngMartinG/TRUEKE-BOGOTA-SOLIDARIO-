@@ -23,7 +23,7 @@ public class Apelacion
         if (texto.Length is < LongitudMinima or > LongitudMaxima)
             throw new ReglaDeNegocioException($"Cuéntanos tu versión en {LongitudMinima} a {LongitudMaxima} caracteres.");
         if (!TextoSeguro.EsSeguro(texto, multilinea: true))
-            throw new ReglaDeNegocioException("El texto contiene caracteres no permitidos.");
+            throw new ReglaDeNegocioException("El texto contiene caracteres no permitidos o etiquetas HTML.");
         Id = Guid.NewGuid();
         ResolucionId = resolucionId;
         UsuarioId = usuarioId;

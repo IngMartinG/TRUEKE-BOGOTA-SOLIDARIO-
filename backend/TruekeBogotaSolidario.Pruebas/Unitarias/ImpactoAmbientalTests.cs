@@ -13,7 +13,7 @@ public class ImpactoAmbientalTests
     private static readonly Categoria Hogar = new(4, "Hogar y muebles", "Muebles");
 
     private static Publicacion Pub(decimal? kg = null, MaterialObjeto? material = null)
-        => new(Guid.NewGuid(), new DatosPublicacion("Mesa", "De madera", Hogar, ModoTransaccion.Trueke, CondicionProducto.Usado,
+        => new(Guid.NewGuid(), new DatosPublicacion("Mesa", "Hecha de madera", Hogar, ModoTransaccion.Trueke, CondicionProducto.Usado,
             null, "11001", "Suba", null, null, null, null, PesoEstimadoKg: kg, Material: material));
 
     private static Dictionary<MaterialObjeto, FactorImpacto> Factores() => new()

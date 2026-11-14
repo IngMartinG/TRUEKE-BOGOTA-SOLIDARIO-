@@ -9,6 +9,7 @@
     "test": "ng test",
     "test:ci": "ng test --watch=false",
     "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
     "api": "npx -y openapi-typescript@7 ../docs/openapi.json -o src/app/api/schema.d.ts --root-types --root-types-no-schema-prefix",
     "verificar": "npm run lint && npm run test:ci && npm run build",
     "e2e": "playwright test"

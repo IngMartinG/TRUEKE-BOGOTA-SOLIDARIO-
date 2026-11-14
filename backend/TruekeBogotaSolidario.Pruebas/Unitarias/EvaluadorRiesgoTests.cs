@@ -114,7 +114,7 @@ public class EvaluadorRiesgoTests
 
 public class ModeracionPublicacionTests
 {
-    private static Publicacion Nueva() => new(Guid.NewGuid(), new DatosPublicacion("Silla", "De madera", new Categoria(4, "Hogar", "Muebles"),
+    private static Publicacion Nueva() => new(Guid.NewGuid(), new DatosPublicacion("Silla", "Hecha de madera", new Categoria(4, "Hogar", "Muebles"),
         ModoTransaccion.Trueke, CondicionProducto.Usado, null, "11001", "Suba", null, null, null, null));
 
     [Fact]

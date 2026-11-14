@@ -86,6 +86,28 @@ public class FormatosTextoTests
         Assert.False(TextoSeguro.EsSeguro(texto, multilinea: true));
     }
 
+    [Theory]
+    [InlineData("<script>alert('XSS-Test')</script>")]
+    [InlineData("Hola <img src=x onerror=alert(1)>")]
+    [InlineData("cierre </div> suelto")]
+    [InlineData("<!-- comentario -->")]
+    [InlineData("<?xml version=\"1.0\"?>")]
+    [InlineData("<SVG/onload=alert(1)")]
+    public void Texto_seguro_rechaza_lo_que_parece_etiqueta_html(string texto)
+    {
+        Assert.False(TextoSeguro.EsSeguro(texto));
+        Assert.False(TextoSeguro.EsSeguro(texto, multilinea: true));
+    }
+
+    [Theory]
+    [InlineData("Precio < 50.000 y talla > M")]
+    [InlineData("Te quiero <3")]
+    [InlineData("Televisor de 32\" con soporte")]
+    [InlineData("Termina en <")]
+    [InlineData("5<10 y 10>5")]
+    public void Texto_seguro_permite_signos_sueltos_que_no_son_etiquetas(string texto)
+        => Assert.True(TextoSeguro.EsSeguro(texto));
+
     [Fact]
     public void Texto_seguro_permite_emojis_y_saltos_de_linea_solo_si_es_multilinea()
     {

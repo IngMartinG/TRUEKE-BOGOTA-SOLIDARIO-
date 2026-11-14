@@ -15,6 +15,7 @@ import {
   nombreComercial,
   nombreCompleto,
   nombrePersona,
+  textoSeguro,
   restarAnios,
 } from './validadores';
 
@@ -145,5 +146,25 @@ describe('mayorDeEdad (misma regla que el backend: solo mayores de 18)', () => {
 
   it('hoy en Colombia es UTC-5', () => {
     expect(hoyEnColombia(Date.parse('2026-10-18T03:00:00Z'))).toBe('2026-10-17');
+  });
+});
+
+describe('textoSeguro (misma regla que TextoSeguro.cs)', () => {
+  const error = (valor: string, multilinea = false) => textoSeguro(multilinea)(new FormControl(valor));
+
+  it('rechaza lo que tiene forma de etiqueta HTML', () => {
+    for (const mal of ["<script>alert('XSS-Test')</script>", 'Hola <img src=x onerror=alert(1)>', 'cierre </div>', '<!-- nota -->', '<SVG/onload=alert(1)'])
+      expect(error(mal), mal).toEqual({ etiquetaHtml: true });
+  });
+
+  it('permite los signos sueltos que no son etiquetas', () => {
+    for (const ok of ['Precio < 50.000 y talla > M', 'Te quiero <3', 'Televisor de 32" con soporte', 'Termina en <', '5<10 y 10>5'])
+      expect(error(ok), ok).toBeNull();
+  });
+
+  it('sigue rechazando los caracteres invisibles y los saltos de línea fuera de los textos largos', () => {
+    expect(error('Ho​la')).toEqual({ textoInvisible: true });
+    expect(error('Línea 1\nLínea 2')).toEqual({ textoInvisible: true });
+    expect(error('Línea 1\nLínea 2', true)).toBeNull();
   });
 });

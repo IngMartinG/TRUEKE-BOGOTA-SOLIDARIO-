@@ -246,8 +246,8 @@ public sealed record VendedorDePqrDto(Guid UsuarioId, string Nombre, string Publ
 
 public sealed class CrearPublicacionRequest
 {
-    [Required, StringLength(120, MinimumLength = 3)] public string Titulo { get; init; } = "";
-    [Required, StringLength(2000, MinimumLength = 1)] public string Descripcion { get; init; } = "";
+    [Required, StringLength(120, MinimumLength = 3), TextoLimpio] public string Titulo { get; init; } = "";
+    [Required, StringLength(2000, MinimumLength = Publicacion.LongitudMinimaDescripcion), TextoLimpio(Multilinea = true)] public string Descripcion { get; init; } = "";
     [Range(1, int.MaxValue)] public int CategoriaId { get; init; }
     [EnumDataType(typeof(ModoDto))] public ModoDto Modo { get; init; }
     /// <summary>Obligatorio: en qué estado está el objeto.</summary>
@@ -515,7 +515,7 @@ public sealed class RangoFechasRequest
 
 public sealed class CrearComentarioRequest
 {
-    [Required, StringLength(500, MinimumLength = 1)] public string Texto { get; init; } = "";
+    [Required, StringLength(500, MinimumLength = 1), TextoLimpio(Multilinea = true)] public string Texto { get; init; } = "";
 }
 
 public sealed class PaginacionRequest
