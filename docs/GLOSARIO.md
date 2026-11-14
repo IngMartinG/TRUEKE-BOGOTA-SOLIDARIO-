@@ -14,6 +14,7 @@ Vocabulario del dominio. Entre paréntesis, el nombre en el código cuando es di
   tenía (`Publicacion.EsMercanciaNueva`, solo con condición Nuevo). No es segunda mano: se muestra como «Producto nuevo» y se
   filtra por origen; una venta de mercancía da 1 Eco-Punto y no suma impacto. Un negocio con el plan vigente que publica algo nuevo siempre vende mercancía. Lo "nuevo sin usar" que
   alguien ya tenía cuenta como segunda mano.
+- **Artículo de higiene** — ropa interior, medias y trajes de baño: solo se publican como «Nuevo» (`ArticulosDeHigiene`).
 - **Solicitud** — interés de una persona en una publicación. Estados: pendiente, aceptada, rechazada, cancelada,
   completada o no concretada.
 - **Contraoferta** — cambio de precio u objetos dentro de una solicitud, por turnos.

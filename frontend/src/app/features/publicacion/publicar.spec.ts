@@ -80,6 +80,35 @@ describe('Origen de lo nuevo', () => {
   });
 });
 
+describe('Higiene solo nueva', () => {
+  const entradas = { modo: 'Trueke', titulo: 'Medias de lana', categoria: '1' };
+  const esperar = () => new Promise((r) => setTimeout(r, 400)); // el título se observa con un pequeño retraso
+
+  it('avisa y no envía ropa interior, medias o trajes de baño que no son nuevos', async () => {
+    const { fixture, c, crear, el } = await montar(entradas, {}, { condicion: 'Usado', origenNuevo: null });
+    c.pasoMaximo.set(1);
+    c.paso.set(1); // el estado del producto se elige en el paso 1
+    await esperar();
+    fixture.detectChanges();
+    expect(el.querySelector('[data-aviso-higiene]')?.textContent).toContain('solo se publican como «Nuevo»');
+
+    await c.publicar();
+    expect(crear).not.toHaveBeenCalled();
+  });
+
+  it('con estado Nuevo no avisa y se envía', async () => {
+    const { fixture, c, crear, el } = await montar(entradas, {}, { origenNuevo: 'mercancia' });
+    c.pasoMaximo.set(1);
+    c.paso.set(1);
+    await esperar();
+    fixture.detectChanges();
+    expect(el.querySelector('[data-aviso-higiene]')).toBeNull();
+
+    await c.publicar();
+    expect(crear).toHaveBeenCalledTimes(1);
+  });
+});
+
 describe('Publicar desde «Tengo esto»', () => {
   const desdeFundacion = { modo: 'Donacion', titulo: 'Cuadernos cuadriculados', categoria: '1', necesidad: NECESIDAD };
 

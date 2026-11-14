@@ -972,6 +972,18 @@ Decisión del dueño: una venta de mercancía nueva da 1 Eco-Punto (no 5), no cu
 - Pruebas: `MercanciaNuevaTests` (1 punto en la venta de mercancía, 5 en una usada, lo nuevo sin usar sí suma, logros),
   `ImpactoAmbientalTests`, y las que cambian un factor ahora usan 2.2.0.
 
+## Hecho el 2026-11-14 — higiene solo nueva (PR 3 de 4)
+Decisión del dueño: ropa interior, medias y trajes de baño solo se publican como «Nuevo» (D-020).
+- **Regla** (`Publicacion.Aplicar`, al crear y al editar): si el título nombra uno de esos artículos (`ArticulosDeHigiene`, por palabra
+  o frase completa, sin tildes) y el estado no es Nuevo → 400 con el motivo. En la descripción no bloquea: `EvaluadorRiesgo` suma la
+  señal «Artículo de higiene que debe ser nuevo» y la publicación espera a un moderador.
+- **Lo ya publicado:** la migración `HigieneSoloNueva` manda a revisión (no borra) las disponibles que no son nuevas y cuyo título
+  coincide, y avisa a cada dueño en la bandeja (`PublicacionEnRevision`).
+- **Front:** Publicar avisa en el paso del estado y no deja avanzar (`shared/higiene.ts`, copia de la lista del servidor).
+- **Pendiente (PR 4):** sumar esta regla a "Publicaciones prohibidas" de los términos de uso, junto con la versión legal nueva.
+- Pruebas: `HigieneSoloNuevaTests` (términos, crear, editar, descripción, señal de moderación), la migración en `PostgreSqlTests` y
+  `higiene.spec.ts` / `publicar.spec.ts`.
+
 ## Revisión de un plan externo de producto (2026-10-29)
 Se revisó un paquete de documentos con bloques de producto (impacto, fundaciones, empresas, monetización, retención) y roles.
 - **Adoptado como documentación:** `docs/METODOLOGIA-IMPACTO.md` (versión 1.0.0, la vigente, y lo previsto para la 2.0.0),

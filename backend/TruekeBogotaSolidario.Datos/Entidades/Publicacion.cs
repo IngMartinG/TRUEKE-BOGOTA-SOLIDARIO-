@@ -1,4 +1,4 @@
-using TruekeBogotaSolidario.Datos.Common;
+﻿using TruekeBogotaSolidario.Datos.Common;
 
 namespace TruekeBogotaSolidario.Datos.Entidades;
 
@@ -176,6 +176,10 @@ public class Publicacion
         if (!TextoSeguro.EsSeguro(titulo) || !TextoSeguro.EsSeguro(localidad) || !TextoSeguro.EsSeguro(descripcion, multilinea: true)) throw new ReglaDeNegocioException("Los datos contienen caracteres no permitidos o etiquetas HTML.");
         if (!Enum.IsDefined(d.Modo)) throw new ReglaDeNegocioException("Modo de transacción no válido.");
         if (!Enum.IsDefined(d.Condicion)) throw new ReglaDeNegocioException("Indica el estado del producto (nuevo, usado, reparado…).");
+        // Higiene: ropa interior, medias y trajes de baño solo nuevos. Se mira el título (lo que dice qué es); si solo aparecen
+        // en la descripción, la moderación lo revisa (EvaluadorRiesgo), para no bloquear "no incluye medias".
+        if (d.Condicion != CondicionProducto.Nuevo && ArticulosDeHigiene.Detectar(titulo) is not null)
+            throw new ReglaDeNegocioException(ArticulosDeHigiene.Mensaje);
         if (CondicionRequiereDetalle(d.Condicion) && (detalle is null || detalle.Length < 5))
             throw new ReglaDeNegocioException("Describe el estado del producto: qué detalles tiene, qué se reparó o qué piezas sirven (mínimo 5 caracteres).");
         if (detalle is { Length: > LongitudMaximaDetalleCondicion })

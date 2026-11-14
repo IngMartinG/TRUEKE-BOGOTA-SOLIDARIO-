@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Text.RegularExpressions;
 using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
@@ -65,7 +65,7 @@ public static partial class EvaluadorRiesgo
     ];
 
     public static EvaluacionRiesgo Evaluar(string titulo, string descripcion, string? detalleCondicion, ContextoRiesgo c,
-        ModeracionOpciones o, DateTime ahoraUtc)
+        ModeracionOpciones o, DateTime ahoraUtc, CondicionProducto? condicion = null)
     {
         var motivos = new List<string>();
         var puntaje = 0;
@@ -80,6 +80,10 @@ public static partial class EvaluadorRiesgo
             .Select(p => TextoBusqueda.Normalizar(p)).Where(p => p.Trim().Length > 0).Distinct(StringComparer.Ordinal)
             .Where(normal.Contains).Select(p => p.Trim()).Take(3).ToList();
         if (restringidas.Count > 0) Sumar(PesoArticuloRestringido, $"Posible artículo prohibido ({string.Join(", ", restringidas)})");
+
+        // Higiene solo nueva: el título ya se bloquea al publicar; aquí se revisa lo que aparece en la descripción.
+        if (condicion is { } estado && estado != CondicionProducto.Nuevo && ArticulosDeHigiene.Detectar(titulo, descripcion, detalleCondicion) is { } higiene)
+            Sumar(PesoArticuloRestringido, $"Artículo de higiene que debe ser nuevo ({higiene})");
 
         if (Correo().IsMatch(crudo) || Enlace().IsMatch(crudo) || Telefono().IsMatch(crudo))
             Sumar(PesoContacto, "Datos de contacto o enlaces en el texto");
