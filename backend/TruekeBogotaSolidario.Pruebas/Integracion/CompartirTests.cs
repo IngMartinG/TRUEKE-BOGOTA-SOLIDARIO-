@@ -47,14 +47,14 @@ public class CompartirTests : IClassFixture<FabricaApi>
     [Fact]
     public async Task La_pagina_tiene_etiquetas_Open_Graph_escapadas_y_redirige_al_front()
     {
-        var (_, id) = await PublicarConFotoAsync("Televisor <b>\"32\"</b>");
+        var (_, id) = await PublicarConFotoAsync("Televisor < \"32\" & 'HD'");
         var r = await _f.CreateClient().GetAsync($"/compartir/publicaciones/{id}");
 
         Assert.Equal(HttpStatusCode.OK, r.StatusCode);
         Assert.Equal("text/html", r.Content.Headers.ContentType!.MediaType);
         var html = await r.Content.ReadAsStringAsync();
-        Assert.Contains("<meta property=\"og:title\" content=\"Televisor &lt;b&gt;&quot;32&quot;&lt;/b&gt;\">", html);
-        Assert.DoesNotContain("<b>", html);
+        Assert.Contains("<meta property=\"og:title\" content=\"Televisor &lt; &quot;32&quot; &amp; &#39;HD&#39;\">", html);
+        Assert.DoesNotContain("Televisor <", html);
         Assert.Contains("Compra y venta · $50.000 · Kennedy", html);
         Assert.Contains("Funciona perfecto. Incluye control.", html);  // una sola línea
         Assert.Contains($"/compartir/publicaciones/{id}/imagen.jpg\"", html);

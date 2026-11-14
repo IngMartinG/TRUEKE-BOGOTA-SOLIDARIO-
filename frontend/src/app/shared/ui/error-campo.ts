@@ -54,6 +54,7 @@ export class ErrorCampo {
     if (e['nitDv']) return 'El dígito de verificación del NIT no es correcto.';
     if (e['cedula']) return 'La cédula debe tener entre 5 y 10 dígitos, sin letras.';
     if (e['textoInvisible']) return 'El texto tiene caracteres invisibles o de control; bórralos y vuelve a escribirlo.';
+    if (e['etiquetaHtml']) return 'El texto no puede llevar etiquetas HTML como <b> o <script>; escríbelo como texto normal.';
     if (e['documentoAlfanumerico']) return 'El documento debe tener entre 3 y 20 letras o números, sin guiones ni símbolos.';
     return `${this.etiqueta()} no es válido.`;
   });

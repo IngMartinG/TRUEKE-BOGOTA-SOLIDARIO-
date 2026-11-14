@@ -115,7 +115,7 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
         // publicación en Medellín con condición, filtros por departamento/condición y vitrina (gen_random_uuid())
         var r = await c.PostAsJsonAsync("/api/v1/publicaciones", new
         {
-            titulo = "Bicicleta", descripcion = "Rin 26", categoriaId = 1, modo = "Compra", precioReferenciaCop = 300000,
+            titulo = "Bicicleta", descripcion = "Rin 26, poco uso", categoriaId = 1, modo = "Compra", precioReferenciaCop = 300000,
             condicion = "Reparado", detalleCondicion = "Se cambiaron los frenos", localidad = "Laureles", municipioCodigo = "05001"
         });
         Assert.Equal(HttpStatusCode.Created, r.StatusCode);
@@ -397,7 +397,7 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
                 """);
             var ropa = await db.Categorias.FirstAsync(c => c.Id == 1);
             var ahora = DateTime.UtcNow;
-            Datos.Entidades.Publicacion Pub() => new(duenio.Id, new Datos.Entidades.DatosPublicacion("Chaqueta", "Abrigada", ropa,
+            Datos.Entidades.Publicacion Pub() => new(duenio.Id, new Datos.Entidades.DatosPublicacion("Chaqueta", "Abrigada y cómoda", ropa,
                 Datos.Entidades.ModoTransaccion.Donacion, Datos.Entidades.CondicionProducto.Usado, null, Divipola.CodigoBogota, "Suba",
                 null, null, null, null));
             Datos.Entidades.Transaccion Intercambio(Datos.Entidades.Publicacion p, bool ambas)

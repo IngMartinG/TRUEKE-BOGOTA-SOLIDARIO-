@@ -103,7 +103,7 @@ public class TruekeConObjetoTests : IClassFixture<FabricaApi>
         var s = (await ProponerAsync(beto, pubAna, pubBeto)).GetProperty("id").GetGuid();
         var editar = await beto.PutAsJsonAsync($"/api/v1/publicaciones/{pubBeto}", new
         {
-            titulo = "Otra cosa", descripcion = "Cambiado", categoriaId = 1, modo = "Trueke", condicion = "Usado", localidad = "Chapinero"
+            titulo = "Otra cosa", descripcion = "Texto cambiado", categoriaId = 1, modo = "Trueke", condicion = "Usado", localidad = "Chapinero"
         });
         Assert.Equal(HttpStatusCode.BadRequest, editar.StatusCode);
         (await beto.PostAsJsonAsync($"/api/v1/publicaciones/{pubBeto}/cancelar", new { motivo = "Ya no" })).EnsureSuccessStatusCode();

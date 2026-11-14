@@ -24,14 +24,14 @@
     <!-- Llega transitivo por MimeKit (10.0.0) con CVE-2026-70162 y CVE-2026-84008: se fija la versión corregida;
          quitar cuando MimeKit la traiga solo. -->
     <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.14" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.14" />
-    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.14" />
-    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.14" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.14" />
-    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.14" />
-    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.14" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.14" />
-    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="10.0.14" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="10.0.15" />
+    <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" Version="10.0.15" />
+    <PackageReference Include="Microsoft.Extensions.Options.DataAnnotations" Version="10.0.15" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="10.0.15" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="10.0.15" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="10.0.15" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.15" />
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks.Abstractions" Version="10.0.15" />
     <!-- Detector de rostros de la foto de perfil (modelo local en Archivos/Modelos; ninguna foto sale del servidor). -->
     <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.31.1" />
     <PackageReference Include="SkiaSharp" Version="4.155.0" />

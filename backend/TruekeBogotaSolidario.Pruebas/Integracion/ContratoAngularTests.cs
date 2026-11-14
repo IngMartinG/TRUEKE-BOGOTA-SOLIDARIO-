@@ -67,6 +67,26 @@ public partial class ContratoAngularTests : IClassFixture<FabricaApi>
     }
 
     [Fact]
+    public async Task Publicar_rechaza_etiquetas_html_y_descripciones_de_relleno_con_un_error_por_campo()
+    {
+        var cliente = await Api.RegistrarAsync(_fabrica, "sinmarcado");
+        var r = await cliente.PostAsJsonAsync("/api/v1/publicaciones", new
+        {
+            titulo = "<script>alert('XSS-Test')</script>", descripcion = ".", categoriaId = 4, modo = "Trueke", condicion = "Usado", localidad = "Suba",
+        });
+        var errores = (await ProblemaAsync(r, HttpStatusCode.BadRequest)).GetProperty("errors");
+        Assert.Contains("etiquetas HTML", errores.GetProperty("titulo")[0].GetString());
+        Assert.Contains("entre 10 y 2000", errores.GetProperty("descripcion")[0].GetString());
+
+        var conImagen = await cliente.PostAsJsonAsync("/api/v1/publicaciones", new
+        {
+            titulo = "Silla de comedor", descripcion = "Buen estado <img src=x onerror=alert(1)>", categoriaId = 4, modo = "Trueke", condicion = "Usado", localidad = "Suba",
+        });
+        errores = (await ProblemaAsync(conImagen, HttpStatusCode.BadRequest)).GetProperty("errors");
+        Assert.Contains("etiquetas HTML", errores.GetProperty("descripcion")[0].GetString());
+    }
+
+    [Fact]
     public async Task Cada_dato_personal_devuelve_su_error_de_formato_por_campo()
     {
         var anonimo = _fabrica.CreateClient();
@@ -103,7 +123,7 @@ public partial class ContratoAngularTests : IClassFixture<FabricaApi>
     public async Task Json_malformado_no_revela_tipos_internos()
     {
         var cliente = await Api.RegistrarAsync(_fabrica, "malformado");
-        var r = await cliente.PostAsJsonAsync("/api/v1/publicaciones", new { titulo = "Titulo ok", descripcion = "x", categoriaId = 1, modo = "Robo", localidad = "Usme" });
+        var r = await cliente.PostAsJsonAsync("/api/v1/publicaciones", new { titulo = "Titulo ok", descripcion = "Descripción de prueba", categoriaId = 1, modo = "Robo", localidad = "Usme" });
         var p = await ProblemaAsync(r, HttpStatusCode.BadRequest);
         Assert.DoesNotContain("TruekeBogotaSolidario", p.GetRawText());
         Assert.DoesNotContain("LineNumber", p.GetRawText());

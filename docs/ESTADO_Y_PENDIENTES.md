@@ -672,6 +672,12 @@ páginas estáticas para buscadores (`generar-seo.mjs`) y la pantalla de carga y
 HtmlSanitizer no aplica: la API solo devuelve JSON, Angular escapa todo y el texto ya se valida con `TextoSeguro`; además
 rechazaría textos normales como "3 < 5" y guardaría el contenido en los registros.
 
+**Texto plano sin marcado (2026-11-14):** `TextoSeguro` ahora también rechaza lo que tiene forma de etiqueta HTML (un `<`
+seguido de una letra, `/`, `!` o `?`), en todos los textos libres; "3 < 5", "<3" y las comillas siguen siendo válidos y no
+se registra el contenido rechazado. La descripción de una publicación exige al menos 10 caracteres (antes 1). Las mismas
+reglas están en el front (`textoSeguro` en `validadores.ts`). Lo ya guardado no se toca: se sigue mostrando escapado.
+Paquetes `Microsoft.*` a 10.0.15 por el aviso GHSA-wr8v-9x5q-ggcm del backplane Redis de SignalR.
+
 ## Hecho el 2026-11-01 — la foto de perfil en revisión o rechazada no la ven los demás
 - **Foto pública aparte (migración `FotoPublica`):** `Usuario.FotoPublicaUrl` es la foto que ven los demás (perfil,
   publicaciones, comentarios, chat, calificaciones, fundaciones, negocios y empresas, todo por `Mapeos.FotoVisible`). Una foto

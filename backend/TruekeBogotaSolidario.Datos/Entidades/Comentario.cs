@@ -15,7 +15,7 @@ public class Comentario
         if (texto.Length is < 1 or > LongitudMaxima)
             throw new ReglaDeNegocioException($"El comentario debe tener entre 1 y {LongitudMaxima} caracteres.");
         if (!TextoSeguro.EsSeguro(texto, multilinea: true))
-            throw new ReglaDeNegocioException("El comentario contiene caracteres no permitidos.");
+            throw new ReglaDeNegocioException("El comentario contiene caracteres no permitidos o etiquetas HTML.");
 
         Id = Guid.NewGuid();
         PublicacionId = publicacionId;

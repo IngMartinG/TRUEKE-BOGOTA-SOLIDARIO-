@@ -249,7 +249,7 @@ public class SeguridadTests : IClassFixture<FabricaApi>
         var atacante = await Api.RegistrarAsync(_fabrica, "atacante");
         var resp = await atacante.PostAsJsonAsync("/api/v1/publicaciones", new
         {
-            titulo = "Suplantada", descripcion = "x", categoriaId = 1, modo = "Donacion", condicion = "Usado", localidad = "Usme",
+            titulo = "Suplantada", descripcion = "Descripción de prueba", categoriaId = 1, modo = "Donacion", condicion = "Usado", localidad = "Usme",
             propietarioId = victima.Usuario.Id, usuarioId = victima.Usuario.Id
         });
         Assert.Equal(HttpStatusCode.Created, resp.StatusCode);
@@ -297,7 +297,7 @@ public class SeguridadTests : IClassFixture<FabricaApi>
         Assert.Equal("Donacion", p.GetProperty("modo").GetString());
         Assert.Equal("Disponible", p.GetProperty("estado").GetString());
         Assert.Equal(HttpStatusCode.BadRequest, (await c.PostAsJsonAsync("/api/v1/publicaciones",
-            new { titulo = "Mal modo", descripcion = "x", categoriaId = 1, modo = "Robo", localidad = "Usme" })).StatusCode);
+            new { titulo = "Mal modo", descripcion = "Descripción de prueba", categoriaId = 1, modo = "Robo", localidad = "Usme" })).StatusCode);
     }
 
     [Fact]

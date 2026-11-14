@@ -38,18 +38,18 @@ public class EscalaYMonetizacionTests : IClassFixture<FabricaApi>
     {
         var c = await Api.RegistrarAsync(_fabrica, "nacional");
         var sinCondicion = await c.PostAsJsonAsync("/api/v1/publicaciones",
-            new { titulo = "Nevera", descripcion = "Funciona", categoriaId = 3, modo = "Donacion", localidad = "El Poblado", municipioCodigo = "05001" });
+            new { titulo = "Nevera", descripcion = "Funciona bien", categoriaId = 3, modo = "Donacion", localidad = "El Poblado", municipioCodigo = "05001" });
         Assert.Equal(HttpStatusCode.BadRequest, sinCondicion.StatusCode);
         var problema = await sinCondicion.Content.ReadFromJsonAsync<JsonElement>();
         Assert.True(problema.GetProperty("errors").TryGetProperty("condicion", out _));
 
         var malMunicipio = await c.PostAsJsonAsync("/api/v1/publicaciones",
-            new { titulo = "Nevera", descripcion = "Funciona", categoriaId = 3, modo = "Donacion", condicion = "Usado", localidad = "Centro", municipioCodigo = "ABCDE" });
+            new { titulo = "Nevera", descripcion = "Funciona bien", categoriaId = 3, modo = "Donacion", condicion = "Usado", localidad = "Centro", municipioCodigo = "ABCDE" });
         Assert.Equal(HttpStatusCode.BadRequest, malMunicipio.StatusCode);
 
         var ok = await c.PostAsJsonAsync("/api/v1/publicaciones", new
         {
-            titulo = "Nevera", descripcion = "Funciona", categoriaId = 3, modo = "Donacion", condicion = "Reparado",
+            titulo = "Nevera", descripcion = "Funciona bien", categoriaId = 3, modo = "Donacion", condicion = "Reparado",
             detalleCondicion = "Se le cambió el compresor en 2025", localidad = "El Poblado", municipioCodigo = "05001"
         });
         Assert.Equal(HttpStatusCode.Created, ok.StatusCode);

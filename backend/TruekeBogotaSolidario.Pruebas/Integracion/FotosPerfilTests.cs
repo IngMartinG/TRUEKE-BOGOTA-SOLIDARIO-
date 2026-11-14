@@ -52,7 +52,7 @@ public sealed class FotosPerfilTests : IClassFixture<FabricaApi>, IDisposable
     }
 
     private static Task<HttpResponseMessage> PublicarAsync(HttpClient c)
-        => c.PostAsJsonAsync("/api/v1/publicaciones", new { titulo = "Lámpara", descripcion = "Funciona", categoriaId = 4, modo = "Trueke", condicion = "ComoNuevo", localidad = "Kennedy" });
+        => c.PostAsJsonAsync("/api/v1/publicaciones", new { titulo = "Lámpara", descripcion = "Funciona bien", categoriaId = 4, modo = "Trueke", condicion = "ComoNuevo", localidad = "Kennedy" });
 
     private async Task<HttpClient> ModeradorAsync() => Api.ConToken(_f, await Api.LoginAsync(_f, FabricaApi.CorreoSuper, FabricaApi.ClaveSuper));
 
