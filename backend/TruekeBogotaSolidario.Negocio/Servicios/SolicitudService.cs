@@ -526,8 +526,10 @@ public sealed class SolicitudService : ISolicitudService
         var ofrecidas = Ofrecidas(s);
         foreach (var o in ofrecidas.Where(o => o.Estado == EstadoPublicacionEnum.EnNegociacion)) o.ConfirmarIntercambio();
         // Cuenta el modo en que se cerró: una venta que terminó en trueke suma como trueke.
-        oferente.RegistrarTransaccionCompletada(s.Modo, puntosOferente, s.Id, pub.Titulo);
-        receptor.RegistrarTransaccionCompletada(s.Modo, puntosReceptor, s.Id, pub.Titulo);
+        // Una compra de mercancía nueva no es reutilización: da 1 Eco-Punto y no cuenta para "Segunda mano" (ni suma impacto).
+        var ventaMercancia = s.Modo == ModoTransaccion.Compra && pub.EsMercanciaNueva;
+        oferente.RegistrarTransaccionCompletada(s.Modo, puntosOferente, s.Id, pub.Titulo, ventaMercancia);
+        receptor.RegistrarTransaccionCompletada(s.Modo, puntosReceptor, s.Id, pub.Titulo, ventaMercancia);
         // Primera publicación: si una publicación propia cambió de manos (con puntos) antes de cumplir 24 h activa.
         if (puntosOferente) oferente.RecibirBonoPrimeraPublicacion(pub.Id, pub.Titulo);
         if (puntosReceptor && ofrecidas.Count > 0) receptor.RecibirBonoPrimeraPublicacion(ofrecidas[0].Id, ofrecidas[0].Titulo);
@@ -535,7 +537,7 @@ public sealed class SolicitudService : ISolicitudService
         foreach (var (invitado, otro, conPuntos) in new[] { (oferente, receptor, puntosOferente), (receptor, oferente, puntosReceptor) })
             if (await RecompensarInvitacionAsync(invitado, otro, conPuntos, s.Id, ahora, avisosPuntos) is { } recompensa)
                 invitaciones.Add(recompensa);
-        var transaccion = new Transaccion(pub.Id, s.Id, oferente.Id, receptor.Id, s.Modo, puntosOferente, puntosReceptor, ahora);
+        var transaccion = new Transaccion(pub.Id, s.Id, oferente.Id, receptor.Id, s.Modo, puntosOferente, puntosReceptor, ahora, ventaMercancia);
         _transacciones.Agregar(transaccion);
         if (ambasConfirmaron)
         {

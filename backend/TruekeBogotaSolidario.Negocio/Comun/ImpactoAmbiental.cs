@@ -9,8 +9,8 @@ public sealed record TipicoCategoria(decimal Kg, MaterialObjeto Material);
 public sealed record ObjetoTipico(string Nombre, decimal Kg, MaterialObjeto Material, int CategoriaId);
 
 /// <summary>
-/// Metodología de impacto 2.0.0 (docs/METODOLOGIA-IMPACTO.md): cada objeto entregado en un intercambio que ambas partes
-/// confirmaron suma sus kilos (los declarados o, si faltan, los típicos de su categoría), y el CO₂ evitado es
+/// Metodología de impacto 2.1.0 (docs/METODOLOGIA-IMPACTO.md): cada objeto de segunda mano entregado en un intercambio que
+/// ambas partes confirmaron suma sus kilos (los declarados o, si faltan, los típicos de su categoría), y el CO₂ evitado es
 /// kilos × factor de su material. Los factores viven en la base de datos; cada registro guarda el que usó.
 /// </summary>
 public static class ImpactoAmbiental
@@ -70,13 +70,14 @@ public static class ImpactoAmbiental
 
     /// <summary>
     /// Un registro por objeto entregado: lo publicado va del dueño a quien lo pidió y, en un trueke con objetos, los ofrecidos
-    /// van en sentido contrario.
+    /// van en sentido contrario. La mercancía nueva no genera registro (no es reutilización).
     /// </summary>
     public static IEnumerable<RegistroImpacto> Registros(Transaccion t, Publicacion pedida, IEnumerable<Publicacion> ofrecidas,
         IReadOnlyDictionary<MaterialObjeto, FactorImpacto> factores)
     {
         foreach (var (objeto, de, para) in ofrecidas.Select(o => (o, t.ReceptorId, t.OferenteId)).Prepend((pedida, t.OferenteId, t.ReceptorId)))
         {
+            if (objeto.EsMercanciaNueva) continue; // metodología 2.1.0: un producto nuevo no se reutiliza, no suma kilos ni CO₂
             var (kg, origen, material) = PesoYMaterial(objeto);
             var factor = factores.GetValueOrDefault(material) ?? factores[MaterialObjeto.Mixto];
             yield return new RegistroImpacto(t.Id, objeto, t.Modo, de, para, kg, origen, material, factor, t.FechaUtc);

@@ -215,6 +215,9 @@ export const CONOCIMIENTO: readonly EntradaConocimiento[] = [
       const gana = ganancias.length
         ? ` Por cada intercambio completado ganas ${lista(ganancias.map((g) => `${g.puntos} (${g.modo === 'Compra' ? 'compra o venta' : g.modo === 'Donacion' ? 'donación' : 'trueke'})`))}.`
         : ' Los ganas al completar intercambios (más por donar).';
+      const nuevo = p?.puntosVentaMercanciaNueva
+        ? ` Comprar o vender un producto nuevo (que no es de segunda mano) suma solo ${p.puntosVentaMercanciaNueva}.`
+        : '';
       const otras = [
         p?.puntosPerfilCompleto ? `${p.puntosPerfilCompleto} al completar tu perfil` : '',
         p?.puntosPrimeraPublicacion ? `${p.puntosPrimeraPublicacion} por tu primera publicación` : '',
@@ -227,7 +230,7 @@ export const CONOCIMIENTO: readonly EntradaConocimiento[] = [
       const recarga = p?.recargaMinimaCop
         ? ` También puedes recargar desde ${cop(p.recargaMinimaCop)}${paquetes.length ? `; los paquetes de ${lista(paquetes)} traen Eco-Puntos de bono` : ''}.`
         : ' También puedes recargar.';
-      return `La moneda interna de la comunidad.${gana}${extra} Sirven para impulsar publicaciones y para pagar destacar o verificar tu cuenta: ${valor} y tú eliges cuántos usar.${recarga} No se convierten en dinero.`;
+      return `La moneda interna de la comunidad.${gana}${nuevo}${extra} Sirven para impulsar publicaciones y para pagar destacar o verificar tu cuenta: ${valor} y tú eliges cuántos usar.${recarga} No se convierten en dinero.`;
     },
     accion: { texto: 'Ver mis Eco-Puntos', ruta: '/eco-puntos' },
     paginas: ['como-funciona'],

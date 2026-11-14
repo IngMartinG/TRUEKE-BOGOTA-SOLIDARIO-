@@ -678,7 +678,7 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                             ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
                             KgCo2PorKg = 8.0m,
-                            Version = "2.0.0"
+                            Version = "2.1.0"
                         },
                         new
                         {
@@ -686,7 +686,7 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                             ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
                             KgCo2PorKg = 12.0m,
-                            Version = "2.0.0"
+                            Version = "2.1.0"
                         },
                         new
                         {
@@ -694,7 +694,7 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                             ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
                             KgCo2PorKg = 5.0m,
-                            Version = "2.0.0"
+                            Version = "2.1.0"
                         },
                         new
                         {
@@ -702,7 +702,7 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                             ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
                             KgCo2PorKg = 1.2m,
-                            Version = "2.0.0"
+                            Version = "2.1.0"
                         },
                         new
                         {
@@ -710,7 +710,7 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                             ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
                             KgCo2PorKg = 0.9m,
-                            Version = "2.0.0"
+                            Version = "2.1.0"
                         },
                         new
                         {
@@ -718,7 +718,7 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                             ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
                             KgCo2PorKg = 3.0m,
-                            Version = "2.0.0"
+                            Version = "2.1.0"
                         },
                         new
                         {
@@ -726,7 +726,7 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                             ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
                             KgCo2PorKg = 0.7m,
-                            Version = "2.0.0"
+                            Version = "2.1.0"
                         },
                         new
                         {
@@ -734,7 +734,7 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                             ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
                             KgCo2PorKg = 4.0m,
-                            Version = "2.0.0"
+                            Version = "2.1.0"
                         },
                         new
                         {
@@ -742,7 +742,7 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                             ActualizadoUtc = new DateTime(2026, 10, 29, 0, 0, 0, 0, DateTimeKind.Utc),
                             Fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja",
                             KgCo2PorKg = 1.5m,
-                            Version = "2.0.0"
+                            Version = "2.1.0"
                         });
                 });
 
@@ -1989,6 +1989,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
 
                     b.Property<Guid>("SolicitudId")
                         .HasColumnType("uuid");
+
+                    b.Property<bool>("VentaMercanciaNueva")
+                        .HasColumnType("boolean");
 
                     b.HasKey("Id");
 

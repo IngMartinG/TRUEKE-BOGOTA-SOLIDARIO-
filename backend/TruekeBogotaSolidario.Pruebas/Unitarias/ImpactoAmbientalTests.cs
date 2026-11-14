@@ -1,4 +1,4 @@
-using TruekeBogotaSolidario.Datos.Common;
+﻿using TruekeBogotaSolidario.Datos.Common;
 using TruekeBogotaSolidario.Datos.Entidades;
 using TruekeBogotaSolidario.Negocio.Comun;
 using TruekeBogotaSolidario.Negocio.Dtos;
@@ -6,15 +6,16 @@ using TruekeBogotaSolidario.Negocio.Servicios;
 
 namespace TruekeBogotaSolidario.Pruebas.Unitarias;
 
-/// <summary>Metodología de impacto 2.0.0: kilos declarados o típicos de la categoría × factor del material.</summary>
+/// <summary>Metodología de impacto 2.1.0: kilos declarados o típicos de la categoría × factor del material.</summary>
 public class ImpactoAmbientalTests
 {
     private static readonly DateTime Ahora = new(2026, 10, 29, 12, 0, 0, DateTimeKind.Utc);
     private static readonly Categoria Hogar = new(4, "Hogar y muebles", "Muebles");
 
-    private static Publicacion Pub(decimal? kg = null, MaterialObjeto? material = null)
-        => new(Guid.NewGuid(), new DatosPublicacion("Mesa", "Hecha de madera", Hogar, ModoTransaccion.Trueke, CondicionProducto.Usado,
-            null, "11001", "Suba", null, null, null, null, PesoEstimadoKg: kg, Material: material));
+    private static Publicacion Pub(decimal? kg = null, MaterialObjeto? material = null, bool mercancia = false)
+        => new(Guid.NewGuid(), new DatosPublicacion("Mesa", "Hecha de madera", Hogar, ModoTransaccion.Trueke,
+            mercancia ? CondicionProducto.Nuevo : CondicionProducto.Usado,
+            null, "11001", "Suba", null, null, null, null, PesoEstimadoKg: kg, Material: material, EsMercanciaNueva: mercancia));
 
     private static Dictionary<MaterialObjeto, FactorImpacto> Factores() => new()
     {
@@ -98,5 +99,21 @@ public class ImpactoAmbientalTests
         // El 1 de noviembre a las 2 a. m. UTC todavía es 31 de octubre en Bogotá.
         Assert.Equal(new DateTime(2026, 10, 1, 5, 0, 0, DateTimeKind.Utc),
             ImpactoService.InicioPeriodoUtc(PeriodoImpactoDto.Mes, new DateTime(2026, 11, 1, 2, 0, 0, DateTimeKind.Utc)));
+    }
+
+    [Fact]
+    public void La_mercancia_nueva_no_genera_registro_pero_el_otro_objeto_del_trueke_si()
+    {
+        var mercancia = Pub(10, MaterialObjeto.Madera, mercancia: true);
+        var usada = Pub(10, MaterialObjeto.Madera);
+        var t = new Transaccion(mercancia.Id, Guid.NewGuid(), Guid.NewGuid(), Guid.NewGuid(), ModoTransaccion.Trueke, true, true, Ahora);
+
+        // Solo mercancía: no hay nada reutilizado.
+        Assert.Empty(ImpactoAmbiental.Registros(t, mercancia, [], Factores()));
+        // Trueke de mercancía por algo usado: solo el usado suma.
+        var r = Assert.Single(ImpactoAmbiental.Registros(t, mercancia, [usada], Factores()));
+        Assert.Equal(usada.Id, r.PublicacionId);
+        // Lo que se ofrece a cambio también puede ser mercancía.
+        Assert.Single(ImpactoAmbiental.Registros(t, usada, [mercancia], Factores()));
     }
 }

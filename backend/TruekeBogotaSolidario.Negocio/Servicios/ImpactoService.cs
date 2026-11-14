@@ -191,7 +191,7 @@ public sealed class ImpactoService : IImpactoService
 
     /// <summary>La versión más alta entre los factores vigentes (comparando cada número, no el texto).</summary>
     public static string VersionVigente(IEnumerable<FactorImpacto> factores)
-        => factores.Select(f => f.Version).MaxBy(v => Version.TryParse(v, out var x) ? x : new Version(0, 0)) ?? "2.0.0";
+        => factores.Select(f => f.Version).MaxBy(v => Version.TryParse(v, out var x) ? x : new Version(0, 0)) ?? "2.1.0";
 
     public IReadOnlyList<ObjetoTipicoDto> ObjetosTipicos()
         => ImpactoAmbiental.ObjetosTipicos.Select(o => new ObjetoTipicoDto(o.Nombre, o.Kg, o.Material.ToString(), o.CategoriaId)).ToList();

@@ -117,6 +117,7 @@ public sealed class EcoPuntosService : IEcoPuntosService
             PoliticaEcoPuntos.PuntosPrimeraPublicacion, PoliticaEcoPuntos.HorasPrimeraPublicacionActiva, PoliticaEcoPuntos.PuntosPerfilCompleto,
             PoliticaEcoPuntos.PuntosCalificacionCincoEstrellas, PoliticaEcoPuntos.PuntosCalificacionCuatroEstrellas,
             PoliticaEcoPuntos.DiasEntreCalificacionesMismaPareja, PoliticaEcoPuntos.PuntosDenunciaConfirmada,
-            PoliticaEcoPuntos.MaxDenunciasRecompensadasPorCiclo, PoliticaEcoPuntos.DiasCicloDenuncias);
+            PoliticaEcoPuntos.MaxDenunciasRecompensadasPorCiclo, PoliticaEcoPuntos.DiasCicloDenuncias,
+            PoliticaEcoPuntos.PuntosVentaMercanciaNueva);
     }
 }

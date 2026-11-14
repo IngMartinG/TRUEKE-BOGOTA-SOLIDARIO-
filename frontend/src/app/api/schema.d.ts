@@ -9254,6 +9254,8 @@ export interface components {
             maxDenunciasRecompensadasPorCiclo?: number;
             /** Format: int32 */
             diasCicloDenuncias?: number;
+            /** Format: int32 */
+            puntosVentaMercanciaNueva?: number;
         };
         PqrAdminDto: {
             /** Format: uuid */

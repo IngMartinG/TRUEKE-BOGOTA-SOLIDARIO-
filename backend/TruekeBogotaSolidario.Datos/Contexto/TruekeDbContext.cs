@@ -456,19 +456,19 @@ public class TruekeDbContext : DbContext
             e.Property(x => x.KgCo2PorKg).HasPrecision(8, 3);
             e.Property(x => x.Fuente).HasMaxLength(FactorImpacto.LongitudMaximaFuente).IsRequired();
             e.Property(x => x.Version).HasMaxLength(FactorImpacto.LongitudMaximaVersion).IsRequired();
-            // Metodología 2.0.0 (docs/METODOLOGIA-IMPACTO.md): factores conservadores por material.
+            // Metodología 2.1.0 (docs/METODOLOGIA-IMPACTO.md): factores conservadores por material (los mismos de la 2.0.0).
             var inicio = new DateTime(2026, 10, 29, 0, 0, 0, DateTimeKind.Utc);
             const string fuente = "Promedios conservadores de estudios de ciclo de vida (WRAP, EPA), recortados a la baja";
             e.HasData(
-                new { Material = MaterialObjeto.Textil, KgCo2PorKg = 8.0m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
-                new { Material = MaterialObjeto.Electronica, KgCo2PorKg = 12.0m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
-                new { Material = MaterialObjeto.Electrodomestico, KgCo2PorKg = 5.0m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
-                new { Material = MaterialObjeto.Madera, KgCo2PorKg = 1.2m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
-                new { Material = MaterialObjeto.Papel, KgCo2PorKg = 0.9m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
-                new { Material = MaterialObjeto.Plastico, KgCo2PorKg = 3.0m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
-                new { Material = MaterialObjeto.Vidrio, KgCo2PorKg = 0.7m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
-                new { Material = MaterialObjeto.Metal, KgCo2PorKg = 4.0m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio },
-                new { Material = MaterialObjeto.Mixto, KgCo2PorKg = 1.5m, Fuente = fuente, Version = "2.0.0", ActualizadoUtc = inicio });
+                new { Material = MaterialObjeto.Textil, KgCo2PorKg = 8.0m, Fuente = fuente, Version = "2.1.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Electronica, KgCo2PorKg = 12.0m, Fuente = fuente, Version = "2.1.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Electrodomestico, KgCo2PorKg = 5.0m, Fuente = fuente, Version = "2.1.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Madera, KgCo2PorKg = 1.2m, Fuente = fuente, Version = "2.1.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Papel, KgCo2PorKg = 0.9m, Fuente = fuente, Version = "2.1.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Plastico, KgCo2PorKg = 3.0m, Fuente = fuente, Version = "2.1.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Vidrio, KgCo2PorKg = 0.7m, Fuente = fuente, Version = "2.1.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Metal, KgCo2PorKg = 4.0m, Fuente = fuente, Version = "2.1.0", ActualizadoUtc = inicio },
+                new { Material = MaterialObjeto.Mixto, KgCo2PorKg = 1.5m, Fuente = fuente, Version = "2.1.0", ActualizadoUtc = inicio });
         });
 
         mb.Entity<RegistroImpacto>(e =>

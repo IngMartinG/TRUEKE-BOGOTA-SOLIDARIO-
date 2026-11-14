@@ -511,6 +511,7 @@ public sealed class TransaccionRepository : ITransaccionRepository
     {
         var porModo = await _db.Transacciones.AsNoTracking()
             .Where(t => (t.OferenteId == usuarioId && t.PuntosOtorgadosOferente) || (t.ReceptorId == usuarioId && t.PuntosOtorgadosReceptor))
+            .Where(t => !t.VentaMercanciaNueva) // la mercancía nueva no es segunda mano: no cuenta para los logros por modo
             .GroupBy(t => t.Modo).Select(g => new { Modo = g.Key, Total = g.Count() }).ToListAsync();
         int Modo(ModoTransaccion m) => porModo.FirstOrDefault(x => x.Modo == m)?.Total ?? 0;
         return (Modo(ModoTransaccion.Trueke), Modo(ModoTransaccion.Compra), Modo(ModoTransaccion.Donacion));

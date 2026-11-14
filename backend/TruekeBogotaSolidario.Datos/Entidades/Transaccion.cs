@@ -6,8 +6,9 @@ public class Transaccion
     private Transaccion() { } // EF Core
 
     public Transaccion(Guid publicacionId, Guid solicitudId, Guid oferenteId, Guid receptorId, ModoTransaccion modo,
-        bool puntosOferente, bool puntosReceptor, DateTime? fechaUtc = null)
+        bool puntosOferente, bool puntosReceptor, DateTime? fechaUtc = null, bool ventaMercanciaNueva = false)
     {
+        VentaMercanciaNueva = ventaMercanciaNueva && modo == ModoTransaccion.Compra;
         Id = Guid.NewGuid();
         PublicacionId = publicacionId;
         SolicitudId = solicitudId;
@@ -28,4 +29,6 @@ public class Transaccion
     public DateTime FechaUtc { get; private set; }
     public bool PuntosOtorgadosOferente { get; private set; }
     public bool PuntosOtorgadosReceptor { get; private set; }
+    /// <summary>Compra de mercancía nueva: no es segunda mano, así que no cuenta para el logro "Segunda mano".</summary>
+    public bool VentaMercanciaNueva { get; private set; }
 }

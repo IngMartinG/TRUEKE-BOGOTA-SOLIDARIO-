@@ -197,7 +197,7 @@ public class EmpresasTests : IClassFixture<FabricaApi>
         Assert.True(r.IsSuccessStatusCode, await r.Content.ReadAsStringAsync());
         var informe = await r.Content.ReadFromJsonAsync<JsonElement>();
         var informeId = informe.GetProperty("id").GetGuid();
-        Assert.Equal("2.0.0", informe.GetProperty("versiones").GetString());
+        Assert.Equal("2.1.0", informe.GetProperty("versiones").GetString());
         Assert.Equal(64, informe.GetProperty("huella").GetString()!.Length);
 
         // Lo descargan los miembros; para cualquier otra cuenta no existe
@@ -231,7 +231,7 @@ public class EmpresasTests : IClassFixture<FabricaApi>
 
         // Cambiar el factor del textil no reescribe el informe
         Assert.Equal(HttpStatusCode.OK, (await super.PutAsJsonAsync("/api/v1/admin/impacto/factores/Textil",
-            new { kgCo2PorKg = 10m, fuente = "Estudio nuevo", version = "2.1.0" })).StatusCode);
+            new { kgCo2PorKg = 10m, fuente = "Estudio nuevo", version = "2.2.0" })).StatusCode);
         var csvDespues = Encoding.UTF8.GetString(await super.GetByteArrayAsync($"/api/v1/admin/empresas/informes/{informeId}/csv")).TrimStart('﻿');
         Assert.Equal(csv, csvDespues);
         Assert.Contains("y ≈ 24,00 kg", TextoPdf(await super.GetByteArrayAsync($"/api/v1/admin/empresas/informes/{informeId}/pdf")));

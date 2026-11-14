@@ -220,7 +220,11 @@ import { Volver } from '../../shared/ui/volver';
                   </button>
                   <p class="flex items-center justify-center gap-1.5 text-center text-xs text-tenue">
                     <app-icono nombre="moneda" [tamano]="14" class="text-sol-500" />
-                    Ambos ganan Eco-Puntos al completar el intercambio
+                    @if (origen().tipo === 'mercancia' && p.modo === 'Compra') {
+                      Producto nuevo: suma menos Eco-Puntos que una compra de segunda mano
+                    } @else {
+                      Ambos ganan Eco-Puntos al completar el intercambio
+                    }
                   </p>
                 } @else {
                   <p class="rounded-xl bg-superficie-2 p-4 text-center text-sm">

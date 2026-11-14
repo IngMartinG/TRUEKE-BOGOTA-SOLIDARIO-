@@ -58,6 +58,12 @@ public static class PoliticaEcoPuntos
         _ => 0
     };
 
+    /// <summary>
+    /// Venta de mercancía nueva (no es segunda mano, no se reutiliza nada): por usar la plataforma, no por reutilizar. La
+    /// reputación sube igual que en cualquier compra o venta.
+    /// </summary>
+    public const int PuntosVentaMercanciaNueva = 1;
+
     public static int PuntosPorModo(ModoTransaccion modo) => modo switch
     {
         ModoTransaccion.Compra => 5,

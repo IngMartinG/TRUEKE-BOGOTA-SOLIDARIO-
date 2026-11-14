@@ -1171,7 +1171,8 @@ public sealed record PoliticaEcoPuntosDto(
     IReadOnlyList<NivelPoliticaDto>? Niveles = null,
     int PuntosPrimeraPublicacion = 0, int HorasPrimeraPublicacionActiva = 0, int PuntosPerfilCompleto = 0,
     int PuntosCalificacionCincoEstrellas = 0, int PuntosCalificacionCuatroEstrellas = 0, int DiasEntreCalificacionesMismaPareja = 0,
-    int PuntosDenunciaConfirmada = 0, int MaxDenunciasRecompensadasPorCiclo = 0, int DiasCicloDenuncias = 0);
+    int PuntosDenunciaConfirmada = 0, int MaxDenunciasRecompensadasPorCiclo = 0, int DiasCicloDenuncias = 0,
+    int PuntosVentaMercanciaNueva = 0);
 
 /// <summary>Invita y ganan los dos: el código propio y cuántas invitaciones ya dieron puntos (sin datos de las personas invitadas).</summary>
 public sealed record InvitacionDto(string Codigo, int Logradas, int RecompensadasEnCiclo, int MaxPorCiclo, int PuntosPorInvitacion, int DiasCiclo);
