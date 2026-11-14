@@ -11,9 +11,11 @@ import {
   LOCALIDADES,
   MODOS,
   ORDENES,
+  ORIGENES,
   type CondicionDto,
   type ModoDto,
   type OrdenPublicacionesDto,
+  type OrigenDto,
   type PublicacionDto,
 } from '../../api/tipos';
 import { CatalogoApi, type FiltrosCatalogo } from '../../core/api/catalogo.api';
@@ -234,6 +236,15 @@ const TAMANO = 12;
           </select>
         </div>
         <div class="campo">
+          <label class="etiqueta" for="f-origen">Segunda mano o nuevo</label>
+          <select id="f-origen" class="entrada" [ngModel]="filtros().origen ?? ''" (ngModelChange)="aplicar({ origen: $event || null })">
+            <option value="">Todo</option>
+            @for (o of origenes; track o.valor) {
+              <option [value]="o.valor">{{ o.etiqueta }}</option>
+            }
+          </select>
+        </div>
+        <div class="campo">
           <span class="etiqueta">Precio de referencia (COP)</span>
           <div class="grid grid-cols-2 gap-2">
             <input type="number" min="0" step="1000" inputmode="numeric" class="entrada" placeholder="Mínimo" aria-label="Precio mínimo"
@@ -273,6 +284,7 @@ export default class Catalogo {
   protected readonly ordenes = ORDENES;
   protected readonly localidades = LOCALIDADES;
   protected readonly condiciones = CONDICIONES;
+  protected readonly origenes = ORIGENES;
   protected readonly codigoBogota = CODIGO_BOGOTA;
   protected readonly tamano = TAMANO;
   protected readonly radios = [2, 5, 10, 20];
@@ -302,6 +314,7 @@ export default class Catalogo {
       categoriaId: num('categoriaId'),
       modo: MODOS.includes(modo as ModoDto) ? (modo as ModoDto) : null,
       condicion: CONDICIONES.some((c) => c.valor === condicion) ? (condicion as CondicionDto) : null,
+      origen: ORIGENES.some((o) => o.valor === q.get('origen')) ? (q.get('origen') as OrigenDto) : null,
       departamentoCodigo: dep && /^\d{2}$/.test(dep) ? dep : null,
       municipioCodigo: mpio && /^\d{5}$/.test(mpio) ? mpio : null,
       localidad: q.get('localidad'),
@@ -316,7 +329,7 @@ export default class Catalogo {
 
   protected readonly filtrosActivos = computed(() => {
     const f = this.filtros();
-    return [f.texto, f.categoriaId, f.modo, f.condicion, f.municipioCodigo ?? f.departamentoCodigo, f.localidad, f.precioMin, f.precioMax, f.soloVerificados || null].filter(
+    return [f.texto, f.categoriaId, f.modo, f.condicion, f.origen, f.municipioCodigo ?? f.departamentoCodigo, f.localidad, f.precioMin, f.precioMax, f.soloVerificados || null].filter(
       (v) => v !== null && v !== undefined && v !== '',
     ).length;
   });
@@ -343,10 +356,10 @@ export default class Catalogo {
     params: () => {
       const u = this.miUbicacion();
       const f = this.filtros();
-      return u ? { u, radio: this.radioKm(), modo: f.modo, cat: f.categoriaId, cond: f.condicion, verificados: !!f.soloVerificados } : undefined;
+      return u ? { u, radio: this.radioKm(), modo: f.modo, cat: f.categoriaId, cond: f.condicion, origen: f.origen, verificados: !!f.soloVerificados } : undefined;
     },
     stream: ({ params }) =>
-      this.api.cercanas(params.u[0], params.u[1], params.radio, params.modo, params.cat, params.cond, params.verificados),
+      this.api.cercanas(params.u[0], params.u[1], params.radio, params.modo, params.cat, params.cond, params.verificados, params.origen),
   });
 
   protected readonly cargando = computed(() =>

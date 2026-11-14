@@ -340,7 +340,7 @@
     .insignias-tarjeta {
       @apply top-2 left-2;
     }
-    .insignias-tarjeta :is(.insignia-trueke, .insignia-compra, .insignia-donacion, .insignia-sol) {
+    .insignias-tarjeta :is(.insignia-trueke, .insignia-compra, .insignia-donacion, .insignia-sol, .insignia-agua) {
       @apply px-2 text-[0.6875rem] leading-tight whitespace-normal;
     }
     .insignias-tarjeta app-icono {

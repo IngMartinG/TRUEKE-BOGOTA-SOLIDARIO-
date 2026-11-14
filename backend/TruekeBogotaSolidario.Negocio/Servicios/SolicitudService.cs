@@ -736,7 +736,7 @@ public sealed class SolicitudService : ISolicitudService
         DateTime ahora, IReadOnlyList<Publicacion> ofrecidas, int evidencias)
     {
         var resumenes = ofrecidas.Select(o => new PublicacionResumenDto(o.Id, o.Titulo,
-            o.Imagenes.OrderBy(i => i.Orden).Select(i => i.Url).FirstOrDefault(), o.Condicion.ToString(), o.Estado.ToString())).ToList();
+            o.Imagenes.OrderBy(i => i.Orden).Select(i => i.Url).FirstOrDefault(), o.Condicion.ToString(), o.Estado.ToString(), o.EsMercanciaNueva)).ToList();
         var soyDuenio = pub.PropietarioId == actorId;
         DateTime? cierre = null;
         if (s.Estado == EstadoSolicitud.Aceptada && s.FechaAceptacionUtc is { } aceptada)

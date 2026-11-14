@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input, model } from '@angular/core';
-import { infoCondicion, type PublicacionDto } from '../../api/tipos';
+import { infoOrigen, type PublicacionDto } from '../../api/tipos';
 import { Icono } from './icono';
 import { ImagenPublicacion } from './imagen-publicacion';
 
@@ -28,7 +28,7 @@ export const MAX_OBJETOS_OFRECIDOS = 3;
             <app-imagen-publicacion class="size-12 shrink-0 rounded-xl" [src]="o.imagenes?.[0]" [miniatura]="true" [modo]="o.modo" [categoriaId]="o.categoria?.id" />
             <span class="min-w-0 flex-1">
               <span class="block truncate font-semibold">{{ o.titulo }}</span>
-              <span class="block text-xs text-tenue">{{ condicion(o.condicion) }}</span>
+              <span class="block text-xs text-tenue">{{ origen(o) }}</span>
             </span>
             <span class="grid size-6 shrink-0 place-items-center rounded-md border-2"
               [class]="elegido ? 'border-bosque-600 bg-bosque-600 text-white' : 'border-borde'" aria-hidden="true">
@@ -55,7 +55,7 @@ export class SelectorObjetos {
   readonly prefijo = input('Ofrecer');
   protected readonly max = MAX_OBJETOS_OFRECIDOS;
   protected readonly lleno = computed(() => this.seleccion().length >= MAX_OBJETOS_OFRECIDOS);
-  protected readonly condicion = (c: string | null | undefined) => infoCondicion(c).etiqueta;
+  protected readonly origen = (p: PublicacionDto) => infoOrigen(p).etiqueta;
 
   protected alternar(id: string): void {
     this.seleccion.update((s) => (s.includes(id) ? s.filter((x) => x !== id) : s.length < MAX_OBJETOS_OFRECIDOS ? [...s, id] : s));

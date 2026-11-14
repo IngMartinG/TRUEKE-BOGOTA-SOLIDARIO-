@@ -356,6 +356,7 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
         ALTER TABLE "Publicaciones" ADD "Material" character varying(20);
         ALTER TABLE "Publicaciones" ADD "NecesidadFundacionId" uuid;
         ALTER TABLE "Publicaciones" ADD "CampanaId" uuid;
+        ALTER TABLE "Publicaciones" ADD "EsMercanciaNueva" boolean NOT NULL DEFAULT FALSE;
         """;
     private const string QuitarColumnasPosteriores = """
         ALTER TABLE "Usuarios" DROP COLUMN "EstadoFoto", DROP COLUMN "FotoRevisadaUtc", DROP COLUMN "MotivoRechazoFoto",
@@ -364,7 +365,7 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
         ALTER TABLE "Publicaciones" DROP COLUMN "EstadoModeracion", DROP COLUMN "PuntajeRiesgo", DROP COLUMN "MotivosRiesgo",
             DROP COLUMN "MotivoRechazo", DROP COLUMN "EnRevisionDesdeUtc", DROP COLUMN "PesoEstimadoKg", DROP COLUMN "Material",
             DROP COLUMN "NecesidadFundacionId", DROP COLUMN "CampanaId", DROP COLUMN "DisponibilidadPedidaUtc",
-            DROP COLUMN "DisponibilidadConfirmadaUtc";
+            DROP COLUMN "DisponibilidadConfirmadaUtc", DROP COLUMN "EsMercanciaNueva";
         """;
 
     [SkippableFact]
@@ -387,6 +388,7 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
                 ALTER TABLE "Publicaciones" ADD "CampanaId" uuid;
                 ALTER TABLE "Publicaciones" ADD "DisponibilidadPedidaUtc" timestamp with time zone;
                 ALTER TABLE "Publicaciones" ADD "DisponibilidadConfirmadaUtc" timestamp with time zone;
+                ALTER TABLE "Publicaciones" ADD "EsMercanciaNueva" boolean NOT NULL DEFAULT FALSE;
                 ALTER TABLE "Usuarios" ADD "DescripcionNegocio" character varying(600);
                 ALTER TABLE "Usuarios" ADD "HorarioNegocio" character varying(120);
                 ALTER TABLE "Usuarios" ADD "NitVerificadoUtc" timestamp with time zone;
@@ -421,7 +423,8 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
             (confirmada, sola) = (t1.Id, t2.Id);
             await db.Database.ExecuteSqlRawAsync("""
                 ALTER TABLE "Publicaciones" DROP COLUMN "PesoEstimadoKg", DROP COLUMN "Material", DROP COLUMN "NecesidadFundacionId",
-                    DROP COLUMN "CampanaId", DROP COLUMN "DisponibilidadPedidaUtc", DROP COLUMN "DisponibilidadConfirmadaUtc";
+                    DROP COLUMN "CampanaId", DROP COLUMN "DisponibilidadPedidaUtc", DROP COLUMN "DisponibilidadConfirmadaUtc",
+                    DROP COLUMN "EsMercanciaNueva";
                 ALTER TABLE "Usuarios" DROP COLUMN "DescripcionNegocio", DROP COLUMN "HorarioNegocio", DROP COLUMN "NitVerificadoUtc",
                     DROP COLUMN "NitRechazadoUtc", DROP COLUMN "ResumenSemanal", DROP COLUMN "ResumenSemanalEnviadoUtc", DROP COLUMN "FotoPublicaUrl";
                 """);

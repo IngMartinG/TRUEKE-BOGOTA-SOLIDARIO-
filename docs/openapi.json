@@ -6086,6 +6086,13 @@
             }
           },
           {
+            "name": "Origen",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/OrigenDto"
+            }
+          },
+          {
             "name": "DepartamentoCodigo",
             "in": "query",
             "schema": {
@@ -6366,6 +6373,13 @@
             "in": "query",
             "schema": {
               "$ref": "#/components/schemas/CondicionDto"
+            }
+          },
+          {
+            "name": "Origen",
+            "in": "query",
+            "schema": {
+              "$ref": "#/components/schemas/OrigenDto"
             }
           },
           {
@@ -9459,6 +9473,9 @@
             "type": "string",
             "nullable": true
           },
+          "esMercanciaNueva": {
+            "type": "boolean"
+          },
           "municipioCodigo": {
             "pattern": "^[0-9]{5}$",
             "type": "string",
@@ -12462,6 +12479,13 @@
         ],
         "type": "string"
       },
+      "OrigenDto": {
+        "enum": [
+          "SegundaMano",
+          "MercanciaNueva"
+        ],
+        "type": "string"
+      },
       "PagoAdminDto": {
         "type": "object",
         "properties": {
@@ -13482,6 +13506,9 @@
             "type": "string",
             "format": "date-time",
             "nullable": true
+          },
+          "esMercanciaNueva": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -13572,6 +13599,9 @@
           "desdeUtc": {
             "type": "string",
             "format": "date-time"
+          },
+          "esMercanciaNueva": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false
@@ -13595,6 +13625,9 @@
           },
           "estado": {
             "type": "string"
+          },
+          "esMercanciaNueva": {
+            "type": "boolean"
           }
         },
         "additionalProperties": false

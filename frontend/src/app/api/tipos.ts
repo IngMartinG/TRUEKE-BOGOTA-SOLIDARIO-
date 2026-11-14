@@ -48,6 +48,32 @@ export const nombrePlan = (tipoCuenta: string | null | undefined): string =>
 
 export const infoCondicion = (c: string | null | undefined) => CONDICIONES.find((x) => x.valor === c) ?? CONDICIONES[2]!;
 
+/**
+ * Origen de lo publicado: mercancía nueva para la venta, algo nuevo sin usar que la persona ya tenía, o segunda mano.
+ * Solo la segunda mano y lo nuevo sin usar se reutilizan (y suman al impacto ambiental); la mercancía nueva no.
+ */
+export interface InfoOrigen {
+  tipo: 'mercancia' | 'sinUsar' | 'segundaMano';
+  /** Texto corto para tarjetas y filtros. */
+  etiqueta: string;
+  /** Frase para el detalle: dice con claridad qué es. */
+  frase: string;
+  clase: string;
+}
+export const infoOrigen = (p: { condicion?: string | null; esMercanciaNueva?: boolean | null } | null | undefined): InfoOrigen => {
+  const cond = infoCondicion(p?.condicion);
+  if (p?.esMercanciaNueva && p.condicion === 'Nuevo')
+    return { tipo: 'mercancia', etiqueta: 'Producto nuevo', frase: 'Producto nuevo, sin uso. No es de segunda mano y no suma al impacto ambiental.', clase: 'insignia-agua' };
+  if (p?.condicion === 'Nuevo')
+    return { tipo: 'sinUsar', etiqueta: 'Nuevo sin usar', frase: 'Nunca se ha usado: su dueño ya lo tenía y lo reutiliza.', clase: 'insignia-trueke' };
+  return { tipo: 'segundaMano', etiqueta: cond.etiqueta, frase: `Segunda mano · ${cond.descripcion}`, clase: cond.clase };
+};
+
+export const ORIGENES: readonly { valor: 'SegundaMano' | 'MercanciaNueva'; etiqueta: string }[] = [
+  { valor: 'SegundaMano', etiqueta: 'Segunda mano' },
+  { valor: 'MercanciaNueva', etiqueta: 'Productos nuevos' },
+];
+
 export const TIPOS_DOCUMENTO: readonly { valor: TipoDocumentoFiscalDto; etiqueta: string }[] = [
   { valor: 'CC', etiqueta: 'Cédula de ciudadanía' },
   { valor: 'CE', etiqueta: 'Cédula de extranjería' },

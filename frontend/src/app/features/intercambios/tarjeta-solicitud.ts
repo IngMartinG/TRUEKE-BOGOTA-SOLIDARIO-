@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { ETIQUETA_ESTADO_SOLICITUD, infoCondicion, INFO_MODO, type ModoDto, type SolicitudDto } from '../../api/tipos';
+import { ETIQUETA_ESTADO_SOLICITUD, infoOrigen, INFO_MODO, type ModoDto, type SolicitudDto } from '../../api/tipos';
 import { CopPipe, FechaPipe, HacePipe } from '../../shared/pipes';
 import { Avatar } from '../../shared/ui/avatar';
 import { Estrellas } from '../../shared/ui/estrellas';
@@ -48,7 +48,7 @@ export type AccionSolicitud = 'aceptar' | 'contraofertar' | 'rechazar' | 'cancel
                     <app-imagen-publicacion class="size-12 shrink-0 rounded-xl" [src]="o.foto" [miniatura]="true" modo="Trueke" />
                     <span class="min-w-0">
                       <span class="block truncate font-semibold">{{ o.titulo }}</span>
-                      <span class="block text-xs text-tenue">{{ condicion(o.condicion) }}</span>
+                      <span class="block text-xs text-tenue">{{ origen(o) }}</span>
                     </span>
                     <app-icono nombre="derecha" [tamano]="16" class="ml-auto shrink-0 text-tenue" />
                   </a>
@@ -147,7 +147,7 @@ export class TarjetaSolicitud {
   readonly solicitud = input.required<SolicitudDto>();
   readonly ocupado = input(false);
   readonly accion = output<AccionSolicitud>();
-  protected readonly condicion = (c: string | null | undefined) => infoCondicion(c).etiqueta;
+  protected readonly origen = (o: { condicion?: string | null; esMercanciaNueva?: boolean | null }) => infoOrigen(o).etiqueta;
 
   protected readonly otra = computed(() => (this.solicitud().soyDuenio ? this.solicitud().solicitante : this.solicitud().propietario));
   protected readonly estado = computed(() =>

@@ -254,6 +254,11 @@ public sealed class CrearPublicacionRequest
     [Required(ErrorMessage = "Indica el estado del producto."), EnumDataType(typeof(CondicionDto))] public CondicionDto? Condicion { get; init; }
     /// <summary>Obligatorio para UsadoConDetalles, Reparado y ParaRepuestos: qué detalles tiene, qué se reparó, qué piezas sirven.</summary>
     [MaxLength(300)] public string? DetalleCondicion { get; init; }
+    /// <summary>
+    /// Solo con Condicion = Nuevo: true si es mercancía nueva para la venta (de tienda o para revender); false si es algo sin
+    /// usar que la persona ya tenía. Con el plan Negocio vigente, lo nuevo siempre es mercancía. No es segunda mano.
+    /// </summary>
+    public bool EsMercanciaNueva { get; init; }
     /// <summary>Código DIVIPOLA del municipio. Si se omite, se usa el del perfil del usuario.</summary>
     [RegularExpression(FormatosUbicacion.Municipio, ErrorMessage = "El municipio no es válido.")] public string? MunicipioCodigo { get; init; }
     /// <summary>Barrio, localidad o sector dentro del municipio.</summary>
@@ -341,11 +346,16 @@ public sealed class IniciarPagoRequest
 
 public enum OrdenPublicacionesDto { Recientes = 1, PrecioAsc = 2, PrecioDesc = 3 }
 
+/// <summary>SegundaMano = todo lo que no es mercancía nueva (incluye lo nuevo sin usar que alguien ya tenía).</summary>
+public enum OrigenDto { SegundaMano = 1, MercanciaNueva = 2 }
+
 public sealed class FiltroPublicacionesRequest
 {
     public int? CategoriaId { get; init; }
     public ModoDto? Modo { get; init; }
     public CondicionDto? Condicion { get; init; }
+    /// <summary>Solo segunda mano o solo mercancía nueva (sin él, todo).</summary>
+    [EnumDataType(typeof(OrigenDto))] public OrigenDto? Origen { get; init; }
     [RegularExpression(FormatosUbicacion.Departamento, ErrorMessage = "El departamento no es válido.")] public string? DepartamentoCodigo { get; init; }
     [RegularExpression(FormatosUbicacion.Municipio, ErrorMessage = "El municipio no es válido.")] public string? MunicipioCodigo { get; init; }
     [MaxLength(60)] public string? Localidad { get; init; }
@@ -427,6 +437,8 @@ public sealed class CercanasRequest
     public int? CategoriaId { get; init; }
     public ModoDto? Modo { get; init; }
     public CondicionDto? Condicion { get; init; }
+    /// <summary>Solo segunda mano o solo mercancía nueva (el mismo filtro del catálogo).</summary>
+    [EnumDataType(typeof(OrigenDto))] public OrigenDto? Origen { get; init; }
     /// <summary>Solo publicaciones de cuentas con identidad verificada (el mismo filtro del catálogo).</summary>
     public bool SoloVerificados { get; init; }
     [Range(1, 50)] public int Max { get; init; } = 20;
@@ -789,7 +801,9 @@ public sealed record PublicacionDto(Guid Id, string Titulo, string Descripcion, 
     // Solo para el dueño: campaña de empresa a la que está ligada.
     Guid? CampanaId = null,
     // Solo para el dueño: cuándo se le preguntó si sigue disponible (se pausa si no responde en 7 días).
-    DateTime? DisponibilidadPedidaUtc = null);
+    DateTime? DisponibilidadPedidaUtc = null,
+    // Producto nuevo ofrecido como mercancía (no es segunda mano).
+    bool EsMercanciaNueva = false);
 
 public sealed record PuntoSerieDto(DateTime Fecha, int Vistas);
 
@@ -912,7 +926,7 @@ public sealed record SolicitudDto(Guid Id, Guid PublicacionId, string Publicacio
     int Evidencias = 0);
 
 /// <summary>Lo que se ofrece a cambio en un trueke: datos que ya son públicos en el catálogo.</summary>
-public sealed record PublicacionResumenDto(Guid Id, string Titulo, string? Foto, string Condicion, string Estado);
+public sealed record PublicacionResumenDto(Guid Id, string Titulo, string? Foto, string Condicion, string Estado, bool EsMercanciaNueva = false);
 
 public sealed class NoConcretadaRequest
 {
@@ -942,7 +956,8 @@ public sealed record AutorEnRevisionDto(Guid Id, string NombreCompleto, string? 
 /// <summary>Publicación que espera revisión previa, con las señales que la mandaron ahí.</summary>
 public sealed record PublicacionEnRevisionDto(Guid Id, string Titulo, string Descripcion, string Condicion, string? DetalleCondicion,
     string Categoria, string Modo, decimal? PrecioReferenciaCop, bool AceptaTrueke, string Localidad, string Municipio,
-    IReadOnlyList<string> Imagenes, AutorEnRevisionDto Autor, int PuntajeRiesgo, IReadOnlyList<string> Motivos, DateTime DesdeUtc);
+    IReadOnlyList<string> Imagenes, AutorEnRevisionDto Autor, int PuntajeRiesgo, IReadOnlyList<string> Motivos, DateTime DesdeUtc,
+    bool EsMercanciaNueva = false);
 /// <summary>La fila (hasta 100: primero las de más riesgo y luego las más antiguas) y su total.</summary>
 public sealed record PublicacionesEnRevisionDto(IReadOnlyList<PublicacionEnRevisionDto> Items, int Total);
 /// <summary>
