@@ -7905,6 +7905,9 @@ export interface components {
             publicacionesOfrecidasIds?: string[] | null;
             /** Format: double */
             precioPropuestoCop?: number | null;
+            /** Format: double */
+            complementoCop?: number | null;
+            complementoLoPagaSolicitante?: boolean | null;
         };
         ConversacionDto: {
             /** Format: uuid */
@@ -8017,6 +8020,9 @@ export interface components {
             publicacionOfrecidaId?: string | null;
             /** Format: double */
             precioPropuestoCop?: number | null;
+            /** Format: double */
+            complementoCop?: number | null;
+            complementoLoPagaSolicitante?: boolean | null;
         };
         DatosFacturacionDto: {
             completos?: boolean;
@@ -8697,6 +8703,7 @@ export interface components {
             domicilio?: string | null;
             correoContacto?: string | null;
             telefono?: string | null;
+            fechaVigenciaTerminos?: string;
         };
         LoginRequest: {
             /** Format: email */
@@ -9567,6 +9574,9 @@ export interface components {
             publicacionAceptaTrueke?: boolean;
             /** Format: int32 */
             evidencias?: number;
+            /** Format: double */
+            complementoCop?: number | null;
+            complementoLoPagaSolicitante?: boolean | null;
         };
         SubidaArchivoDto: {
             urlSubida?: string;

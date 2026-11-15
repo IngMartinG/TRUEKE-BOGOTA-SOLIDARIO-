@@ -584,7 +584,7 @@ Todos cuentan para el nivel. Las rachas de días seguidos quedan para después (
 - El asistente explica los plazos. Pruebas en `EntregaTests` (tiempos, sin repetir, solo a quien falta y nada tras completar).
 
 ## Hecho el 2026-10-24 — contraofertas y trueke de varios objetos
-Decisiones del dueño: negocian las dos partes por turnos, hasta 3 objetos por trueke, sin mezclar objetos y dinero, máximo
+Decisiones del dueño: negocian las dos partes por turnos, hasta 3 objetos por trueke, sin mezclar objetos y dinero (reemplazado el 2026-11-14 por D-021), máximo
 5 contraofertas por solicitud.
 - **Al pedir:** en un Trueke se ofrecen de 0 a 3 objetos propios disponibles (`PublicacionesOfrecidasIds`; el campo viejo
   `PublicacionOfrecidaId` se sigue aceptando); en una Compra se puede proponer otro precio (`PrecioPropuestoCop`, sin él vale
@@ -650,7 +650,7 @@ páginas públicas sin sesión; donarle a una fundación no da puntos extra (ant
   retirada, bloqueo en las dos direcciones, otro modo y necesidad inexistente), `publicar.spec.ts` y `fundaciones.spec.ts`.
 
 ## Hecho el 2026-10-25 — venta que también acepta trueke
-Decisiones del dueño: la casilla solo existe en Compra y venta, sin mezclar objetos y dinero en una misma propuesta, y el
+Decisiones del dueño: la casilla solo existe en Compra y venta, sin mezclar objetos y dinero en una misma propuesta (reemplazado el 2026-11-14 por D-021), y el
 intercambio cuenta en el modo en que se cerró.
 - **Al publicar:** casilla "También acepto trueke" (`Publicacion.AceptaTrueke`, se ignora en Trueke y Donación). La
   publicación muestra la insignia "Acepta trueke" y también sale en el filtro Trueke del catálogo, en "Cerca de mí" y en
@@ -980,9 +980,31 @@ Decisión del dueño: ropa interior, medias y trajes de baño solo se publican c
 - **Lo ya publicado:** la migración `HigieneSoloNueva` manda a revisión (no borra) las disponibles que no son nuevas y cuyo título
   coincide, y avisa a cada dueño en la bandeja (`PublicacionEnRevision`).
 - **Front:** Publicar avisa en el paso del estado y no deja avanzar (`shared/higiene.ts`, copia de la lista del servidor).
-- **Pendiente (PR 4):** sumar esta regla a "Publicaciones prohibidas" de los términos de uso, junto con la versión legal nueva.
+- La regla ya está en "Publicaciones prohibidas" de los términos (PR 4).
 - Pruebas: `HigieneSoloNuevaTests` (términos, crear, editar, descripción, señal de moderación), la migración en `PostgreSqlTests` y
   `higiene.spec.ts` / `publicar.spec.ts`.
+
+## Hecho el 2026-11-14 — trueke con dinero para completar y textos legales (PR 4 de 4)
+Decisión del dueño (D-021): una propuesta de trueke puede llevar objetos + un monto en pesos; se paga entre las partes.
+- **Datos:** `Solicitud.ComplementoCop` (decimal?) y `ComplementoLoPagaSolicitante` (bool?: true = lo paga quien solicita al dueño),
+  migración `TruekeConComplemento` (dos columnas nulas en `Solicitudes`, sin RLS: no hay tabla nueva). `PonerPropuesta` exige modo
+  Trueke, al menos 1 objeto, monto entero > 0 y hasta $1.000.000.000, y el sentido; sin monto no puede haber sentido. Al pasar a
+  precio (o a una compra) el complemento se borra. Donación y compra sin trueke no lo admiten.
+- **Servicio y API:** `CrearSolicitudRequest`/`ContraofertaRequest` con `ComplementoCop` y `ComplementoLoPagaSolicitante`; `SolicitudDto`
+  los devuelve. Lo propone cualquiera de las dos partes, también al contraofertar (una misma propuesta = mismos objetos Y mismo dinero).
+  Los avisos dicen "+ $50.000 de tu parte / de su parte". Cuenta como trueke: 10 Eco-Puntos, contador de truekes e impacto de los
+  objetos, sin puntos extra. El dinero NO pasa por la plataforma ni por Wompi.
+- **Front:** `shared/ui/complemento-dinero.ts` (monto + quién paga + aviso fijo «Se paga entre ustedes; Trueke no recibe ni guarda
+  este dinero»), visible solo con objetos elegidos, en el diálogo de proponer (`detalle.ts`) y en el de contraoferta
+  (`intercambios.ts`); la tarjeta de solicitud muestra el monto y quién le paga a quién.
+- **Legal:** una sola versión nueva de los **términos** (`Legal:VersionTerminos` = 2026-11-14, con `FechaVigenciaTerminos` propia
+  para no cambiar la fecha de la política de datos). Quien ya tenía cuenta debe aceptarlos de nuevo al fusionar. Se agregaron las
+  secciones «Mercancía nueva» y «Trueke con dinero para completar el valor», la regla de higiene en "Publicaciones prohibidas" y
+  una frase en "Pagos". El asistente de ayuda explica los tres temas.
+- **Pendiente:** que un abogado revise los textos (también la venta de mercancía nueva por negocios); que las búsquedas guardadas
+  guarden el filtro de origen (PR 1) y repetir la etiqueta «Producto nuevo» en la tarjeta de mercancía.
+- Pruebas: `TruekeConComplementoTests`, `LegalTests` (versión nueva), la migración en `PostgreSqlTests`, `complemento-dinero.spec.ts`
+  y `tarjeta-solicitud.spec.ts`.
 
 ## Revisión de un plan externo de producto (2026-10-29)
 Se revisó un paquete de documentos con bloques de producto (impacto, fundaciones, empresas, monetización, retención) y roles.

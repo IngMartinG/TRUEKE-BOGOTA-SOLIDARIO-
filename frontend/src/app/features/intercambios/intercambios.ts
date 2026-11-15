@@ -18,6 +18,7 @@ import { Estrellas } from '../../shared/ui/estrellas';
 import { Modal } from '../../shared/ui/modal';
 import { Icono } from '../../shared/ui/icono';
 import { SelectorObjetos } from '../../shared/ui/selector-objetos';
+import { ComplementoDinero, cuerpoComplemento } from '../../shared/ui/complemento-dinero';
 import { cop } from '../../shared/pipes';
 import { TarjetaSolicitud, type AccionSolicitud } from './tarjeta-solicitud';
 import { Volver } from '../../shared/ui/volver';
@@ -26,7 +27,7 @@ type Pestana = 'recibidas' | 'enviadas';
 const TIPOS_SOLICITUD = /^(Solicitud|Entrega|Intercambio|Calificacion)/;
 
 @Component({
-  imports: [Volver, FormsModule, RouterLink, TarjetaSolicitud, EstadoVacio, Modal, Estrellas, Icono, SelectorObjetos],
+  imports: [Volver, FormsModule, RouterLink, TarjetaSolicitud, EstadoVacio, Modal, Estrellas, Icono, SelectorObjetos, ComplementoDinero],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="contenedor max-w-4xl py-8 sm:py-10">
@@ -182,6 +183,11 @@ const TIPOS_SOLICITUD = /^(Solicitud|Entrega|Intercambio|Calificacion)/;
               <p class="text-sm text-tenue">{{ contraoferta()?.soyDuenio ? 'No tiene otros objetos disponibles. Puedes aceptar, rechazar o conversar por el chat.' : 'No tienes objetos disponibles para ofrecer.' }}</p>
             </app-selector-objetos>
           </fieldset>
+          @if (seleccionContraoferta().length) {
+            <app-complemento-dinero [(monto)]="complementoContraoferta" [(loPagoYo)]="complementoLoPagoYoContraoferta"
+              [otraPersona]="(contraoferta()?.soyDuenio ? contraoferta()?.solicitante?.nombre : contraoferta()?.propietario?.nombre) ?? 'la otra persona'"
+              idBase="complemento-contraoferta" />
+          }
         }
         <p class="text-xs text-tenue">
           La propuesta anterior se reemplaza y le toca responder a la otra persona.
@@ -352,6 +358,9 @@ export default class Intercambios {
   /** Publicaciones disponibles de quien solicita (null = cargando). */
   protected readonly objetosContraoferta = signal<PublicacionDto[] | null>(null);
   protected readonly seleccionContraoferta = signal<string[]>([]);
+  /** Trueke con dinero: monto que se suma a los objetos de la contraoferta y si lo pago yo (se paga entre las partes). */
+  protected readonly complementoContraoferta = signal<number | null>(null);
+  protected readonly complementoLoPagoYoContraoferta = signal(true);
   protected readonly errorContraoferta = signal<string | null>(null);
   protected readonly subtituloContraoferta = computed(() => {
     const s = this.contraoferta();
@@ -384,8 +393,19 @@ export default class Intercambios {
     }
     const sel = this.seleccionContraoferta();
     const actual = s?.modo === 'Trueke' ? (s.ofrecidas ?? []).map((o) => o.id) : [];
-    return sel.length > 0 && !(sel.length === actual.length && sel.every((id) => actual.includes(id)));
+    const mismosObjetos = sel.length === actual.length && sel.every((id) => actual.includes(id));
+    // Cambiar solo el dinero (o quitarlo) también es una propuesta distinta
+    const monto = Math.round(this.complementoContraoferta() ?? 0) || null;
+    const actualMonto = s?.modo === 'Trueke' ? (s.complementoCop ?? null) : null;
+    const mismoDinero = monto === actualMonto && (monto === null || this.loPagaSolicitanteContraoferta() === s?.complementoLoPagaSolicitante);
+    return sel.length > 0 && !(mismosObjetos && mismoDinero);
   });
+
+  /** Sentido del dinero respecto de quien solicita (como lo guarda la API). */
+  private loPagaSolicitanteContraoferta(): boolean {
+    const duenio = !!this.contraoferta()?.soyDuenio;
+    return duenio ? !this.complementoLoPagoYoContraoferta() : this.complementoLoPagoYoContraoferta();
+  }
 
   constructor() {
     const tiempoReal = inject(TiempoRealService);
@@ -476,6 +496,10 @@ export default class Intercambios {
     this.errorContraoferta.set(null);
     this.precioContraoferta.set(null);
     this.seleccionContraoferta.set((s.ofrecidas ?? []).map((o) => o.id!));
+    // Arranca con el dinero de la propuesta vigente (si lo hay), expresado desde quien contraoferta
+    const hay = s.modo === 'Trueke' && !!s.complementoCop;
+    this.complementoContraoferta.set(hay ? s.complementoCop! : null);
+    this.complementoLoPagoYoContraoferta.set(hay ? (s.soyDuenio ? !s.complementoLoPagaSolicitante : !!s.complementoLoPagaSolicitante) : true);
     this.objetosContraoferta.set(null);
     this.formaContraoferta.set(s.modo === 'Trueke' ? 'Trueke' : 'Compra');
     this.contraofertaAbierta.set(true);
@@ -506,7 +530,8 @@ export default class Intercambios {
     if (!s?.id || !this.contraofertaValida()) return;
     const cuerpo = this.modoContraoferta() === 'Compra'
       ? { precioPropuestoCop: Math.round(this.precioContraoferta()!) }
-      : { publicacionesOfrecidasIds: this.seleccionContraoferta() };
+      : { publicacionesOfrecidasIds: this.seleccionContraoferta(),
+        ...cuerpoComplemento(this.complementoContraoferta(), this.complementoLoPagoYoContraoferta(), !!s.soyDuenio) };
     this.ocupado.set(s.id);
     this.errorContraoferta.set(null);
     try {

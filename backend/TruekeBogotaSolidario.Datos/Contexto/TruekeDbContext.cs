@@ -190,6 +190,7 @@ public class TruekeDbContext : DbContext
             e.HasOne(x => x.Publicacion).WithMany().HasForeignKey(x => x.PublicacionId).OnDelete(DeleteBehavior.Restrict);
             e.HasOne(x => x.Solicitante).WithMany().HasForeignKey(x => x.SolicitanteId).OnDelete(DeleteBehavior.Restrict);
             e.Property(x => x.PrecioPropuestoCop).HasPrecision(18, 2);
+            e.Property(x => x.ComplementoCop).HasPrecision(18, 2);
             e.HasMany(x => x.Ofrecidas).WithOne().HasForeignKey(o => o.SolicitudId).OnDelete(DeleteBehavior.Cascade);
             e.Navigation(x => x.Ofrecidas).UsePropertyAccessMode(PropertyAccessMode.Field);
             e.HasIndex(x => new { x.PublicacionId, x.Estado });

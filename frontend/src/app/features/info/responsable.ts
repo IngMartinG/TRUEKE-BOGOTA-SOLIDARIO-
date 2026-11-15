@@ -14,6 +14,7 @@ export function datosResponsable(legal: LegalPublicoDto | null | undefined) {
     correo: legal?.correoContacto ?? PENDIENTE,
     telefono: legal?.telefono ?? null,
     vigencia: legal?.fechaVigencia ?? PENDIENTE,
+    vigenciaTerminos: legal?.fechaVigenciaTerminos ?? PENDIENTE,
     versionPolitica: legal?.versionPoliticaDatos ?? PENDIENTE,
     versionTerminos: legal?.versionTerminos ?? PENDIENTE,
   };

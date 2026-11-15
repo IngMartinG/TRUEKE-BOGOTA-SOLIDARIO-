@@ -22,7 +22,8 @@ public sealed record ConfiguracionPublicaDto(string? CaptchaClaveSitio, string? 
 /// Null en un dato = no está configurado (solo pasa fuera de producción).
 /// </summary>
 public sealed record LegalPublicoDto(string VersionPoliticaDatos, string VersionTerminos, string FechaVigencia,
-    string? ResponsableNombre, string? ResponsableDocumento, string? Domicilio, string? CorreoContacto, string? Telefono);
+    string? ResponsableNombre, string? ResponsableDocumento, string? Domicilio, string? CorreoContacto, string? Telefono,
+    string FechaVigenciaTerminos);
 
 public interface IConfiguracionService
 {
@@ -68,7 +69,7 @@ public sealed class ConfiguracionService : IConfiguracionService
         _push.Habilitado && _push.Validas ? _push.ClavePublica : null,
         new LegalPublicoDto(_legal.VersionPoliticaDatos, _legal.VersionTerminos, _legal.FechaVigencia,
             Vacio(_legal.ResponsableNombre), Vacio(_legal.ResponsableDocumento), Vacio(_legal.Domicilio), Vacio(_legal.CorreoContacto),
-            Vacio(_legal.Telefono)),
+            Vacio(_legal.Telefono), _legal.FechaVigenciaTerminos),
         _pagos.VentasHabilitadas,
         Vacio(_donaciones.Url),
         _modelo.Habilitado,

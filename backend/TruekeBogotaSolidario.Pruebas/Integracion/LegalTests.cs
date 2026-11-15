@@ -37,7 +37,7 @@ public class LegalTests : IClassFixture<FabricaApi>
         Assert.Equal(HttpStatusCode.Created, ok.StatusCode);
         var usuario = (await ok.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("usuario");
         Assert.Equal("2026-10-31", usuario.GetProperty("politicaDatosVersion").GetString());
-        Assert.Equal("2026-10-31", usuario.GetProperty("terminosVersion").GetString());
+        Assert.Equal("2026-11-14", usuario.GetProperty("terminosVersion").GetString());
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public class LegalTests : IClassFixture<FabricaApi>
         Assert.Equal(HttpStatusCode.BadRequest, sinMarcar.StatusCode);
         var acepta = await cliente.PutAsJsonAsync("/api/v1/usuarios/yo/aceptar-legal", new { aceptoPoliticaDatos = true, aceptoTerminos = true });
         Assert.Equal(HttpStatusCode.OK, acepta.StatusCode);
-        Assert.Equal("2026-10-31", (await acepta.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("terminosVersion").GetString());
+        Assert.Equal("2026-11-14", (await acepta.Content.ReadFromJsonAsync<JsonElement>()).GetProperty("terminosVersion").GetString());
 
         // Con un token nuevo (el front refresca la sesión) ya puede usar todo
         var nuevo = await _f.CreateClient().PostAsJsonAsync("/api/v1/auth/login", new { correo = ses.Usuario.Correo, clave = Api.ClaveValida });
@@ -79,7 +79,8 @@ public class LegalTests : IClassFixture<FabricaApi>
     {
         var cfg = await _f.CreateClient().GetFromJsonAsync<JsonElement>("/api/v1/configuracion");
         var legal = cfg.GetProperty("legal");
-        Assert.Equal("2026-10-31", legal.GetProperty("versionTerminos").GetString());
+        Assert.Equal("2026-11-14", legal.GetProperty("versionTerminos").GetString());
+        Assert.Equal("2026-11-14", legal.GetProperty("fechaVigenciaTerminos").GetString());
         Assert.Equal("2026-10-31", legal.GetProperty("fechaVigencia").GetString());
         Assert.True(legal.TryGetProperty("responsableNombre", out _));
     }
