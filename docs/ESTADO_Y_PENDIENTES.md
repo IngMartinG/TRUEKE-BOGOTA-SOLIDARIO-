@@ -1001,8 +1001,9 @@ Decisión del dueño (D-021): una propuesta de trueke puede llevar objetos + un 
   para no cambiar la fecha de la política de datos). Quien ya tenía cuenta debe aceptarlos de nuevo al fusionar. Se agregaron las
   secciones «Mercancía nueva» y «Trueke con dinero para completar el valor», la regla de higiene en "Publicaciones prohibidas" y
   una frase en "Pagos". El asistente de ayuda explica los tres temas.
-- **Pendiente:** que un abogado revise los textos (también la venta de mercancía nueva por negocios); que las búsquedas guardadas
-  guarden el filtro de origen (PR 1) y repetir la etiqueta «Producto nuevo» en la tarjeta de mercancía.
+- **Pendiente:** que un abogado revise los textos (también la venta de mercancía nueva por negocios).
+- **Después (2026-11-15):** las búsquedas guardadas ya conservan el origen (`BusquedaGuardada.EsMercanciaNueva`, migración
+  `BusquedaGuardadaOrigen`, columna nula = ambos) y la tarjeta del catálogo ya no repite «Producto nuevo» (queda la insignia sobre la foto).
 - Pruebas: `TruekeConComplementoTests`, `LegalTests` (versión nueva), la migración en `PostgreSqlTests`, `complemento-dinero.spec.ts`
   y `tarjeta-solicitud.spec.ts`.
 

@@ -18,6 +18,7 @@ export function parametrosDe(b: BusquedaGuardadaDto): Record<string, string> {
   poner('categoriaId', b.categoriaId);
   poner('modo', b.modo);
   poner('condicion', b.condicion);
+  poner('origen', b.origen);
   poner('departamentoCodigo', b.departamentoCodigo);
   poner('municipioCodigo', b.municipioCodigo);
   poner('localidad', b.localidad);

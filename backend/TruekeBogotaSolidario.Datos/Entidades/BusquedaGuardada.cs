@@ -15,14 +15,14 @@ public class BusquedaGuardada
 
     public BusquedaGuardada(Guid usuarioId, string? texto, int? categoriaId, ModoTransaccion? modo, CondicionProducto? condicion,
         string? departamentoCodigo, string? municipioCodigo, string? localidad, decimal? precioMin, decimal? precioMax,
-        bool soloVerificados, bool alertas, DateTime ahoraUtc)
+        bool soloVerificados, bool alertas, DateTime ahoraUtc, bool? esMercanciaNueva = null)
     {
         texto = string.IsNullOrWhiteSpace(texto) ? null : texto.Trim();
         if (texto is { Length: > 100 }) throw new ReglaDeNegocioException("El texto de búsqueda admite máximo 100 caracteres.");
         if (precioMin.HasValue && precioMax.HasValue && precioMin > precioMax)
             throw new ReglaDeNegocioException("El precio mínimo no puede ser mayor que el máximo.");
         if (texto is null && categoriaId is null && modo is null && condicion is null && departamentoCodigo is null && municipioCodigo is null
-            && string.IsNullOrWhiteSpace(localidad) && precioMin is null && precioMax is null && !soloVerificados)
+            && string.IsNullOrWhiteSpace(localidad) && precioMin is null && precioMax is null && !soloVerificados && esMercanciaNueva is null)
             throw new ReglaDeNegocioException("Escribe algo o elige al menos un filtro para guardar la búsqueda.");
 
         Id = Guid.NewGuid();
@@ -37,6 +37,7 @@ public class BusquedaGuardada
         PrecioMin = precioMin;
         PrecioMax = precioMax;
         SoloVerificados = soloVerificados;
+        EsMercanciaNueva = esMercanciaNueva;
         AlertasActivas = alertas;
         FechaUtc = ahoraUtc;
         RevisadaHastaUtc = ahoraUtc; // solo avisa de lo que se publique DESPUÉS de guardarla
@@ -54,6 +55,8 @@ public class BusquedaGuardada
     public decimal? PrecioMin { get; private set; }
     public decimal? PrecioMax { get; private set; }
     public bool SoloVerificados { get; private set; }
+    /// <summary>Origen: true = solo mercancía nueva, false = solo segunda mano, null = ambos.</summary>
+    public bool? EsMercanciaNueva { get; private set; }
     public bool AlertasActivas { get; private set; }
     public DateTime FechaUtc { get; private set; }
     /// <summary>Hasta cuándo ya se revisaron publicaciones nuevas (o se avisó).</summary>
@@ -72,7 +75,8 @@ public class BusquedaGuardada
     public FiltroPublicaciones AFiltro() => new()
     {
         Texto = Texto, CategoriaId = CategoriaId, Modo = Modo, Condicion = Condicion, DepartamentoCodigo = DepartamentoCodigo,
-        MunicipioCodigo = MunicipioCodigo, Localidad = Localidad, PrecioMin = PrecioMin, PrecioMax = PrecioMax, SoloVerificados = SoloVerificados
+        MunicipioCodigo = MunicipioCodigo, Localidad = Localidad, PrecioMin = PrecioMin, PrecioMax = PrecioMax, SoloVerificados = SoloVerificados,
+        EsMercanciaNueva = EsMercanciaNueva
     };
 
     /// <summary>Misma búsqueda (para no guardarla dos veces).</summary>
@@ -80,5 +84,5 @@ public class BusquedaGuardada
         => string.Equals(TextoBusqueda.Normalizar(Texto), TextoBusqueda.Normalizar(o.Texto), StringComparison.Ordinal)
            && CategoriaId == o.CategoriaId && Modo == o.Modo && Condicion == o.Condicion && DepartamentoCodigo == o.DepartamentoCodigo
            && MunicipioCodigo == o.MunicipioCodigo && Localidad == o.Localidad && PrecioMin == o.PrecioMin && PrecioMax == o.PrecioMax
-           && SoloVerificados == o.SoloVerificados;
+           && SoloVerificados == o.SoloVerificados && EsMercanciaNueva == o.EsMercanciaNueva;
 }

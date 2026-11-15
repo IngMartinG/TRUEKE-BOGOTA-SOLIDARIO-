@@ -56,7 +56,8 @@ public sealed class BusquedaGuardadaService : IBusquedaGuardadaService
 
         var nueva = new BusquedaGuardada(actorId, r.Texto, r.CategoriaId, r.Modo.HasValue ? (ModoTransaccion)(int)r.Modo.Value : null,
             r.Condicion.HasValue ? (CondicionProducto)(int)r.Condicion.Value : null, r.DepartamentoCodigo, r.MunicipioCodigo, r.Localidad,
-            r.PrecioMin, r.PrecioMax, r.SoloVerificados, r.Alertas, Ahora);
+            r.PrecioMin, r.PrecioMax, r.SoloVerificados, r.Alertas, Ahora,
+            r.Origen switch { OrigenDto.MercanciaNueva => true, OrigenDto.SegundaMano => false, _ => null });
         var actuales = await _busquedas.DeUsuarioAsync(actorId);
         var categorias = await NombresCategoriasAsync();
         if (actuales.FirstOrDefault(b => b.EquivaleA(nueva)) is { } existente) return ADto(existente, categorias);
@@ -124,6 +125,7 @@ public sealed class BusquedaGuardadaService : IBusquedaGuardadaService
     {
         var partes = new List<string>();
         if (b.Texto is not null) partes.Add(b.Texto);
+        if (b.EsMercanciaNueva is { } nueva) partes.Add(nueva ? "Producto nuevo" : "Segunda mano");
         if (b.Modo is { } m) partes.Add(m switch { ModoTransaccion.Donacion => "Donación", ModoTransaccion.Compra => "Compra y venta", _ => "Trueke" });
         if (b.CategoriaId is { } c && categorias.TryGetValue(c, out var cat)) partes.Add(cat);
         if (b.MunicipioCodigo is not null) partes.Add(Divipola.NombreCompleto(b.MunicipioCodigo));
@@ -138,5 +140,6 @@ public sealed class BusquedaGuardadaService : IBusquedaGuardadaService
 
     private static BusquedaGuardadaDto ADto(BusquedaGuardada b, IReadOnlyDictionary<int, string> categorias)
         => new(b.Id, Nombre(b, categorias), b.Texto, b.CategoriaId, b.Modo?.ToString(), b.Condicion?.ToString(), b.DepartamentoCodigo,
-            b.MunicipioCodigo, b.Localidad, b.PrecioMin, b.PrecioMax, b.SoloVerificados, b.AlertasActivas, b.FechaUtc);
+            b.MunicipioCodigo, b.Localidad, b.PrecioMin, b.PrecioMax, b.SoloVerificados, b.AlertasActivas, b.FechaUtc,
+            b.EsMercanciaNueva is { } n ? (n ? nameof(OrigenDto.MercanciaNueva) : nameof(OrigenDto.SegundaMano)) : null);
 }
