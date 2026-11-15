@@ -7721,6 +7721,7 @@ export interface components {
             alertasActivas?: boolean;
             /** Format: date-time */
             fechaUtc?: string;
+            origen?: string | null;
         };
         CalificacionDto: {
             /** Format: uuid */
@@ -8496,6 +8497,7 @@ export interface components {
             /** Format: double */
             precioMax?: number | null;
             soloVerificados?: boolean;
+            origen?: components["schemas"]["OrigenDto"];
             alertas?: boolean;
         };
         GuardarCampanaRequest: {

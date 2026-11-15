@@ -58,6 +58,24 @@ public class BusquedasGuardadasTests : IClassFixture<FabricaApi>
     }
 
     [Fact]
+    public async Task Guarda_el_origen_segunda_mano_o_producto_nuevo_y_son_busquedas_distintas()
+    {
+        var ana = await Api.RegistrarAsync(_f, "anaBgOrigen");
+        var nuevo = await GuardarAsync(ana, new { texto = "Zapatos", origen = "MercanciaNueva" });
+        Assert.Equal("MercanciaNueva", nuevo.GetProperty("origen").GetString());
+        Assert.Equal("Zapatos · Producto nuevo", nuevo.GetProperty("nombre").GetString());
+        var usado = await GuardarAsync(ana, new { texto = "Zapatos", origen = "SegundaMano" });
+        var ambos = await GuardarAsync(ana, new { texto = "Zapatos" });
+        Assert.Equal(3, new[] { nuevo, usado, ambos }.Select(b => b.GetProperty("id").GetGuid()).Distinct().Count());
+        Assert.Equal(JsonValueKind.Null, ambos.GetProperty("origen").ValueKind);
+        // Solo el origen ya es un filtro suficiente para guardar
+        await GuardarAsync(ana, new { origen = "MercanciaNueva" });
+        // Y repetirla no la duplica
+        var otraVez = await GuardarAsync(ana, new { texto = "zapatos", origen = "MercanciaNueva" });
+        Assert.Equal(nuevo.GetProperty("id").GetGuid(), otraVez.GetProperty("id").GetGuid());
+    }
+
+    [Fact]
     public async Task Maximo_diez_busquedas()
     {
         var c = await Api.RegistrarAsync(_f, "muchasBg");

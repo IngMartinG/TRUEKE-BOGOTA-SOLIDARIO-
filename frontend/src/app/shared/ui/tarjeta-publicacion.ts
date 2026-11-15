@@ -64,7 +64,10 @@ import { InsigniaModo } from './insignia-modo';
       <div class="flex flex-1 flex-col gap-2 p-4">
         <p class="flex items-center justify-between gap-2 text-xs font-medium text-tenue">
           <span class="truncate">{{ p.categoria?.nombre }}</span>
-          <span class="shrink-0 rounded-full bg-superficie-2 px-2 py-0.5 text-xs font-semibold">{{ origen().etiqueta }}</span>
+          @if (origen().tipo !== 'mercancia') {
+            <!-- La mercancía nueva ya lleva su insignia sobre la foto: no se repite aquí -->
+            <span class="shrink-0 rounded-full bg-superficie-2 px-2 py-0.5 text-xs font-semibold">{{ origen().etiqueta }}</span>
+          }
         </p>
         <h3 class="line-clamp-2 font-display text-base leading-snug font-bold group-hover:text-bosque-700 dark:group-hover:text-bosque-300">
           {{ p.titulo }}

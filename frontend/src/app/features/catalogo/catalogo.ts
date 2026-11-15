@@ -442,6 +442,7 @@ export default class Catalogo {
           precioMin: f.precioMin ?? null,
           precioMax: f.precioMax ?? null,
           soloVerificados: !!f.soloVerificados,
+          origen: f.origen ?? undefined,
           alertas: true,
         }),
       );

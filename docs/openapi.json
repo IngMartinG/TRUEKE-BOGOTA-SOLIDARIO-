@@ -8624,6 +8624,10 @@
           "fechaUtc": {
             "type": "string",
             "format": "date-time"
+          },
+          "origen": {
+            "type": "string",
+            "nullable": true
           }
         },
         "additionalProperties": false
@@ -11087,6 +11091,9 @@
           },
           "soloVerificados": {
             "type": "boolean"
+          },
+          "origen": {
+            "$ref": "#/components/schemas/OrigenDto"
           },
           "alertas": {
             "type": "boolean"

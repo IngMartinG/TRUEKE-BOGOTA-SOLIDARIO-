@@ -395,6 +395,8 @@ public sealed class GuardarBusquedaRequest
     [Range(0, 1_000_000_000)] public decimal? PrecioMin { get; init; }
     [Range(0, 1_000_000_000)] public decimal? PrecioMax { get; init; }
     public bool SoloVerificados { get; init; }
+    /// <summary>Segunda mano o mercancía nueva (sin él, ambos).</summary>
+    [EnumDataType(typeof(OrigenDto))] public OrigenDto? Origen { get; init; }
     public bool Alertas { get; init; } = true;
 }
 
@@ -406,7 +408,7 @@ public sealed class AlertasBusquedaRequest
 /// <param name="Nombre">Resumen legible: "bicicleta · Trueke · Bogotá, D.C."</param>
 public sealed record BusquedaGuardadaDto(Guid Id, string Nombre, string? Texto, int? CategoriaId, string? Modo, string? Condicion,
     string? DepartamentoCodigo, string? MunicipioCodigo, string? Localidad, decimal? PrecioMin, decimal? PrecioMax, bool SoloVerificados,
-    bool AlertasActivas, DateTime FechaUtc);
+    bool AlertasActivas, DateTime FechaUtc, string? Origen = null);
 
 /// <summary>Crear o editar un deseo de "Lo que busco".</summary>
 public sealed class GuardarDeseoRequest

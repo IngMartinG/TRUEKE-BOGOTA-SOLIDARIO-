@@ -162,6 +162,9 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                         .IsUnicode(false)
                         .HasColumnType("character varying(2)");
 
+                    b.Property<bool?>("EsMercanciaNueva")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime>("FechaUtc")
                         .HasColumnType("timestamp with time zone");
 
