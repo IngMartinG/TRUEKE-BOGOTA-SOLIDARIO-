@@ -107,6 +107,16 @@ el motivo y el formulario avisa antes de enviar. Si solo aparecen en la descripc
 bloquea: "no incluye medias" es legítimo). La lista está en `ArticulosDeHigiene`; el front tiene una copia solo para avisar. Lo
 que ya estaba publicado y no cumple salió del catálogo hacia revisión (no se borró) y a su dueño se le avisó.
 
+## D-021 — Trueke con dinero para completar el valor (2026-11-14)
+- Una propuesta de trueke puede llevar objetos y un monto en pesos para completar la diferencia de valor; indica quién le paga a
+  quién y la puede hacer cualquiera de las dos partes (al pedir o al contraofertar). Reemplaza la decisión del 2026-10-24/25 de no
+  mezclar objetos y dinero en una misma propuesta.
+- El dinero solo es información en la solicitud: se paga entre las partes (en persona o transferencia). La plataforma no lo recibe,
+  no lo custodia, no lo verifica ni garantiza que se pague, y Wompi no interviene. Los Eco-Puntos no se convierten a pesos.
+- Cuenta como trueke (10 Eco-Puntos, contador de truekes, impacto de los objetos) sin puntos extra por el dinero. Exige al menos un
+  objeto (sin objetos sería una compra), monto entero hasta 1.000.000.000 y el sentido del pago.
+- Los términos de uso subieron a la versión 2026-11-14 para explicarlo (junto con la mercancía nueva y la regla de higiene).
+
 ## Pendientes de decidir
 - Precio de "Destacar": 5.000 COP por 7 días desde el 2026-10-30 (antes 6.000). Revisar con datos reales cuando se encienda el cobro.
 - Punto físico o 100 % digital.

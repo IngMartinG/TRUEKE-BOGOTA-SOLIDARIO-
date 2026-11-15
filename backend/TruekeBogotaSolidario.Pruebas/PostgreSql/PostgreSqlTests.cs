@@ -428,6 +428,8 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
                 ALTER TABLE "Publicaciones" ADD "DisponibilidadConfirmadaUtc" timestamp with time zone;
                 ALTER TABLE "Publicaciones" ADD "EsMercanciaNueva" boolean NOT NULL DEFAULT FALSE;
                 ALTER TABLE "Transacciones" ADD "VentaMercanciaNueva" boolean NOT NULL DEFAULT FALSE;
+                ALTER TABLE "Solicitudes" ADD "ComplementoCop" numeric(18,2);
+                ALTER TABLE "Solicitudes" ADD "ComplementoLoPagaSolicitante" boolean;
                 ALTER TABLE "Usuarios" ADD "DescripcionNegocio" character varying(600);
                 ALTER TABLE "Usuarios" ADD "HorarioNegocio" character varying(120);
                 ALTER TABLE "Usuarios" ADD "NitVerificadoUtc" timestamp with time zone;
@@ -465,6 +467,7 @@ public class PostgreSqlTests : IClassFixture<PostgreSqlFixture>
                     DROP COLUMN "CampanaId", DROP COLUMN "DisponibilidadPedidaUtc", DROP COLUMN "DisponibilidadConfirmadaUtc",
                     DROP COLUMN "EsMercanciaNueva";
                 ALTER TABLE "Transacciones" DROP COLUMN "VentaMercanciaNueva";
+                ALTER TABLE "Solicitudes" DROP COLUMN "ComplementoCop", DROP COLUMN "ComplementoLoPagaSolicitante";
                 ALTER TABLE "Usuarios" DROP COLUMN "DescripcionNegocio", DROP COLUMN "HorarioNegocio", DROP COLUMN "NitVerificadoUtc",
                     DROP COLUMN "NitRechazadoUtc", DROP COLUMN "ResumenSemanal", DROP COLUMN "ResumenSemanalEnviadoUtc", DROP COLUMN "FotoPublicaUrl";
                 """);

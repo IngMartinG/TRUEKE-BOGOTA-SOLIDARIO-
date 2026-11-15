@@ -15,6 +15,8 @@ public class Solicitud
     public const int MaxObjetosOfrecidos = 3;
     /// <summary>Contraofertas por solicitud entre las dos partes: después solo queda aceptar o retirarse.</summary>
     public const int MaxContraofertas = 5;
+    /// <summary>Tope del complemento en dinero (el mismo del precio propuesto en una compra).</summary>
+    public const decimal MaxComplementoCop = 1_000_000_000m;
 
     private readonly List<SolicitudObjeto> _ofrecidas = new();
 
@@ -23,8 +25,10 @@ public class Solicitud
     /// <param name="modo">Cómo se negocia: el de la publicación, o Trueke en una venta que también acepta trueke.</param>
     /// <param name="ofrecidas">Trueke: publicaciones propias que se ofrecen a cambio (opcional, hasta <see cref="MaxObjetosOfrecidos"/>).</param>
     /// <param name="precioPropuestoCop">Compra: precio que propone quien solicita (opcional; sin él, vale el publicado).</param>
+    /// <param name="complementoCop">Trueke: dinero que se suma a los objetos para completar el valor (opcional; se paga entre las partes).</param>
+    /// <param name="complementoLoPagaSolicitante">Con complemento: true si lo paga quien solicita, false si lo paga el dueño.</param>
     public Solicitud(Guid publicacionId, Guid solicitanteId, ModoTransaccion modo, string mensaje, IReadOnlyList<Guid>? ofrecidas = null,
-        decimal? precioPropuestoCop = null)
+        decimal? precioPropuestoCop = null, decimal? complementoCop = null, bool? complementoLoPagaSolicitante = null)
     {
         mensaje = (mensaje ?? "").Trim();
         if (mensaje.Length is < 1 or > 500) throw new ReglaDeNegocioException("El mensaje es obligatorio (máximo 500 caracteres).");
@@ -35,7 +39,7 @@ public class Solicitud
         FechaSolicitud = DateTime.UtcNow;
         Estado = EstadoSolicitud.Pendiente;
         TurnoDuenio = true;
-        PonerPropuesta(modo, ofrecidas ?? Array.Empty<Guid>(), precioPropuestoCop);
+        PonerPropuesta(modo, ofrecidas ?? Array.Empty<Guid>(), precioPropuestoCop, complementoCop, complementoLoPagaSolicitante);
     }
 
     public Guid Id { get; private set; }
@@ -53,6 +57,13 @@ public class Solicitud
     public IReadOnlyList<SolicitudObjeto> Ofrecidas => _ofrecidas;
     /// <summary>Compra: precio de la propuesta vigente (null = el publicado). Se paga en persona, como el publicado.</summary>
     public decimal? PrecioPropuestoCop { get; private set; }
+    /// <summary>
+    /// Trueke: dinero que se suma a los objetos de la propuesta vigente para completar el valor (null = sin dinero). Es solo un dato
+    /// de la negociación: las partes se lo pagan entre ellas, la plataforma no lo recibe, no lo custodia ni lo verifica.
+    /// </summary>
+    public decimal? ComplementoCop { get; private set; }
+    /// <summary>Con complemento: true si lo paga quien solicita (al dueño), false si lo paga el dueño (a quien solicita); null sin complemento.</summary>
+    public bool? ComplementoLoPagaSolicitante { get; private set; }
     /// <summary>A quién le toca responder la propuesta vigente: al dueño (al crearse) o a quien solicita (tras una contraoferta del dueño).</summary>
     public bool TurnoDuenio { get; private set; }
     public int Contraofertas { get; private set; }
@@ -85,25 +96,44 @@ public class Solicitud
     }
 
     /// <summary>Reemplaza la propuesta vigente y pasa el turno a la otra parte.</summary>
-    public void Contraofertar(bool esDuenio, ModoTransaccion modo, IReadOnlyList<Guid> ofrecidas, decimal? precioPropuestoCop)
+    public void Contraofertar(bool esDuenio, ModoTransaccion modo, IReadOnlyList<Guid> ofrecidas, decimal? precioPropuestoCop,
+        decimal? complementoCop = null, bool? complementoLoPagaSolicitante = null)
     {
         ExigirPendiente();
         ExigirTurno(esDuenio);
         if (Contraofertas >= MaxContraofertas)
             throw new ReglaDeNegocioException($"Ya hicieron {MaxContraofertas} contraofertas: acepta la propuesta o retírate.");
-        PonerPropuesta(modo, ofrecidas, precioPropuestoCop);
+        PonerPropuesta(modo, ofrecidas, precioPropuestoCop, complementoCop, complementoLoPagaSolicitante);
         TurnoDuenio = !esDuenio;
         Contraofertas++;
     }
 
-    /// <summary>Una propuesta es de un solo tipo: objetos (Trueke), un precio (Compra) o nada (Donación).</summary>
-    private void PonerPropuesta(ModoTransaccion modo, IReadOnlyList<Guid> ofrecidas, decimal? precioPropuestoCop)
+    /// <summary>
+    /// Una propuesta es de un solo tipo: objetos (Trueke, con un complemento en dinero opcional), un precio (Compra) o nada
+    /// (Donación). El complemento exige al menos un objeto: sin objetos sería una compra.
+    /// </summary>
+    private void PonerPropuesta(ModoTransaccion modo, IReadOnlyList<Guid> ofrecidas, decimal? precioPropuestoCop,
+        decimal? complementoCop, bool? complementoLoPagaSolicitante)
     {
         if (!Enum.IsDefined(modo)) throw new ReglaDeNegocioException("Modo de transacción no válido.");
         if (precioPropuestoCop is not null && modo != ModoTransaccion.Compra) throw new ReglaDeNegocioException("Solo en una compra se propone un precio.");
         if (ofrecidas.Count > 0 && modo != ModoTransaccion.Trueke) throw new ReglaDeNegocioException("Solo en un trueke se ofrecen objetos a cambio.");
+        if (complementoCop is null)
+        {
+            if (complementoLoPagaSolicitante is not null) throw new ReglaDeNegocioException("Indica el monto del dinero que se suma a los objetos.");
+        }
+        else
+        {
+            if (modo != ModoTransaccion.Trueke) throw new ReglaDeNegocioException("Solo en un trueke se suma dinero a los objetos.");
+            if (ofrecidas.Count == 0) throw new ReglaDeNegocioException("Para sumar dinero ofrece al menos un objeto; sin objetos sería una compra.");
+            if (complementoCop <= 0 || complementoCop > MaxComplementoCop || complementoCop != decimal.Truncate(complementoCop.Value))
+                throw new ReglaDeNegocioException("El dinero que se suma debe ser un monto entero en pesos, mayor que cero y hasta $1.000.000.000.");
+            if (complementoLoPagaSolicitante is null) throw new ReglaDeNegocioException("Indica quién le paga a quién.");
+        }
         PonerOfrecidas(ofrecidas);
         PrecioPropuestoCop = precioPropuestoCop;
+        ComplementoCop = complementoCop;
+        ComplementoLoPagaSolicitante = complementoCop is null ? null : complementoLoPagaSolicitante;
         Modo = modo;
     }
 

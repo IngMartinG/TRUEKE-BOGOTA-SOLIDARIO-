@@ -31,6 +31,7 @@ import { InsigniaModo } from '../../shared/ui/insignia-modo';
 import { Mapa } from '../../shared/ui/mapa';
 import { PuntosEncuentro } from '../../shared/ui/puntos-encuentro';
 import { SelectorObjetos } from '../../shared/ui/selector-objetos';
+import { ComplementoDinero, cuerpoComplemento } from '../../shared/ui/complemento-dinero';
 import { Modal } from '../../shared/ui/modal';
 import { Comentarios } from './comentarios';
 import { Volver } from '../../shared/ui/volver';
@@ -53,6 +54,7 @@ import { Volver } from '../../shared/ui/volver';
     EstadoVacio,
     Comentarios,
     SelectorObjetos,
+    ComplementoDinero,
     CopPipe,
     HacePipe,
     FechaPipe,
@@ -421,6 +423,10 @@ import { Volver } from '../../shared/ui/volver';
                 <p class="text-sm text-tenue">No tienes objetos publicados disponibles. <a routerLink="/publicar" class="enlace">Publica el que quieres ofrecer</a>.</p>
               </app-selector-objetos>
             </fieldset>
+            @if (ofrecidas().length) {
+              <app-complemento-dinero [(monto)]="complementoMonto" [(loPagoYo)]="complementoLoPagoYo"
+                [otraPersona]="p.propietario?.nombre ?? 'el dueño'" idBase="complemento-solicitud" />
+            }
           } @else if (p.modo === 'Compra' && p.precioReferenciaCop) {
             <div class="campo">
               <label for="precio-propuesto" class="etiqueta">¿Propones otro precio? <span class="font-normal text-tenue">(opcional)</span></label>
@@ -550,6 +556,9 @@ export default class Detalle {
   protected readonly ofrecidas = signal<string[]>([]);
   /** Compra: precio que propongo (vacío = el publicado). */
   protected readonly precioPropuesto = signal<number | null>(null);
+  /** Trueke con dinero: monto que se suma a los objetos y si lo pago yo (se paga entre las partes). */
+  protected readonly complementoMonto = signal<number | null>(null);
+  protected readonly complementoLoPagoYo = signal(true);
   /** Venta que también acepta trueke: pagar el precio u ofrecer objetos (una cosa o la otra). */
   protected readonly forma = signal<'comprar' | 'trueke'>('comprar');
   protected readonly formas = [
@@ -647,12 +656,15 @@ export default class Detalle {
           mensaje,
           publicacionesOfrecidasIds: this.ofreceObjetos() ? this.ofrecidas() : null,
           precioPropuestoCop: p.modo === 'Compra' && !this.ofreceObjetos() && precio && precio > 0 ? Math.round(precio) : null,
+          ...(this.ofreceObjetos() && this.ofrecidas().length ? cuerpoComplemento(this.complementoMonto(), this.complementoLoPagoYo(), false) : {}),
         }),
       );
       this.solicitudAbierta.set(false);
       this.mensaje.set('');
       this.ofrecidas.set([]);
       this.precioPropuesto.set(null);
+      this.complementoMonto.set(null);
+      this.complementoLoPagoYo.set(true);
       this.forma.set('comprar');
       this.misObjetos.set(null);
       this.avisos.exito('¡Solicitud enviada!', 'Te avisaremos cuando te respondan.');

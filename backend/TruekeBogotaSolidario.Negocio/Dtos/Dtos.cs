@@ -306,6 +306,13 @@ public sealed class CrearSolicitudRequest
     public Guid? PublicacionOfrecidaId { get; init; }
     /// <summary>Solo en una Compra y opcional: el precio que se propone (sin él, vale el publicado).</summary>
     [Range(1, 1_000_000_000)] public decimal? PrecioPropuestoCop { get; init; }
+    /// <summary>
+    /// Solo en un trueke y opcional: dinero (pesos enteros) que se suma a los objetos ofrecidos (al menos uno) para completar el
+    /// valor. Se paga entre las partes: la plataforma no lo recibe. Exige ComplementoLoPagaSolicitante.
+    /// </summary>
+    [Range(1, 1_000_000_000)] public decimal? ComplementoCop { get; init; }
+    /// <summary>Con complemento: true si lo paga quien solicita (al dueño), false si lo paga el dueño (a quien solicita).</summary>
+    public bool? ComplementoLoPagaSolicitante { get; init; }
 }
 
 /// <summary>
@@ -316,6 +323,9 @@ public sealed class ContraofertaRequest
 {
     [MaxLength(3)] public List<Guid>? PublicacionesOfrecidasIds { get; init; }
     [Range(1, 1_000_000_000)] public decimal? PrecioPropuestoCop { get; init; }
+    /// <summary>Trueke con dinero: lo puede proponer cualquiera de las dos partes (ver CrearSolicitudRequest).</summary>
+    [Range(1, 1_000_000_000)] public decimal? ComplementoCop { get; init; }
+    public bool? ComplementoLoPagaSolicitante { get; init; }
 }
 
 public sealed class RechazarSolicitudRequest
@@ -923,7 +933,9 @@ public sealed record SolicitudDto(Guid Id, Guid PublicacionId, string Publicacio
     IReadOnlyList<PublicacionResumenDto> Ofrecidas, decimal? PrecioPublicadoCop, decimal? PrecioPropuestoCop,
     bool MeTocaResponder, int Contraofertas, int ContraofertasRestantes, bool PublicacionAceptaTrueke,
     // Fotos de la entrega que adjuntaron las partes (se ven con GET /solicitudes/{id}/evidencias).
-    int Evidencias = 0);
+    int Evidencias = 0,
+    // Trueke con dinero: monto que se suma a los objetos y quién lo paga (true = quien solicita, al dueño). Se paga entre las partes.
+    decimal? ComplementoCop = null, bool? ComplementoLoPagaSolicitante = null);
 
 /// <summary>Lo que se ofrece a cambio en un trueke: datos que ya son públicos en el catálogo.</summary>
 public sealed record PublicacionResumenDto(Guid Id, string Titulo, string? Foto, string Condicion, string Estado, bool EsMercanciaNueva = false);

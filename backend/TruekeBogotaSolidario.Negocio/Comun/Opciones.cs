@@ -127,9 +127,11 @@ public sealed class LegalOpciones
     /// </summary>
     [Required, StringLength(20, MinimumLength = 1)] public string VersionPoliticaDatos { get; set; } = "2026-10-31";
     /// <summary>Versión vigente de los términos de uso (mismo mecanismo que la política).</summary>
-    [Required, StringLength(20, MinimumLength = 1)] public string VersionTerminos { get; set; } = "2026-10-31";
+    [Required, StringLength(20, MinimumLength = 1)] public string VersionTerminos { get; set; } = "2026-11-14";
     /// <summary>Desde cuándo rigen las versiones vigentes ("yyyy-MM-dd"); se muestra en las páginas legales.</summary>
     [Required, RegularExpression(@"^\d{4}-\d{2}-\d{2}$")] public string FechaVigencia { get; set; } = "2026-10-31";
+    /// <summary>Desde cuándo rige la versión vigente de los términos (cambian más seguido que la política de datos).</summary>
+    [Required, RegularExpression(@"^\d{4}-\d{2}-\d{2}$")] public string FechaVigenciaTerminos { get; set; } = "2026-11-14";
 
     // Responsable del tratamiento (Ley 1581, art. 17; Decreto 1377, art. 13). El repositorio es público: estos datos se
     // configuran por variables de entorno (Legal__ResponsableNombre…) y en producción la API no arranca sin ellos. Hoy es

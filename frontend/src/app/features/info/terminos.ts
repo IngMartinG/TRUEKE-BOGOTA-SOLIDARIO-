@@ -12,7 +12,7 @@ import { datosResponsable } from './responsable';
       titulo="Términos de uso"
       subtitulo="Reglas para usar Trueke Bogotá Solidario y convivir en la comunidad"
       [version]="legal()?.versionTerminos"
-      [vigenteDesde]="legal()?.fechaVigencia"
+      [vigenteDesde]="legal()?.fechaVigenciaTerminos"
       [secciones]="secciones()"
     />
   `,
@@ -87,6 +87,21 @@ export default class Terminos {
           'Datos personales de terceros (documentos, fotos o información de otras personas sin su autorización).',
           'Contenido sexual, violento, discriminatorio u ofensivo, y publicaciones engañosas o de estafa.',
           'Servicios, inmuebles o cualquier cosa que no sea un objeto que puedas entregar.',
+          'Por higiene, ropa interior, medias y trajes de baño usados: solo se pueden publicar en estado «Nuevo». Una publicación de estos artículos que declare otro estado se rechaza o pasa a revisión hasta que se corrija o se retire.',
+        ],
+      },
+      {
+        titulo: 'Mercancía nueva',
+        parrafos: [
+          'La plataforma está pensada para objetos de segunda mano, pero también permite publicar mercancía nueva: productos que se venden como nuevos, de ordinario por negocios o personas que los comercializan. Se marcan con la insignia «Producto nuevo» y se distinguen de un objeto sin usar que una persona ya tenía; no cuentan como segunda mano ni suman kilos ni CO₂ en las cifras de impacto.',
+          'Quien vende mercancía nueva es el único responsable de ofrecerla en las condiciones que informa: la garantía legal, el derecho de retracto en las ventas a distancia y demás obligaciones del Estatuto del Consumidor (Ley 1480 de 2011) están a cargo del vendedor, no de la plataforma, que solo pone en contacto a las partes. El vendedor debe informar con veracidad las características, el precio y las condiciones de entrega, y atender los reclamos del comprador.',
+        ],
+      },
+      {
+        titulo: 'Trueke con dinero para completar el valor',
+        parrafos: [
+          'En un trueke, cualquiera de las dos partes puede proponer, además de uno o más objetos, un monto en pesos para completar la diferencia de valor, indicando quién le paga a quién. Si no se ofrece ningún objeto no es un trueke sino una compra, y en las donaciones no se admite.',
+          'Ese dinero se acuerda y se paga directamente entre las partes, por el medio que elijan. La plataforma no lo recibe, no lo custodia, no lo verifica ni garantiza que se pague: solo lo anota como parte de la propuesta. Por eso te recomendamos pagarlo en persona al momento de la entrega y coordinar todo por el chat de la plataforma, que queda como constancia de lo acordado. El dinero no da Eco-Puntos adicionales: el intercambio cuenta como trueke.',
         ],
       },
       {
@@ -102,7 +117,7 @@ export default class Terminos {
         parrafos: [
           'Los servicios opcionales (destacar, verificar la identidad, planes Premium y Empresa y recargas de Eco-Puntos) se pagan con Wompi. Destacar y verificar también se pueden pagar, en parte o del todo, con Eco-Puntos (1 punto = 100 pesos), solo si la persona lo elige. Las recargas parten de 5.000 pesos, y los paquetes de 10.000, 20.000 y 50.000 pesos suman Eco-Puntos de bono. Lo pagado del todo con puntos no genera cobro ni factura.',
           'Los precios están en pesos colombianos e incluyen el IVA. Cada pago aprobado genera una factura electrónica: puedes registrar tus datos de facturación en tu cuenta; si no lo haces, se emite a "consumidor final".',
-          'La plataforma nunca procesa pagos entre usuarios: los acuerdos de compra se pagan directamente entre las partes, que acuerdan el medio de pago y la entrega.',
+          'La plataforma nunca procesa pagos entre usuarios: los acuerdos de compra, y el dinero que se suma en un trueke, se pagan directamente entre las partes, que acuerdan el medio de pago y la entrega.',
           'Los planes Premium y Empresa se pagan por 30 días o, con el plan anual, por 365 días en un solo pago. No se renuevan automáticamente: te avisamos antes del vencimiento. Si renuevas antes, los días se suman al periodo actual.',
         ],
       },
@@ -154,7 +169,7 @@ export default class Terminos {
         titulo: 'Ley aplicable y jurisdicción',
         parrafos: [
           'Estos términos se rigen por la ley colombiana. Las controversias se resolverán ante los jueces de Bogotá D.C., sin perjuicio de tu derecho como consumidor a acudir a la Superintendencia de Industria y Comercio o a los jueces de tu domicilio.',
-          `Versión ${r.versionTerminos}, vigente desde el ${r.vigencia}.`,
+          `Versión ${r.versionTerminos}, vigente desde el ${r.vigenciaTerminos}.`,
         ],
       },
     ];

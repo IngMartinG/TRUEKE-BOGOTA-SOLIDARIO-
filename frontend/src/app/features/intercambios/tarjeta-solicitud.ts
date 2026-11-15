@@ -56,6 +56,13 @@ export type AccionSolicitud = 'aceptar' | 'contraofertar' | 'rechazar' | 'cancel
               }
             </ul>
           }
+          @if (s.modo === 'Trueke' && s.complementoCop) {
+            <p class="mt-2 rounded-xl bg-sol-50 px-3 py-2 text-sm dark:bg-sol-500/10">
+              <span class="font-semibold">Dinero para completar: <span class="tabular-nums">{{ s.complementoCop | cop }}</span></span>
+              <span class="block">{{ textoComplemento() }}</span>
+              <span class="block text-xs text-tenue">Se paga entre ustedes; Trueke no recibe ni guarda este dinero.</span>
+            </p>
+          }
           @if (s.modo === 'Trueke' && s.publicacionAceptaTrueke && s.precioPublicadoCop) {
             <p class="mt-2 text-xs text-tenue">Es una venta en {{ s.precioPublicadoCop | cop }} que también acepta trueke.</p>
           }
@@ -150,6 +157,13 @@ export class TarjetaSolicitud {
   protected readonly origen = (o: { condicion?: string | null; esMercanciaNueva?: boolean | null }) => infoOrigen(o).etiqueta;
 
   protected readonly otra = computed(() => (this.solicitud().soyDuenio ? this.solicitud().solicitante : this.solicitud().propietario));
+  /** Quién le paga a quién el dinero que completa el trueke (el sentido se guarda respecto de quien solicita). */
+  protected readonly textoComplemento = computed(() => {
+    const s = this.solicitud();
+    const otra = this.otra()?.nombre ?? 'La otra persona';
+    const loPagoYo = s.soyDuenio ? s.complementoLoPagaSolicitante === false : !!s.complementoLoPagaSolicitante;
+    return loPagoYo ? `Tú le pagas a ${otra}.` : `${otra} te paga a ti.`;
+  });
   protected readonly estado = computed(() =>
     this.solicitud().enEspera
       ? { texto: 'En lista de espera', clase: 'insignia-sol' }

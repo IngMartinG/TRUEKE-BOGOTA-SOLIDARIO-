@@ -69,4 +69,17 @@ describe('TarjetaSolicitud (negociación)', () => {
     });
     expect([...el.querySelectorAll('a[aria-label^="Te ofrece:"]')].map((a) => a.getAttribute('aria-label'))).toEqual(['Te ofrece: Patineta', 'Te ofrece: Casco']);
   });
+
+  it('en un trueke con dinero dice cuánto y quién le paga a quién, desde cada punto de vista', () => {
+    const solicitantePaga = { complementoCop: 50000, complementoLoPagaSolicitante: true };
+    const comoDuenio = crear({ soyDuenio: true, ...solicitantePaga }).textContent ?? '';
+    expect(comoDuenio).toContain('Dinero para completar');
+    expect(comoDuenio).toContain('Beto te paga a ti.');
+    expect(comoDuenio).toContain('Trueke no recibe ni guarda este dinero');
+    TestBed.resetTestingModule();
+    const comoSolicitante = crear({ soyDuenio: false, ...solicitantePaga }).textContent ?? '';
+    expect(comoSolicitante).toContain('Tú le pagas a Ana.');
+    TestBed.resetTestingModule();
+    expect(crear({ soyDuenio: false }).textContent).not.toContain('Dinero para completar');
+  });
 });

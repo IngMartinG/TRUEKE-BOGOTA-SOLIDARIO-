@@ -8,6 +8,8 @@ Vocabulario del dominio. Entre paréntesis, el nombre en el código cuando es di
 - **Compra y venta** — modo con precio en pesos entre personas. La plataforma no recibe ese dinero.
 - **Donación** — entrega gratuita.
 - **Venta que también acepta trueke** — venta con la casilla "También acepto trueke" (`Publicacion.AceptaTrueke`).
+- **Complemento en dinero** — monto en pesos que se suma a los objetos de un trueke para completar el valor (`Solicitud.ComplementoCop`).
+  Lo propone cualquiera de las dos partes, indica quién le paga a quién y se paga entre ellas: la plataforma no lo recibe ni lo verifica.
 - **Publicación** — objeto ofrecido, con modo, categoría, condición, localidad y hasta 5 fotos.
 - **Condición** — estado del objeto: nuevo, como nuevo, usado, usado con detalles, reparado o para repuestos.
 - **Mercancía nueva** — producto nuevo que se ofrece para la venta (de tienda o para revender), no algo que la persona ya

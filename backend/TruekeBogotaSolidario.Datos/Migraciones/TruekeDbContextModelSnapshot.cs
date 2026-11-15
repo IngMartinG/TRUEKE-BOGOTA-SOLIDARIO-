@@ -1791,6 +1791,13 @@ namespace TruekeBogotaSolidario.Datos.Migraciones
                     b.Property<Guid>("Id")
                         .HasColumnType("uuid");
 
+                    b.Property<decimal?>("ComplementoCop")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<bool?>("ComplementoLoPagaSolicitante")
+                        .HasColumnType("boolean");
+
                     b.Property<DateTime?>("ConfirmadaPorDuenioUtc")
                         .HasColumnType("timestamp with time zone");
 

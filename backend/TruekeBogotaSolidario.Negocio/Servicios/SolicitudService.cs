@@ -130,13 +130,15 @@ public sealed class SolicitudService : ISolicitudService
         if (r.PrecioPropuestoCop is not null && pub.Modo != ModoTransaccion.Compra)
             throw new ReglaDeNegocioException("Solo en una compra se propone un precio.");
         if (r.PrecioPropuestoCop is not null && ofrecidas.Count > 0) throw new ReglaDeNegocioException(PrecioUObjetos);
+        if (r.ComplementoCop is not null && ofrecidas.Count == 0) throw new ReglaDeNegocioException(ComplementoSinObjetos);
         var precio = r.PrecioPropuestoCop == pub.PrecioReferenciaCop ? null : r.PrecioPropuestoCop;
         // En una venta que también acepta trueke, ofrecer objetos convierte la solicitud en un trueke.
         var modo = ofrecidas.Count > 0 ? ModoTransaccion.Trueke : pub.Modo;
 
         // Varias personas pueden estar interesadas a la vez: la publicación sigue en el catálogo hasta que el dueño elija a una.
         // Los objetos ofrecidos también siguen disponibles (se pueden ofrecer en varios truekes) hasta que alguno se acepte.
-        var solicitud = new Solicitud(pub.Id, actorId, modo, r.Mensaje, ofrecidas.Select(o => o.Id).ToList(), precio);
+        var solicitud = new Solicitud(pub.Id, actorId, modo, r.Mensaje, ofrecidas.Select(o => o.Id).ToList(), precio,
+            r.ComplementoCop, r.ComplementoLoPagaSolicitante);
         _solicitudes.Agregar(solicitud);
 
         // El chat nace con la solicitud; su mensaje es el primero de la conversación.
@@ -146,12 +148,22 @@ public sealed class SolicitudService : ISolicitudService
         await _uow.GuardarCambiosAsync();
 
         await NotificarAsync(pub.PropietarioId, TiposNotificacion.SolicitudNueva, ofrecidas.Count > 0
-            ? $"Nueva propuesta de trueke para \"{pub.Titulo}\": te ofrecen {Titulos(ofrecidas)}."
+            ? $"Nueva propuesta de trueke para \"{pub.Titulo}\": te ofrecen {Titulos(ofrecidas)}{TextoComplemento(solicitud, destinatarioEsSolicitante: false)}."
             : precio is { } p ? $"Nueva solicitud para \"{pub.Titulo}\": te ofrecen {Cop(p)}." : $"Nueva solicitud para \"{pub.Titulo}\".", solicitud.Id);
         return ADto(solicitud, pub, solicitante, actorId, conversacion.Id, puedoCalificar: false, ahora, ofrecidas, evidencias: 0);
     }
 
     private const string PrecioUObjetos = "Propón un precio u objetos a cambio, no las dos cosas.";
+    private const string ComplementoSinObjetos = "Para sumar dinero ofrece al menos un objeto; sin objetos sería una compra.";
+
+    /// <summary>
+    /// " + $50.000 de tu parte" / " + $50.000 de su parte" según a quién se le avise ("" sin complemento). El dinero se paga
+    /// entre las partes: el aviso solo informa la propuesta.
+    /// </summary>
+    private static string TextoComplemento(Solicitud s, bool destinatarioEsSolicitante)
+        => s.ComplementoCop is { } c && s.ComplementoLoPagaSolicitante is { } loPagaSolicitante
+            ? $" + {Cop(c)} {(loPagaSolicitante == destinatarioEsSolicitante ? "de tu parte" : "de su parte")}"
+            : "";
 
     /// <summary>
     /// Lo que se ofrece en un trueke (o en una venta que también lo acepta): publicaciones de QUIEN SOLICITA, disponibles y
@@ -204,6 +216,10 @@ public sealed class SolicitudService : ISolicitudService
         if (pub.Modo == ModoTransaccion.Compra && ids.Count > 0 && !pub.AceptaTrueke)
             throw new ReglaDeNegocioException("En una compra se propone un precio, no objetos.");
         if (r.PrecioPropuestoCop is not null && ids.Count > 0) throw new ReglaDeNegocioException(PrecioUObjetos);
+        if (r.ComplementoCop is not null && ids.Count == 0) throw new ReglaDeNegocioException(ComplementoSinObjetos);
+        if (r.ComplementoCop is not null && r.ComplementoLoPagaSolicitante is null) throw new ReglaDeNegocioException("Indica quién le paga a quién.");
+        var complemento = r.ComplementoCop;
+        var loPagaSolicitante = complemento is null ? null : r.ComplementoLoPagaSolicitante;
 
         // Objetos: un trueke, o una venta que también acepta trueke (la propuesta pasa a ser un trueke).
         var modo = pub.Modo == ModoTransaccion.Trueke || ids.Count > 0 ? ModoTransaccion.Trueke : ModoTransaccion.Compra;
@@ -211,10 +227,14 @@ public sealed class SolicitudService : ISolicitudService
         {
             if (r.PrecioPropuestoCop is not null) throw new ReglaDeNegocioException("En un trueke se proponen objetos, no dinero.");
             if (ids.Count == 0) throw new ReglaDeNegocioException("Elige al menos un objeto para la contraoferta.");
-            if (s.Modo == ModoTransaccion.Trueke && ids.ToHashSet().SetEquals(s.Ofrecidas.Select(o => o.PublicacionId)))
+            if (s.Modo == ModoTransaccion.Trueke && ids.ToHashSet().SetEquals(s.Ofrecidas.Select(o => o.PublicacionId))
+                && complemento == s.ComplementoCop && loPagaSolicitante == s.ComplementoLoPagaSolicitante)
                 throw new ReglaDeNegocioException("Esa es la misma propuesta: si te sirve, acéptala.");
             ofrecidas = await ValidarOfrecidasAsync(ids, pub, s.SolicitanteId);
-            resumen = esDuenio ? $"prefiere {Titulos(ofrecidas)} a cambio" : $"ahora ofrece {Titulos(ofrecidas)}";
+            // El texto del dinero se escribe desde quien recibe el aviso: "de tu parte" es la persona que lo lee.
+            var dinero = complemento is { } c && loPagaSolicitante is { } paga
+                ? $" + {Cop(c)} {(paga == !esDuenio ? "de su parte" : "de tu parte")}" : "";
+            resumen = esDuenio ? $"prefiere {Titulos(ofrecidas)}{dinero} a cambio" : $"ahora ofrece {Titulos(ofrecidas)}{dinero}";
         }
         else
         {
@@ -226,7 +246,7 @@ public sealed class SolicitudService : ISolicitudService
             if (precio == pub.PrecioReferenciaCop) precio = null; // volver al publicado
         }
 
-        s.Contraofertar(esDuenio, modo, ofrecidas.Select(o => o.Id).ToList(), precio);
+        s.Contraofertar(esDuenio, modo, ofrecidas.Select(o => o.Id).ToList(), precio, complemento, loPagaSolicitante);
         await _uow.GuardarCambiosAsync();
         var otra = esDuenio ? s.SolicitanteId : pub.PropietarioId;
         var restantes = Solicitud.MaxContraofertas - s.Contraofertas;
@@ -303,7 +323,8 @@ public sealed class SolicitudService : ISolicitudService
         if (esDuenio)
             avisos.Agregar(s.SolicitanteId, TiposNotificacion.SolicitudAceptada, ofrecidas.Count == 0
                 ? $"¡Aceptaron tu solicitud para \"{pub.Titulo}\"{precio}! Coordinen la entrega por el chat y confírmala cuando ocurra."
-                : $"¡Aceptaron tu trueke: {Titulos(ofrecidas)} por \"{pub.Titulo}\"! Todos los objetos quedan reservados. Coordinen la entrega por el chat.", s.Id);
+                : $"¡Aceptaron tu trueke: {Titulos(ofrecidas)}{TextoComplemento(s, destinatarioEsSolicitante: true)} por \"{pub.Titulo}\"! Todos los objetos quedan reservados. Coordinen la entrega por el chat"
+                  + (s.ComplementoCop is null ? "." : " y cómo se paga el dinero entre ustedes."), s.Id);
         else
             avisos.Agregar(pub.PropietarioId, TiposNotificacion.SolicitudAceptada,
                 $"¡Aceptaron tu contraoferta por \"{pub.Titulo}\"{precio}! Queda reservada: coordinen la entrega por el chat.", s.Id);
@@ -751,6 +772,7 @@ public sealed class SolicitudService : ISolicitudService
             EnEspera: s.Estado == EstadoSolicitud.Pendiente && pub.Estado == EstadoPublicacionEnum.EnNegociacion, resumenes,
             pub.Modo == ModoTransaccion.Compra ? pub.PrecioReferenciaCop : null, s.PrecioPropuestoCop,
             MeTocaResponder: s.Estado == EstadoSolicitud.Pendiente && s.TurnoDuenio == soyDuenio, s.Contraofertas,
-            Math.Max(0, Solicitud.MaxContraofertas - s.Contraofertas), pub.Modo == ModoTransaccion.Compra && pub.AceptaTrueke, evidencias);
+            Math.Max(0, Solicitud.MaxContraofertas - s.Contraofertas), pub.Modo == ModoTransaccion.Compra && pub.AceptaTrueke, evidencias,
+            s.ComplementoCop, s.ComplementoLoPagaSolicitante);
     }
 }
