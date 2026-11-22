@@ -31,7 +31,7 @@ services:
       retries: 30
 
   storage:
-    image: supabase/storage-api:v1.94.0@sha256:d96ed16903aaaacd25a02376cee306e45e6fc6724b15ce18cb867f8045b3509c
+    image: supabase/storage-api:v1.97.2@sha256:59d4fd407c8d750a6dcbb86a2f85f51f1e85ab351dbc0d28bdcbe979fb634e05
     environment:
       <<: *llaves
       DATABASE_URL: postgres://postgres:storage-local@storage-db:5432/storage
